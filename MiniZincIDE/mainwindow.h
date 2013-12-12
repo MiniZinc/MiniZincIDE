@@ -41,7 +41,10 @@ private slots:
     void procError(QProcess::ProcessError);
 
     void on_actionSave_triggered();
+    void on_actionQuit_triggered();
 
+protected:
+    virtual void closeEvent(QCloseEvent*);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

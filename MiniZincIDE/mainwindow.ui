@@ -158,14 +158,6 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="actionQuit">
-   <property name="text">
-    <string>Quit</string>
-   </property>
-   <property name="shortcut">
-    <string>Meta+Q</string>
-   </property>
-  </action>
   <action name="actionUndo">
    <property name="text">
     <string>Undo</string>
@@ -238,6 +230,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
    </property>
   </action>
  </widget>

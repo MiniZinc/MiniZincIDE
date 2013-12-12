@@ -79,37 +79,62 @@ void MainWindow::tabCloseRequest(int tab)
         int ret = msg.exec();
         switch (ret) {
         case QMessageBox::Save:
-            break;
+            on_actionSave_triggered();
+            if (ce->document()->isModified())
+                return;
         case QMessageBox::Discard:
-            ui->tabWidget->removeTab(tab);
-            if (ui->tabWidget->count()==0) {
-                on_actionNew_triggered();
-            }
             break;
         case QMessageBox::Cancel:
-            break;
+            return;
         default:
-            break;
+            return;
         }
-    } else {
-        ui->tabWidget->removeTab(tab);
-        if (ui->tabWidget->count()==0) {
-            on_actionNew_triggered();
-        }
+    }
+    ui->tabWidget->removeTab(tab);
+    if (ui->tabWidget->count()==0) {
+        on_actionNew_triggered();
     }
 }
 
-void MainWindow::tabChange(int tab) {
-    if (tab==-1) {
-        if (curEditor) {
-            disconnect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
-            disconnect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
-            disconnect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
-            disconnect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
-            disconnect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
-            disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
-            disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
+void MainWindow::closeEvent(QCloseEvent* e) {
+    bool modified = false;
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (static_cast<CodeEditor*>(ui->tabWidget->widget(i))->document()->isModified()) {
+            modified = true;
+            break;
         }
+    }
+    if (modified) {
+        int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                       "There are modified documents.\nDo you want to discard the changes or cancel?",
+                                       QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Cancel) {
+            e->ignore();
+            return;
+        }
+    }
+    e->accept();
+}
+
+void MainWindow::tabChange(int tab) {
+    if (curEditor) {
+        disconnect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
+        disconnect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
+        disconnect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
+        disconnect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
+        disconnect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
+        disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
+        disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
+        disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
+                   this, SLOT(setWindowModified(bool)));
+        disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
+                   ui->actionSave, SLOT(setEnabled(bool)));
+        disconnect(curEditor->document(), SIGNAL(undoAvailable(bool)),
+                   ui->actionUndo, SLOT(setEnabled(bool)));
+        disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
+                   ui->actionRedo, SLOT(setEnabled(bool)));
+    }
+    if (tab==-1) {
         curEditor = NULL;
     } else {
         curEditor = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
@@ -120,6 +145,18 @@ void MainWindow::tabChange(int tab) {
         connect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
         connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
         connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
+        connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
+                this, SLOT(setWindowModified(bool)));
+        connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
+                ui->actionSave, SLOT(setEnabled(bool)));
+        connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
+                ui->actionUndo, SLOT(setEnabled(bool)));
+        connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
+                ui->actionRedo, SLOT(setEnabled(bool)));
+        setWindowModified(curEditor->document()->isModified());
+        ui->actionSave->setEnabled(curEditor->document()->isModified());
+        ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
+        ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
     }
 }
 
@@ -202,4 +239,9 @@ void MainWindow::on_actionSave_triggered()
             }
         }
     }
+}
+
+void MainWindow::on_actionQuit_triggered()
+{
+    close();
 }
