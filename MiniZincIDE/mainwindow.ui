@@ -64,27 +64,25 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
-               <widget class="QCheckBox" name="conf_have_data_file">
+               <widget class="QLabel" name="label_5">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Data file</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="conf_data_file"/>
-              </item>
-              <item>
-               <widget class="QPushButton" name="conf_select_data_file">
-                <property name="text">
-                 <string>Select</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="conf_browse_data_file">
-                <property name="text">
-                 <string>Browse</string>
-                </property>
+               <widget class="QComboBox" name="conf_data_file">
+                <item>
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
@@ -135,6 +133,12 @@
                <layout class="QHBoxLayout" name="horizontalLayout_4">
                 <item>
                  <widget class="QLabel" name="label_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="text">
                    <string>Solver</string>
                   </property>
@@ -155,7 +159,14 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="conf_nsol"/>
+                 <widget class="QSpinBox" name="conf_nsol">
+                  <property name="maximum">
+                   <number>10000</number>
+                  </property>
+                  <property name="value">
+                   <number>1</number>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>

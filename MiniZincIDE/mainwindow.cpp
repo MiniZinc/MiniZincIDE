@@ -3,7 +3,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
-#include "rundialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -25,6 +24,14 @@ MainWindow::MainWindow(QWidget *parent) :
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
+
+    solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd",""));
+    solvers.append(Solver("G12 lazyfd","flatzinc","-Gg12_fd","lazy"));
+    solvers.append(Solver("G12 CPX","fzn_cpx","-Gg12_cpx",""));
+    solvers.append(Solver("G12 MIP","flatzinc","-Glinear","mip"));
+
+    for (int i=0; i<solvers.size(); i++)
+        ui->conf_solver->addItem(solvers[i].name,i);
 }
 
 MainWindow::~MainWindow()
@@ -51,11 +58,17 @@ void MainWindow::createEditor(QFile& file) {
             curEditor->filepath = QFileInfo(file).absoluteFilePath();
             curEditor->filename = QFileInfo(file).fileName();
             ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
+            if (QFileInfo(file).completeSuffix()=="dzn") {
+                ui->conf_data_file->addItem(curEditor->filepath);
+            }
         }
     } else {
         CodeEditor* ce = new CodeEditor(file,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
+        if (QFileInfo(file).completeSuffix()=="dzn") {
+            ui->conf_data_file->addItem(curEditor->filepath);
+        }
     }
 }
 
@@ -98,6 +111,7 @@ void MainWindow::tabCloseRequest(int tab)
             return;
         }
     }
+    removeFile(ce->filepath);
     ui->tabWidget->removeTab(tab);
     if (ui->tabWidget->count()==0) {
         on_actionNew_triggered();
@@ -207,7 +221,7 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf()
+QStringList MainWindow::parseConf(bool compileOnly)
 {
     QStringList ret;
     if (!ui->conf_optimize->isChecked())
@@ -215,47 +229,67 @@ QStringList MainWindow::parseConf()
     if (ui->conf_verbose->isChecked())
         ret << "-v";
     if (ui->conf_have_cmd_params->isChecked())
-        ret << "-D "+ui->conf_cmd_params->text();
-    if (ui->conf_have_data_file->isChecked())
-        ret << "-d "+ui->conf_data_file->text();
-    if (ui->conf_printall->isChecked())
+        ret << "-D"+ui->conf_cmd_params->text();
+    if (ui->conf_data_file->currentText()!="None")
+        ret << "-d"+ui->conf_data_file->currentText();
+    if (!compileOnly && ui->conf_printall->isChecked())
         ret << "-a";
-    if (ui->conf_stats->isChecked())
+    if (!compileOnly && ui->conf_stats->isChecked())
         ret << "-s";
-    if (ui->conf_nthreads->value() != 1)
+    if (!compileOnly && ui->conf_nthreads->value() != 1)
         ret << "-p"+QString::number(ui->conf_nthreads->value());
-    if (ui->conf_have_seed->isChecked())
+    if (!compileOnly && ui->conf_have_seed->isChecked())
         ret << "-r"+ui->conf_seed->text();
-    if (ui->conf_nsol->value() != 1)
+    if (!compileOnly && ui->conf_nsol->value() != 1)
         ret << "-n"+QString::number(ui->conf_nsol->value());
+    Solver s = solvers[ui->conf_solver->currentData().toInt()];
+    if (!compileOnly) {
+        ret << "-f" << s.executable;
+        if (!s.backend.isEmpty())
+            ret << "-b" << s.backend;
+    }
+    if (!s.mznlib.isEmpty())
+        ret << s.mznlib;
     return ret;
+}
+
+void MainWindow::addFile(const QString &path)
+{
+    if (!filePaths.contains(path)) {
+        filePaths.insert(path);
+        if (path.endsWith(".dzn"))
+            ui->conf_data_file->addItem(path);
+    }
+}
+
+void MainWindow::removeFile(const QString& path)
+{
+    filePaths.remove(path);
+    if (path.endsWith(".dzn")) {
+        ui->conf_data_file->removeItem(ui->conf_data_file->findText(path));
+    }
 }
 
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
-//        RunDialog rd(this);
-//        int ret = rd.exec();
-//        if (ret==QDialog::Accepted) {
-            ui->actionRun->setEnabled(false);
-            ui->actionCompile->setEnabled(false);
-            ui->actionStop->setEnabled(true);
-            process = new QProcess(this);
-            process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            process->setProcessChannelMode(QProcess::MergedChannels);
-            connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-            connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
-            connect(process, SIGNAL(error(QProcess::ProcessError)),
-                    this, SLOT(procError(QProcess::ProcessError)));
+        ui->actionRun->setEnabled(false);
+        ui->actionCompile->setEnabled(false);
+        ui->actionStop->setEnabled(true);
+        process = new QProcess(this);
+        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+        connect(process, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(procError(QProcess::ProcessError)));
 
-            QStringList args = parseConf();
-            args << curEditor->filepath;
-            ui->outputConsole->insertHtml("<div style='color:red;'>Starting "+curEditor->filename+"</div><br>");
-            qDebug() << "command line: " << args;
-            process->start("mzn-gecode",args);
-            time = 0;
-            timer->start(500);
-//        }
+        QStringList args = parseConf(false);
+        args << curEditor->filepath;
+        ui->outputConsole->insertHtml("<div style='color:red;'>Starting "+curEditor->filename+"</div><br>");
+        process->start("minizinc",args);
+        time = 0;
+        timer->start(500);
     }
 }
 
@@ -311,6 +345,9 @@ void MainWindow::on_actionSave_triggered()
         if (!filepath.isEmpty()) {
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
+                if (QFileInfo(file).completeSuffix()=="dzn") {
+                    ui->conf_data_file->addItem(curEditor->filepath);
+                }
                 QTextStream out(&file);
                 out << curEditor->document()->toPlainText();
                 file.close();
@@ -341,9 +378,37 @@ void MainWindow::on_actionStop_triggered()
     }
 }
 
+void MainWindow::openCompiledFzn(int exitcode)
+{
+    if (exitcode==0) {
+        openFile(currentFznTarget);
+    }
+}
+
 void MainWindow::on_actionCompile_triggered()
 {
+    if (curEditor && curEditor->filepath!="") {
+        ui->actionRun->setEnabled(false);
+        ui->actionCompile->setEnabled(false);
+        ui->actionStop->setEnabled(true);
+        process = new QProcess(this);
+        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+        connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
+        connect(process, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(procError(QProcess::ProcessError)));
 
+        QStringList args = parseConf(true);
+        args << curEditor->filepath;
+        QFileInfo fi(curEditor->filepath);
+        currentFznTarget = fi.absolutePath()+"/"+fi.baseName()+".fzn";
+        ui->outputConsole->insertHtml("<div style='color:red;'>Compiling "+curEditor->filename+"</div><br>");
+        process->start("mzn2fzn",args);
+        time = 0;
+        timer->start(500);
+    }
 }
 
 void MainWindow::on_actionConstraint_Graph_triggered()

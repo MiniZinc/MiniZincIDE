@@ -15,14 +15,11 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     codeeditor.cpp \
-    highlighter.cpp \
-    rundialog.cpp
+    highlighter.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
-    highlighter.h \
-    rundialog.h
+    highlighter.h
 
 FORMS    += \
-    mainwindow.ui \
-    rundialog.ui
+    mainwindow.ui
