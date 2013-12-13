@@ -63,6 +63,7 @@ private:
     int time;
     QLabel* statusLabel;
     void createEditor(QFile& file);
+    QStringList parseConf();
 };
 
 #endif // MAINWINDOW_H

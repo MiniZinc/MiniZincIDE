@@ -207,6 +207,30 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
+QStringList MainWindow::parseConf()
+{
+    QStringList ret;
+    if (!ui->conf_optimize->isChecked())
+        ret << "--no-optimize";
+    if (ui->conf_verbose->isChecked())
+        ret << "-v";
+    if (ui->conf_have_cmd_params->isChecked())
+        ret << "-D "+ui->conf_cmd_params->text();
+    if (ui->conf_have_data_file->isChecked())
+        ret << "-d "+ui->conf_data_file->text();
+    if (ui->conf_printall->isChecked())
+        ret << "-a";
+    if (ui->conf_stats->isChecked())
+        ret << "-s";
+    if (ui->conf_nthreads->value() != 1)
+        ret << "-p"+QString::number(ui->conf_nthreads->value());
+    if (ui->conf_have_seed->isChecked())
+        ret << "-r"+ui->conf_seed->text();
+    if (ui->conf_nsol->value() != 1)
+        ret << "-n"+QString::number(ui->conf_nsol->value());
+    return ret;
+}
+
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
@@ -224,9 +248,10 @@ void MainWindow::on_actionRun_triggered()
             connect(process, SIGNAL(error(QProcess::ProcessError)),
                     this, SLOT(procError(QProcess::ProcessError)));
 
-            QStringList args;
+            QStringList args = parseConf();
             args << curEditor->filepath;
             ui->outputConsole->insertHtml("<div style='color:red;'>Starting "+curEditor->filename+"</div><br>");
+            qDebug() << "command line: " << args;
             process->start("mzn-gecode",args);
             time = 0;
             timer->start(500);

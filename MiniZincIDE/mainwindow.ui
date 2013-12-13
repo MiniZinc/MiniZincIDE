@@ -46,29 +46,8 @@
            <property name="title">
             <string>Translation</string>
            </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="1" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
-              <item>
-               <widget class="QCheckBox" name="checkBox">
-                <property name="text">
-                 <string>Data file</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="lineEdit_2"/>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButton">
-                <property name="text">
-                 <string>Browse</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="0" column="0">
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <widget class="QLabel" name="label">
@@ -78,35 +57,66 @@
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit"/>
+               <widget class="QLineEdit" name="conf_include_path"/>
               </item>
              </layout>
             </item>
-            <item row="2" column="0">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QCheckBox" name="conf_have_data_file">
+                <property name="text">
+                 <string>Data file</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_data_file"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="conf_select_data_file">
+                <property name="text">
+                 <string>Select</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="conf_browse_data_file">
+                <property name="text">
+                 <string>Browse</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
-               <widget class="QCheckBox" name="checkBox_2">
+               <widget class="QCheckBox" name="conf_have_cmd_params">
                 <property name="text">
                  <string>Additional parameters</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit_3"/>
+               <widget class="QLineEdit" name="conf_cmd_params"/>
               </item>
              </layout>
             </item>
-            <item row="3" column="0" alignment="Qt::AlignLeft">
-             <widget class="QCheckBox" name="checkBox_4">
+            <item>
+             <widget class="QCheckBox" name="conf_verbose">
               <property name="text">
                <string>Verbose</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <widget class="QCheckBox" name="checkBox_3">
+            <item>
+             <widget class="QCheckBox" name="conf_optimize">
               <property name="text">
                <string>Optimize</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -118,122 +128,90 @@
            <property name="title">
             <string>Solving</string>
            </property>
-           <widget class="QCheckBox" name="checkBox_5">
-            <property name="geometry">
-             <rect>
-              <x>490</x>
-              <y>30</y>
-              <width>131</width>
-              <height>20</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Print all solutions</string>
-            </property>
-           </widget>
-           <widget class="QCheckBox" name="checkBox_6">
-            <property name="geometry">
-             <rect>
-              <x>650</x>
-              <y>30</y>
-              <width>87</width>
-              <height>20</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Statistics</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_4">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>60</y>
-              <width>62</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>#Threads</string>
-            </property>
-           </widget>
-           <widget class="QSpinBox" name="spinBox_2">
-            <property name="geometry">
-             <rect>
-              <x>140</x>
-              <y>60</y>
-              <width>49</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QCheckBox" name="checkBox_7">
-            <property name="geometry">
-             <rect>
-              <x>290</x>
-              <y>60</y>
-              <width>111</width>
-              <height>20</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Random seed</string>
-            </property>
-           </widget>
-           <widget class="QLineEdit" name="lineEdit_4">
-            <property name="geometry">
-             <rect>
-              <x>420</x>
-              <y>60</y>
-              <width>113</width>
-              <height>21</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QWidget" name="">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>30</y>
-              <width>155</width>
-              <height>26</height>
-             </rect>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Solver</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="comboBox"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="">
-            <property name="geometry">
-             <rect>
-              <x>301</x>
-              <y>30</y>
-              <width>126</width>
-              <height>26</height>
-             </rect>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>#Solutions</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="spinBox"/>
-             </item>
-            </layout>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QLabel" name="label_2">
+                  <property name="text">
+                   <string>Solver</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="conf_solver"/>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_5">
+                <item>
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>#Solutions</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="conf_nsol"/>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="conf_printall">
+                <property name="text">
+                 <string>Print all solutions</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="conf_stats">
+                <property name="text">
+                 <string>Statistics</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_7">
+                <item>
+                 <widget class="QLabel" name="label_4">
+                  <property name="text">
+                   <string>#Threads</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="conf_nthreads">
+                  <property name="value">
+                   <number>1</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QCheckBox" name="conf_have_seed">
+                  <property name="text">
+                   <string>Random seed</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="conf_seed"/>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </widget>
          </item>
         </layout>
