@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QFile>
 #include <QProcess>
+#include <QTimer>
+#include <QLabel>
 
 #include "codeeditor.h"
 
@@ -43,12 +45,23 @@ private slots:
     void on_actionSave_triggered();
     void on_actionQuit_triggered();
 
+    void statusTimerEvent();
+
+    void on_actionStop_triggered();
+
+    void on_actionCompile_triggered();
+
+    void on_actionConstraint_Graph_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
     QProcess* process;
+    QTimer* timer;
+    int time;
+    QLabel* statusLabel;
     void createEditor(QFile& file);
 };
 
