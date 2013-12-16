@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
+    tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
     solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd",""));
@@ -194,17 +195,29 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                     ui->actionRedo, SLOT(setEnabled(bool)));
             setWindowModified(curEditor->document()->isModified());
+            ui->actionSave_as->setEnabled(true);
             ui->actionSave->setEnabled(curEditor->document()->isModified());
+            ui->actionSelect_All->setEnabled(true);
             ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
+            bool isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
+            ui->actionRun->setEnabled(isMzn);
+            ui->actionCompile->setEnabled(isMzn);
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionConstraint_Graph->setEnabled(isFzn);
         } else {
             curEditor = NULL;
             ui->actionClose->setEnabled(false);
             ui->actionSave->setEnabled(false);
+            ui->actionSave_as->setEnabled(false);
+            ui->actionCut->setEnabled(false);
+            ui->actionCopy->setEnabled(false);
+            ui->actionPaste->setEnabled(false);
+            ui->actionSelect_All->setEnabled(false);
             ui->actionUndo->setEnabled(false);
             ui->actionRedo->setEnabled(false);
+            ui->actionRun->setEnabled(false);
+            ui->actionCompile->setEnabled(false);
             ui->actionConstraint_Graph->setEnabled(false);
         }
     }
@@ -242,7 +255,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-r"+ui->conf_seed->text();
     if (!compileOnly && ui->conf_nsol->value() != 1)
         ret << "-n"+QString::number(ui->conf_nsol->value());
-    Solver s = solvers[ui->conf_solver->currentData().toInt()];
+    Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (!compileOnly) {
         ret << "-f" << s.executable;
         if (!s.backend.isEmpty())
@@ -335,28 +348,41 @@ void MainWindow::procError(QProcess::ProcessError e) {
     ui->actionCompile->setEnabled(true);
 }
 
+void MainWindow::saveFile(const QString& f)
+{
+    QString filepath = f;
+    if (filepath=="") {
+        filepath = QFileDialog::getSaveFileName(this,"Save file",QString(),"MiniZinc files (*.mzn *.dzn *.fzn)");
+    }
+    if (!filepath.isEmpty()) {
+        QFile file(filepath);
+        if (file.open(QFile::WriteOnly | QFile::Text)) {
+            if (QFileInfo(file).completeSuffix()=="dzn") {
+                ui->conf_data_file->addItem(curEditor->filepath);
+            }
+            QTextStream out(&file);
+            out << curEditor->document()->toPlainText();
+            file.close();
+            curEditor->document()->setModified(false);
+            curEditor->filepath = filepath;
+            curEditor->filename = QFileInfo(filepath).fileName();
+            ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
+            tabChange(ui->tabWidget->currentIndex());
+        }
+    }
+}
+
 void MainWindow::on_actionSave_triggered()
 {
     if (curEditor) {
-        QString filepath = curEditor->filepath;
-        if (filepath=="") {
-            filepath = QFileDialog::getSaveFileName(this,"Save file",QString(),"MiniZinc files (*.mzn *.dzn *.fzn)");
-        }
-        if (!filepath.isEmpty()) {
-            QFile file(filepath);
-            if (file.open(QFile::WriteOnly | QFile::Text)) {
-                if (QFileInfo(file).completeSuffix()=="dzn") {
-                    ui->conf_data_file->addItem(curEditor->filepath);
-                }
-                QTextStream out(&file);
-                out << curEditor->document()->toPlainText();
-                file.close();
-                curEditor->document()->setModified(false);
-                curEditor->filepath = filepath;
-                curEditor->filename = QFileInfo(filepath).fileName();
-                ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
-            }
-        }
+        saveFile(curEditor->filepath);
+    }
+}
+
+void MainWindow::on_actionSave_as_triggered()
+{
+    if (curEditor) {
+        saveFile(QString());
     }
 }
 

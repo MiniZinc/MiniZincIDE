@@ -314,6 +314,9 @@
    <property name="text">
     <string>Save as</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
   </action>
   <action name="actionClose">
    <property name="text">
@@ -415,7 +418,7 @@
     <string>Stop</string>
    </property>
    <property name="shortcut">
-    <string>Meta+C</string>
+    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionCompile">

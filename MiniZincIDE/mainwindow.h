@@ -66,6 +66,8 @@ private slots:
 
     void openCompiledFzn(int);
 
+    void on_actionSave_as_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -77,6 +79,7 @@ private:
     QLabel* statusLabel;
     void createEditor(QFile& file);
     QStringList parseConf(bool compileOnly);
+    void saveFile(const QString& filepath);
     QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString currentFznTarget;
