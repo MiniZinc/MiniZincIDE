@@ -38,7 +38,10 @@
 **
 ****************************************************************************/
 
+#include <QDebug>
+
 #include "highlighter.h"
+
 
 Highlighter::Highlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
@@ -101,5 +104,18 @@ void Highlighter::highlightBlock(const QString &text)
         }
     }
 
+    BracketData* bd = new BracketData;
+    QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
+    int pos = text.indexOf(re);
+    while (pos != -1) {
+        if (format(pos)!=quotationFormat && format(pos)!=singleLineCommentFormat) {
+            Bracket b;
+            b.b = text.at(pos);
+            b.pos = pos;
+            bd->brackets.append(b);
+        }
+        pos = text.indexOf(re, pos+1);
+    }
+    setCurrentBlockUserData(bd);
     setCurrentBlockState(0);
 }

@@ -25,7 +25,8 @@ private slots:
 private:
     QWidget *lineNumberArea;
     Highlighter* highlighter;
-
+    int matchLeft(QTextBlock block, QChar b, int i, int n);
+    int matchRight(QTextBlock block, QChar b, int i, int n);
 signals:
 
 public slots:
