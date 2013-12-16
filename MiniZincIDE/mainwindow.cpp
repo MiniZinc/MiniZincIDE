@@ -6,6 +6,7 @@
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
 #include "webpage.h"
+#include "fzndoc.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -465,28 +466,18 @@ void MainWindow::on_actionConstraint_Graph_triggered()
     WebPage* page = new WebPage();
     webView = new QWebView();
     webView->setPage(page);
-    QString url_s = QDir::currentPath() + "/ConstraintGraph/index.html";
-    QUrl url = QUrl::fromLocalFile(url_s);
-//    QString url = "qrc:/ConstraintGraph/index.html";
+    QString url = "qrc:/ConstraintGraph/index.html";
     connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
     webView->load(url);
-   
     webView->show();
-
-
-    // QString code = "initialize('not_so_many.fzn')";
-    
-    // code = "document.write('body');";
-    
-    // webView->page()->mainFrame()->evaluateJavaScript(QString("document.getElementById('body').appendChild('p').text('hey');"));
-    /// Maxim: create new constraint graph view here!
-    /// QString("send('%1')").arg(resultString)
 }
 
 void MainWindow::webview_loaded(bool ok) {
     if (ok){
-        QString fznpath = curEditor->filepath;
-        QString code = "start('file://" + fznpath + "')";
+        FznDoc fzndoc;
+        fzndoc.setstr(curEditor->document()->toPlainText());
+        webView->page()->mainFrame()->addToJavaScriptWindowObject("fznfile", &fzndoc);
+        QString code = "start_s(fznfile)";
         webView->page()->mainFrame()->evaluateJavaScript(code);
     } else {
         qDebug() << "not ok";

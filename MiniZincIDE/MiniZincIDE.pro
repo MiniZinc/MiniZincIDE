@@ -16,12 +16,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
-    webpage.cpp
+    webpage.cpp \
+    fzndoc.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
-    webpage.h
+    webpage.h \
+    fzndoc.h
 
 FORMS    += \
     mainwindow.ui

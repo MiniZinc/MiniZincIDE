@@ -38,6 +38,18 @@ Data.prototype._initModel = function(data, callback){
   callback();
 };
 
+Data.prototype.readString = function(str, callback){
+  var lines = str.trim().split('\n');
+  
+  this._parseVariables(lines.filter(Data._isSingleVar).filter(Data._isVariable));
+  this._parseArrays(lines.filter(Data._isArray).filter(Data._isVariable));
+  this._parseConstraints(lines.filter(Data._isConstraint));
+  this._loopConstraints();
+  this._removeRedundancy();
+
+  callback();
+}
+
 Data._isVariable = function(str){
   if (str.split(' ').indexOf("var") !== -1)
     return true;

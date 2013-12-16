@@ -46,6 +46,11 @@ function initialize(file_path){
 
 }
 
+function init_string(str) {
+  de.init_svg();
+  data.readString(str, ready);
+}
+
 function ready(){
   console.log("global_v_names: ", data.global_v_names);
   console.log("all_v: ", data.all_v);
