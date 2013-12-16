@@ -42,6 +42,21 @@ CodeEditor::CodeEditor(QFile& file, QWidget *parent) :
         filepath = "";
         filename = "Untitled";
     }
+//    connect(document(), SIGNAL(contentsChange(int,int,int)), this, SLOT(replaceTabs(int,int,int)));
+}
+
+void CodeEditor::replaceTabs(int pos,int,int add)
+{
+    if (add>0) {
+        QTextCursor cursor(document());
+        cursor.setPosition(pos);
+        cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,add);
+        QString sel = cursor.selectedText();
+        if (sel.indexOf('\t')!=-1) {
+            sel = sel.replace('\t',"  ");
+            cursor.insertText(sel);
+        }
+    }
 }
 
 int CodeEditor::lineNumberAreaWidth()
@@ -106,10 +121,125 @@ void CodeEditor::highlightCurrentLine()
         extraSelections.append(selection);
     }
 
+    BracketData* bd = static_cast<BracketData*>(textCursor().block().userData());
+
+    if (bd) {
+        QVector<Bracket>& brackets = bd->brackets;
+        int pos = textCursor().block().position();
+        for (int i=0; i<brackets.size(); i++) {
+            int curPos = textCursor().position()-textCursor().block().position();
+            Bracket& b = brackets[i];
+            int parenPos0 = -1;
+            int parenPos1 = -1;
+            int errPos = -1;
+            if (b.pos == curPos-1 && (b.b == '(' || b.b == '{' || b.b == '[')) {
+                parenPos1 = matchLeft(textCursor().block(), b.b, i+1, 0);
+                if (parenPos1 != -1) {
+                    parenPos0 = pos+b.pos;
+                } else {
+                    errPos = pos+b.pos;
+                }
+            } else if (b.pos == curPos-1 && (b.b == ')' || b.b == '}' || b.b == ']')) {
+                parenPos0 = matchRight(textCursor().block(), b.b, i-1, 0);
+                if (parenPos0 != -1) {
+                    parenPos1 = pos+b.pos;
+                } else {
+                    errPos = pos+b.pos;
+                }
+            }
+            if (parenPos0 != -1 && parenPos1 != -1) {
+                QTextEdit::ExtraSelection sel;
+                QTextCharFormat format = sel.format;
+                format.setBackground(Qt::green);
+                sel.format = format;
+                QTextCursor cursor = textCursor();
+                cursor.setPosition(parenPos0);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+                sel.cursor = cursor;
+                extraSelections.append(sel);
+                cursor.setPosition(parenPos1);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+                sel.cursor = cursor;
+                extraSelections.append(sel);
+            }
+            if (errPos != -1) {
+                QTextEdit::ExtraSelection sel;
+                QTextCharFormat format = sel.format;
+                format.setBackground(Qt::red);
+                sel.format = format;
+                QTextCursor cursor = textCursor();
+                cursor.setPosition(errPos);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+                sel.cursor = cursor;
+                extraSelections.append(sel);
+            }
+        }
+    }
+
     setExtraSelections(extraSelections);
 }
 
+int CodeEditor::matchLeft(QTextBlock block, QChar b, int i, int nLeft)
+{
+    QChar match;
+    switch (b.toLatin1()) {
+    case '(' : match = ')'; break;
+    case '{' : match = '}'; break;
+    case '[' : match = ']'; break;
+    default: break; // should not happen
+    }
 
+    while (block.isValid()) {
+        BracketData* bd = static_cast<BracketData*>(block.userData());
+        QVector<Bracket>& brackets = bd->brackets;
+        int docPos = block.position();
+        for (; i<brackets.size(); i++) {
+            Bracket& b = brackets[i];
+            if (b.b=='(' || b.b=='{' || b.b=='[') {
+                nLeft++;
+            } else if (b.b==match && nLeft==0) {
+                return docPos+b.pos;
+            } else {
+                nLeft--;
+            }
+        }
+        block = block.next();
+        i = 0;
+    }
+    return -1;
+}
+
+int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
+{
+    QChar match;
+    switch (b.toLatin1()) {
+    case ')' : match = '('; break;
+    case '}' : match = '{'; break;
+    case ']' : match = '['; break;
+    default: break; // should not happen
+    }
+
+    while (block.isValid()) {
+        BracketData* bd = static_cast<BracketData*>(block.userData());
+        QVector<Bracket>& brackets = bd->brackets;
+        if (i==-1)
+            i = brackets.size()-1;
+        int docPos = block.position();
+        for (; i>-1 && brackets.size()>0; i--) {
+            Bracket& b = brackets[i];
+            if (b.b==')' || b.b=='}' || b.b==']') {
+                nRight++;
+            } else if (b.b==match && nRight==0) {
+                return docPos+b.pos;
+            } else {
+                nRight--;
+            }
+        }
+        block = block.previous();
+        i = -1;
+    }
+    return -1;
+}
 
 void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 {

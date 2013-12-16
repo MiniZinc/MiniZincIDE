@@ -48,7 +48,17 @@ QT_BEGIN_NAMESPACE
 class QTextDocument;
 QT_END_NAMESPACE
 
-//! [0]
+struct Bracket {
+    QChar b;
+    int pos;
+};
+
+class BracketData : public QTextBlockUserData
+{
+public:
+    QVector<Bracket> brackets;
+};
+
 class Highlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
@@ -72,6 +82,5 @@ private:
     QTextCharFormat quotationFormat;
     QTextCharFormat functionFormat;
 };
-//! [0]
 
 #endif // HIGHLIGHTER_H

@@ -7,12 +7,24 @@
 #include <QTimer>
 #include <QLabel>
 #include <QWebView>
+#include <QSet>
+#include <QTemporaryDir>
 
 #include "codeeditor.h"
 
 namespace Ui {
 class MainWindow;
 }
+
+struct Solver {
+    QString name;
+    QString executable;
+    QString mznlib;
+    QString backend;
+    Solver(const QString& n, const QString& e, const QString& m, const QString& b) :
+        name(n), executable(e), mznlib(m), backend(b) {}
+    Solver(void) {}
+};
 
 class MainWindow : public QMainWindow
 {
@@ -25,7 +37,7 @@ public:
 private slots:
     void on_actionNew_triggered();
 
-    void openFile(const QString &path = QString());
+    void openFile(const QString &path = QString(), bool openAsModified=false);
 
     void on_actionClose_triggered();
 
@@ -54,8 +66,11 @@ private slots:
 
     void on_actionConstraint_Graph_triggered();
 
-
     void webview_loaded(bool);
+
+    void openCompiledFzn(int);
+
+    void on_actionSave_as_triggered();
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -67,7 +82,16 @@ private:
     QTimer* timer;
     int time;
     QLabel* statusLabel;
-    void createEditor(QFile& file);
+    void createEditor(QFile& file, bool openAsModified);
+    QStringList parseConf(bool compileOnly);
+    void saveFile(const QString& filepath);
+    QSet<QString> filePaths;
+    QVector<Solver> solvers;
+    QString currentFznTarget;
+    QTemporaryDir* tmpDir;
+
+    void addFile(const QString& path);
+    void removeFile(const QString& path);
 };
 
 #endif // MAINWINDOW_H

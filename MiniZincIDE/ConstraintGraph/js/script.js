@@ -8,7 +8,6 @@ var shown_v = [];
 var links = [];
 var cola_links = [];
 
-alert('js loaded');
 
 function init(){
   // initialize('latinsquare.fzn');
@@ -23,10 +22,9 @@ function echo(str){
 }
 
 function initialize(file_path){
-  log_to_html("in initialize");
-  
-  if (file_path !== undefined)
-    log_to_html("file: " + file_path);
+
+  // if (file_path !== undefined)
+  //   log_to_html("file: " + file_path);
   de.init_svg();
 
 /// work:
