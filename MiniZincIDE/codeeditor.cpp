@@ -42,7 +42,7 @@ CodeEditor::CodeEditor(QFile& file, QWidget *parent) :
         filepath = "";
         filename = "Untitled";
     }
-    connect(document(), SIGNAL(contentsChange(int,int,int)), this, SLOT(replaceTabs(int,int,int)));
+//    connect(document(), SIGNAL(contentsChange(int,int,int)), this, SLOT(replaceTabs(int,int,int)));
 }
 
 void CodeEditor::replaceTabs(int pos,int,int add)
