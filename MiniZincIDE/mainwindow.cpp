@@ -8,7 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     curEditor(NULL),
-    process(NULL)
+    process(NULL),
+    tmpDir(NULL)
 {
     ui->setupUi(this);
     QFont font("Courier New");
@@ -48,11 +49,11 @@ MainWindow::~MainWindow()
 void MainWindow::on_actionNew_triggered()
 {
     QFile file;
-    createEditor(file);
+    createEditor(file,false);
 }
 
 
-void MainWindow::createEditor(QFile& file) {
+void MainWindow::createEditor(QFile& file, bool openAsModified) {
     if (curEditor && curEditor->filepath=="" && !curEditor->document()->isModified()) {
         if (file.isOpen()) {
             curEditor->setPlainText(file.readAll());
@@ -71,9 +72,14 @@ void MainWindow::createEditor(QFile& file) {
             ui->conf_data_file->addItem(curEditor->filepath);
         }
     }
+    if (openAsModified) {
+        curEditor->filepath = "";
+        curEditor->document()->setModified(true);
+        tabChange(ui->tabWidget->currentIndex());
+    }
 }
 
-void MainWindow::openFile(const QString &path)
+void MainWindow::openFile(const QString &path, bool openAsModified)
 {
     QString fileName = path;
 
@@ -83,7 +89,7 @@ void MainWindow::openFile(const QString &path)
     if (!fileName.isEmpty()) {
         QFile file(fileName);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
-            createEditor(file);
+            createEditor(file, openAsModified);
         }
     }
 
@@ -407,8 +413,10 @@ void MainWindow::on_actionStop_triggered()
 void MainWindow::openCompiledFzn(int exitcode)
 {
     if (exitcode==0) {
-        openFile(currentFznTarget);
+        openFile(currentFznTarget, true);
     }
+    delete tmpDir;
+    tmpDir = NULL;
 }
 
 void MainWindow::on_actionCompile_triggered()
@@ -427,13 +435,20 @@ void MainWindow::on_actionCompile_triggered()
                 this, SLOT(procError(QProcess::ProcessError)));
 
         QStringList args = parseConf(true);
-        args << curEditor->filepath;
-        QFileInfo fi(curEditor->filepath);
-        currentFznTarget = fi.absolutePath()+"/"+fi.baseName()+".fzn";
-        ui->outputConsole->insertHtml("<div style='color:red;'>Compiling "+curEditor->filename+"</div><br>");
-        process->start("mzn2fzn",args);
-        time = 0;
-        timer->start(500);
+
+        tmpDir = new QTemporaryDir("mzn_ide");
+        if (!tmpDir->isValid()) {
+            QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        } else {
+            QFileInfo fi(curEditor->filepath);
+            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+            args << "-o" << currentFznTarget;
+            args << curEditor->filepath;
+            ui->outputConsole->insertHtml("<div style='color:red;'>Compiling "+curEditor->filename+"</div><br>");
+            process->start("mzn2fzn",args);
+            time = 0;
+            timer->start(500);
+        }
     }
 }
 

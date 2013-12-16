@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QLabel>
 #include <QSet>
+#include <QTemporaryDir>
 
 #include "codeeditor.h"
 
@@ -35,7 +36,7 @@ public:
 private slots:
     void on_actionNew_triggered();
 
-    void openFile(const QString &path = QString());
+    void openFile(const QString &path = QString(), bool openAsModified=false);
 
     void on_actionClose_triggered();
 
@@ -77,12 +78,14 @@ private:
     QTimer* timer;
     int time;
     QLabel* statusLabel;
-    void createEditor(QFile& file);
+    void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
     QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString currentFznTarget;
+    QTemporaryDir* tmpDir;
+
     void addFile(const QString& path);
     void removeFile(const QString& path);
 };
