@@ -466,9 +466,9 @@ void MainWindow::on_actionConstraint_Graph_triggered()
     webView = new QWebView();
     webView->setPage(page);
     QString url = QDir::currentPath() + "/ConstraintGraph/index.html";
-    url = QString("file:/") + url; 
-    url.replace("/", "//");
-
+    url = QString("file:/") + url;
+//    url.replace("/", "//");
+//    QString url = "qrc:/ConstraintGraph/index.html";
     connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
     webView->load(QUrl(url));
    
