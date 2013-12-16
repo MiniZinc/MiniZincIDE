@@ -1,4 +1,5 @@
 #include <QtWidgets>
+#include <QApplication>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -34,6 +35,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+
+    QStringList args = QApplication::arguments();
+    for (int i=1; i<args.size(); i++)
+        openFile(args.at(i),false);
+
 }
 
 MainWindow::~MainWindow()
