@@ -21,6 +21,7 @@ private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
     void updateLineNumberArea(const QRect &, int);
+    void replaceTabs(int,int,int);
 private:
     QWidget *lineNumberArea;
     Highlighter* highlighter;
