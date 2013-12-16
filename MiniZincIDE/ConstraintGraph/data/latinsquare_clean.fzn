@@ -1,0 +1,13 @@
+array [1..25] of var 1..5: x :: output_array([1..5, 1..5]);
+var 1..5: z;
+constraint all_different_int([x[1], x[2], x[3], x[4], x[5]]);
+constraint all_different_int([x[1], x[6], x[11], x[16], x[21]]);
+constraint all_different_int([x[2], x[7], x[12], x[17], x[22]]);
+constraint all_different_int([x[3], x[8], x[13], x[18], x[23]]);
+constraint all_different_int([x[4], x[9], x[14], x[19], x[24]]);
+constraint all_different_int([x[5], x[10], x[15], x[20], x[25]]);
+constraint all_different_int([x[6], x[7], x[8], x[9], x[10]]);
+constraint all_different_int([x[11], x[12], x[13], x[14], x[15]]);
+constraint all_different_int([x[16], x[17], x[18], x[19], x[20]]);
+constraint all_different_int([x[21], x[22], x[23], x[24], x[25]]);
+solve satisfy;

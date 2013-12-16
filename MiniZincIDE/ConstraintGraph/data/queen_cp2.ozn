@@ -1,0 +1,5 @@
+array[1 .. 8] of var 1 .. 8: q;
+output 
+  [ "8 queens, CP version:\n" ] ++ 
+  [ if fix(q[i]) = j then "Q " else ". " endif ++ 
+  if j = 8 then "\n" else "" endif | i, j in 1 .. 8 ];

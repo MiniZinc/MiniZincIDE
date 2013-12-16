@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui webkitwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -16,12 +16,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
-    rundialog.cpp
+    rundialog.cpp \
+    webpage.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
-    rundialog.h
+    rundialog.h \
+    webpage.h
 
 FORMS    += \
     mainwindow.ui \

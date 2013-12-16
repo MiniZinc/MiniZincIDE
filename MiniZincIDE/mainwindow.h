@@ -6,6 +6,7 @@
 #include <QProcess>
 #include <QTimer>
 #include <QLabel>
+#include <QWebView>
 
 #include "codeeditor.h"
 
@@ -53,11 +54,15 @@ private slots:
 
     void on_actionConstraint_Graph_triggered();
 
+
+    void webview_loaded(bool);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
+    QWebView* webView;
     QProcess* process;
     QTimer* timer;
     int time;

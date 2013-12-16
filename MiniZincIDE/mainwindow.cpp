@@ -1,9 +1,13 @@
 #include <QtWidgets>
+#include <QApplication>
+#include <QtWebKitWidgets>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
 #include "rundialog.h"
+#include "webpage.h"
+#include <unistd.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -35,12 +39,6 @@ MainWindow::~MainWindow()
         delete process;
     }
     delete ui;
-}
-
-void MainWindow::on_actionNew_triggered()
-{
-    QFile file;
-    createEditor(file);
 }
 
 
@@ -321,8 +319,46 @@ void MainWindow::on_actionCompile_triggered()
 
 }
 
+void MainWindow::on_actionNew_triggered()
+{
+
+}
+
 void MainWindow::on_actionConstraint_Graph_triggered()
 {
-    QString fznpath = curEditor->filepath;
+    
+    WebPage* page = new WebPage();
+    webView = new QWebView();
+    webView->setPage(page);
+    QString url = QDir::currentPath() + "/ConstraintGraph/index.html";
+    url = QString("file:/") + url; 
+    url.replace("/", "//");
+
+    connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
+    webView->load(QUrl(url));
+   
+    webView->show();
+
+
+    // QString code = "initialize('not_so_many.fzn')";
+    
+    // code = "document.write('body');";
+    
+    // webView->page()->mainFrame()->evaluateJavaScript(QString("document.getElementById('body').appendChild('p').text('hey');"));
     /// Maxim: create new constraint graph view here!
+    /// QString("send('%1')").arg(resultString)
 }
+
+void MainWindow::webview_loaded(bool ok) {
+    if (ok){
+        QString fznpath = curEditor->filepath;
+        QString code = "start('file://" + fznpath + "')";
+        // code = "console.log('hello')";
+        // code = "say_hello('hey')";
+        // code = "document.getElementById('body');";
+        webView->page()->mainFrame()->evaluateJavaScript(code);
+    } else {
+        qDebug() << "not ok";
+    }
+    
+} 

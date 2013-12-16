@@ -1,0 +1,11 @@
+var 0..9: D :: output_var;
+var 0..9: E :: output_var;
+var 1..9: M :: output_var;
+var 0..9: N :: output_var;
+var 0..9: O :: output_var;
+var 0..9: R :: output_var;
+var 1..9: S :: output_var;
+var 0..9: Y :: output_var;
+constraint all_different_int([S, E, N, D, M, O, R, Y]);
+constraint int_lin_eq([1, 91, -9000, -90, -900, 10, 1000, -1], [D, E, M, N, O, R, S, Y], 0);
+solve satisfy;

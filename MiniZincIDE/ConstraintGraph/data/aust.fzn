@@ -1,0 +1,17 @@
+var 1..3: nsw :: output_var;
+var 1..3: nt :: output_var;
+var 1..3: q :: output_var;
+var 1..3: sa :: output_var;
+var 1..3: t :: output_var;
+var 1..3: v :: output_var;
+var 1..3: wa :: output_var;
+constraint int_ne(nsw, v);
+constraint int_ne(nt, q);
+constraint int_ne(nt, sa);
+constraint int_ne(q, nsw);
+constraint int_ne(sa, nsw);
+constraint int_ne(sa, q);
+constraint int_ne(sa, v);
+constraint int_ne(wa, nt);
+constraint int_ne(wa, sa);
+solve satisfy;
