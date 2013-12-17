@@ -79,6 +79,7 @@ void MainWindow::createEditor(QFile& file, bool openAsModified) {
         if (QFileInfo(file).completeSuffix()=="dzn") {
             ui->conf_data_file->addItem(curEditor->filepath);
         }
+        curEditor->setFocus();
     }
     if (openAsModified) {
         curEditor->filepath = "";
