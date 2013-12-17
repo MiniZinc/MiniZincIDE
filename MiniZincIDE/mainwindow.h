@@ -72,6 +72,12 @@ private slots:
 
     void on_actionSave_as_triggered();
 
+    void on_actionClear_output_triggered();
+
+    void on_actionBigger_font_triggered();
+
+    void on_actionSmaller_font_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -82,9 +88,11 @@ private:
     QTimer* timer;
     int time;
     QLabel* statusLabel;
+    double fontSize;
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
+    void setFontSize(double points);
     QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString currentFznTarget;

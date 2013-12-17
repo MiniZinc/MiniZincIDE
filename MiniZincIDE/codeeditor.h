@@ -8,15 +8,15 @@ class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 public:
-    explicit CodeEditor(QFile& file, QWidget *parent = 0);
+    explicit CodeEditor(QFile& file, double fontSize, QWidget *parent = 0);
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     int lineNumberAreaWidth();
     QString filepath;
     QString filename;
-
+    void setFontSize(double points);
 protected:
     void resizeEvent(QResizeEvent *event);
-    void initUI(void);
+    void initUI(double fontSize);
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();

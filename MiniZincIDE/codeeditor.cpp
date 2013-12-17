@@ -2,7 +2,7 @@
 #include "codeeditor.h"
 
 void
-CodeEditor::initUI(void)
+CodeEditor::initUI(double fontSize)
 {
     QFont font("Courier New");
     font.setStyleHint(QFont::Monospace);
@@ -21,7 +21,7 @@ CodeEditor::initUI(void)
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
-    highlighter = new Highlighter(document());
+    highlighter = new Highlighter(fontSize,document());
 
     QTextCursor cursor(textCursor());
     cursor.movePosition(QTextCursor::Start);
@@ -30,10 +30,10 @@ CodeEditor::initUI(void)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QFile& file, QWidget *parent) :
+CodeEditor::CodeEditor(QFile& file, double fontSize, QWidget *parent) :
     QPlainTextEdit(parent)
 {
-    initUI();
+    initUI(fontSize);
     if (file.isOpen()) {
         setPlainText(file.readAll());
         filepath = QFileInfo(file).absoluteFilePath();
@@ -265,4 +265,10 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
         bottom = top + (int) blockBoundingRect(block).height();
         ++blockNumber;
     }
+}
+
+void CodeEditor::setFontSize(double p)
+{
+    highlighter->setFontSize(p);
+    highlighter->rehighlight();
 }

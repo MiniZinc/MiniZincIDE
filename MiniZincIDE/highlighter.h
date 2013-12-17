@@ -64,8 +64,8 @@ class Highlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    Highlighter(QTextDocument *parent = 0);
-
+    Highlighter(double fontSize, QTextDocument *parent = 0);
+    void setFontSize(double fontSize);
 protected:
     void highlightBlock(const QString &text);
 
@@ -77,6 +77,7 @@ private:
     };
     QVector<HighlightingRule> highlightingRules;
 
+    QTextCharFormat baseFormat;
     QTextCharFormat keywordFormat;
     QTextCharFormat singleLineCommentFormat;
     QTextCharFormat quotationFormat;

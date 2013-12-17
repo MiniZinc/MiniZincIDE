@@ -43,7 +43,7 @@
 #include "highlighter.h"
 
 
-Highlighter::Highlighter(QTextDocument *parent)
+Highlighter::Highlighter(double fontSize, QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;
@@ -89,11 +89,20 @@ Highlighter::Highlighter(QTextDocument *parent)
     rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
     rule.format = functionFormat;
     highlightingRules.append(rule);
+    setFontSize(fontSize);
+}
 
+void Highlighter::setFontSize(double p)
+{
+    baseFormat.setFontPointSize(p);
+    for (int i=0; i<highlightingRules.size(); i++) {
+        highlightingRules[i].format.setFontPointSize(p);
+    }
 }
 
 void Highlighter::highlightBlock(const QString &text)
 {
+    setFormat(0, text.length(), baseFormat);
     foreach (const HighlightingRule &rule, highlightingRules) {
         QRegExp expression(rule.pattern);
         int index = expression.indexIn(text);

@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
+    fontSize(13.0),
     tmpDir(NULL)
 {
     ui->setupUi(this);
@@ -38,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+
+    setFontSize(fontSize);
 
     QStringList args = QApplication::arguments();
     for (int i=1; i<args.size(); i++)
@@ -68,23 +71,20 @@ void MainWindow::createEditor(QFile& file, bool openAsModified) {
             curEditor->filepath = QFileInfo(file).absoluteFilePath();
             curEditor->filename = QFileInfo(file).fileName();
             ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
-            if (QFileInfo(file).completeSuffix()=="dzn") {
-                ui->conf_data_file->addItem(curEditor->filepath);
-            }
+            curEditor->setFocus();
         }
     } else {
-        CodeEditor* ce = new CodeEditor(file,this);
+        CodeEditor* ce = new CodeEditor(file,fontSize,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
-        if (!curEditor->filepath.isEmpty() && QFileInfo(file).completeSuffix()=="dzn") {
-            ui->conf_data_file->addItem(curEditor->filepath);
-        }
         curEditor->setFocus();
     }
     if (openAsModified) {
         curEditor->filepath = "";
         curEditor->document()->setModified(true);
         tabChange(ui->tabWidget->currentIndex());
+    } else {
+        addFile(curEditor->filepath);
     }
 }
 
@@ -283,7 +283,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
 
 void MainWindow::addFile(const QString &path)
 {
-    if (!filePaths.contains(path)) {
+    if (!path.isEmpty() && !filePaths.contains(path)) {
         filePaths.insert(path);
         if (path.endsWith(".dzn"))
             ui->conf_data_file->addItem(path);
@@ -372,12 +372,13 @@ void MainWindow::saveFile(const QString& f)
     if (!filepath.isEmpty()) {
         QFile file(filepath);
         if (file.open(QFile::WriteOnly | QFile::Text)) {
-            if (QFileInfo(file).completeSuffix()=="dzn") {
-                ui->conf_data_file->addItem(curEditor->filepath);
-            }
             QTextStream out(&file);
             out << curEditor->document()->toPlainText();
             file.close();
+            if (filepath != curEditor->filepath) {
+                removeFile(curEditor->filepath);
+                addFile(filepath);
+            }
             curEditor->document()->setModified(false);
             curEditor->filepath = filepath;
             curEditor->filename = QFileInfo(filepath).fileName();
@@ -485,3 +486,37 @@ void MainWindow::webview_loaded(bool ok) {
     }
     
 } 
+
+void MainWindow::on_actionClear_output_triggered()
+{
+    ui->outputConsole->document()->clear();
+}
+
+void MainWindow::setFontSize(double points)
+{
+    QTextCharFormat format;
+    format.setFontPointSize(points);
+
+    QTextCursor cursor(ui->outputConsole->document());
+    cursor.movePosition(QTextCursor::Start);
+    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    cursor.mergeCharFormat(format);
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i)!=ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            ce->setFontSize(points);
+        }
+    }
+}
+
+void MainWindow::on_actionBigger_font_triggered()
+{
+    fontSize += 1.0;
+    setFontSize(fontSize);
+}
+
+void MainWindow::on_actionSmaller_font_triggered()
+{
+    fontSize = std::max(5.0, fontSize-1.0);
+    setFontSize(fontSize);
+}

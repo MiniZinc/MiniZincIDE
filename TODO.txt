@@ -2,14 +2,11 @@ Features needed to release:
 
  * Configuration dialog for adding other solvers
  * Find/replace
- * Make dzn selection in Configuration tab work
  * Correct handling of open constraint graph windows
  * Multiple windows ("projects")
  * Handle duplicate open files
- * Save all
  * Indent/outdent selection
  * Tabs-to-spaces (without messing up the undo buffer)
- * Clear output window
 
 Features that would be nice to have:
  * Click on error location to jump to position in editor
@@ -19,6 +16,12 @@ Features that would be nice to have:
    open files)
  * Detect when files change on disk (auto reload + dialog if changed)
  * Report solve time + support time outs
+ * Font/colour selection
+ * Save all
 
 Done
  * Focus
+ * Make dzn selection in Configuration tab work
+ * Clear output window
+ * Font size
+ 
