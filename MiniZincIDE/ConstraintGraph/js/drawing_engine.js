@@ -30,7 +30,7 @@ function DrawingEngine(){
   // this.cola_obj = cola.d3adaptor().avoidOverlaps(true).size([this.width, this.height]);
   this.cola_obj = cola.d3adaptor().size([this.width, this.height]);
   window.addEventListener('resize', function(event){
-    console.log(DrawingEngine._self.svg.width);
+    console.log(DrawingEngine._self.svg.attr('width'));
     DrawingEngine._self.svg.attr('width', window.innerWidth - 20);
     DrawingEngine._self.svg.attr('height', window.innerHeight - 20);
   });
