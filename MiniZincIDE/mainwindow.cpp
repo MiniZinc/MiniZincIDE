@@ -444,7 +444,7 @@ void MainWindow::on_actionCompile_triggered()
 
         QStringList args = parseConf(true);
 
-        tmpDir = new QTemporaryDir("mzn_ide");
+        tmpDir = new QTemporaryDir;
         if (!tmpDir->isValid()) {
             QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
         } else {
