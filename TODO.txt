@@ -6,7 +6,6 @@ Features needed to release:
  * Multiple windows ("projects")
  * Handle duplicate open files
  * Indent/outdent selection
- * Tabs-to-spaces (without messing up the undo buffer)
 
 Features that would be nice to have:
  * Click on error location to jump to position in editor
@@ -24,4 +23,4 @@ Done
  * Make dzn selection in Configuration tab work
  * Clear output window
  * Font size
- 
+ * Tabs-to-spaces (without messing up the undo buffer)
