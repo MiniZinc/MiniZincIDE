@@ -9,11 +9,16 @@ Features needed to release:
  * Save all
  * Indent/outdent selection
  * Tabs-to-spaces (without messing up the undo buffer)
+ * Clear output window
 
 Features that would be nice to have:
+ * Click on error location to jump to position in editor
  * Global solver configurations stored somewhere system wide
  * Auto indent
  * Saving/loading projects (i.e. the contents of the Configuration tab + all 
    open files)
  * Detect when files change on disk (auto reload + dialog if changed)
  * Report solve time + support time outs
+
+Done
+ * Focus
