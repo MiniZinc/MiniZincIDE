@@ -78,6 +78,8 @@ private slots:
 
     void on_actionSmaller_font_triggered();
 
+    void on_actionAbout_MiniZinc_IDE_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

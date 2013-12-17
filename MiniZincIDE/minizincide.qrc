@@ -25,5 +25,7 @@
         <file>ConstraintGraph/from_tim/vpsc.js</file>
         <file>ConstraintGraph/from_tim/vpsc.js.map</file>
         <file>ConstraintGraph/from_tim/vpsc.ts</file>
+        <file>images/mznlogo.png</file>
+        <file>images/about.html</file>
     </qresource>
 </RCC>

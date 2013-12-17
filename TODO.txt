@@ -6,6 +6,7 @@ Features needed to release:
  * Multiple windows ("projects")
  * Handle duplicate open files
  * Indent/outdent selection
+ * Basic help
 
 Features that would be nice to have:
  * Click on error location to jump to position in editor
@@ -24,3 +25,4 @@ Done
  * Clear output window
  * Font size
  * Tabs-to-spaces (without messing up the undo buffer)
+ * About dialog

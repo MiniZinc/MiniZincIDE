@@ -4,6 +4,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "aboutdialog.h"
 #include "codeeditor.h"
 #include "webpage.h"
 #include "fzndoc.h"
@@ -519,4 +520,9 @@ void MainWindow::on_actionSmaller_font_triggered()
 {
     fontSize = std::max(5.0, fontSize-1.0);
     setFontSize(fontSize);
+}
+
+void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
+{
+    AboutDialog().exec();
 }
