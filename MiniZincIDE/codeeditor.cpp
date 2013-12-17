@@ -42,20 +42,16 @@ CodeEditor::CodeEditor(QFile& file, double fontSize, QWidget *parent) :
         filepath = "";
         filename = "Untitled";
     }
-//    connect(document(), SIGNAL(contentsChange(int,int,int)), this, SLOT(replaceTabs(int,int,int)));
 }
 
-void CodeEditor::replaceTabs(int pos,int,int add)
+void CodeEditor::keyPressEvent(QKeyEvent *e)
 {
-    if (add>0) {
-        QTextCursor cursor(document());
-        cursor.setPosition(pos);
-        cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,add);
-        QString sel = cursor.selectedText();
-        if (sel.indexOf('\t')!=-1) {
-            sel = sel.replace('\t',"  ");
-            cursor.insertText(sel);
-        }
+    if (e->key() == Qt::Key_Tab) {
+        e->accept();
+        QTextCursor cursor(textCursor());
+        cursor.insertText("  ");
+    } else {
+        QPlainTextEdit::keyPressEvent(e);
     }
 }
 
