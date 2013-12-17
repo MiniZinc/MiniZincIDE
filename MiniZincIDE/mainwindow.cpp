@@ -76,7 +76,7 @@ void MainWindow::createEditor(QFile& file, bool openAsModified) {
         CodeEditor* ce = new CodeEditor(file,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
-        if (QFileInfo(file).completeSuffix()=="dzn") {
+        if (!curEditor->filepath.isEmpty() && QFileInfo(file).completeSuffix()=="dzn") {
             ui->conf_data_file->addItem(curEditor->filepath);
         }
         curEditor->setFocus();
