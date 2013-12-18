@@ -265,6 +265,9 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 
 void CodeEditor::setFontSize(double p)
 {
+    QFont f(font());
+    f.setPointSize(p);
+    setFont(f);
     highlighter->setFontSize(p);
     highlighter->rehighlight();
 }
