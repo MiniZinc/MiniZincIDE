@@ -1,6 +1,5 @@
 Features needed to release:
 
- * Find/replace
  * Correct handling of open constraint graph windows
  * Multiple windows ("projects")
  * Handle duplicate open files
@@ -15,6 +14,9 @@ Features that would be nice to have:
  * Report solve time + support time outs
  * Font/colour selection
  * Save all
+ * Use mzn2fzn and implement the solutions processing internally
+ * Run fzn files
+ * Detach solver (to be able to run Gecode w/ Gist)
 
 Done
  * Focus
@@ -26,3 +28,4 @@ Done
  * Click on error location to jump to position in editor
  * Configuration dialog for adding other solvers
  * Global solver configurations stored somewhere system wide
+ * Find/replace

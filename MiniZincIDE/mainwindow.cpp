@@ -8,6 +8,8 @@
 #include "codeeditor.h"
 #include "webpage.h"
 #include "fzndoc.h"
+#include "finddialog.h"
+#include "findreplacedialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,9 +19,16 @@ MainWindow::MainWindow(QWidget *parent) :
     tmpDir(NULL)
 {
     ui->setupUi(this);
+
+    findDialog = new FindDialog(this);
+    findDialog->setModal(false);
+    findReplaceDialog = new FindReplaceDialog(this);
+    findReplaceDialog->setModal(false);
+
     QFont font("Courier New");
     font.setStyleHint(QFont::Monospace);
     ui->outputConsole->setFont(font);
+
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
     timer = new QTimer(this);
@@ -42,6 +51,9 @@ MainWindow::MainWindow(QWidget *parent) :
     settings.endGroup();
 
     setFontSize(fontSize);
+
+    findDialog->readSettings(settings);
+    findReplaceDialog->readSettings(settings);
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
@@ -195,6 +207,8 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.endGroup();
+    findDialog->writeSettings(settings);
+    findReplaceDialog->writeSettings(settings);
     e->accept();
 }
 
@@ -249,6 +263,11 @@ void MainWindow::tabChange(int tab) {
             ui->actionCompile->setEnabled(isMzn);
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionConstraint_Graph->setEnabled(isFzn);
+
+            findDialog->setTextEdit(curEditor);
+            findReplaceDialog->setTextEdit(curEditor);
+            ui->actionFind->setEnabled(true);
+            ui->actionReplace->setEnabled(true);
         } else {
             curEditor = NULL;
             ui->actionClose->setEnabled(false);
@@ -263,6 +282,10 @@ void MainWindow::tabChange(int tab) {
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
             ui->actionConstraint_Graph->setEnabled(false);
+            ui->actionFind->setEnabled(false);
+            ui->actionReplace->setEnabled(false);
+            findDialog->close();
+            findReplaceDialog->close();
         }
     }
 }
@@ -636,4 +659,14 @@ void MainWindow::on_actionManage_solvers_triggered()
         settings.setValue("builtin",solvers[i].builtin);
     }
     settings.endArray();
+}
+
+void MainWindow::on_actionFind_triggered()
+{
+    findDialog->show();
+}
+
+void MainWindow::on_actionReplace_triggered()
+{
+    findReplaceDialog->show();
 }

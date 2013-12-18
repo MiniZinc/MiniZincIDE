@@ -19,7 +19,11 @@ SOURCES += main.cpp\
     webpage.cpp \
     fzndoc.cpp \
     aboutdialog.cpp \
-    solverdialog.cpp
+    solverdialog.cpp \
+    finddialog.cpp \
+    findform.cpp \
+    findreplacedialog.cpp \
+    findreplaceform.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -27,12 +31,19 @@ HEADERS  += mainwindow.h \
     webpage.h \
     fzndoc.h \
     aboutdialog.h \
-    solverdialog.h
+    solverdialog.h \
+    finddialog.h \
+    findform.h \
+    findreplace_global.h \
+    findreplacedialog.h \
+    findreplaceform.h
 
 FORMS    += \
     mainwindow.ui \
     aboutdialog.ui \
-    solverdialog.ui
+    solverdialog.ui \
+    findreplacedialog.ui \
+    findreplaceform.ui
 
 RESOURCES += \
     minizincide.qrc

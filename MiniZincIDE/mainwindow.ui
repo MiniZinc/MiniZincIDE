@@ -325,7 +325,8 @@
     <addaction name="actionSelect_All"/>
     <addaction name="separator"/>
     <addaction name="actionGo_to_line"/>
-    <addaction name="actionFind_Replace"/>
+    <addaction name="actionFind"/>
+    <addaction name="actionReplace"/>
    </widget>
    <widget class="QMenu" name="menuMiniZinc">
     <property name="title">
@@ -457,9 +458,12 @@
     <string>Ctrl+L</string>
    </property>
   </action>
-  <action name="actionFind_Replace">
+  <action name="actionFind">
    <property name="text">
-    <string>Find/Replace</string>
+    <string>Find...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
   <action name="actionConstraint_Graph">
@@ -530,6 +534,14 @@
   <action name="actionManage_solvers">
    <property name="text">
     <string>Solvers</string>
+   </property>
+  </action>
+  <action name="actionReplace">
+   <property name="text">
+    <string>Replace...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+F</string>
    </property>
   </action>
  </widget>

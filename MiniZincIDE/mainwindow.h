@@ -17,6 +17,9 @@ namespace Ui {
 class MainWindow;
 }
 
+class FindDialog;
+class FindReplaceDialog;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -77,6 +80,10 @@ private slots:
 
     void on_actionManage_solvers_triggered();
 
+    void on_actionFind_triggered();
+
+    void on_actionReplace_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -88,15 +95,18 @@ private:
     int time;
     QLabel* statusLabel;
     double fontSize;
+    QSet<QString> filePaths;
+    QVector<Solver> solvers;
+    QString currentFznTarget;
+    QTemporaryDir* tmpDir;
+    FindDialog* findDialog;
+    FindReplaceDialog* findReplaceDialog;
+
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
     void setFontSize(double points);
     void addOutput(const QString& s, bool html=true);
-    QSet<QString> filePaths;
-    QVector<Solver> solvers;
-    QString currentFznTarget;
-    QTemporaryDir* tmpDir;
 
     void addFile(const QString& path);
     void removeFile(const QString& path);
