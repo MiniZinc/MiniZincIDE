@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
-    fontSize(13.0),
     tmpDir(NULL)
 {
     ui->setupUi(this);
@@ -42,6 +41,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    fontSize = settings.value("fontSize", 13.0).toDouble();
+    resize(settings.value("size", QSize(400, 400)).toSize());
+    move(settings.value("pos", QPoint(200, 200)).toPoint());
+    settings.endGroup();
 
     setFontSize(fontSize);
 
@@ -169,6 +175,12 @@ void MainWindow::closeEvent(QCloseEvent* e) {
                    this, SLOT(procError(QProcess::ProcessError)));
         process->kill();
     }
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("fontSize", fontSize);
+    settings.setValue("size", size());
+    settings.setValue("pos", pos());
+    settings.endGroup();
     e->accept();
 }
 
@@ -553,6 +565,12 @@ void MainWindow::on_actionBigger_font_triggered()
 void MainWindow::on_actionSmaller_font_triggered()
 {
     fontSize = std::max(5.0, fontSize-1.0);
+    setFontSize(fontSize);
+}
+
+void MainWindow::on_actionDefault_font_size_triggered()
+{
+    fontSize = 13.0;
     setFontSize(fontSize);
 }
 

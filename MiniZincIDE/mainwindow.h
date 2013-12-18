@@ -82,6 +82,8 @@ private slots:
 
     void errorClicked(const QUrl&);
 
+    void on_actionDefault_font_size_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

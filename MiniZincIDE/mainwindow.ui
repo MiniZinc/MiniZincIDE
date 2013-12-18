@@ -344,6 +344,7 @@
     </property>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
+    <addaction name="actionDefault_font_size"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -517,6 +518,11 @@
   <action name="actionAbout_MiniZinc_IDE">
    <property name="text">
     <string>About MiniZinc IDE</string>
+   </property>
+  </action>
+  <action name="actionDefault_font_size">
+   <property name="text">
+    <string>Default font size</string>
    </property>
   </action>
  </widget>
