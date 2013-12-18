@@ -24,7 +24,6 @@ SolverDialog::~SolverDialog()
 void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 {
     if (index<solvers.size()) {
-        qDebug() << "switch to " << index;
         ui->name->setText(solvers[index].name);
         ui->executable->setText(solvers[index].executable);
         ui->mznpath->setText(solvers[index].mznlib);
@@ -34,7 +33,6 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->deleteButton->setEnabled(true);
         ui->solverFrame->setEnabled(!solvers[index].builtin);
     } else {
-        qDebug() << "switch to add";
         ui->name->setText("");
         ui->executable->setText("");
         ui->mznpath->setText("");
