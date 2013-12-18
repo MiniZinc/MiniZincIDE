@@ -33,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
+    connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
+
     solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd",""));
     solvers.append(Solver("G12 lazyfd","flatzinc","-Gg12_fd","lazy"));
     solvers.append(Solver("G12 CPX","fzn_cpx","-Gg12_cpx",""));
@@ -299,6 +301,17 @@ void MainWindow::removeFile(const QString& path)
     }
 }
 
+void MainWindow::addOutput(const QString& s, bool html)
+{
+    QTextCursor cursor = ui->outputConsole->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ui->outputConsole->setTextCursor(cursor);
+    if (html)
+        ui->outputConsole->insertHtml(s);
+    else
+        ui->outputConsole->insertPlainText(s);
+}
+
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
@@ -307,15 +320,15 @@ void MainWindow::on_actionRun_triggered()
         ui->actionStop->setEnabled(true);
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        process->setProcessChannelMode(QProcess::MergedChannels);
-        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
         connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(procError(QProcess::ProcessError)));
 
         QStringList args = parseConf(false);
         args << curEditor->filepath;
-        ui->outputConsole->insertHtml("<div style='color:red;'>Starting "+curEditor->filename+"</div><br>");
+        addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
         process->start("minizinc",args);
         time = 0;
         timer->start(500);
@@ -332,16 +345,32 @@ void MainWindow::statusTimerEvent()
 
 void MainWindow::readOutput()
 {
+    process->setReadChannel(QProcess::StandardOutput);
     while (process->canReadLine()) {
         QString l = process->readLine();
-        if (l=="----------\n") {
-            ui->outputConsole->insertHtml("<br>");
-        } else if (l=="==========\n") {
-            ui->outputConsole->insertHtml("<div style='color:red;'>Search complete.</div><br>");
+//        if (l=="----------\n") {
+//            addOutput("<br>");
+//        } else if (l=="==========\n") {
+//            addOutput("<div style='color:blue;'>Search complete.</div><br>");
+//        } else {
+            addOutput(l,false);
+//        }
+    }
+
+    process->setReadChannel(QProcess::StandardError);
+    while (process->canReadLine()) {
+        QString l = process->readLine();
+        QRegExp errexp("^(.*):([0-9]+):\\s*$");
+        if (errexp.indexIn(l) != -1) {
+            QUrl url = QUrl::fromLocalFile(errexp.cap(1));
+            url.setQuery("line="+errexp.cap(2));
+            url.setScheme("err");
+            addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
         } else {
-            ui->outputConsole->insertPlainText(l);
+            addOutput(l,false);
         }
     }
+
 }
 
 void MainWindow::procFinished(int) {
@@ -417,7 +446,7 @@ void MainWindow::on_actionStop_triggered()
         process->waitForFinished();
         delete process;
         process = NULL;
-        ui->outputConsole->insertHtml("<div style='color:red;'>Stopped.</div><br>");
+        addOutput("<div style='color:blue;'>Stopped.</div><br>");
     }
 }
 
@@ -455,7 +484,7 @@ void MainWindow::on_actionCompile_triggered()
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
             args << curEditor->filepath;
-            ui->outputConsole->insertHtml("<div style='color:red;'>Compiling "+curEditor->filename+"</div><br>");
+            addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
             process->start("mzn2fzn",args);
             time = 0;
             timer->start(500);
@@ -525,4 +554,28 @@ void MainWindow::on_actionSmaller_font_triggered()
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 {
     AboutDialog().exec();
+}
+
+void MainWindow::errorClicked(const QUrl & url)
+{
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (ce->filepath == url.path()) {
+                QRegExp re_line("line=([0-9]+)");
+                if (re_line.indexIn(url.query()) != -1) {
+                    bool ok;
+                    int line = re_line.cap(1).toInt(&ok);
+                    if (ok) {
+                        QTextBlock block = ce->document()->findBlockByLineNumber(line-1);
+                        QTextCursor cursor = ce->textCursor();
+                        cursor.setPosition(block.position());
+                        ce->setFocus();
+                        ce->setTextCursor(cursor);
+                    }
+                }
+
+            }
+        }
+    }
 }

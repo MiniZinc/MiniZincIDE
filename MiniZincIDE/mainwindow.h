@@ -80,6 +80,8 @@ private slots:
 
     void on_actionAbout_MiniZinc_IDE_triggered();
 
+    void errorClicked(const QUrl&);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -95,6 +97,7 @@ private:
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
     void setFontSize(double points);
+    void addOutput(const QString& s, bool html=true);
     QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString currentFznTarget;

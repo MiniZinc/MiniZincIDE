@@ -267,7 +267,11 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QTextBrowser" name="outputConsole"/>
+      <widget class="QTextBrowser" name="outputConsole">
+       <property name="openLinks">
+        <bool>false</bool>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
