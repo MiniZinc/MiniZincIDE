@@ -572,6 +572,7 @@ void MainWindow::errorClicked(const QUrl & url)
                         cursor.setPosition(block.position());
                         ce->setFocus();
                         ce->setTextCursor(cursor);
+                        ui->tabWidget->setCurrentIndex(i);
                     }
                 }
 
