@@ -1,6 +1,5 @@
 Features needed to release:
 
- * Configuration dialog for adding other solvers
  * Find/replace
  * Correct handling of open constraint graph windows
  * Multiple windows ("projects")
@@ -9,7 +8,6 @@ Features needed to release:
  * Basic help
 
 Features that would be nice to have:
- * Global solver configurations stored somewhere system wide
  * Auto indent
  * Saving/loading projects (i.e. the contents of the Configuration tab + all 
    open files)
@@ -26,3 +24,5 @@ Done
  * Tabs-to-spaces (without messing up the undo buffer)
  * About dialog
  * Click on error location to jump to position in editor
+ * Configuration dialog for adding other solvers
+ * Global solver configurations stored somewhere system wide
