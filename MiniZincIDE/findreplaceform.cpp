@@ -4,7 +4,7 @@
  */
 
 #include <QtGui>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QRegExp>
 #include <QSettings>
 
@@ -51,7 +51,7 @@ void FindReplaceForm::hideReplaceWidgets() {
     ui->replaceAllButton->setVisible(false);
 }
 
-void FindReplaceForm::setTextEdit(QTextEdit *textEdit_) {
+void FindReplaceForm::setTextEdit(QPlainTextEdit *textEdit_) {
     textEdit = textEdit_;
     connect(textEdit, SIGNAL(copyAvailable(bool)), ui->replaceButton, SLOT(setEnabled(bool)));
     connect(textEdit, SIGNAL(copyAvailable(bool)), ui->replaceAllButton, SLOT(setEnabled(bool)));
@@ -144,15 +144,13 @@ void FindReplaceForm::find(bool next) {
         QRegExp reg(toSearch,
                     (ui->caseCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
 
-        qDebug() << "searching for regexp: " << reg.pattern();
-
         textCursor = textEdit->document()->find(reg, textCursor, flags);
         textEdit->setTextCursor(textCursor);
         result = (!textCursor.isNull());
     } else {
-        qDebug() << "searching for: " << toSearch;
-
-        result = textEdit->find(toSearch, flags);
+        textCursor = textEdit->document()->find(toSearch, textCursor, flags);
+        textEdit->setTextCursor(textCursor);
+        result = (!textCursor.isNull());
     }
 
     if (result) {
