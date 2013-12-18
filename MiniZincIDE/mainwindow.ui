@@ -193,6 +193,20 @@
              </layout>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <item>
+               <widget class="QCheckBox" name="conf_have_solverFlags">
+                <property name="text">
+                 <string>Solver flags</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_solverFlags"/>
+              </item>
+             </layout>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -324,14 +338,6 @@
     <addaction name="separator"/>
     <addaction name="actionConstraint_Graph"/>
    </widget>
-   <widget class="QMenu" name="menuProject">
-    <property name="title">
-     <string>Project</string>
-    </property>
-    <addaction name="actionNew_2"/>
-    <addaction name="actionOpen_2"/>
-    <addaction name="actionSave_2"/>
-   </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
      <string>View</string>
@@ -348,7 +354,6 @@
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuMiniZinc"/>
-   <addaction name="menuProject"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -486,21 +491,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
-   </property>
-  </action>
-  <action name="actionNew_2">
-   <property name="text">
-    <string>New</string>
-   </property>
-  </action>
-  <action name="actionOpen_2">
-   <property name="text">
-    <string>Open</string>
-   </property>
-  </action>
-  <action name="actionSave_2">
-   <property name="text">
-    <string>Save</string>
    </property>
   </action>
   <action name="actionClear_output">

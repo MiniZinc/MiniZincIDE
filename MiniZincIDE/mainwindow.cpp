@@ -271,6 +271,8 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-p"+QString::number(ui->conf_nthreads->value());
     if (!compileOnly && ui->conf_have_seed->isChecked())
         ret << "-r"+ui->conf_seed->text();
+    if (!compileOnly && ui->conf_have_solverFlags->isChecked())
+        ret << "--fzn-flags" << ui->conf_solverFlags->text();
     if (!compileOnly && ui->conf_nsol->value() != 1)
         ret << "-n"+QString::number(ui->conf_nsol->value());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
@@ -318,6 +320,7 @@ void MainWindow::on_actionRun_triggered()
         ui->actionRun->setEnabled(false);
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
+        ui->configuration->setEnabled(false);
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
@@ -377,6 +380,7 @@ void MainWindow::procFinished(int) {
     ui->actionRun->setEnabled(true);
     ui->actionCompile->setEnabled(true);
     ui->actionStop->setEnabled(false);
+    ui->configuration->setEnabled(true);
     timer->stop();
     statusLabel->setText("Ready");
     process = NULL;
@@ -465,6 +469,7 @@ void MainWindow::on_actionCompile_triggered()
         ui->actionRun->setEnabled(false);
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
+        ui->configuration->setEnabled(false);
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         process->setProcessChannelMode(QProcess::MergedChannels);
