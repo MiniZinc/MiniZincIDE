@@ -34,14 +34,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
-    solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd",""));
-    solvers.append(Solver("G12 lazyfd","flatzinc","-Gg12_fd","lazy"));
-    solvers.append(Solver("G12 CPX","fzn_cpx","-Gg12_cpx",""));
-    solvers.append(Solver("G12 MIP","flatzinc","-Glinear","mip"));
-
-    for (int i=0; i<solvers.size(); i++)
-        ui->conf_solver->addItem(solvers[i].name,i);
-
     QSettings settings;
     settings.beginGroup("MainWindow");
     fontSize = settings.value("fontSize", 13.0).toDouble();
@@ -50,6 +42,28 @@ MainWindow::MainWindow(QWidget *parent) :
     settings.endGroup();
 
     setFontSize(fontSize);
+
+    int nsolvers = settings.beginReadArray("solvers");
+    if (nsolvers==0) {
+        solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd","",true));
+        solvers.append(Solver("G12 lazyfd","flatzinc","-Gg12_fd","lazy",true));
+        solvers.append(Solver("G12 CPX","fzn_cpx","-Gg12_cpx","",true));
+        solvers.append(Solver("G12 MIP","flatzinc","-Glinear","mip",true));
+    } else {
+        for (int i=0; i<nsolvers; i++) {
+            settings.setArrayIndex(i);
+            Solver solver;
+            solver.name = settings.value("name").toString();
+            solver.executable = settings.value("executable").toString();
+            solver.mznlib = settings.value("mznlib").toString();
+            solver.backend = settings.value("backend").toString();
+            solver.builtin = settings.value("builtin").toBool();
+            solvers.append(solver);
+        }
+    }
+    settings.endArray();
+    for (int i=0; i<solvers.size(); i++)
+        ui->conf_solver->addItem(solvers[i].name,i);
 
     QStringList args = QApplication::arguments();
     for (int i=1; i<args.size(); i++)
@@ -602,4 +616,24 @@ void MainWindow::errorClicked(const QUrl & url)
             }
         }
     }
+}
+
+void MainWindow::on_actionManage_solvers_triggered()
+{
+    SolverDialog sd(solvers);
+    sd.exec();
+    ui->conf_solver->clear();
+    for (int i=0; i<solvers.size(); i++)
+        ui->conf_solver->addItem(solvers[i].name,i);
+    QSettings settings;
+    settings.beginWriteArray("solvers");
+    for (int i=0; i<solvers.size(); i++) {
+        settings.setArrayIndex(i);
+        settings.setValue("name",solvers[i].name);
+        settings.setValue("executable",solvers[i].executable);
+        settings.setValue("mznlib",solvers[i].mznlib);
+        settings.setValue("backend",solvers[i].backend);
+        settings.setValue("builtin",solvers[i].builtin);
+    }
+    settings.endArray();
 }

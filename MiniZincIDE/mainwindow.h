@@ -11,20 +11,11 @@
 #include <QTemporaryDir>
 
 #include "codeeditor.h"
+#include "solverdialog.h"
 
 namespace Ui {
 class MainWindow;
 }
-
-struct Solver {
-    QString name;
-    QString executable;
-    QString mznlib;
-    QString backend;
-    Solver(const QString& n, const QString& e, const QString& m, const QString& b) :
-        name(n), executable(e), mznlib(m), backend(b) {}
-    Solver(void) {}
-};
 
 class MainWindow : public QMainWindow
 {
@@ -83,6 +74,8 @@ private slots:
     void errorClicked(const QUrl&);
 
     void on_actionDefault_font_size_triggered();
+
+    void on_actionManage_solvers_triggered();
 
 protected:
     virtual void closeEvent(QCloseEvent*);

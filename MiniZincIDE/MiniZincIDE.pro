@@ -18,18 +18,21 @@ SOURCES += main.cpp\
     highlighter.cpp \
     webpage.cpp \
     fzndoc.cpp \
-    aboutdialog.cpp
+    aboutdialog.cpp \
+    solverdialog.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     webpage.h \
     fzndoc.h \
-    aboutdialog.h
+    aboutdialog.h \
+    solverdialog.h
 
 FORMS    += \
     mainwindow.ui \
-    aboutdialog.ui
+    aboutdialog.ui \
+    solverdialog.ui
 
 RESOURCES += \
     minizincide.qrc

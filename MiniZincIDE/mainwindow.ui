@@ -336,6 +336,8 @@
     <addaction name="actionCompile"/>
     <addaction name="actionClear_output"/>
     <addaction name="separator"/>
+    <addaction name="actionManage_solvers"/>
+    <addaction name="separator"/>
     <addaction name="actionConstraint_Graph"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -523,6 +525,11 @@
   <action name="actionDefault_font_size">
    <property name="text">
     <string>Default font size</string>
+   </property>
+  </action>
+  <action name="actionManage_solvers">
+   <property name="text">
+    <string>Solvers</string>
    </property>
   </action>
  </widget>
