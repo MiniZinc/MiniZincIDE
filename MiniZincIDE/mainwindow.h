@@ -107,6 +107,7 @@ private:
     QFont editorFont;
     QSet<QString> filePaths;
     QVector<Solver> solvers;
+    QString mznDistribPath;
     QString currentFznTarget;
     QTemporaryDir* tmpDir;
     FindDialog* findDialog;
@@ -120,6 +121,7 @@ private:
 
     void addFile(const QString& path);
     void removeFile(const QString& path);
+    void checkMznPath();
 };
 
 #endif // MAINWINDOW_H

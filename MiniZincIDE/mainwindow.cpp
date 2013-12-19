@@ -58,6 +58,10 @@ MainWindow::MainWindow(QWidget *parent) :
     findDialog->readSettings(settings);
     findReplaceDialog->readSettings(settings);
 
+    settings.beginGroup("minizinc");
+    mznDistribPath = settings.value("mznpath","").toString();
+    settings.endGroup();
+    checkMznPath();
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd","",true));
@@ -384,7 +388,7 @@ void MainWindow::on_actionRun_triggered()
         QStringList args = parseConf(false);
         args << curEditor->filepath;
         addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
-        process->start("minizinc",args);
+        process->start(mznDistribPath+"minizinc",args);
         time = 0;
         timer->start(500);
     }
@@ -542,7 +546,7 @@ void MainWindow::on_actionCompile_triggered()
             args << "-o" << currentFznTarget;
             args << curEditor->filepath;
             addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
-            process->start("mzn2fzn",args);
+            process->start(mznDistribPath+"mzn2fzn",args);
             time = 0;
             timer->start(500);
         }
@@ -648,12 +652,20 @@ void MainWindow::errorClicked(const QUrl & url)
 
 void MainWindow::on_actionManage_solvers_triggered()
 {
-    SolverDialog sd(solvers);
+    SolverDialog sd(solvers,mznDistribPath);
     sd.exec();
+    mznDistribPath = sd.mznPath();
+    if (! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
+        mznDistribPath += "/";
+    checkMznPath();
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
     QSettings settings;
+    settings.beginGroup("minizinc");
+    settings.setValue("mznpath",mznDistribPath);
+    settings.endGroup();
+
     settings.beginWriteArray("solvers");
     for (int i=0; i<solvers.size(); i++) {
         settings.setArrayIndex(i);
@@ -702,6 +714,21 @@ void MainWindow::on_actionGo_to_line_triggered()
         }
     }
 }
+
+void MainWindow::checkMznPath()
+{
+    QProcess p;
+    QStringList args;
+    args << "-v";
+    p.start(mznDistribPath+"minizinc", args);
+    if (!p.waitForStarted() || !p.waitForFinished()) {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nPlease check the path settings in the solver menu.",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+    }
+}
+
 void MainWindow::on_actionOnly_editor_triggered()
 {
     QList<int> sizes;

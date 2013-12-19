@@ -2,14 +2,16 @@
 #include "ui_solverdialog.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QFileDialog>
 
-SolverDialog::SolverDialog(QVector<Solver>& solvers0, QWidget *parent) :
+SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
     solvers(solvers0)
 {
     ui->setupUi(this);
 
+    ui->mznDistribPath->setText(mznPath);
     for (int i=solvers.size(); i--;) {
         ui->solvers_combo->insertItem(0,solvers[i].name,i);
     }
@@ -19,6 +21,11 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, QWidget *parent) :
 SolverDialog::~SolverDialog()
 {
     delete ui;
+}
+
+QString SolverDialog::mznPath()
+{
+    return ui->mznDistribPath->text();
 }
 
 void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
@@ -68,5 +75,27 @@ void SolverDialog::on_deleteButton_clicked()
             == QMessageBox::Ok) {
         solvers.removeAt(index);
         ui->solvers_combo->removeItem(index);
+    }
+}
+
+void SolverDialog::on_mznpath_select_clicked()
+{
+    QFileDialog fd(this,"Select MiniZinc distribution path (bin directory)");
+    QDir dir(ui->mznDistribPath->text());
+    fd.setDirectory(dir);
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setOption(QFileDialog::ShowDirsOnly, true);
+    if (fd.exec()) {
+        ui->mznDistribPath->setText(fd.selectedFiles().first());
+    }
+}
+
+void SolverDialog::on_exec_select_clicked()
+{
+    QFileDialog fd(this,"Select solver executable");
+    fd.selectFile(ui->executable->text());
+    fd.setFileMode(QFileDialog::ExistingFile);
+    if (fd.exec()) {
+        ui->executable->setText(fd.selectedFiles().first());
     }
 }

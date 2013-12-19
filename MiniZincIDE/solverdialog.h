@@ -23,15 +23,19 @@ class SolverDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SolverDialog(QVector<Solver>& solvers, QWidget *parent = 0);
+    explicit SolverDialog(QVector<Solver>& solvers, const QString& mznPath, QWidget *parent = 0);
     ~SolverDialog();
-
+    QString mznPath();
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
     void on_updateButton_clicked();
 
     void on_deleteButton_clicked();
+
+    void on_mznpath_select_clicked();
+
+    void on_exec_select_clicked();
 
 private:
     Ui::SolverDialog *ui;

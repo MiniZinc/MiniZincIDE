@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>531</width>
-    <height>307</height>
+    <height>335</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>440</x>
-     <y>270</y>
+     <y>300</y>
      <width>81</width>
      <height>32</height>
     </rect>
@@ -36,7 +36,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>60</y>
+     <y>90</y>
      <width>521</width>
      <height>202</height>
     </rect>
@@ -81,13 +81,19 @@
       <item>
        <widget class="QPushButton" name="exec_select">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="text">
          <string>Select</string>
+        </property>
+        <property name="autoDefault">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -158,7 +164,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>20</y>
+     <y>50</y>
      <width>231</width>
      <height>26</height>
     </rect>
@@ -190,6 +196,42 @@
         <string>Add new...</string>
        </property>
       </item>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>511</width>
+     <height>35</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_9">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
+      <item>
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>MiniZinc path</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="mznDistribPath"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QPushButton" name="mznpath_select">
+      <property name="text">
+       <string>Select</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
      </widget>
     </item>
    </layout>

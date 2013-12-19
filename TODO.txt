@@ -5,7 +5,6 @@ Features needed to release:
  * Handle duplicate open files
  * Indent/outdent selection
  * Basic help
- * Go to line
  * Report solve time + support time outs
  * Save all
  * Packaging
@@ -33,3 +32,5 @@ Done
  * Global solver configurations stored somewhere system wide
  * Find/replace
  * Font selection
+ * Go to line
+ * Configure paths
