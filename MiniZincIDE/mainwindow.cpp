@@ -31,6 +31,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(statusTimerEvent()));
+    solverTimeout = new QTimer(this);
+    solverTimeout->setSingleShot(true);
+    connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
     statusLabel = new QLabel("Ready");
     ui->statusbar->addWidget(statusLabel);
     ui->actionStop->setEnabled(false);
@@ -58,10 +61,6 @@ MainWindow::MainWindow(QWidget *parent) :
     findDialog->readSettings(settings);
     findReplaceDialog->readSettings(settings);
 
-    settings.beginGroup("minizinc");
-    mznDistribPath = settings.value("mznpath","").toString();
-    settings.endGroup();
-    checkMznPath();
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd","",true));
@@ -81,6 +80,10 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     }
     settings.endArray();
+    settings.beginGroup("minizinc");
+    mznDistribPath = settings.value("mznpath","").toString();
+    settings.endGroup();
+    checkMznPath();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
 
@@ -387,6 +390,12 @@ void MainWindow::on_actionRun_triggered()
 
         QStringList args = parseConf(false);
         args << curEditor->filepath;
+        if (ui->conf_have_timeLimit->isChecked()) {
+            bool ok;
+            int timeout = ui->conf_timeLimit->text().toInt(&ok);
+            if (ok)
+                solverTimeout->start(timeout*1000);
+        }
         addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
         process->start(mznDistribPath+"minizinc",args);
         time = 0;

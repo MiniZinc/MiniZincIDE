@@ -102,6 +102,7 @@ private:
     QWebView* webView;
     QProcess* process;
     QTimer* timer;
+    QTimer* solverTimeout;
     int time;
     QLabel* statusLabel;
     QFont editorFont;

@@ -5,7 +5,7 @@ Features needed to release:
  * Handle duplicate open files
  * Indent/outdent selection
  * Basic help
- * Report solve time + support time outs
+ * Report solve time
  * Save all
  * Packaging
  * Detach solver (to be able to run Gecode w/ Gist)
@@ -34,3 +34,4 @@ Done
  * Font selection
  * Go to line
  * Configure paths
+ * Time outs
