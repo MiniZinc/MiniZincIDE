@@ -64,8 +64,8 @@ class Highlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    Highlighter(double fontSize, QTextDocument *parent = 0);
-    void setFontSize(double fontSize);
+    Highlighter(QFont& font, QTextDocument *parent = 0);
+    void setEditorFont(QFont& font);
 protected:
     void highlightBlock(const QString &text);
 

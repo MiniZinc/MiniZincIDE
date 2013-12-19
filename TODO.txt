@@ -5,18 +5,21 @@ Features needed to release:
  * Handle duplicate open files
  * Indent/outdent selection
  * Basic help
+ * Go to line
+ * Report solve time + support time outs
+ * Save all
+ * Packaging
+ * Detach solver (to be able to run Gecode w/ Gist)
 
 Features that would be nice to have:
  * Auto indent
+ * Column selection
  * Saving/loading projects (i.e. the contents of the Configuration tab + all 
    open files)
  * Detect when files change on disk (auto reload + dialog if changed)
- * Report solve time + support time outs
- * Font/colour selection
- * Save all
  * Use mzn2fzn and implement the solutions processing internally
  * Run fzn files
- * Detach solver (to be able to run Gecode w/ Gist)
+ * Colour selection
 
 Done
  * Focus
@@ -29,3 +32,4 @@ Done
  * Configuration dialog for adding other solvers
  * Global solver configurations stored somewhere system wide
  * Find/replace
+ * Font selection

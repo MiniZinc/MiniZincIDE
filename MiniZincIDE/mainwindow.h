@@ -84,6 +84,8 @@ private slots:
 
     void on_actionReplace_triggered();
 
+    void on_actionSelect_font_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -94,7 +96,7 @@ private:
     QTimer* timer;
     int time;
     QLabel* statusLabel;
-    double fontSize;
+    QFont editorFont;
     QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString currentFznTarget;
@@ -105,7 +107,7 @@ private:
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
-    void setFontSize(double points);
+    void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
 
     void addFile(const QString& path);

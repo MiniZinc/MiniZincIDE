@@ -2,10 +2,8 @@
 #include "codeeditor.h"
 
 void
-CodeEditor::initUI(double fontSize)
+CodeEditor::initUI(QFont& font)
 {
-    QFont font("Courier New");
-    font.setStyleHint(QFont::Monospace);
     setFont(font);
 
     const int tabStop = 2;  // 4 characters
@@ -21,7 +19,7 @@ CodeEditor::initUI(double fontSize)
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
-    highlighter = new Highlighter(fontSize,document());
+    highlighter = new Highlighter(font,document());
 
     QTextCursor cursor(textCursor());
     cursor.movePosition(QTextCursor::Start);
@@ -30,10 +28,10 @@ CodeEditor::initUI(double fontSize)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QFile& file, double fontSize, QWidget *parent) :
+CodeEditor::CodeEditor(QFile& file, QFont& font, QWidget *parent) :
     QPlainTextEdit(parent)
 {
-    initUI(fontSize);
+    initUI(font);
     if (file.isOpen()) {
         setPlainText(file.readAll());
         filepath = QFileInfo(file).absoluteFilePath();
@@ -263,11 +261,9 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
     }
 }
 
-void CodeEditor::setFontSize(double p)
+void CodeEditor::setEditorFont(QFont& font)
 {
-    QFont f(font());
-    f.setPointSize(p);
-    setFont(f);
-    highlighter->setFontSize(p);
+    setFont(font);
+    highlighter->setEditorFont(font);
     highlighter->rehighlight();
 }

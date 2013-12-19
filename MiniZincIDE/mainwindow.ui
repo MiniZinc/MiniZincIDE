@@ -348,6 +348,7 @@
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
+    <addaction name="actionSelect_font"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -542,6 +543,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+F</string>
+   </property>
+  </action>
+  <action name="actionSelect_font">
+   <property name="text">
+    <string>Select font...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
  </widget>

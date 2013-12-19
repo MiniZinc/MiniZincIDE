@@ -25,9 +25,6 @@ MainWindow::MainWindow(QWidget *parent) :
     findReplaceDialog = new FindReplaceDialog(this);
     findReplaceDialog->setModal(false);
 
-    QFont font("Courier New");
-    font.setStyleHint(QFont::Monospace);
-    ui->outputConsole->setFont(font);
 
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
@@ -45,12 +42,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-    fontSize = settings.value("fontSize", 13.0).toDouble();
+
+    QFont defaultFont("Courier New");
+    defaultFont.setStyleHint(QFont::Monospace);
+    defaultFont.setPointSize(13);
+    editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+    ui->outputConsole->setFont(editorFont);
     resize(settings.value("size", QSize(400, 400)).toSize());
     move(settings.value("pos", QPoint(200, 200)).toPoint());
     settings.endGroup();
 
-    setFontSize(fontSize);
+    setEditorFont(editorFont);
 
     findDialog->readSettings(settings);
     findReplaceDialog->readSettings(settings);
@@ -109,7 +111,7 @@ void MainWindow::createEditor(QFile& file, bool openAsModified) {
             curEditor->setFocus();
         }
     } else {
-        CodeEditor* ce = new CodeEditor(file,fontSize,this);
+        CodeEditor* ce = new CodeEditor(file,editorFont,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
@@ -203,7 +205,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("fontSize", fontSize);
+    settings.setValue("editorFont", editorFont);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.endGroup();
@@ -576,10 +578,10 @@ void MainWindow::on_actionClear_output_triggered()
     ui->outputConsole->document()->clear();
 }
 
-void MainWindow::setFontSize(double points)
+void MainWindow::setEditorFont(QFont font)
 {
     QTextCharFormat format;
-    format.setFontPointSize(points);
+    format.setFont(font);
 
     QTextCursor cursor(ui->outputConsole->document());
     cursor.movePosition(QTextCursor::Start);
@@ -588,27 +590,27 @@ void MainWindow::setFontSize(double points)
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i)!=ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            ce->setFontSize(points);
+            ce->setEditorFont(font);
         }
     }
 }
 
 void MainWindow::on_actionBigger_font_triggered()
 {
-    fontSize += 1.0;
-    setFontSize(fontSize);
+    editorFont.setPointSize(editorFont.pointSize()+1);
+    setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionSmaller_font_triggered()
 {
-    fontSize = std::max(5.0, fontSize-1.0);
-    setFontSize(fontSize);
+    editorFont.setPointSize(std::max(5, editorFont.pointSize()-1));
+    setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionDefault_font_size_triggered()
 {
-    fontSize = 13.0;
-    setFontSize(fontSize);
+    editorFont.setPointSize(13);
+    setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
@@ -669,4 +671,14 @@ void MainWindow::on_actionFind_triggered()
 void MainWindow::on_actionReplace_triggered()
 {
     findReplaceDialog->show();
+}
+
+void MainWindow::on_actionSelect_font_triggered()
+{
+    bool ok;
+    QFont newFont = QFontDialog::getFont(&ok,editorFont,this);
+    if (ok) {
+        editorFont = newFont;
+        setEditorFont(editorFont);
+    }
 }
