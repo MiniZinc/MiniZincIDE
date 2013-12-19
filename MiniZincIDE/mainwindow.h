@@ -88,6 +88,12 @@ private slots:
 
     void on_actionGo_to_line_triggered();
 
+    void on_actionOnly_editor_triggered();
+
+    void on_actionOnly_output_triggered();
+
+    void on_actionSplit_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

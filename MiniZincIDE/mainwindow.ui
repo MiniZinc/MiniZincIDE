@@ -349,6 +349,10 @@
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
+    <addaction name="separator"/>
+    <addaction name="actionOnly_editor"/>
+    <addaction name="actionOnly_output"/>
+    <addaction name="actionSplit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -551,6 +555,30 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionOnly_editor">
+   <property name="text">
+    <string>Only editor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
+   </property>
+  </action>
+  <action name="actionOnly_output">
+   <property name="text">
+    <string>Only output</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="actionSplit">
+   <property name="text">
+    <string>Split</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
    </property>
   </action>
  </widget>
