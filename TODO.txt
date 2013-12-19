@@ -3,12 +3,12 @@ Features needed to release:
  * Correct handling of open constraint graph windows
  * Multiple windows ("projects")
  * Handle duplicate open files
- * Indent/outdent selection
  * Basic help
  * Report solve time
  * Save all
  * Packaging
  * Detach solver (to be able to run Gecode w/ Gist)
+ * Windows application icon
 
 Features that would be nice to have:
  * Auto indent
@@ -35,3 +35,5 @@ Done
  * Go to line
  * Configure paths
  * Time outs
+ * Mac application icon
+ * Indent/outdent selection

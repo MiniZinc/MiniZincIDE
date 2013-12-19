@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -365,6 +365,8 @@
     <addaction name="actionGo_to_line"/>
     <addaction name="actionFind"/>
     <addaction name="actionReplace"/>
+    <addaction name="actionShift_left"/>
+    <addaction name="actionShift_right"/>
    </widget>
    <widget class="QMenu" name="menuMiniZinc">
     <property name="title">
@@ -621,6 +623,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+3</string>
+   </property>
+  </action>
+  <action name="actionShift_left">
+   <property name="text">
+    <string>Shift left</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+[</string>
+   </property>
+  </action>
+  <action name="actionShift_right">
+   <property name="text">
+    <string>Shift right</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+]</string>
    </property>
   </action>
  </widget>

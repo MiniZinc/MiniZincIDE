@@ -94,6 +94,10 @@ private slots:
 
     void on_actionSplit_triggered();
 
+    void on_actionShift_left_triggered();
+
+    void on_actionShift_right_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

@@ -761,3 +761,37 @@ void MainWindow::on_actionSplit_triggered()
     sizes << ui->splitter->height()/3;
     ui->splitter->setSizes(sizes);
 }
+
+void MainWindow::on_actionShift_left_triggered()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
+    QRegExp white("\\s");
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        if (block.length() > 2) {
+            cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
+            if (white.indexIn(cursor.selectedText()) == 0) {
+                cursor.removeSelectedText();
+            }
+        }
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
+
+void MainWindow::on_actionShift_right_triggered()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        cursor.insertText("  ");
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
