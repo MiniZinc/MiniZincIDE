@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MiniZinc IDE</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="minizincide.qrc">
+    <normaloff>:/images/mznicon.png</normaloff>:/images/mznicon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
@@ -620,6 +624,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="minizincide.qrc"/>
+ </resources>
  <connections/>
 </ui>
