@@ -9,6 +9,7 @@
 #include <QWebView>
 #include <QSet>
 #include <QTemporaryDir>
+#include <QElapsedTimer>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -108,6 +109,7 @@ private:
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
+    QElapsedTimer elapsedTime;
     QLabel* statusLabel;
     QFont editorFont;
     QSet<QString> filePaths;
@@ -123,7 +125,7 @@ private:
     void saveFile(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
-
+    void setElapsedTime();
     void addFile(const QString& path);
     void removeFile(const QString& path);
     void checkMznPath();

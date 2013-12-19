@@ -4,7 +4,6 @@ Features needed to release:
  * Multiple windows ("projects")
  * Handle duplicate open files
  * Basic help
- * Report solve time
  * Save all
  * Packaging
  * Detach solver (to be able to run Gecode w/ Gist)
@@ -37,3 +36,4 @@ Done
  * Time outs
  * Mac application icon
  * Indent/outdent selection
+ * Report solve time
