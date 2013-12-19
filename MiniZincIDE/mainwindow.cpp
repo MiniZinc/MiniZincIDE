@@ -10,6 +10,7 @@
 #include "fzndoc.h"
 #include "finddialog.h"
 #include "findreplacedialog.h"
+#include "gotolinedialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -629,12 +630,14 @@ void MainWindow::errorClicked(const QUrl & url)
                     bool ok;
                     int line = re_line.cap(1).toInt(&ok);
                     if (ok) {
-                        QTextBlock block = ce->document()->findBlockByLineNumber(line-1);
-                        QTextCursor cursor = ce->textCursor();
-                        cursor.setPosition(block.position());
-                        ce->setFocus();
-                        ce->setTextCursor(cursor);
-                        ui->tabWidget->setCurrentIndex(i);
+                        QTextBlock block = ce->document()->findBlockByNumber(line-1);
+                        if (block.isValid()) {
+                            QTextCursor cursor = ce->textCursor();
+                            cursor.setPosition(block.position());
+                            ce->setFocus();
+                            ce->setTextCursor(cursor);
+                            ui->tabWidget->setCurrentIndex(i);
+                        }
                     }
                 }
 
@@ -680,5 +683,22 @@ void MainWindow::on_actionSelect_font_triggered()
     if (ok) {
         editorFont = newFont;
         setEditorFont(editorFont);
+    }
+}
+
+void MainWindow::on_actionGo_to_line_triggered()
+{
+    GoToLineDialog gtl;
+    if (gtl.exec()==QDialog::Accepted) {
+        bool ok;
+        int line = gtl.getLine(&ok);
+        if (ok) {
+            QTextBlock block = curEditor->document()->findBlockByNumber(line-1);
+            if (block.isValid()) {
+                QTextCursor cursor = curEditor->textCursor();
+                cursor.setPosition(block.position());
+                curEditor->setTextCursor(cursor);
+            }
+        }
     }
 }
