@@ -369,7 +369,6 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
-    <addaction name="actionClear_output"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
@@ -387,6 +386,8 @@
     <addaction name="actionOnly_editor"/>
     <addaction name="actionOnly_output"/>
     <addaction name="actionSplit"/>
+    <addaction name="separator"/>
+    <addaction name="actionClear_output"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -528,7 +529,7 @@
     <string>Stop</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+K</string>
+    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionCompile">
@@ -542,6 +543,9 @@
   <action name="actionClear_output">
    <property name="text">
     <string>Clear output</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
    </property>
   </action>
   <action name="actionBigger_font">
