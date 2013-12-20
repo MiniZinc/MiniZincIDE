@@ -9,9 +9,11 @@
 #include <QWebView>
 #include <QSet>
 #include <QTemporaryDir>
+#include <QElapsedTimer>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
+#include "help.h"
 
 namespace Ui {
 class MainWindow;
@@ -94,6 +96,12 @@ private slots:
 
     void on_actionSplit_triggered();
 
+    void on_actionShift_left_triggered();
+
+    void on_actionShift_right_triggered();
+
+    void on_actionHelp_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -104,6 +112,7 @@ private:
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
+    QElapsedTimer elapsedTime;
     QLabel* statusLabel;
     QFont editorFont;
     QSet<QString> filePaths;
@@ -113,13 +122,14 @@ private:
     QTemporaryDir* tmpDir;
     FindDialog* findDialog;
     FindReplaceDialog* findReplaceDialog;
+    Help* helpWindow;
 
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
-
+    void setElapsedTime();
     void addFile(const QString& path);
     void removeFile(const QString& path);
     void checkMznPath();

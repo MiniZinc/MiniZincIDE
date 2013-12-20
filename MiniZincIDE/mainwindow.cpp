@@ -11,6 +11,7 @@
 #include "finddialog.h"
 #include "findreplacedialog.h"
 #include "gotolinedialog.h"
+#include "help.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
     findReplaceDialog = new FindReplaceDialog(this);
     findReplaceDialog->setModal(false);
 
+    helpWindow = new Help();
 
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
@@ -34,8 +36,9 @@ MainWindow::MainWindow(QWidget *parent) :
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
-    statusLabel = new QLabel("Ready");
-    ui->statusbar->addWidget(statusLabel);
+    statusLabel = new QLabel("");
+    ui->statusbar->addPermanentWidget(statusLabel);
+    ui->statusbar->showMessage("Ready.");
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
@@ -101,6 +104,7 @@ MainWindow::~MainWindow()
         delete process;
     }
     delete ui;
+    delete helpWindow;
 }
 
 void MainWindow::on_actionNew_triggered()
@@ -219,6 +223,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.endGroup();
     findDialog->writeSettings(settings);
     findReplaceDialog->writeSettings(settings);
+    helpWindow->close();
     e->accept();
 }
 
@@ -396,6 +401,7 @@ void MainWindow::on_actionRun_triggered()
             if (ok)
                 solverTimeout->start(timeout*1000);
         }
+        elapsedTime.start();
         addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
         process->start(mznDistribPath+"minizinc",args);
         time = 0;
@@ -403,12 +409,31 @@ void MainWindow::on_actionRun_triggered()
     }
 }
 
+void MainWindow::setElapsedTime()
+{
+    int hours = elapsedTime.elapsed() / 3600000;
+    int minutes = (elapsedTime.elapsed() % 3600000) / 60000;
+    int seconds = (elapsedTime.elapsed() % 60000) / 1000;
+    int msec = (elapsedTime.elapsed() % 1000);
+    QString elapsed;
+    if (hours > 0)
+        elapsed += QString().number(hours)+"h ";
+    if (hours > 0 || minutes > 0)
+        elapsed += QString().number(minutes)+"m ";
+    if (hours > 0 || minutes > 0 || seconds > 0)
+        elapsed += QString().number(seconds)+"s";
+    if (hours==0 && minutes==0)
+        elapsed += " "+QString().number(msec)+"msec";
+    statusLabel->setText(elapsed);
+}
+
 void MainWindow::statusTimerEvent()
 {
     QString txt = "Running.";
     for (int i=time; i--;) txt+=".";
-    statusLabel->setText(txt);
+    ui->statusbar->showMessage(txt);
     time = (time+1) % 5;
+    setElapsedTime();
 }
 
 void MainWindow::readOutput()
@@ -447,7 +472,8 @@ void MainWindow::procFinished(int) {
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
     timer->stop();
-    statusLabel->setText("Ready");
+    setElapsedTime();
+    ui->statusbar->showMessage("Ready.");
     process = NULL;
 }
 
@@ -558,6 +584,7 @@ void MainWindow::on_actionCompile_triggered()
             process->start(mznDistribPath+"mzn2fzn",args);
             time = 0;
             timer->start(500);
+            elapsedTime.start();
         }
     }
 }
@@ -760,4 +787,43 @@ void MainWindow::on_actionSplit_triggered()
     sizes << ui->splitter->height()/3*2;
     sizes << ui->splitter->height()/3;
     ui->splitter->setSizes(sizes);
+}
+
+void MainWindow::on_actionShift_left_triggered()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
+    QRegExp white("\\s");
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        if (block.length() > 2) {
+            cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
+            if (white.indexIn(cursor.selectedText()) == 0) {
+                cursor.removeSelectedText();
+            }
+        }
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
+
+void MainWindow::on_actionShift_right_triggered()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        cursor.insertText("  ");
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
+
+void MainWindow::on_actionHelp_triggered()
+{
+    helpWindow->show();
 }

@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     findform.cpp \
     findreplacedialog.cpp \
     findreplaceform.cpp \
-    gotolinedialog.cpp
+    gotolinedialog.cpp \
+    help.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -40,7 +41,8 @@ HEADERS  += mainwindow.h \
     findreplace_global.h \
     findreplacedialog.h \
     findreplaceform.h \
-    gotolinedialog.h
+    gotolinedialog.h \
+    help.h
 
 FORMS    += \
     mainwindow.ui \
@@ -48,7 +50,8 @@ FORMS    += \
     solverdialog.ui \
     findreplacedialog.ui \
     findreplaceform.ui \
-    gotolinedialog.ui
+    gotolinedialog.ui \
+    help.ui
 
 RESOURCES += \
     minizincide.qrc
