@@ -524,6 +524,8 @@ void MainWindow::saveFile(const QString& f)
             curEditor->filename = QFileInfo(filepath).fileName();
             ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
             tabChange(ui->tabWidget->currentIndex());
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
         }
     }
 }
