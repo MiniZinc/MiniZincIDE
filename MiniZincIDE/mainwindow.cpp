@@ -13,6 +13,15 @@
 #include "gotolinedialog.h"
 #include "help.h"
 
+#include <QtGlobal>
+#ifdef Q_OS_WIN
+#define pathSep ";"
+#define MZN2FZN "mzn2fzn.bat"
+#else
+#define pathSep ":"
+#define MZN2FZN "mzn2fzn"
+#endif
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -394,7 +403,7 @@ void MainWindow::on_actionRun_triggered()
                 this, SLOT(procError(QProcess::ProcessError)));
 
         QStringList args = parseConf(false);
-        args << curEditor->filepath;
+        args << QFileInfo(curEditor->filepath).fileName();
         if (ui->conf_have_timeLimit->isChecked()) {
             bool ok;
             int timeout = ui->conf_timeLimit->text().toInt(&ok);
@@ -403,7 +412,13 @@ void MainWindow::on_actionRun_triggered()
         }
         elapsedTime.start();
         addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
+        if (!mznDistribPath.isEmpty()) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+            process->setProcessEnvironment(env);
+        }
         process->start(mznDistribPath+"minizinc",args);
+
         time = 0;
         timer->start(500);
     }
@@ -579,9 +594,14 @@ void MainWindow::on_actionCompile_triggered()
             QFileInfo fi(curEditor->filepath);
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
-            args << curEditor->filepath;
+            args << QFileInfo(curEditor->filepath).fileName();
             addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
-            process->start(mznDistribPath+"mzn2fzn",args);
+            if (!mznDistribPath.isEmpty()) {
+                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                process->setProcessEnvironment(env);
+            }
+            process->start(mznDistribPath + MZN2FZN,args);
             time = 0;
             timer->start(500);
             elapsedTime.start();

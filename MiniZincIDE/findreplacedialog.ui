@@ -23,7 +23,7 @@
   <customwidget>
    <class>FindReplaceForm</class>
    <extends>QWidget</extends>
-   <header location="global">findreplaceform.h</header>
+   <header location="local">findreplaceform.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
