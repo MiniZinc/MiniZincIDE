@@ -73,7 +73,7 @@ void SolverDialog::on_deleteButton_clicked()
     int index = ui->solvers_combo->currentIndex();
     if (QMessageBox::warning(this,"MiniZinc IDE","Delete solver "+solvers[index].name+"?",QMessageBox::Ok | QMessageBox::Cancel)
             == QMessageBox::Ok) {
-        solvers.removeAt(index);
+        solvers.remove(index);
         ui->solvers_combo->removeItem(index);
     }
 }
