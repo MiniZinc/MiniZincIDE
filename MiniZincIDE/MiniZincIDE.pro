@@ -12,6 +12,7 @@ TARGET = MiniZincIDE
 TEMPLATE = app
 
 ICON = mznide.icns
+RC_ICONS = mznide.ico
 
 SOURCES += main.cpp\
         mainwindow.cpp \
