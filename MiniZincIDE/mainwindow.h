@@ -13,6 +13,7 @@
 
 #include "codeeditor.h"
 #include "solverdialog.h"
+#include "help.h"
 
 namespace Ui {
 class MainWindow;
@@ -99,6 +100,8 @@ private slots:
 
     void on_actionShift_right_triggered();
 
+    void on_actionHelp_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -119,6 +122,7 @@ private:
     QTemporaryDir* tmpDir;
     FindDialog* findDialog;
     FindReplaceDialog* findReplaceDialog;
+    Help* helpWindow;
 
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);

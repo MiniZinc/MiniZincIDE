@@ -11,6 +11,7 @@
 #include "finddialog.h"
 #include "findreplacedialog.h"
 #include "gotolinedialog.h"
+#include "help.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
     findReplaceDialog = new FindReplaceDialog(this);
     findReplaceDialog->setModal(false);
 
+    helpWindow = new Help();
 
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
@@ -102,6 +104,7 @@ MainWindow::~MainWindow()
         delete process;
     }
     delete ui;
+    delete helpWindow;
 }
 
 void MainWindow::on_actionNew_triggered()
@@ -220,6 +223,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.endGroup();
     findDialog->writeSettings(settings);
     findReplaceDialog->writeSettings(settings);
+    helpWindow->close();
     e->accept();
 }
 
@@ -817,4 +821,9 @@ void MainWindow::on_actionShift_right_triggered()
         block = block.next();
     } while (block.isValid() && block != endblock);
     cursor.endEditBlock();
+}
+
+void MainWindow::on_actionHelp_triggered()
+{
+    helpWindow->show();
 }
