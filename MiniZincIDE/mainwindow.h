@@ -10,6 +10,7 @@
 #include <QSet>
 #include <QTemporaryDir>
 #include <QElapsedTimer>
+#include <QApplication>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -22,13 +23,26 @@ class MainWindow;
 class FindDialog;
 class FindReplaceDialog;
 
+class IDE : public QApplication {
+    Q_OBJECT
+public:
+    IDE(int& argc, char* argv[]) :
+        QApplication(argc,argv) {}
+protected:
+    bool event(QEvent *);
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(const QString& project = QString(), QWidget *parent = 0);
+    explicit MainWindow(const QStringList& files, QWidget *parent = 0);
     ~MainWindow();
+
+private:
+    void init(const QString& project);
 
 private slots:
     void on_actionNew_triggered();
@@ -102,6 +116,14 @@ private slots:
 
     void on_actionHelp_triggered();
 
+    void on_actionNew_project_triggered();
+
+    void on_actionOpen_project_triggered();
+
+    void on_actionSave_project_triggered();
+
+    void on_actionSave_project_as_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -123,16 +145,21 @@ private:
     FindDialog* findDialog;
     FindReplaceDialog* findReplaceDialog;
     Help* helpWindow;
+    QString projectPath;
 
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
+    void saveProject(const QString& filepath);
+    void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
     void setElapsedTime();
     void addFile(const QString& path);
     void removeFile(const QString& path);
     void checkMznPath();
+public:
+    void openProject(const QString& fileName);
 };
 
 #endif // MAINWINDOW_H

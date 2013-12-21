@@ -11,7 +11,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-ICON = mznide.icns
+macx {
+    ICON = mznide.icns
+    QMAKE_INFO_PLIST = mznide.plist
+}
+
 RC_ICONS = mznide.ico
 
 SOURCES += main.cpp\

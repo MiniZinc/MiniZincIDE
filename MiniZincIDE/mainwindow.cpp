@@ -22,12 +22,57 @@
 #define MZN2FZN "mzn2fzn"
 #endif
 
-MainWindow::MainWindow(QWidget *parent) :
+bool IDE::event(QEvent *e)
+{
+    switch (e->type()) {
+    case QEvent::FileOpen:
+    {
+        QString file = static_cast<QFileOpenEvent*>(e)->file();
+        if (file.endsWith(".mzp")) {
+            MainWindow* mw = static_cast<MainWindow*>(activeWindow());
+            if (mw==NULL) {
+                mw = new MainWindow(file);
+                mw->show();
+            } else {
+                mw->openProject(file);
+            }
+        } else {
+            QStringList files;
+            files << file;
+            MainWindow* mw = new MainWindow(files);
+            mw->show();
+        }
+        return true;
+    }
+    default:
+        return QApplication::event(e);
+    }
+}
+
+MainWindow::MainWindow(const QString& project, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
     tmpDir(NULL)
+{
+    init(project);
+}
+
+MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    curEditor(NULL),
+    process(NULL),
+    tmpDir(NULL)
+{
+    init(QString());
+    for (int i=0; i<files.size(); i++)
+        openFile(files.at(i),false);
+
+}
+
+void MainWindow::init(const QString& project)
 {
     ui->setupUi(this);
 
@@ -99,10 +144,9 @@ MainWindow::MainWindow(QWidget *parent) :
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
 
-    QStringList args = QApplication::arguments();
-    for (int i=1; i<args.size(); i++)
-        openFile(args.at(i),false);
-
+    if (!project.isEmpty()) {
+        loadProject(project);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -546,7 +590,7 @@ void MainWindow::on_actionSave_as_triggered()
 
 void MainWindow::on_actionQuit_triggered()
 {
-    close();
+    qApp->closeAllWindows();
 }
 
 void MainWindow::on_actionStop_triggered()
@@ -848,4 +892,160 @@ void MainWindow::on_actionShift_right_triggered()
 void MainWindow::on_actionHelp_triggered()
 {
     helpWindow->show();
+}
+
+void MainWindow::on_actionNew_project_triggered()
+{
+    MainWindow* mw = new MainWindow;
+    QPoint p = pos();
+    mw->move(p.x()+20, p.y()+20);
+    mw->show();
+}
+
+void MainWindow::openProject(const QString& fileName)
+{
+    if (!fileName.isEmpty()) {
+        if (ui->tabWidget->count()==1) {
+            loadProject(fileName);
+        } else {
+            MainWindow* mw = new MainWindow(fileName);
+            QPoint p = pos();
+            mw->move(p.x()+20, p.y()+20);
+            mw->show();
+        }
+    }
+}
+
+void MainWindow::on_actionOpen_project_triggered()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), "", "MiniZinc projects (*.mzp)");
+    openProject(fileName);
+}
+
+void MainWindow::saveProject(const QString& f)
+{
+    QString filepath = f;
+    if (filepath.isEmpty()) {
+        filepath = QFileDialog::getSaveFileName(this,"Save project",QString(),"MiniZinc projects (*.mzp)");
+    }
+    if (!filepath.isEmpty()) {
+        QFile file(filepath);
+        if (file.open(QFile::WriteOnly | QFile::Text)) {
+            projectPath = filepath;
+            setWindowTitle("MiniZinc IDE: "+QFileInfo(file).baseName()+" [*]");
+            QDataStream out(&file);
+            out << (quint32)0xD539EA12;
+            out << (quint32)101;
+            out.setVersion(QDataStream::Qt_5_0);
+            QStringList openFiles;
+            for (int i=0; i<ui->tabWidget->count(); i++) {
+                if (ui->tabWidget->widget(i)!=ui->configuration) {
+                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                    if (!ce->filepath.isEmpty())
+                        openFiles << ce->filepath;
+                }
+            }
+            out << openFiles;
+
+            out << ui->conf_include_path->text();
+            out << (qint32)ui->conf_data_file->currentIndex();
+            out << ui->conf_have_cmd_params->isChecked();
+            out << ui->conf_cmd_params->text();
+            out << ui->conf_verbose->isChecked();
+            out << ui->conf_optimize->isChecked();
+            out << ui->conf_solver->currentText();
+            out << (qint32)ui->conf_nsol->value();
+            out << ui->conf_printall->isChecked();
+            out << ui->conf_stats->isChecked();
+            out << ui->conf_have_solverFlags->isChecked();
+            out << ui->conf_solverFlags->text();
+            out << (qint32)ui->conf_nthreads->value();
+            out << ui->conf_have_seed->isChecked();
+            out << ui->conf_seed->text();
+            out << ui->conf_have_timeLimit->isChecked();
+            out << (qint32)ui->conf_timeLimit->value();
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
+        }
+    }
+}
+
+void MainWindow::loadProject(const QString& filepath)
+{
+    QFile pfile(filepath);
+    pfile.open(QIODevice::ReadOnly);
+    QDataStream in(&pfile);
+    quint32 magic;
+    in >> magic;
+    if (magic != 0xD539EA12) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open project file");
+        close();
+        return;
+    }
+    quint32 version;
+    in >> version;
+    if (version != 101) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open project file (version mismatch)");
+        close();
+        return;
+    }
+    in.setVersion(QDataStream::Qt_5_0);
+
+    QStringList openFiles;
+    in >> openFiles;
+    for (int i=0; i<openFiles.size(); i++) {
+        openFile(openFiles[i],false);
+    }
+    QString p_s;
+    qint32 p_i;
+    bool p_b;
+
+    in >> p_s;
+    ui->conf_include_path->setText(p_s);
+    in >> p_i;
+    ui->conf_data_file->setCurrentIndex(p_i);
+    in >> p_b;
+    ui->conf_have_cmd_params->setChecked(p_b);
+    in >> p_s;
+    ui->conf_cmd_params->setText(p_s);
+    in >> p_b;
+    ui->conf_verbose->setChecked(p_b);
+    in >> p_b;
+    ui->conf_optimize->setChecked(p_b);
+    in >> p_s;
+    ui->conf_solver->setCurrentText(p_s);
+    in >> p_i;
+    ui->conf_nsol->setValue(p_i);
+    in >> p_b;
+    ui->conf_printall->setChecked(p_b);
+    in >> p_b;
+    ui->conf_stats->setChecked(p_b);
+    in >> p_b;
+    ui->conf_have_solverFlags->setChecked(p_b);
+    in >> p_s;
+    ui->conf_solverFlags->setText(p_s);
+    in >> p_i;
+    ui->conf_nthreads->setValue(p_i);
+    in >> p_b;
+    ui->conf_have_seed->setChecked(p_b);
+    in >> p_s;
+    ui->conf_seed->setText(p_s);
+    in >> p_b;
+    ui->conf_have_timeLimit->setChecked(p_b);
+    in >> p_i;
+    ui->conf_timeLimit->setValue(p_i);
+    projectPath = filepath;
+    setWindowTitle("MiniZinc IDE: "+QFileInfo(pfile).baseName()+" [*]");
+}
+
+void MainWindow::on_actionSave_project_triggered()
+{
+    saveProject(projectPath);
+}
+
+void MainWindow::on_actionSave_project_as_triggered()
+{
+    saveProject(QString());
 }
