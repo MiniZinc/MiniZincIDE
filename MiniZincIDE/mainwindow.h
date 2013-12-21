@@ -141,6 +141,7 @@ private:
     QFont editorFont;
     QSet<QString> filePaths;
     QVector<Solver> solvers;
+    QString defaultSolver;
     QString mznDistribPath;
     QString currentFznTarget;
     QTemporaryDir* tmpDir;

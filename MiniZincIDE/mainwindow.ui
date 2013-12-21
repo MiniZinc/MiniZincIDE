@@ -520,6 +520,9 @@
    </property>
   </action>
   <action name="actionConstraint_Graph">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Constraint Graph</string>
    </property>
@@ -589,7 +592,7 @@
   </action>
   <action name="actionManage_solvers">
    <property name="text">
-    <string>Solvers</string>
+    <string>Preferences</string>
    </property>
   </action>
   <action name="actionReplace">

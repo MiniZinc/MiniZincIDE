@@ -165,8 +165,8 @@
     <rect>
      <x>10</x>
      <y>50</y>
-     <width>231</width>
-     <height>26</height>
+     <width>321</width>
+     <height>27</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -198,9 +198,16 @@
       </item>
      </widget>
     </item>
+    <item>
+     <widget class="QCheckBox" name="solver_default">
+      <property name="text">
+       <string>Default</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>

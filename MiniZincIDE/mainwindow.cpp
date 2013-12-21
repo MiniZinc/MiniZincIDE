@@ -139,10 +139,13 @@ void MainWindow::init(const QString& project)
     settings.endArray();
     settings.beginGroup("minizinc");
     mznDistribPath = settings.value("mznpath","").toString();
+    defaultSolver = settings.value("defaultSolver","").toString();
     settings.endGroup();
     checkMznPath();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    if (!defaultSolver.isEmpty())
+        ui->conf_solver->setCurrentText(defaultSolver);
 
     if (!project.isEmpty()) {
         loadProject(project);
@@ -759,18 +762,27 @@ void MainWindow::errorClicked(const QUrl & url)
 
 void MainWindow::on_actionManage_solvers_triggered()
 {
-    SolverDialog sd(solvers,mznDistribPath);
+    SolverDialog sd(solvers,defaultSolver,mznDistribPath);
     sd.exec();
+    defaultSolver = sd.def();
     mznDistribPath = sd.mznPath();
     if (! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
     checkMznPath();
+    QString curSelection = ui->conf_solver->currentText();
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    int idx = ui->conf_solver->findText(curSelection);
+    if (idx!=-1)
+        ui->conf_solver->setCurrentIndex(idx);
+    else
+        ui->conf_solver->setCurrentText(defaultSolver);
+
     QSettings settings;
     settings.beginGroup("minizinc");
     settings.setValue("mznpath",mznDistribPath);
+    settings.setValue("defaultSolver",defaultSolver);
     settings.endGroup();
 
     settings.beginWriteArray("solvers");
