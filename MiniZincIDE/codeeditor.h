@@ -2,13 +2,15 @@
 #define CODEEDITOR_H
 
 #include <QPlainTextEdit>
+#include <QTabWidget>
+
 #include "highlighter.h"
 
 class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 public:
-    explicit CodeEditor(QFile& file, QFont& font, QWidget *parent = 0);
+    explicit CodeEditor(QFile& file, QFont& font, QTabWidget* tabs, QWidget *parent);
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     int lineNumberAreaWidth();
     QString filepath;
@@ -22,8 +24,10 @@ private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
     void updateLineNumberArea(const QRect &, int);
+    void docChanged(bool);
 private:
-    QWidget *lineNumberArea;
+    QWidget* lineNumberArea;
+    QTabWidget* tabs;
     Highlighter* highlighter;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);

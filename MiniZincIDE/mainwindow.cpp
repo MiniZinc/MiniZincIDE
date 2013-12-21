@@ -179,7 +179,7 @@ void MainWindow::createEditor(QFile& file, bool openAsModified) {
             curEditor->setFocus();
         }
     } else {
-        CodeEditor* ce = new CodeEditor(file,editorFont,this);
+        CodeEditor* ce = new CodeEditor(file,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
@@ -232,6 +232,7 @@ void MainWindow::tabCloseRequest(int tab)
             return;
         }
     }
+    ce->document()->setModified(false);
     removeFile(ce->filepath);
     ui->tabWidget->removeTab(tab);
     if (ui->tabWidget->count()==0) {
@@ -362,6 +363,7 @@ void MainWindow::tabChange(int tab) {
             findDialog->close();
             findReplaceDialog->close();
             setWindowFilePath(projectPath);
+            setWindowModified(false);
         }
     }
 }

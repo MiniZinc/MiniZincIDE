@@ -16,6 +16,7 @@ CodeEditor::initUI(QFont& font)
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+    connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
@@ -28,8 +29,8 @@ CodeEditor::initUI(QFont& font)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QFile& file, QFont& font, QWidget *parent) :
-    QPlainTextEdit(parent)
+CodeEditor::CodeEditor(QFile& file, QFont& font, QTabWidget* t, QWidget *parent) :
+    QPlainTextEdit(parent), tabs(t)
 {
     initUI(font);
     if (file.isOpen()) {
@@ -40,6 +41,16 @@ CodeEditor::CodeEditor(QFile& file, QFont& font, QWidget *parent) :
         filepath = "";
         filename = "Untitled";
     }
+}
+
+void CodeEditor::docChanged(bool c)
+{
+    int t = tabs->indexOf(this);
+    QString title = tabs->tabText(t);
+    title = title.mid(0, title.lastIndexOf(" *"));
+    if (c)
+        title += " *";
+    tabs->setTabText(t,title);
 }
 
 void CodeEditor::keyPressEvent(QKeyEvent *e)
