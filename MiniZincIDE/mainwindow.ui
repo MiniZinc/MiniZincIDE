@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MiniZinc IDE [*]</string>
+   <string/>
   </property>
   <property name="windowIcon">
    <iconset resource="minizincide.qrc">
@@ -339,7 +339,7 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
@@ -351,6 +351,7 @@
     <addaction name="actionOpen_project"/>
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
+    <addaction name="actionClose_project"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -416,7 +417,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen">
    <property name="text">
-    <string>Open</string>
+    <string>&amp;Open...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -448,7 +449,7 @@
   </action>
   <action name="actionNew">
    <property name="text">
-    <string>New</string>
+    <string>&amp;New</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -504,7 +505,7 @@
   </action>
   <action name="actionGo_to_line">
    <property name="text">
-    <string>Go to line</string>
+    <string>Go to line...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
@@ -673,6 +674,14 @@
   <action name="actionSave_project_as">
    <property name="text">
     <string>Save project as...</string>
+   </property>
+  </action>
+  <action name="actionClose_project">
+   <property name="text">
+    <string>Close project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+W</string>
    </property>
   </action>
  </widget>

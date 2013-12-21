@@ -124,6 +124,8 @@ private slots:
 
     void on_actionSave_project_as_triggered();
 
+    void on_actionClose_project_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

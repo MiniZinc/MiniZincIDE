@@ -321,6 +321,10 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                     ui->actionRedo, SLOT(setEnabled(bool)));
             setWindowModified(curEditor->document()->isModified());
+            if (curEditor->filepath.isEmpty())
+                setWindowFilePath(curEditor->filename);
+            else
+                setWindowFilePath(curEditor->filepath);
             ui->actionSave_as->setEnabled(true);
             ui->actionSave->setEnabled(curEditor->document()->isModified());
             ui->actionSelect_All->setEnabled(true);
@@ -354,6 +358,7 @@ void MainWindow::tabChange(int tab) {
             ui->actionReplace->setEnabled(false);
             findDialog->close();
             findReplaceDialog->close();
+            setWindowFilePath(projectPath);
         }
     }
 }
@@ -932,7 +937,6 @@ void MainWindow::saveProject(const QString& f)
         QFile file(filepath);
         if (file.open(QFile::WriteOnly | QFile::Text)) {
             projectPath = filepath;
-            setWindowTitle("MiniZinc IDE: "+QFileInfo(file).baseName()+" [*]");
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
             out << (quint32)101;
@@ -1037,7 +1041,6 @@ void MainWindow::loadProject(const QString& filepath)
     in >> p_i;
     ui->conf_timeLimit->setValue(p_i);
     projectPath = filepath;
-    setWindowTitle("MiniZinc IDE: "+QFileInfo(pfile).baseName()+" [*]");
 }
 
 void MainWindow::on_actionSave_project_triggered()
@@ -1048,4 +1051,9 @@ void MainWindow::on_actionSave_project_triggered()
 void MainWindow::on_actionSave_project_as_triggered()
 {
     saveProject(QString());
+}
+
+void MainWindow::on_actionClose_project_triggered()
+{
+    close();
 }
