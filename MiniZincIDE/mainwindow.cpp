@@ -54,7 +54,8 @@ MainWindow::MainWindow(const QString& project, QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
-    tmpDir(NULL)
+    tmpDir(NULL),
+    saveBeforeRunning(false)
 {
     init(project);
 }
@@ -64,7 +65,8 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
-    tmpDir(NULL)
+    tmpDir(NULL),
+    saveBeforeRunning(false)
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
@@ -444,6 +446,27 @@ void MainWindow::addOutput(const QString& s, bool html)
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
+        if (curEditor->document()->isModified()) {
+            if (!saveBeforeRunning) {
+                QMessageBox msgBox;
+                msgBox.setText("The model has been modified.");
+                msgBox.setInformativeText("Do you want to save it before running?");
+                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+                msgBox.addButton(QMessageBox::Cancel);
+                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+                msgBox.setDefaultButton(QMessageBox::Save);
+                msgBox.exec();
+                if (msgBox.clickedButton()==alwaysButton) {
+                    saveBeforeRunning = true;
+                }
+                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                    return;
+                }
+            }
+            on_actionSave_triggered();
+        }
+        if (curEditor->document()->isModified())
+            return;
         ui->actionRun->setEnabled(false);
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);

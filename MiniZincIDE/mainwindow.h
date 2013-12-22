@@ -149,6 +149,7 @@ private:
     FindReplaceDialog* findReplaceDialog;
     Help* helpWindow;
     QString projectPath;
+    bool saveBeforeRunning;
 
     void createEditor(QFile& file, bool openAsModified);
     QStringList parseConf(bool compileOnly);
