@@ -258,7 +258,8 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
     case ']' : match = '['; break;
     default: break; // should not happen
     }
-
+    if (i==-1)
+        block = block.previous();
     while (block.isValid()) {
         BracketData* bd = static_cast<BracketData*>(block.userData());
         QVector<Bracket>& brackets = bd->brackets;
