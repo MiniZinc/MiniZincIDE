@@ -98,7 +98,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             Doc* d = new Doc;
-            if (path.endsWith(".dzn") && file.size() > 5/**1024*1024*/) {
+            if (path.endsWith(".dzn") && file.size() > 5*1024*1024) {
                 d->large = true;
             } else {
                 d->td.setPlainText(file.readAll());
