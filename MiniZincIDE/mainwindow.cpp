@@ -21,7 +21,6 @@
 #include "webpage.h"
 #include "fzndoc.h"
 #include "finddialog.h"
-#include "findreplacedialog.h"
 #include "gotolinedialog.h"
 #include "help.h"
 
@@ -92,8 +91,6 @@ void MainWindow::init(const QString& project)
 
     findDialog = new FindDialog(this);
     findDialog->setModal(false);
-    findReplaceDialog = new FindReplaceDialog(this);
-    findReplaceDialog->setModal(false);
 
     helpWindow = new Help();
 
@@ -128,9 +125,6 @@ void MainWindow::init(const QString& project)
     settings.endGroup();
 
     setEditorFont(editorFont);
-
-    findDialog->readSettings(settings);
-    findReplaceDialog->readSettings(settings);
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
@@ -296,8 +290,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.endGroup();
-    findDialog->writeSettings(settings);
-    findReplaceDialog->writeSettings(settings);
     helpWindow->close();
     e->accept();
 }
@@ -358,9 +350,10 @@ void MainWindow::tabChange(int tab) {
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionConstraint_Graph->setEnabled(isFzn);
 
-            findDialog->setTextEdit(curEditor);
-            findReplaceDialog->setTextEdit(curEditor);
+            findDialog->setEditor(curEditor);
             ui->actionFind->setEnabled(true);
+            ui->actionFind_next->setEnabled(true);
+            ui->actionFind_previous->setEnabled(true);
             ui->actionReplace->setEnabled(true);
         } else {
             curEditor = NULL;
@@ -377,9 +370,10 @@ void MainWindow::tabChange(int tab) {
             ui->actionCompile->setEnabled(false);
             ui->actionConstraint_Graph->setEnabled(false);
             ui->actionFind->setEnabled(false);
+            ui->actionFind_next->setEnabled(false);
+            ui->actionFind_previous->setEnabled(false);
             ui->actionReplace->setEnabled(false);
             findDialog->close();
-            findReplaceDialog->close();
             setWindowFilePath(projectPath);
             setWindowModified(false);
         }
@@ -845,7 +839,7 @@ void MainWindow::on_actionFind_triggered()
 
 void MainWindow::on_actionReplace_triggered()
 {
-    findReplaceDialog->show();
+    findDialog->show();
 }
 
 void MainWindow::on_actionSelect_font_triggered()
@@ -1109,4 +1103,14 @@ void MainWindow::on_actionSave_project_as_triggered()
 void MainWindow::on_actionClose_project_triggered()
 {
     close();
+}
+
+void MainWindow::on_actionFind_next_triggered()
+{
+    findDialog->on_b_next_clicked();
+}
+
+void MainWindow::on_actionFind_previous_triggered()
+{
+    findDialog->on_b_prev_clicked();
 }

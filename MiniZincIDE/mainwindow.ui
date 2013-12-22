@@ -359,6 +359,15 @@
     <property name="title">
      <string>Edit</string>
     </property>
+    <widget class="QMenu" name="menuFind">
+     <property name="title">
+      <string>Find</string>
+     </property>
+     <addaction name="actionFind"/>
+     <addaction name="separator"/>
+     <addaction name="actionFind_next"/>
+     <addaction name="actionFind_previous"/>
+    </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
@@ -368,9 +377,8 @@
     <addaction name="separator"/>
     <addaction name="actionSelect_All"/>
     <addaction name="separator"/>
+    <addaction name="menuFind"/>
     <addaction name="actionGo_to_line"/>
-    <addaction name="actionFind"/>
-    <addaction name="actionReplace"/>
     <addaction name="actionShift_left"/>
     <addaction name="actionShift_right"/>
    </widget>
@@ -509,14 +517,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
-   </property>
-  </action>
-  <action name="actionFind">
-   <property name="text">
-    <string>Find...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+F</string>
    </property>
   </action>
   <action name="actionConstraint_Graph">
@@ -685,6 +685,30 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+  <action name="actionFind">
+   <property name="text">
+    <string>Find...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionFind_next">
+   <property name="text">
+    <string>Find next</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionFind_previous">
+   <property name="text">
+    <string>Find previous</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+G</string>
    </property>
   </action>
  </widget>

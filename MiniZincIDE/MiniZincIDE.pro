@@ -26,12 +26,9 @@ SOURCES += main.cpp\
     fzndoc.cpp \
     aboutdialog.cpp \
     solverdialog.cpp \
-    finddialog.cpp \
-    findform.cpp \
-    findreplacedialog.cpp \
-    findreplaceform.cpp \
     gotolinedialog.cpp \
-    help.cpp
+    help.cpp \
+    finddialog.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -40,22 +37,17 @@ HEADERS  += mainwindow.h \
     fzndoc.h \
     aboutdialog.h \
     solverdialog.h \
-    finddialog.h \
-    findform.h \
-    findreplace_global.h \
-    findreplacedialog.h \
-    findreplaceform.h \
     gotolinedialog.h \
-    help.h
+    help.h \
+    finddialog.h
 
 FORMS    += \
     mainwindow.ui \
     aboutdialog.ui \
     solverdialog.ui \
-    findreplacedialog.ui \
-    findreplaceform.ui \
     gotolinedialog.ui \
-    help.ui
+    help.ui \
+    finddialog.ui
 
 RESOURCES += \
     minizincide.qrc

@@ -138,6 +138,10 @@ private slots:
 
     void on_actionClose_project_triggered();
 
+    void on_actionFind_next_triggered();
+
+    void on_actionFind_previous_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
