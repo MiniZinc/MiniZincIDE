@@ -25,8 +25,10 @@ private slots:
     void highlightCurrentLine();
     void updateLineNumberArea(const QRect &, int);
     void docChanged(bool);
+    void loadContents();
 private:
     QWidget* lineNumberArea;
+    QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
     int matchLeft(QTextBlock block, QChar b, int i, int n);

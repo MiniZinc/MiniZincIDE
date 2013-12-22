@@ -30,16 +30,38 @@ CodeEditor::initUI(QFont& font)
 }
 
 CodeEditor::CodeEditor(QFile& file, QFont& font, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), tabs(t)
+    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
 {
     initUI(font);
     if (file.isOpen()) {
-        setPlainText(file.readAll());
+        if (file.size() > 5*1024*1024) {
+            QPushButton* pb = new QPushButton("Big file. Load contents?", this);
+            connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
+            loadContentsButton = pb;
+            setReadOnly(true);
+        } else {
+            setPlainText(file.readAll());
+        }
         filepath = QFileInfo(file).absoluteFilePath();
         filename = QFileInfo(file).fileName();
     } else {
         filepath = "";
         filename = "Untitled";
+    }
+}
+
+void CodeEditor::loadContents()
+{
+    QFile file(filepath);
+    if (file.open(QFile::ReadOnly)) {
+        setPlainText(file.readAll());
+        setReadOnly(false);
+        delete loadContentsButton;
+        loadContentsButton = NULL;
+    } else {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open file",
+                             QMessageBox::Ok);
     }
 }
 
@@ -106,6 +128,9 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
 
     QRect cr = contentsRect();
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+    if (loadContentsButton) {
+        loadContentsButton->move(cr.left()+lineNumberAreaWidth(), cr.top());
+    }
 }
 
 

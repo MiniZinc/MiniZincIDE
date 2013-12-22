@@ -1,16 +1,16 @@
 Features needed to release:
 
+ * Save all data files before running
+ * Correct copyright headers
  * Correct handling of open constraint graph windows
  * Handle duplicate open files
- * Save all
+ * Save all (in particular when saving a project)
  * Packaging
  * Detach solver (to be able to run Gecode w/ Gist)
 
 Features that would be nice to have:
  * Auto indent
  * Column selection
- * Saving/loading projects (i.e. the contents of the Configuration tab + all 
-   open files)
  * Detect when files change on disk (auto reload + dialog if changed)
  * Use mzn2fzn and implement the solutions processing internally
  * Run fzn files
@@ -37,3 +37,7 @@ Done
  * Basic help
  * Windows application icon
  * Multiple windows ("projects")
+ * Saving/loading projects (i.e. the contents of the Configuration tab + all 
+   open files)
+ * Do not load really large files (show button instead to load on demand)
+ * Save before running

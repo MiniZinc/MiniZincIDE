@@ -206,6 +206,10 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
         QFile file(fileName);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             createEditor(file, openAsModified);
+        } else {
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Could not open file",
+                                 QMessageBox::Ok);
         }
     }
 
