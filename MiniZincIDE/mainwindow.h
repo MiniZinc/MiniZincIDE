@@ -23,6 +23,7 @@
 #include <QTemporaryDir>
 #include <QElapsedTimer>
 #include <QApplication>
+#include <QMap>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -33,13 +34,25 @@ class MainWindow;
 }
 
 class FindDialog;
-class FindReplaceDialog;
+class MainWindow;
 
 class IDE : public QApplication {
     Q_OBJECT
 public:
     IDE(int& argc, char* argv[]) :
         QApplication(argc,argv) {}
+    struct Doc;
+    typedef QMap<QString,Doc*> DMap;
+    DMap documents;
+    typedef QMap<QString,MainWindow*> PMap;
+    PMap projects;
+
+    bool hasFile(const QString& path);
+    QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
+    void loadLargeFile(const QString& path, QWidget* parent);
+    QTextDocument* addDocument(const QString& path, QTextDocument* doc, CodeEditor* ce);
+    void registerEditor(const QString& path, CodeEditor* ce);
+    void removeEditor(const QString& path, CodeEditor* ce);
 protected:
     bool event(QEvent *);
 };
@@ -155,19 +168,17 @@ private:
     QElapsedTimer elapsedTime;
     QLabel* statusLabel;
     QFont editorFont;
-    QSet<QString> filePaths;
     QVector<Solver> solvers;
     QString defaultSolver;
     QString mznDistribPath;
     QString currentFznTarget;
     QTemporaryDir* tmpDir;
     FindDialog* findDialog;
-    FindReplaceDialog* findReplaceDialog;
     Help* helpWindow;
     QString projectPath;
     bool saveBeforeRunning;
 
-    void createEditor(QFile& file, bool openAsModified);
+    void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);
     void saveFile(const QString& filepath);
     void saveProject(const QString& filepath);
@@ -175,9 +186,9 @@ private:
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
     void setElapsedTime();
-    void addFile(const QString& path);
-    void removeFile(const QString& path);
+    void setupDznMenu();
     void checkMznPath();
+    IDE* ide();
 public:
     void openProject(const QString& fileName);
 };

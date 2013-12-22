@@ -12,6 +12,7 @@
 
 #include <QtWidgets>
 #include "codeeditor.h"
+#include "mainwindow.h"
 
 void
 CodeEditor::initUI(QFont& font)
@@ -41,40 +42,39 @@ CodeEditor::initUI(QFont& font)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QFile& file, QFont& font, QTabWidget* t, QWidget *parent) :
+CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool large,
+                       QFont& font, QTabWidget* t, QWidget *parent) :
     QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
 {
+    if (doc) {
+        setDocument(doc);
+    }
     initUI(font);
-    if (file.isOpen()) {
-        if (file.size() > 5*1024*1024) {
-            QPushButton* pb = new QPushButton("Big file. Load contents?", this);
-            connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
-            loadContentsButton = pb;
-            setReadOnly(true);
-        } else {
-            setPlainText(file.readAll());
-        }
-        filepath = QFileInfo(file).absoluteFilePath();
-        filename = QFileInfo(file).fileName();
-    } else {
+    if (path.isEmpty()) {
         filepath = "";
         filename = "Untitled";
+    } else {
+        filepath = QFileInfo(path).absoluteFilePath();
+        filename = QFileInfo(path).fileName();
+    }
+    if (large) {
+        setReadOnly(true);
+        QPushButton* pb = new QPushButton("Big file. Load contents?", this);
+        connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
+        loadContentsButton = pb;
     }
 }
 
 void CodeEditor::loadContents()
 {
-    QFile file(filepath);
-    if (file.open(QFile::ReadOnly)) {
-        setPlainText(file.readAll());
-        setReadOnly(false);
-        delete loadContentsButton;
-        loadContentsButton = NULL;
-    } else {
-        QMessageBox::warning(this, "MiniZinc IDE",
-                             "Could not open file",
-                             QMessageBox::Ok);
-    }
+    static_cast<IDE*>(qApp)->loadLargeFile(filepath,this);
+}
+
+void CodeEditor::loadedLargeFile()
+{
+    setReadOnly(false);
+    delete loadContentsButton;
+    loadContentsButton = NULL;
 }
 
 void CodeEditor::docChanged(bool c)

@@ -22,7 +22,8 @@ class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 public:
-    explicit CodeEditor(QFile& file, QFont& font, QTabWidget* tabs, QWidget *parent);
+    explicit CodeEditor(QTextDocument* doc, const QString& path, bool large,
+                        QFont& font, QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
     QString filepath;
@@ -48,7 +49,7 @@ private:
 signals:
 
 public slots:
-
+    void loadedLargeFile();
 };
 
 class LineNumbers: public QWidget
