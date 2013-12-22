@@ -2,7 +2,6 @@ Features needed to release:
 
  * Save all data files before running
  * Correct handling of open constraint graph windows
- * Save all (in particular when saving a project)
  * Packaging
 
 Features that would be nice to have:
@@ -42,3 +41,4 @@ Done
  * Remove LGPL find/replace dialog
  * Correct copyright headers
  * Handle duplicate open files
+ * Save all

@@ -155,6 +155,8 @@ private slots:
 
     void on_actionFind_previous_triggered();
 
+    void on_actionSave_all_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -180,7 +182,7 @@ private:
 
     void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);
-    void saveFile(const QString& filepath);
+    void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
