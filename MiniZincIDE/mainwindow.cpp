@@ -67,6 +67,11 @@ bool IDE::event(QEvent *e)
             QStringList files;
             files << file;
             MainWindow* mw = new MainWindow(files);
+            MainWindow* curw = static_cast<MainWindow*>(activeWindow());
+            if (curw!=NULL) {
+                QPoint p = curw->pos();
+                mw->move(p.x()+20, p.y()+20);
+            }
             mw->show();
         }
         return true;
