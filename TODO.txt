@@ -1,7 +1,6 @@
 Features needed to release:
 
  * Save all data files before running
- * Correct handling of open constraint graph windows
  * Packaging
 
 Features that would be nice to have:
@@ -43,3 +42,4 @@ Done
  * Handle duplicate open files
  * Save all
  * Change font also for output
+ * Correct handling of open constraint graph windows
