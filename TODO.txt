@@ -42,3 +42,4 @@ Done
  * Correct copyright headers
  * Handle duplicate open files
  * Save all
+ * Change font also for output

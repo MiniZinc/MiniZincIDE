@@ -870,6 +870,7 @@ void MainWindow::setEditorFont(QFont font)
     QTextCharFormat format;
     format.setFont(font);
 
+    ui->outputConsole->setFont(font);
     QTextCursor cursor(ui->outputConsole->document());
     cursor.movePosition(QTextCursor::Start);
     cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
