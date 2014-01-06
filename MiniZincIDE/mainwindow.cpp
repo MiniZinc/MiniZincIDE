@@ -1,6 +1,19 @@
+/*
+ *  Author:
+ *     Guido Tack <guido.tack@monash.edu>
+ *
+ *  Copyright:
+ *     NICTA 2013
+ */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <QtWidgets>
 #include <QApplication>
 #include <QtWebKitWidgets>
+#include <QSet>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -9,7 +22,6 @@
 #include "webpage.h"
 #include "fzndoc.h"
 #include "finddialog.h"
-#include "findreplacedialog.h"
 #include "gotolinedialog.h"
 #include "help.h"
 
@@ -22,19 +34,172 @@
 #define MZN2FZN "mzn2fzn"
 #endif
 
-MainWindow::MainWindow(QWidget *parent) :
+struct IDE::Doc {
+    QTextDocument td;
+    QSet<CodeEditor*> editors;
+    bool large;
+    Doc() {
+        td.setDocumentLayout(new QPlainTextDocumentLayout(&td));
+    }
+};
+
+bool IDE::event(QEvent *e)
+{
+    switch (e->type()) {
+    case QEvent::FileOpen:
+    {
+        QString file = static_cast<QFileOpenEvent*>(e)->file();
+        if (file.endsWith(".mzp")) {
+            PMap::iterator it = projects.find(file);
+            if (it==projects.end()) {
+                MainWindow* mw = static_cast<MainWindow*>(activeWindow());
+                if (mw==NULL) {
+                    mw = new MainWindow(file);
+                    mw->show();
+                } else {
+                    mw->openProject(file);
+                }
+            } else {
+                it.value()->raise();
+                it.value()->activateWindow();
+            }
+        } else {
+            QStringList files;
+            files << file;
+            MainWindow* mw = new MainWindow(files);
+            MainWindow* curw = static_cast<MainWindow*>(activeWindow());
+            if (curw!=NULL) {
+                QPoint p = curw->pos();
+                mw->move(p.x()+20, p.y()+20);
+            }
+            mw->show();
+        }
+        return true;
+    }
+    default:
+        return QApplication::event(e);
+    }
+}
+
+bool IDE::hasFile(const QString& path)
+{
+    return documents.find(path) != documents.end();
+}
+
+QTextDocument* IDE::addDocument(const QString& path, QTextDocument *doc, CodeEditor *ce)
+{
+    Doc* d = new Doc;
+    d->td.setPlainText(doc->toPlainText());
+    d->editors.insert(ce);
+    d->large = false;
+    documents.insert(path,d);
+    return &d->td;
+}
+
+QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
+{
+    DMap::iterator it = documents.find(path);
+    if (it==documents.end()) {
+        QFile file(path);
+        if (file.open(QFile::ReadOnly | QFile::Text)) {
+            Doc* d = new Doc;
+            if (path.endsWith(".dzn") && file.size() > 5*1024*1024) {
+                d->large = true;
+            } else {
+                d->td.setPlainText(file.readAll());
+                d->large = false;
+            }
+            d->td.setModified(false);
+            documents.insert(path,d);
+            return qMakePair(&d->td,d->large);
+        } else {
+            QMessageBox::warning(parent, "MiniZinc IDE",
+                                 "Could not open file",
+                                 QMessageBox::Ok);
+            QTextDocument* nd = NULL;
+            return qMakePair(nd,false);
+        }
+
+    } else {
+        return qMakePair(&it.value()->td,it.value()->large);
+    }
+}
+
+void IDE::loadLargeFile(const QString &path, QWidget* parent)
+{
+    DMap::iterator it = documents.find(path);
+    if (it.value()->large) {
+        QFile file(path);
+        if (file.open(QFile::ReadOnly | QFile::Text)) {
+            it.value()->td.setPlainText(file.readAll());
+            it.value()->large = false;
+            it.value()->td.setModified(false);
+            QSet<CodeEditor*>::iterator ed = it.value()->editors.begin();
+            for (; ed != it.value()->editors.end(); ++ed) {
+                (*ed)->loadedLargeFile();
+            }
+        } else {
+            QMessageBox::warning(parent, "MiniZinc IDE",
+                                 "Could not open file",
+                                 QMessageBox::Ok);
+        }
+    }
+}
+
+void IDE::registerEditor(const QString& path, CodeEditor* ce)
+{
+    DMap::iterator it = documents.find(path);
+    QSet<CodeEditor*>& editors = it.value()->editors;
+    editors.insert(ce);
+}
+
+void IDE::removeEditor(const QString& path, CodeEditor* ce)
+{
+    DMap::iterator it = documents.find(path);
+    QSet<CodeEditor*>& editors = it.value()->editors;
+    editors.remove(ce);
+    if (editors.empty()) {
+        delete it.value();
+        documents.remove(path);
+    }
+}
+
+IDE* MainWindow::ide()
+{
+    return static_cast<IDE*>(qApp);
+}
+
+MainWindow::MainWindow(const QString& project, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
-    tmpDir(NULL)
+    tmpDir(NULL),
+    saveBeforeRunning(false)
+{
+    init(project);
+}
+
+MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    curEditor(NULL),
+    process(NULL),
+    tmpDir(NULL),
+    saveBeforeRunning(false)
+{
+    init(QString());
+    for (int i=0; i<files.size(); i++)
+        openFile(files.at(i),false);
+
+}
+
+void MainWindow::init(const QString& project)
 {
     ui->setupUi(this);
 
     findDialog = new FindDialog(this);
     findDialog->setModal(false);
-    findReplaceDialog = new FindReplaceDialog(this);
-    findReplaceDialog->setModal(false);
 
     helpWindow = new Help();
 
@@ -70,9 +235,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     setEditorFont(editorFont);
 
-    findDialog->readSettings(settings);
-    findReplaceDialog->readSettings(settings);
-
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd","",true));
@@ -94,15 +256,17 @@ MainWindow::MainWindow(QWidget *parent) :
     settings.endArray();
     settings.beginGroup("minizinc");
     mznDistribPath = settings.value("mznpath","").toString();
+    defaultSolver = settings.value("defaultSolver","").toString();
     settings.endGroup();
     checkMznPath();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    if (!defaultSolver.isEmpty())
+        ui->conf_solver->setCurrentText(defaultSolver);
 
-    QStringList args = QApplication::arguments();
-    for (int i=1; i<args.size(); i++)
-        openFile(args.at(i),false);
-
+    if (!project.isEmpty()) {
+        loadProject(project);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -114,35 +278,49 @@ MainWindow::~MainWindow()
     }
     delete ui;
     delete helpWindow;
+    /// TODO: close tabs so that documents are unregistered
 }
 
 void MainWindow::on_actionNew_triggered()
 {
-    QFile file;
-    createEditor(file,false);
+    createEditor(QString(),false);
 }
 
-void MainWindow::createEditor(QFile& file, bool openAsModified) {
-    if (curEditor && curEditor->filepath=="" && !curEditor->document()->isModified()) {
-        if (file.isOpen()) {
-            curEditor->setPlainText(file.readAll());
-            curEditor->filepath = QFileInfo(file).absoluteFilePath();
-            curEditor->filename = QFileInfo(file).fileName();
-            ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
-            curEditor->setFocus();
+void MainWindow::createEditor(const QString& path, bool openAsModified) {
+    QTextDocument* doc = NULL;
+    bool large = false;
+    QString fileContents;
+    if (path.isEmpty()) {
+
+    } else if (openAsModified) {
+        QFile file(path);
+        if (file.open(QFile::ReadOnly)) {
+            fileContents = file.readAll();
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE",
+                                 "Could not open file.",
+                                 QMessageBox::Ok);
+            return;
         }
     } else {
-        CodeEditor* ce = new CodeEditor(file,editorFont,this);
+        QPair<QTextDocument*,bool> d = ide()->loadFile(path,this);
+        doc = d.first;
+        large = d.second;
+    }
+    if (doc || !fileContents.isEmpty() || path.isEmpty()) {
+        CodeEditor* ce = new CodeEditor(doc,path,large,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
-    }
-    if (openAsModified) {
-        curEditor->filepath = "";
-        curEditor->document()->setModified(true);
-        tabChange(ui->tabWidget->currentIndex());
-    } else {
-        addFile(curEditor->filepath);
+        if (openAsModified) {
+            curEditor->filepath = "";
+            curEditor->document()->setPlainText(fileContents);
+            curEditor->document()->setModified(true);
+            tabChange(ui->tabWidget->currentIndex());
+        } else if (doc) {
+            ide()->registerEditor(path,curEditor);
+        }
+        setupDznMenu();
     }
 }
 
@@ -154,10 +332,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
         fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", "MiniZinc Files (*.mzn *.dzn *.fzn)");
 
     if (!fileName.isEmpty()) {
-        QFile file(fileName);
-        if (file.open(QFile::ReadOnly | QFile::Text)) {
-            createEditor(file, openAsModified);
-        }
+        createEditor(fileName, openAsModified);
     }
 
 }
@@ -185,7 +360,8 @@ void MainWindow::tabCloseRequest(int tab)
             return;
         }
     }
-    removeFile(ce->filepath);
+    ce->document()->setModified(false);
+    setupDznMenu();
     ui->tabWidget->removeTab(tab);
     if (ui->tabWidget->count()==0) {
         on_actionNew_triggered();
@@ -224,14 +400,21 @@ void MainWindow::closeEvent(QCloseEvent* e) {
                    this, SLOT(procError(QProcess::ProcessError)));
         process->kill();
     }
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            ce->setDocument(NULL);
+            if (ce->filepath != "")
+                ide()->removeEditor(ce->filepath,ce);
+        }
+    }
+
     QSettings settings;
     settings.beginGroup("MainWindow");
     settings.setValue("editorFont", editorFont);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.endGroup();
-    findDialog->writeSettings(settings);
-    findReplaceDialog->writeSettings(settings);
     helpWindow->close();
     e->accept();
 }
@@ -277,6 +460,10 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                     ui->actionRedo, SLOT(setEnabled(bool)));
             setWindowModified(curEditor->document()->isModified());
+            if (curEditor->filepath.isEmpty())
+                setWindowFilePath(curEditor->filename);
+            else
+                setWindowFilePath(curEditor->filepath);
             ui->actionSave_as->setEnabled(true);
             ui->actionSave->setEnabled(curEditor->document()->isModified());
             ui->actionSelect_All->setEnabled(true);
@@ -288,9 +475,10 @@ void MainWindow::tabChange(int tab) {
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionConstraint_Graph->setEnabled(isFzn);
 
-            findDialog->setTextEdit(curEditor);
-            findReplaceDialog->setTextEdit(curEditor);
+            findDialog->setEditor(curEditor);
             ui->actionFind->setEnabled(true);
+            ui->actionFind_next->setEnabled(true);
+            ui->actionFind_previous->setEnabled(true);
             ui->actionReplace->setEnabled(true);
         } else {
             curEditor = NULL;
@@ -307,9 +495,12 @@ void MainWindow::tabChange(int tab) {
             ui->actionCompile->setEnabled(false);
             ui->actionConstraint_Graph->setEnabled(false);
             ui->actionFind->setEnabled(false);
+            ui->actionFind_next->setEnabled(false);
+            ui->actionFind_previous->setEnabled(false);
             ui->actionReplace->setEnabled(false);
             findDialog->close();
-            findReplaceDialog->close();
+            setWindowFilePath(projectPath);
+            setWindowModified(false);
         }
     }
 }
@@ -359,20 +550,16 @@ QStringList MainWindow::parseConf(bool compileOnly)
     return ret;
 }
 
-void MainWindow::addFile(const QString &path)
+void MainWindow::setupDznMenu()
 {
-    if (!path.isEmpty() && !filePaths.contains(path)) {
-        filePaths.insert(path);
-        if (path.endsWith(".dzn"))
-            ui->conf_data_file->addItem(path);
-    }
-}
-
-void MainWindow::removeFile(const QString& path)
-{
-    filePaths.remove(path);
-    if (path.endsWith(".dzn")) {
-        ui->conf_data_file->removeItem(ui->conf_data_file->findText(path));
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (!ce->filepath.isEmpty() && ce->filepath.endsWith(".dzn") &&
+                ui->conf_data_file->findText(ce->filepath) == -1) {
+                    ui->conf_data_file->addItem(ce->filepath);
+            }
+        }
     }
 }
 
@@ -390,6 +577,27 @@ void MainWindow::addOutput(const QString& s, bool html)
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
+        if (curEditor->document()->isModified()) {
+            if (!saveBeforeRunning) {
+                QMessageBox msgBox;
+                msgBox.setText("The model has been modified.");
+                msgBox.setInformativeText("Do you want to save it before running?");
+                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+                msgBox.addButton(QMessageBox::Cancel);
+                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+                msgBox.setDefaultButton(QMessageBox::Save);
+                msgBox.exec();
+                if (msgBox.clickedButton()==alwaysButton) {
+                    saveBeforeRunning = true;
+                }
+                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                    return;
+                }
+            }
+            on_actionSave_triggered();
+        }
+        if (curEditor->document()->isModified())
+            return;
         ui->actionRun->setEnabled(false);
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
@@ -503,29 +711,45 @@ void MainWindow::procError(QProcess::ProcessError e) {
     ui->actionCompile->setEnabled(true);
 }
 
-void MainWindow::saveFile(const QString& f)
+void MainWindow::saveFile(CodeEditor* ce, const QString& f)
 {
     QString filepath = f;
+    int tabIndex = ui->tabWidget->indexOf(ce);
     if (filepath=="") {
+        if (ce != curEditor) {
+            ui->tabWidget->setCurrentIndex(tabIndex);
+        }
         filepath = QFileDialog::getSaveFileName(this,"Save file",QString(),"MiniZinc files (*.mzn *.dzn *.fzn)");
     }
     if (!filepath.isEmpty()) {
-        QFile file(filepath);
-        if (file.open(QFile::WriteOnly | QFile::Text)) {
-            QTextStream out(&file);
-            out << curEditor->document()->toPlainText();
-            file.close();
-            if (filepath != curEditor->filepath) {
-                removeFile(curEditor->filepath);
-                addFile(filepath);
-            }
-            curEditor->document()->setModified(false);
-            curEditor->filepath = filepath;
-            curEditor->filename = QFileInfo(filepath).fileName();
-            ui->tabWidget->setTabText(ui->tabWidget->currentIndex(),curEditor->filename);
-            tabChange(ui->tabWidget->currentIndex());
+        if (filepath != ce->filepath && ide()->hasFile(filepath)) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot overwrite open file.",
+                                 QMessageBox::Ok);
+
         } else {
-            QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
+            QFile file(filepath);
+            if (file.open(QFile::WriteOnly | QFile::Text)) {
+                QTextStream out(&file);
+                out << ce->document()->toPlainText();
+                file.close();
+                if (filepath != ce->filepath) {
+                    QTextDocument* newdoc =
+                            ide()->addDocument(filepath,ce->document(),ce);
+                    ce->setDocument(newdoc);
+                    if (ce->filepath != "") {
+                        ide()->removeEditor(ce->filepath,ce);
+                    }
+                    setupDznMenu();
+                }
+                ce->document()->setModified(false);
+                ce->filepath = filepath;
+                ce->filename = QFileInfo(filepath).fileName();
+                ui->tabWidget->setTabText(tabIndex,ce->filename);
+                if (ce==curEditor)
+                    tabChange(tabIndex);
+            } else {
+                QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
+            }
         }
     }
 }
@@ -533,20 +757,20 @@ void MainWindow::saveFile(const QString& f)
 void MainWindow::on_actionSave_triggered()
 {
     if (curEditor) {
-        saveFile(curEditor->filepath);
+        saveFile(curEditor,curEditor->filepath);
     }
 }
 
 void MainWindow::on_actionSave_as_triggered()
 {
     if (curEditor) {
-        saveFile(QString());
+        saveFile(curEditor,QString());
     }
 }
 
 void MainWindow::on_actionQuit_triggered()
 {
-    close();
+    qApp->closeAllWindows();
 }
 
 void MainWindow::on_actionStop_triggered()
@@ -710,18 +934,27 @@ void MainWindow::errorClicked(const QUrl & url)
 
 void MainWindow::on_actionManage_solvers_triggered()
 {
-    SolverDialog sd(solvers,mznDistribPath);
+    SolverDialog sd(solvers,defaultSolver,mznDistribPath);
     sd.exec();
+    defaultSolver = sd.def();
     mznDistribPath = sd.mznPath();
     if (! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
     checkMznPath();
+    QString curSelection = ui->conf_solver->currentText();
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    int idx = ui->conf_solver->findText(curSelection);
+    if (idx!=-1)
+        ui->conf_solver->setCurrentIndex(idx);
+    else
+        ui->conf_solver->setCurrentText(defaultSolver);
+
     QSettings settings;
     settings.beginGroup("minizinc");
     settings.setValue("mznpath",mznDistribPath);
+    settings.setValue("defaultSolver",defaultSolver);
     settings.endGroup();
 
     settings.beginWriteArray("solvers");
@@ -743,7 +976,7 @@ void MainWindow::on_actionFind_triggered()
 
 void MainWindow::on_actionReplace_triggered()
 {
-    findReplaceDialog->show();
+    findDialog->show();
 }
 
 void MainWindow::on_actionSelect_font_triggered()
@@ -848,4 +1081,205 @@ void MainWindow::on_actionShift_right_triggered()
 void MainWindow::on_actionHelp_triggered()
 {
     helpWindow->show();
+}
+
+void MainWindow::on_actionNew_project_triggered()
+{
+    MainWindow* mw = new MainWindow;
+    QPoint p = pos();
+    mw->move(p.x()+20, p.y()+20);
+    mw->show();
+}
+
+void MainWindow::openProject(const QString& fileName)
+{
+    if (!fileName.isEmpty()) {
+        IDE::PMap& pmap = ide()->projects;
+        IDE::PMap::iterator it = pmap.find(fileName);
+        if (it==pmap.end()) {
+            if (ui->tabWidget->count()==1) {
+                loadProject(fileName);
+            } else {
+                MainWindow* mw = new MainWindow(fileName);
+                QPoint p = pos();
+                mw->move(p.x()+20, p.y()+20);
+                mw->show();
+            }
+        } else {
+            it.value()->raise();
+            it.value()->activateWindow();
+        }
+    }
+}
+
+void MainWindow::on_actionOpen_project_triggered()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), "", "MiniZinc projects (*.mzp)");
+    openProject(fileName);
+}
+
+void MainWindow::saveProject(const QString& f)
+{
+    QString filepath = f;
+    if (filepath.isEmpty()) {
+        filepath = QFileDialog::getSaveFileName(this,"Save project",QString(),"MiniZinc projects (*.mzp)");
+    }
+    if (!filepath.isEmpty()) {
+        if (projectPath != filepath && ide()->projects.contains(filepath)) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot overwrite existing open project.",
+                                 QMessageBox::Ok);
+            return;
+        }
+        QFile file(filepath);
+        if (file.open(QFile::WriteOnly | QFile::Text)) {
+            if (projectPath != filepath) {
+                ide()->projects.remove(projectPath);
+                ide()->projects.insert(filepath,this);
+            }
+            projectPath = filepath;
+            QDataStream out(&file);
+            out << (quint32)0xD539EA12;
+            out << (quint32)101;
+            out.setVersion(QDataStream::Qt_5_0);
+            QStringList openFiles;
+            for (int i=0; i<ui->tabWidget->count(); i++) {
+                if (ui->tabWidget->widget(i)!=ui->configuration) {
+                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                    if (!ce->filepath.isEmpty())
+                        openFiles << ce->filepath;
+                }
+            }
+            out << openFiles;
+
+            out << ui->conf_include_path->text();
+            out << (qint32)ui->conf_data_file->currentIndex();
+            out << ui->conf_have_cmd_params->isChecked();
+            out << ui->conf_cmd_params->text();
+            out << ui->conf_verbose->isChecked();
+            out << ui->conf_optimize->isChecked();
+            out << ui->conf_solver->currentText();
+            out << (qint32)ui->conf_nsol->value();
+            out << ui->conf_printall->isChecked();
+            out << ui->conf_stats->isChecked();
+            out << ui->conf_have_solverFlags->isChecked();
+            out << ui->conf_solverFlags->text();
+            out << (qint32)ui->conf_nthreads->value();
+            out << ui->conf_have_seed->isChecked();
+            out << ui->conf_seed->text();
+            out << ui->conf_have_timeLimit->isChecked();
+            out << (qint32)ui->conf_timeLimit->value();
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
+        }
+    }
+}
+
+void MainWindow::loadProject(const QString& filepath)
+{
+    QFile pfile(filepath);
+    pfile.open(QIODevice::ReadOnly);
+    QDataStream in(&pfile);
+    quint32 magic;
+    in >> magic;
+    if (magic != 0xD539EA12) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open project file");
+        close();
+        return;
+    }
+    quint32 version;
+    in >> version;
+    if (version != 101) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open project file (version mismatch)");
+        close();
+        return;
+    }
+    in.setVersion(QDataStream::Qt_5_0);
+
+    QStringList openFiles;
+    in >> openFiles;
+    for (int i=0; i<openFiles.size(); i++) {
+        openFile(openFiles[i],false);
+    }
+    QString p_s;
+    qint32 p_i;
+    bool p_b;
+
+    in >> p_s;
+    ui->conf_include_path->setText(p_s);
+    in >> p_i;
+    ui->conf_data_file->setCurrentIndex(p_i);
+    in >> p_b;
+    ui->conf_have_cmd_params->setChecked(p_b);
+    in >> p_s;
+    ui->conf_cmd_params->setText(p_s);
+    in >> p_b;
+    ui->conf_verbose->setChecked(p_b);
+    in >> p_b;
+    ui->conf_optimize->setChecked(p_b);
+    in >> p_s;
+    ui->conf_solver->setCurrentText(p_s);
+    in >> p_i;
+    ui->conf_nsol->setValue(p_i);
+    in >> p_b;
+    ui->conf_printall->setChecked(p_b);
+    in >> p_b;
+    ui->conf_stats->setChecked(p_b);
+    in >> p_b;
+    ui->conf_have_solverFlags->setChecked(p_b);
+    in >> p_s;
+    ui->conf_solverFlags->setText(p_s);
+    in >> p_i;
+    ui->conf_nthreads->setValue(p_i);
+    in >> p_b;
+    ui->conf_have_seed->setChecked(p_b);
+    in >> p_s;
+    ui->conf_seed->setText(p_s);
+    in >> p_b;
+    ui->conf_have_timeLimit->setChecked(p_b);
+    in >> p_i;
+    ui->conf_timeLimit->setValue(p_i);
+    projectPath = filepath;
+
+    ide()->projects.insert(projectPath, this);
+
+}
+
+void MainWindow::on_actionSave_project_triggered()
+{
+    saveProject(projectPath);
+}
+
+void MainWindow::on_actionSave_project_as_triggered()
+{
+    saveProject(QString());
+}
+
+void MainWindow::on_actionClose_project_triggered()
+{
+    if (!projectPath.isEmpty())
+        ide()->projects.remove(projectPath);
+    close();
+}
+
+void MainWindow::on_actionFind_next_triggered()
+{
+    findDialog->on_b_next_clicked();
+}
+
+void MainWindow::on_actionFind_previous_triggered()
+{
+    findDialog->on_b_prev_clicked();
+}
+
+void MainWindow::on_actionSave_all_triggered()
+{
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i)!=ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (ce->document()->isModified())
+                saveFile(ce,ce->filepath);
+        }
+    }
 }

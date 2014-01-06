@@ -1,40 +1,53 @@
 /*
- * Copyright (C) 2009  Lorenzo Bettini <http://www.lorenzobettini.it>
- * See COPYING file that comes with this distribution
+ *  Author:
+ *     Guido Tack <guido.tack@monash.edu>
+ *
+ *  Copyright:
+ *     NICTA 2013
  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef FINDDIALOG_H
 #define FINDDIALOG_H
 
 #include <QDialog>
 
-#include "findreplace_global.h"
+namespace Ui {
+class FindDialog;
+}
 
-#include "findreplacedialog.h"
+class CodeEditor;
 
-/**
-  * A find dialog (it is basically the same
-  * as FindReplaceDialog without the replace related widgets).
-  */
-class FINDREPLACESHARED_EXPORT FindDialog : public FindReplaceDialog {
+class FindDialog : public QDialog
+{
     Q_OBJECT
+
 public:
-    FindDialog(QWidget *parent = 0);
+    explicit FindDialog(QWidget *parent = 0);
     ~FindDialog();
 
-    /**
-      * Writes the state of the form to the passed settings.
-      * @param settings
-      * @param prefix the prefix to insert in the settings
-      */
-    virtual void writeSettings(QSettings &settings, const QString &prefix = "FindDialog");
+    void setEditor(CodeEditor* doc);
+public slots:
+    void on_b_next_clicked();
 
-    /**
-      * Reads the state of the form from the passed settings.
-      * @param settings
-      * @param prefix the prefix to look for in the settings
-      */
-    virtual void readSettings(QSettings &settings, const QString &prefix = "FindDialog");
+    void on_b_prev_clicked();
+
+    void on_b_replacefind_clicked();
+
+    void on_b_replace_clicked();
+
+    void on_b_replaceall_clicked();
+
+    void show();
+
+private:
+    Ui::FindDialog *ui;
+    CodeEditor* codeEditor;
+
+    void find(bool fwd);
 };
 
 #endif // FINDDIALOG_H

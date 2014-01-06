@@ -11,7 +11,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-ICON = mznide.icns
+macx {
+    ICON = mznide.icns
+    QMAKE_INFO_PLIST = mznide.plist
+}
+
 RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
@@ -24,12 +28,9 @@ SOURCES += main.cpp\
     fzndoc.cpp \
     aboutdialog.cpp \
     solverdialog.cpp \
-    finddialog.cpp \
-    findform.cpp \
-    findreplacedialog.cpp \
-    findreplaceform.cpp \
     gotolinedialog.cpp \
-    help.cpp
+    help.cpp \
+    finddialog.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -38,22 +39,17 @@ HEADERS  += mainwindow.h \
     fzndoc.h \
     aboutdialog.h \
     solverdialog.h \
-    finddialog.h \
-    findform.h \
-    findreplace_global.h \
-    findreplacedialog.h \
-    findreplaceform.h \
     gotolinedialog.h \
-    help.h
+    help.h \
+    finddialog.h
 
 FORMS    += \
     mainwindow.ui \
     aboutdialog.ui \
     solverdialog.ui \
-    findreplacedialog.ui \
-    findreplaceform.ui \
     gotolinedialog.ui \
-    help.ui
+    help.ui \
+    finddialog.ui
 
 RESOURCES += \
     minizincide.qrc

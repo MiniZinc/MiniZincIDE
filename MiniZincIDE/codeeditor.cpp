@@ -1,5 +1,18 @@
+/*
+ *  Author:
+ *     Guido Tack <guido.tack@monash.edu>
+ *
+ *  Copyright:
+ *     NICTA 2013
+ */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <QtWidgets>
 #include "codeeditor.h"
+#include "mainwindow.h"
 
 void
 CodeEditor::initUI(QFont& font)
@@ -11,14 +24,15 @@ CodeEditor::initUI(QFont& font)
     QFontMetrics metrics(font);
     setTabStopWidth(tabStop * metrics.width(' '));
 
-    lineNumberArea = new LineNumberArea(this);
+    lineNumbers= new LineNumbers(this);
 
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
+    connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
 
-    updateLineNumberAreaWidth(0);
-    highlightCurrentLine();
+    setLineNumbersWidth(0);
+    cursorChange();
     highlighter = new Highlighter(font,document());
 
     QTextCursor cursor(textCursor());
@@ -28,18 +42,49 @@ CodeEditor::initUI(QFont& font)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QFile& file, QFont& font, QWidget *parent) :
-    QPlainTextEdit(parent)
+CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool large,
+                       QFont& font, QTabWidget* t, QWidget *parent) :
+    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
 {
+    if (doc) {
+        setDocument(doc);
+    }
     initUI(font);
-    if (file.isOpen()) {
-        setPlainText(file.readAll());
-        filepath = QFileInfo(file).absoluteFilePath();
-        filename = QFileInfo(file).fileName();
-    } else {
+    if (path.isEmpty()) {
         filepath = "";
         filename = "Untitled";
+    } else {
+        filepath = QFileInfo(path).absoluteFilePath();
+        filename = QFileInfo(path).fileName();
     }
+    if (large) {
+        setReadOnly(true);
+        QPushButton* pb = new QPushButton("Big file. Load contents?", this);
+        connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
+        loadContentsButton = pb;
+    }
+}
+
+void CodeEditor::loadContents()
+{
+    static_cast<IDE*>(qApp)->loadLargeFile(filepath,this);
+}
+
+void CodeEditor::loadedLargeFile()
+{
+    setReadOnly(false);
+    delete loadContentsButton;
+    loadContentsButton = NULL;
+}
+
+void CodeEditor::docChanged(bool c)
+{
+    int t = tabs->indexOf(this);
+    QString title = tabs->tabText(t);
+    title = title.mid(0, title.lastIndexOf(" *"));
+    if (c)
+        title += " *";
+    tabs->setTabText(t,title);
 }
 
 void CodeEditor::keyPressEvent(QKeyEvent *e)
@@ -53,38 +98,36 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
     }
 }
 
-int CodeEditor::lineNumberAreaWidth()
+int CodeEditor::lineNumbersWidth()
 {
-    int digits = 1;
-    int max = qMax(1, blockCount());
-    while (max >= 10) {
-        max /= 10;
-        ++digits;
+    int width = 1;
+    int bc = blockCount();
+    while (bc >= 10) {
+        bc /= 10;
+        ++width;
     }
 
-    int space = 3 + fontMetrics().width(QLatin1Char('9')) * digits;
-
-    return space;
+    return 3 + fontMetrics().width(QLatin1Char('9')) * width;
 }
 
 
 
-void CodeEditor::updateLineNumberAreaWidth(int /* newBlockCount */)
+void CodeEditor::setLineNumbersWidth(int)
 {
-    setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+    setViewportMargins(lineNumbersWidth(), 0, 0, 0);
 }
 
 
 
-void CodeEditor::updateLineNumberArea(const QRect &rect, int dy)
+void CodeEditor::setLineNumbers(const QRect &rect, int dy)
 {
     if (dy)
-        lineNumberArea->scroll(0, dy);
+        lineNumbers->scroll(0, dy);
     else
-        lineNumberArea->update(0, rect.y(), lineNumberArea->width(), rect.height());
+        lineNumbers->update(0, rect.y(), lineNumbers->width(), rect.height());
 
     if (rect.contains(viewport()->rect()))
-        updateLineNumberAreaWidth(0);
+        setLineNumbersWidth(0);
 }
 
 
@@ -94,12 +137,15 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
     QPlainTextEdit::resizeEvent(e);
 
     QRect cr = contentsRect();
-    lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+    lineNumbers->setGeometry(QRect(cr.left(), cr.top(), lineNumbersWidth(), cr.height()));
+    if (loadContentsButton) {
+        loadContentsButton->move(cr.left()+lineNumbersWidth(), cr.top());
+    }
 }
 
 
 
-void CodeEditor::highlightCurrentLine()
+void CodeEditor::cursorChange()
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
 
@@ -212,7 +258,8 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
     case ']' : match = '['; break;
     default: break; // should not happen
     }
-
+    if (i==-1)
+        block = block.previous();
     while (block.isValid()) {
         BracketData* bd = static_cast<BracketData*>(block.userData());
         QVector<Bracket>& brackets = bd->brackets;
@@ -235,11 +282,10 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
     return -1;
 }
 
-void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+void CodeEditor::paintLineNumbers(QPaintEvent *event)
 {
-    QPainter painter(lineNumberArea);
+    QPainter painter(lineNumbers);
     painter.fillRect(event->rect(), Qt::lightGray);
-
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -250,7 +296,7 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
             painter.setPen(Qt::black);
-            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(),
+            painter.drawText(0, top, lineNumbers->width(), fontMetrics().height(),
                              Qt::AlignRight, number);
         }
 
