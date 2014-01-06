@@ -14,6 +14,8 @@ TEMPLATE = app
 ICON = mznide.icns
 RC_ICONS = mznide.ico
 
+CONFIG += embed_manifest_exe
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     codeeditor.cpp \
