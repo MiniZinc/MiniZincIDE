@@ -706,9 +706,7 @@ void MainWindow::procError(QProcess::ProcessError e) {
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
     }
-    process = NULL;
-    ui->actionRun->setEnabled(true);
-    ui->actionCompile->setEnabled(true);
+    procFinished(0);
 }
 
 void MainWindow::saveFile(CodeEditor* ce, const QString& f)
