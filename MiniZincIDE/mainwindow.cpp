@@ -611,7 +611,7 @@ void MainWindow::on_actionRun_triggered()
                 this, SLOT(procError(QProcess::ProcessError)));
 
         QStringList args = parseConf(false);
-        args << QFileInfo(curEditor->filepath).fileName();
+        args << curEditor->filepath;
         if (ui->conf_have_timeLimit->isChecked()) {
             bool ok;
             int timeout = ui->conf_timeLimit->text().toInt(&ok);
