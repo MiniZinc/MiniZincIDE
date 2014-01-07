@@ -99,10 +99,6 @@ private slots:
 
     void on_actionCompile_triggered();
 
-    void on_actionConstraint_Graph_triggered();
-
-    void webview_loaded(bool);
-
     void openCompiledFzn(int);
 
     void on_actionSave_as_triggered();
