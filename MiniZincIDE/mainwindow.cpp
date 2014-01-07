@@ -266,6 +266,9 @@ void MainWindow::init(const QString& project)
 
     if (!project.isEmpty()) {
         loadProject(project);
+        lastPath = QFileInfo(project).absolutePath()+"/*";
+    } else {
+        lastPath = QDir::homePath()+"/*";
     }
 }
 
@@ -328,8 +331,12 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
 {
     QString fileName = path;
 
-    if (fileName.isNull())
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", "MiniZinc Files (*.mzn *.dzn *.fzn)");
+    if (fileName.isNull()) {
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), lastPath, "MiniZinc Files (*.mzn *.dzn *.fzn)");
+        if (!fileName.isNull()) {
+            lastPath = QFileInfo(fileName).absolutePath()+"/*";
+        }
+    }
 
     if (!fileName.isEmpty()) {
         createEditor(fileName, openAsModified);
@@ -717,7 +724,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         if (ce != curEditor) {
             ui->tabWidget->setCurrentIndex(tabIndex);
         }
-        filepath = QFileDialog::getSaveFileName(this,"Save file",QString(),"MiniZinc files (*.mzn *.dzn *.fzn)");
+        filepath = QFileDialog::getSaveFileName(this,"Save file",lastPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
+        if (!filepath.isNull()) {
+            lastPath = QFileInfo(filepath).absolutePath()+"/*";
+        }
     }
     if (!filepath.isEmpty()) {
         if (filepath != ce->filepath && ide()->hasFile(filepath)) {

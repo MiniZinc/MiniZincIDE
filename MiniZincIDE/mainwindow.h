@@ -178,6 +178,7 @@ private:
     FindDialog* findDialog;
     Help* helpWindow;
     QString projectPath;
+    QString lastPath;
     bool saveBeforeRunning;
 
     void createEditor(const QString& path, bool openAsModified);
