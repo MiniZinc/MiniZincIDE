@@ -47,7 +47,7 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool large,
     QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
 {
     if (doc) {
-        setDocument(doc);
+        QPlainTextEdit::setDocument(doc);
     }
     initUI(font);
     if (path.isEmpty()) {
@@ -75,6 +75,20 @@ void CodeEditor::loadedLargeFile()
     setReadOnly(false);
     delete loadContentsButton;
     loadContentsButton = NULL;
+}
+
+void CodeEditor::setDocument(QTextDocument *document)
+{
+    if (document) {
+        delete highlighter;
+        highlighter = NULL;
+    }
+    QPlainTextEdit::setDocument(document);
+    if (document) {
+        QFont f= font();
+        highlighter = new Highlighter(f,document);
+        connect(document, SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    }
 }
 
 void CodeEditor::docChanged(bool c)
