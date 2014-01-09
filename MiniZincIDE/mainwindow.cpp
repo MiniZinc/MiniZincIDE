@@ -366,8 +366,8 @@ void MainWindow::tabCloseRequest(int tab)
         }
     }
     ce->document()->setModified(false);
-    setupDznMenu();
     ui->tabWidget->removeTab(tab);
+    setupDznMenu();
     if (ui->tabWidget->count()==0) {
         on_actionNew_triggered();
     }
@@ -555,6 +555,8 @@ QStringList MainWindow::parseConf(bool compileOnly)
 
 void MainWindow::setupDznMenu()
 {
+    ui->conf_data_file->clear();
+    ui->conf_data_file->addItem("None");
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -744,10 +746,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     if (ce->filepath != "") {
                         ide()->removeEditor(ce->filepath,ce);
                     }
+                    ce->filepath = filepath;
                     setupDznMenu();
                 }
                 ce->document()->setModified(false);
-                ce->filepath = filepath;
                 ce->filename = QFileInfo(filepath).fileName();
                 ui->tabWidget->setTabText(tabIndex,ce->filename);
                 if (ce==curEditor)
