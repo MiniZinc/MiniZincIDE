@@ -483,6 +483,7 @@ void MainWindow::tabChange(int tab) {
             ui->actionFind_next->setEnabled(true);
             ui->actionFind_previous->setEnabled(true);
             ui->actionReplace->setEnabled(true);
+            curEditor->setFocus();
         } else {
             curEditor = NULL;
             ui->actionClose->setEnabled(false);
