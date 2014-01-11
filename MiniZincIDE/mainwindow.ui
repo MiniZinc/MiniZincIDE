@@ -395,7 +395,6 @@
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
-    <addaction name="actionConstraint_Graph"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -520,14 +519,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
-   </property>
-  </action>
-  <action name="actionConstraint_Graph">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Constraint Graph</string>
    </property>
   </action>
   <action name="actionRun">

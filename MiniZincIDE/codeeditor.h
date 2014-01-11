@@ -29,6 +29,7 @@ public:
     QString filepath;
     QString filename;
     void setEditorFont(QFont& font);
+    void setDocument(QTextDocument *document);
 protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);

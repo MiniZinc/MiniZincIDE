@@ -12,14 +12,12 @@
 
 #include <QtWidgets>
 #include <QApplication>
-#include <QtWebKitWidgets>
 #include <QSet>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "aboutdialog.h"
 #include "codeeditor.h"
-#include "webpage.h"
 #include "fzndoc.h"
 #include "finddialog.h"
 #include "gotolinedialog.h"
@@ -266,6 +264,9 @@ void MainWindow::init(const QString& project)
 
     if (!project.isEmpty()) {
         loadProject(project);
+        lastPath = QFileInfo(project).absolutePath()+"/*";
+    } else {
+        lastPath = QDir::homePath()+"/*";
     }
 }
 
@@ -328,8 +329,12 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
 {
     QString fileName = path;
 
-    if (fileName.isNull())
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", "MiniZinc Files (*.mzn *.dzn *.fzn)");
+    if (fileName.isNull()) {
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), lastPath, "MiniZinc Files (*.mzn *.dzn *.fzn)");
+        if (!fileName.isNull()) {
+            lastPath = QFileInfo(fileName).absolutePath()+"/*";
+        }
+    }
 
     if (!fileName.isEmpty()) {
         createEditor(fileName, openAsModified);
@@ -361,8 +366,8 @@ void MainWindow::tabCloseRequest(int tab)
         }
     }
     ce->document()->setModified(false);
-    setupDznMenu();
     ui->tabWidget->removeTab(tab);
+    setupDznMenu();
     if (ui->tabWidget->count()==0) {
         on_actionNew_triggered();
     }
@@ -472,14 +477,13 @@ void MainWindow::tabChange(int tab) {
             bool isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
             ui->actionRun->setEnabled(isMzn);
             ui->actionCompile->setEnabled(isMzn);
-            bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
-            ui->actionConstraint_Graph->setEnabled(isFzn);
 
             findDialog->setEditor(curEditor);
             ui->actionFind->setEnabled(true);
             ui->actionFind_next->setEnabled(true);
             ui->actionFind_previous->setEnabled(true);
             ui->actionReplace->setEnabled(true);
+            curEditor->setFocus();
         } else {
             curEditor = NULL;
             ui->actionClose->setEnabled(false);
@@ -493,7 +497,6 @@ void MainWindow::tabChange(int tab) {
             ui->actionRedo->setEnabled(false);
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
-            ui->actionConstraint_Graph->setEnabled(false);
             ui->actionFind->setEnabled(false);
             ui->actionFind_next->setEnabled(false);
             ui->actionFind_previous->setEnabled(false);
@@ -552,6 +555,8 @@ QStringList MainWindow::parseConf(bool compileOnly)
 
 void MainWindow::setupDznMenu()
 {
+    ui->conf_data_file->clear();
+    ui->conf_data_file->addItem("None");
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -611,7 +616,7 @@ void MainWindow::on_actionRun_triggered()
                 this, SLOT(procError(QProcess::ProcessError)));
 
         QStringList args = parseConf(false);
-        args << QFileInfo(curEditor->filepath).fileName();
+        args << curEditor->filepath;
         if (ui->conf_have_timeLimit->isChecked()) {
             bool ok;
             int timeout = ui->conf_timeLimit->text().toInt(&ok);
@@ -706,9 +711,7 @@ void MainWindow::procError(QProcess::ProcessError e) {
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
     }
-    process = NULL;
-    ui->actionRun->setEnabled(true);
-    ui->actionCompile->setEnabled(true);
+    procFinished(0);
 }
 
 void MainWindow::saveFile(CodeEditor* ce, const QString& f)
@@ -719,7 +722,11 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         if (ce != curEditor) {
             ui->tabWidget->setCurrentIndex(tabIndex);
         }
-        filepath = QFileDialog::getSaveFileName(this,"Save file",QString(),"MiniZinc files (*.mzn *.dzn *.fzn)");
+        QString dialogPath = ce->filepath.isEmpty() ? lastPath : ce->filepath;
+        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
+        if (!filepath.isNull()) {
+            lastPath = QFileInfo(filepath).absolutePath()+"/*";
+        }
     }
     if (!filepath.isEmpty()) {
         if (filepath != ce->filepath && ide()->hasFile(filepath)) {
@@ -739,10 +746,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     if (ce->filepath != "") {
                         ide()->removeEditor(ce->filepath,ce);
                     }
+                    ce->filepath = filepath;
                     setupDznMenu();
                 }
                 ce->document()->setModified(false);
-                ce->filepath = filepath;
                 ce->filename = QFileInfo(filepath).fileName();
                 ui->tabWidget->setTabText(tabIndex,ce->filename);
                 if (ce==curEditor)
@@ -834,31 +841,6 @@ void MainWindow::on_actionCompile_triggered()
         }
     }
 }
-
-void MainWindow::on_actionConstraint_Graph_triggered()
-{
-    
-    WebPage* page = new WebPage();
-    webView = new QWebView();
-    webView->setPage(page);
-    QString url = "qrc:/ConstraintGraph/index.html";
-    connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
-    webView->load(url);
-    webView->show();
-}
-
-void MainWindow::webview_loaded(bool ok) {
-    if (ok){
-        FznDoc fzndoc;
-        fzndoc.setstr(curEditor->document()->toPlainText());
-        webView->page()->mainFrame()->addToJavaScriptWindowObject("fznfile", &fzndoc);
-        QString code = "start_s(fznfile)";
-        webView->page()->mainFrame()->evaluateJavaScript(code);
-    } else {
-        qDebug() << "not ok";
-    }
-    
-} 
 
 void MainWindow::on_actionClear_output_triggered()
 {
@@ -1115,7 +1097,11 @@ void MainWindow::openProject(const QString& fileName)
 
 void MainWindow::on_actionOpen_project_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), "", "MiniZinc projects (*.mzp)");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), lastPath, "MiniZinc projects (*.mzp)");
+    if (!fileName.isNull()) {
+        lastPath = QFileInfo(fileName).absolutePath()+"/*";
+    }
+
     openProject(fileName);
 }
 
@@ -1123,7 +1109,10 @@ void MainWindow::saveProject(const QString& f)
 {
     QString filepath = f;
     if (filepath.isEmpty()) {
-        filepath = QFileDialog::getSaveFileName(this,"Save project",QString(),"MiniZinc projects (*.mzp)");
+        filepath = QFileDialog::getSaveFileName(this,"Save project",lastPath,"MiniZinc projects (*.mzp)");
+        if (!filepath.isNull()) {
+            lastPath = QFileInfo(filepath).absolutePath()+"/*";
+        }
     }
     if (!filepath.isEmpty()) {
         if (projectPath != filepath && ide()->projects.contains(filepath)) {
