@@ -25,6 +25,17 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
     format.setForeground(Qt::darkGreen);
     format.setFontWeight(QFont::Bold);
 
+    quoteFormat.setForeground(Qt::darkGreen);
+    rule.pattern = QRegExp("\".*\"");
+    rule.pattern.setMinimal(true);
+    rule.format = quoteFormat;
+    rules.append(rule);
+
+    commentFormat.setForeground(Qt::red);
+    rule.pattern = QRegExp("%[^\n]*");
+    rule.format = commentFormat;
+    rules.append(rule);
+
     QStringList patterns;
     patterns << "\\bann\\b" << "\\bannotation\\b" << "\\bany\\b"
              << "\\barray\\b" << "\\bbool\\b" << "\\bcase\\b"
@@ -48,16 +59,6 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
         rules.append(rule);
     }
 
-    commentFormat.setForeground(Qt::red);
-    rule.pattern = QRegExp("%[^\n]*");
-    rule.format = commentFormat;
-    rules.append(rule);
-
-    quoteFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegExp("\".*\"");
-    rule.format = quoteFormat;
-    rules.append(rule);
-
     format = QTextCharFormat();
     format.setFontItalic(true);
     format.setForeground(Qt::blue);
@@ -71,6 +72,8 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
 void Highlighter::setEditorFont(QFont& font)
 {
     baseFormat.setFont(font);
+    quoteFormat.setFont(font);
+    commentFormat.setFont(font);
     for (int i=0; i<rules.size(); i++) {
         rules[i].format.setFont(font);
     }
@@ -85,7 +88,9 @@ void Highlighter::highlightBlock(const QString &text)
         int index = expression.indexIn(text);
         while (index >= 0) {
             int length = expression.matchedLength();
-            setFormat(index, length, rule.format);
+            if (format(index)!=quoteFormat && format(index)!=commentFormat) {
+                setFormat(index, length, rule.format);
+            }
             index = expression.indexIn(text, index + length);
         }
     }
