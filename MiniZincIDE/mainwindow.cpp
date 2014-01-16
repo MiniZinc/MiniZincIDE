@@ -611,7 +611,6 @@ void MainWindow::on_actionRun_triggered()
 
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        process->setProcessChannelMode(QProcess::MergedChannels);
         connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
         connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
         connect(process, SIGNAL(error(QProcess::ProcessError)),
@@ -627,7 +626,7 @@ void MainWindow::on_actionRun_triggered()
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
             args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-            args << QFileInfo(curEditor->filepath).fileName();
+            args << curEditor->filepath;
             addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
             if (!mznDistribPath.isEmpty()) {
                 QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -891,7 +890,6 @@ void MainWindow::on_actionCompile_triggered()
         ui->configuration->setEnabled(false);
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        process->setProcessChannelMode(QProcess::MergedChannels);
         connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
         connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
@@ -907,7 +905,7 @@ void MainWindow::on_actionCompile_triggered()
             QFileInfo fi(curEditor->filepath);
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
-            args << QFileInfo(curEditor->filepath).fileName();
+            args << curEditor->filepath;
             addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
             if (!mznDistribPath.isEmpty()) {
                 QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -989,7 +987,6 @@ void MainWindow::errorClicked(const QUrl & url)
                         }
                     }
                 }
-
             }
         }
     }
