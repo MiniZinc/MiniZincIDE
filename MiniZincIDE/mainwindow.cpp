@@ -724,6 +724,8 @@ void MainWindow::procFinished(int) {
         outputProcess->waitForFinished();
         outputProcess = NULL;
     }
+    delete tmpDir;
+    tmpDir = NULL;
 }
 
 void MainWindow::procError(QProcess::ProcessError e) {
