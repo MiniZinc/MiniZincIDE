@@ -86,6 +86,8 @@ private slots:
 
     void readOutput();
 
+    void pipeOutput();
+
     void procFinished(int);
 
     void procError(QProcess::ProcessError);
@@ -100,6 +102,8 @@ private slots:
     void on_actionCompile_triggered();
 
     void openCompiledFzn(int);
+
+    void runCompiledFzn(int);
 
     void on_actionSave_as_triggered();
 
@@ -160,6 +164,7 @@ private:
     CodeEditor* curEditor;
     QWebView* webView;
     QProcess* process;
+    QProcess* outputProcess;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;

@@ -172,6 +172,7 @@ MainWindow::MainWindow(const QString& project, QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
+    outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false)
 {
@@ -183,6 +184,7 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
+    outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false)
 {
@@ -522,13 +524,13 @@ void MainWindow::on_actionOpen_triggered()
 QStringList MainWindow::parseConf(bool compileOnly)
 {
     QStringList ret;
-    if (!ui->conf_optimize->isChecked())
+    if (compileOnly && !ui->conf_optimize->isChecked())
         ret << "--no-optimize";
-    if (ui->conf_verbose->isChecked())
+    if (compileOnly && ui->conf_verbose->isChecked())
         ret << "-v";
-    if (ui->conf_have_cmd_params->isChecked())
+    if (compileOnly && ui->conf_have_cmd_params->isChecked())
         ret << "-D"+ui->conf_cmd_params->text();
-    if (ui->conf_data_file->currentText()!="None")
+    if (compileOnly && ui->conf_data_file->currentText()!="None")
         ret << "-d"+ui->conf_data_file->currentText();
     if (!compileOnly && ui->conf_printall->isChecked())
         ret << "-a";
@@ -538,17 +540,16 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-p"+QString::number(ui->conf_nthreads->value());
     if (!compileOnly && ui->conf_have_seed->isChecked())
         ret << "-r"+ui->conf_seed->text();
-    if (!compileOnly && ui->conf_have_solverFlags->isChecked())
-        ret << "--fzn-flags" << ui->conf_solverFlags->text();
+    if (!compileOnly && ui->conf_have_solverFlags->isChecked()) {
+        QStringList solverArgs =
+                ui->conf_solverFlags->text().split(" ",
+                                                   QString::SkipEmptyParts);
+        ret << solverArgs;
+    }
     if (!compileOnly && ui->conf_nsol->value() != 1)
         ret << "-n"+QString::number(ui->conf_nsol->value());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (!compileOnly) {
-        ret << "-f" << s.executable;
-        if (!s.backend.isEmpty())
-            ret << "-b" << s.backend;
-    }
-    if (!s.mznlib.isEmpty())
+    if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
     return ret;
 }
@@ -607,33 +608,37 @@ void MainWindow::on_actionRun_triggered()
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
-        connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
-        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(procError(QProcess::ProcessError)));
 
-        QStringList args = parseConf(false);
-        args << curEditor->filepath;
-        if (ui->conf_have_timeLimit->isChecked()) {
-            bool ok;
-            int timeout = ui->conf_timeLimit->text().toInt(&ok);
-            if (ok)
-                solverTimeout->start(timeout*1000);
-        }
-        elapsedTime.start();
-        addOutput("<div style='color:blue;'>Starting "+curEditor->filename+"</div><br>");
-        if (!mznDistribPath.isEmpty()) {
-            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-            process->setProcessEnvironment(env);
-        }
-        process->start(mznDistribPath+"minizinc",args);
+        QStringList args = parseConf(true);
 
-        time = 0;
-        timer->start(500);
+        tmpDir = new QTemporaryDir;
+        if (!tmpDir->isValid()) {
+            QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        } else {
+            QFileInfo fi(curEditor->filepath);
+            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+            args << "-o" << currentFznTarget;
+            args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+            args << QFileInfo(curEditor->filepath).fileName();
+            addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
+            if (!mznDistribPath.isEmpty()) {
+                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                process->setProcessEnvironment(env);
+            }
+            process->start(mznDistribPath + MZN2FZN,args);
+            time = 0;
+            timer->start(500);
+            elapsedTime.start();
+        }
     }
 }
 
@@ -666,35 +671,46 @@ void MainWindow::statusTimerEvent()
 
 void MainWindow::readOutput()
 {
-    process->setReadChannel(QProcess::StandardOutput);
-    while (process->canReadLine()) {
-        QString l = process->readLine();
-//        if (l=="----------\n") {
-//            addOutput("<br>");
-//        } else if (l=="==========\n") {
-//            addOutput("<div style='color:blue;'>Search complete.</div><br>");
-//        } else {
-            addOutput(l,false);
-//        }
+    QProcess* readProc = (outputProcess==NULL ? process : outputProcess);
+
+    readProc->setReadChannel(QProcess::StandardOutput);
+    while (readProc->canReadLine()) {
+        QString l = readProc->readLine();
+        addOutput(l,false);
     }
 
-    process->setReadChannel(QProcess::StandardError);
-    while (process->canReadLine()) {
-        QString l = process->readLine();
-        QRegExp errexp("^(.*):([0-9]+):\\s*$");
-        if (errexp.indexIn(l) != -1) {
-            QUrl url = QUrl::fromLocalFile(errexp.cap(1));
-            url.setQuery("line="+errexp.cap(2));
-            url.setScheme("err");
-            addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
-        } else {
-            addOutput(l,false);
+    if (process != NULL) {
+        process->setReadChannel(QProcess::StandardError);
+        while (process->canReadLine()) {
+            QString l = process->readLine();
+            QRegExp errexp("^(.*):([0-9]+):\\s*$");
+            if (errexp.indexIn(l) != -1) {
+                QUrl url = QUrl::fromLocalFile(errexp.cap(1));
+                url.setQuery("line="+errexp.cap(2));
+                url.setScheme("err");
+                addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
+            } else {
+                addOutput(l,false);
+            }
         }
     }
 
+    if (outputProcess != NULL) {
+        outputProcess->setReadChannel(QProcess::StandardError);
+        while (outputProcess->canReadLine()) {
+            QString l = outputProcess->readLine();
+            addOutput(l,false);
+        }
+    }
+}
+
+void MainWindow::pipeOutput()
+{
+    outputProcess->write(process->readAllStandardOutput());
 }
 
 void MainWindow::procFinished(int) {
+    readOutput();
     ui->actionRun->setEnabled(true);
     ui->actionCompile->setEnabled(true);
     ui->actionStop->setEnabled(false);
@@ -703,6 +719,11 @@ void MainWindow::procFinished(int) {
     setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
+    if (outputProcess) {
+        outputProcess->closeWriteChannel();
+        outputProcess->waitForFinished();
+        outputProcess = NULL;
+    }
 }
 
 void MainWindow::procError(QProcess::ProcessError e) {
@@ -785,7 +806,7 @@ void MainWindow::on_actionStop_triggered()
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
-        process->kill();
+        process->terminate();
         process->waitForFinished();
         delete process;
         process = NULL;
@@ -800,6 +821,63 @@ void MainWindow::openCompiledFzn(int exitcode)
     }
     delete tmpDir;
     tmpDir = NULL;
+}
+
+void MainWindow::runCompiledFzn(int exitcode)
+{
+    if (exitcode==0) {
+        outputProcess = new QProcess(this);
+        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+        connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+        connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+        connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(procError(QProcess::ProcessError)));
+        if (!mznDistribPath.isEmpty()) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+            outputProcess->setProcessEnvironment(env);
+        }
+        QStringList outargs;
+        outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+        outputProcess->start(mznDistribPath+"solns2out",outargs);
+
+        process = new QProcess(this);
+        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+        connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+        connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+        connect(process, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(procError(QProcess::ProcessError)));
+
+        QStringList args = parseConf(false);
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        if (!s.backend.isEmpty())
+            args << "-b" << s.backend;
+
+        args << currentFznTarget;
+        if (ui->conf_have_timeLimit->isChecked()) {
+            bool ok;
+            int timeout = ui->conf_timeLimit->text().toInt(&ok);
+            if (ok)
+                solverTimeout->start(timeout*1000);
+        }
+
+        elapsedTime.start();
+        addOutput("<div style='color:blue;'>Running "+curEditor->filename+"</div><br>");
+        if (!mznDistribPath.isEmpty()) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+            process->setProcessEnvironment(env);
+        }
+        qDebug() << s.executable << args;
+        process->start(s.executable,args);
+        time = 0;
+        timer->start(500);
+    } else {
+        delete tmpDir;
+        tmpDir = NULL;
+        procFinished(exitcode);
+    }
 }
 
 void MainWindow::on_actionCompile_triggered()
