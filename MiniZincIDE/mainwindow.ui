@@ -662,6 +662,9 @@
    <property name="text">
     <string>Open project</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
+   </property>
   </action>
   <action name="actionSave_project">
    <property name="text">
