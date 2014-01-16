@@ -477,7 +477,8 @@ void MainWindow::tabChange(int tab) {
             ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
             bool isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
-            ui->actionRun->setEnabled(isMzn);
+            bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+            ui->actionRun->setEnabled(isMzn || isFzn);
             ui->actionCompile->setEnabled(isMzn);
 
             findDialog->setEditor(curEditor);
@@ -609,34 +610,39 @@ void MainWindow::on_actionRun_triggered()
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
 
-        process = new QProcess(this);
-        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
-        connect(process, SIGNAL(error(QProcess::ProcessError)),
-                this, SLOT(procError(QProcess::ProcessError)));
-
-        QStringList args = parseConf(true);
-
-        tmpDir = new QTemporaryDir;
-        if (!tmpDir->isValid()) {
-            QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        if (curEditor->filepath.endsWith(".fzn")) {
+            currentFznTarget = curEditor->filepath;
+            runCompiledFzn(0);
         } else {
-            QFileInfo fi(curEditor->filepath);
-            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-            args << "-o" << currentFznTarget;
-            args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-            args << curEditor->filepath;
-            addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
-            if (!mznDistribPath.isEmpty()) {
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                process->setProcessEnvironment(env);
+            process = new QProcess(this);
+            process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+            connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+            connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+            connect(process, SIGNAL(error(QProcess::ProcessError)),
+                    this, SLOT(procError(QProcess::ProcessError)));
+
+            QStringList args = parseConf(true);
+
+            tmpDir = new QTemporaryDir;
+            if (!tmpDir->isValid()) {
+                QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+            } else {
+                QFileInfo fi(curEditor->filepath);
+                currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+                args << "-o" << currentFznTarget;
+                args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+                args << curEditor->filepath;
+                addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
+                if (!mznDistribPath.isEmpty()) {
+                    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                    env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                    process->setProcessEnvironment(env);
+                }
+                process->start(mznDistribPath + MZN2FZN,args);
+                time = 0;
+                timer->start(500);
+                elapsedTime.start();
             }
-            process->start(mznDistribPath + MZN2FZN,args);
-            time = 0;
-            timer->start(500);
-            elapsedTime.start();
         }
     }
 }
@@ -820,15 +826,14 @@ void MainWindow::openCompiledFzn(int exitcode)
     if (exitcode==0) {
         openFile(currentFznTarget, true);
     }
-    delete tmpDir;
-    tmpDir = NULL;
+    procFinished(exitcode);
 }
 
 void MainWindow::runCompiledFzn(int exitcode)
 {
     if (exitcode==0) {
         outputProcess = new QProcess(this);
-        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+        outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
         connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
         connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
@@ -870,7 +875,6 @@ void MainWindow::runCompiledFzn(int exitcode)
             env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
             process->setProcessEnvironment(env);
         }
-        qDebug() << s.executable << args;
         process->start(s.executable,args);
         time = 0;
         timer->start(500);
@@ -891,7 +895,6 @@ void MainWindow::on_actionCompile_triggered()
         process = new QProcess(this);
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(procError(QProcess::ProcessError)));

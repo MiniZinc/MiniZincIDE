@@ -1,7 +1,6 @@
 Features needed to release:
 
  * Save all data files before running
- * Packaging
 
 Features that would be nice to have:
  * Auto indent
@@ -9,7 +8,6 @@ Features that would be nice to have:
  * Detect when files change on disk (auto reload + dialog if changed)
  * Use mzn2fzn and implement the solutions processing internally
    * Detach solver (to be able to run Gecode w/ Gist)
- * Run fzn files
  * Colour selection
 
 Done
@@ -43,3 +41,5 @@ Done
  * Save all
  * Change font also for output
  * Correct handling of open constraint graph windows
+ * Packaging
+ * Run fzn files
