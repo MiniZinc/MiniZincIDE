@@ -370,6 +370,7 @@
     <addaction name="actionGo_to_line"/>
     <addaction name="actionShift_left"/>
     <addaction name="actionShift_right"/>
+    <addaction name="action_Un_comment"/>
    </widget>
    <widget class="QMenu" name="menuMiniZinc">
     <property name="title">
@@ -697,6 +698,14 @@
   <action name="actionSave_all">
    <property name="text">
     <string>Save all</string>
+   </property>
+  </action>
+  <action name="action_Un_comment">
+   <property name="text">
+    <string>(Un)comment</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+/</string>
    </property>
   </action>
  </widget>

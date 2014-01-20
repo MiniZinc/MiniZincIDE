@@ -157,6 +157,8 @@ private slots:
 
     void on_actionSave_all_triggered();
 
+    void on_action_Un_comment_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

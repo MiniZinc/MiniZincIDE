@@ -1,7 +1,6 @@
 Features that would be nice to have:
  * Save all data files before running
  * Auto indent
- * Comment/uncomment selection
  * Column selection
  * Detect when files change on disk (auto reload + dialog if changed)
  * Detach solver (to be able to run Gecode w/ Gist)
@@ -41,3 +40,4 @@ Done
  * Packaging
  * Run fzn files
  * Use mzn2fzn and implement the solutions processing internally
+ * Comment/uncomment selection

@@ -1353,3 +1353,46 @@ void MainWindow::on_actionSave_all_triggered()
         }
     }
 }
+
+void MainWindow::on_action_Un_comment_triggered()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+
+    QRegExp comment("^(\\s*%|\\s*$)");
+    QRegExp comSpace("%\\s");
+    QRegExp emptyLine("^\\s*$");
+
+    QTextBlock block = beginBlock;
+    bool isCommented = true;
+    do {
+        if (comment.indexIn(block.text()) == -1) {
+            isCommented = false;
+            break;
+        }
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+
+    block = beginBlock;
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        QString t = block.text();
+        if (isCommented) {
+            int cpos = t.indexOf("%");
+            if (cpos != -1) {
+                cursor.setPosition(block.position()+cpos);
+                bool haveSpace = (comSpace.indexIn(t,cpos)==cpos);
+                cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,haveSpace ? 2:1);
+                cursor.removeSelectedText();
+            }
+
+        } else {
+            if (emptyLine.indexIn(t)==-1)
+                cursor.insertText("% ");
+        }
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
