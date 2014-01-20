@@ -58,20 +58,6 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QLabel" name="label">
-                <property name="text">
-                 <string>MiniZinc include path</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="conf_include_path"/>
-              </item>
-             </layout>
-            </item>
-            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QLabel" name="label_5">
@@ -114,14 +100,14 @@
             <item>
              <widget class="QCheckBox" name="conf_verbose">
               <property name="text">
-               <string>Verbose</string>
+               <string>Verbose flattening</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QCheckBox" name="conf_optimize">
               <property name="text">
-               <string>Optimize</string>
+               <string>Produce optimized FlatZinc (disable if flattening takes too long)</string>
               </property>
               <property name="checked">
                <bool>true</bool>
