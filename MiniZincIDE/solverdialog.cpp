@@ -53,6 +53,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
     if (index<solvers.size()) {
         ui->name->setText(solvers[index].name);
         ui->executable->setText(solvers[index].executable);
+        ui->detach->setChecked(solvers[index].detach);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->backend->setText(solvers[index].backend);
         ui->solver_default->setChecked(index==defaultSolver);
@@ -64,6 +65,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
     } else {
         ui->name->setText("");
         ui->executable->setText("");
+        ui->detach->setChecked(false);
         ui->mznpath->setText("");
         ui->backend->setText("");
         ui->solverFrame->setEnabled(true);
@@ -84,6 +86,7 @@ void SolverDialog::on_updateButton_clicked()
     solvers[index].mznlib = ui->mznpath->text();
     solvers[index].name = ui->name->text();
     solvers[index].builtin = false;
+    solvers[index].detach = ui->detach->isChecked();
     if (index==solvers.size()-1) {
         ui->solvers_combo->insertItem(index,ui->name->text(),index);
     }

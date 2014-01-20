@@ -178,6 +178,7 @@ private:
     QString mznDistribPath;
     QString currentFznTarget;
     QTemporaryDir* tmpDir;
+    QVector<QTemporaryDir*> cleanupTmpDirs;
     FindDialog* findDialog;
     Help* helpWindow;
     QString projectPath;

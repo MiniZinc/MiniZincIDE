@@ -97,6 +97,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="detach">
+        <property name="text">
+         <string>Detach</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
