@@ -317,6 +317,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 void CodeEditor::setEditorFont(QFont& font)
 {
     setFont(font);
+    document()->setDefaultFont(font);
     highlighter->setEditorFont(font);
     highlighter->rehighlight();
 }

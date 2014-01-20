@@ -71,7 +71,6 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
 
 void Highlighter::setEditorFont(QFont& font)
 {
-    baseFormat.setFont(font);
     quoteFormat.setFont(font);
     commentFormat.setFont(font);
     for (int i=0; i<rules.size(); i++) {
@@ -81,7 +80,6 @@ void Highlighter::setEditorFont(QFont& font)
 
 void Highlighter::highlightBlock(const QString &text)
 {
-    setFormat(0, text.length(), baseFormat);
     for (int i=0; i<rules.size(); i++) {
         const Rule& rule = rules[i];
         QRegExp expression(rule.pattern);

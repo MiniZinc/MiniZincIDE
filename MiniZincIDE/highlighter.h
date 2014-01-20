@@ -46,7 +46,6 @@ private:
     };
     QVector<Rule> rules;
 
-    QTextCharFormat baseFormat;
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;
 };

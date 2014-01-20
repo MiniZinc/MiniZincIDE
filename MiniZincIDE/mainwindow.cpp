@@ -87,6 +87,7 @@ bool IDE::hasFile(const QString& path)
 QTextDocument* IDE::addDocument(const QString& path, QTextDocument *doc, CodeEditor *ce)
 {
     Doc* d = new Doc;
+    d->td.setDefaultFont(ce->font());
     d->td.setPlainText(doc->toPlainText());
     d->editors.insert(ce);
     d->large = false;
