@@ -303,7 +303,8 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
                 painter.setPen(Qt::black);
             else
                 painter.setPen(Qt::gray);
-            painter.drawText(0, top, lineNumbers->width(), fontMetrics().height(),
+            int textTop = top+fontMetrics().leading();
+            painter.drawText(0, textTop, lineNumbers->width(), fontMetrics().height(),
                              Qt::AlignRight, number);
         }
 
