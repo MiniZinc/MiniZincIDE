@@ -280,7 +280,7 @@ MainWindow::~MainWindow()
         delete cleanupTmpDirs[i];
     }
     if (process) {
-        process->kill();
+        process->terminate();
         process->waitForFinished();
         delete process;
     }
