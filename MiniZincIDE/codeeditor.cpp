@@ -120,7 +120,7 @@ int CodeEditor::lineNumbersWidth()
         bc /= 10;
         ++width;
     }
-
+    width = std::max(width,3);
     return 3 + fontMetrics().width(QLatin1Char('9')) * width;
 }
 
@@ -162,18 +162,6 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
 void CodeEditor::cursorChange()
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
-
-    if (!isReadOnly()) {
-        QTextEdit::ExtraSelection selection;
-
-        QColor lineColor = QColor(Qt::yellow).lighter(160);
-
-        selection.format.setBackground(lineColor);
-        selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-        selection.cursor = textCursor();
-        selection.cursor.clearSelection();
-        extraSelections.append(selection);
-    }
 
     BracketData* bd = static_cast<BracketData*>(textCursor().block().userData());
 
@@ -299,17 +287,22 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
 void CodeEditor::paintLineNumbers(QPaintEvent *event)
 {
     QPainter painter(lineNumbers);
-    painter.fillRect(event->rect(), Qt::lightGray);
+    painter.fillRect(event->rect(), QColor(Qt::lightGray).lighter(120));
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
     int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
     int bottom = top + (int) blockBoundingRect(block).height();
 
+    int curLine = textCursor().blockNumber();
+
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            painter.setPen(Qt::black);
+            if (blockNumber == curLine)
+                painter.setPen(Qt::black);
+            else
+                painter.setPen(Qt::gray);
             painter.drawText(0, top, lineNumbers->width(), fontMetrics().height(),
                              Qt::AlignRight, number);
         }
