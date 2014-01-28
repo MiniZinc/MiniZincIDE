@@ -1,3 +1,15 @@
+/*
+ *  Author:
+ *     Guido Tack <guido.tack@monash.edu>
+ *
+ *  Copyright:
+ *     NICTA 2013
+ */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "paramdialog.h"
 #include "ui_paramdialog.h"
 
@@ -20,7 +32,7 @@ QStringList ParamDialog::getParams(QStringList params)
     bool fillPrevious = previousParams == params;
     for (int i=0; i<params.size(); i++) {
         le.append(new QLineEdit(fillPrevious ? previousValues[i] : ""));
-        formLayout->addRow(new QLabel(params[i]), le.back());
+        formLayout->addRow(new QLabel(params[i]+" ="), le.back());
     }
     le[0]->setFocus();
     QStringList values;

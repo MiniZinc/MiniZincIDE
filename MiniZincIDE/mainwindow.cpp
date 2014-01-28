@@ -289,6 +289,7 @@ MainWindow::~MainWindow()
     }
     delete ui;
     delete helpWindow;
+    delete paramDialog;
     /// TODO: close tabs so that documents are unregistered
 }
 

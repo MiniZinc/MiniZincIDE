@@ -41,3 +41,4 @@ Done
  * Use mzn2fzn and implement the solutions processing internally
  * Comment/uncomment selection
  * Detach solver (to be able to run Gecode w/ Gist)
+ * Dialog for missing model parameters
