@@ -1162,7 +1162,7 @@ void MainWindow::checkMznPath()
     args << "-v";
     p.start(mznDistribPath+"minizinc", args);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nPlease check the path settings in the solver menu.",
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
