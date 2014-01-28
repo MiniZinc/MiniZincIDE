@@ -28,6 +28,7 @@
 #include "codeeditor.h"
 #include "solverdialog.h"
 #include "help.h"
+#include "paramdialog.h"
 
 namespace Ui {
 class MainWindow;
@@ -83,6 +84,10 @@ private slots:
     void tabChange(int);
 
     void on_actionRun_triggered();
+
+    void checkArgs(QString filepath);
+    void checkArgsOutput();
+    void checkArgsFinished(int exitcode);
 
     void readOutput();
 
@@ -184,6 +189,8 @@ private:
     QString projectPath;
     QString lastPath;
     bool saveBeforeRunning;
+    QString compileErrors;
+    ParamDialog* paramDialog;
 
     void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);

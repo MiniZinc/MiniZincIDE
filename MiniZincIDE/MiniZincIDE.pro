@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     solverdialog.cpp \
     gotolinedialog.cpp \
     help.cpp \
-    finddialog.cpp
+    finddialog.cpp \
+    paramdialog.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -39,7 +40,8 @@ HEADERS  += mainwindow.h \
     solverdialog.h \
     gotolinedialog.h \
     help.h \
-    finddialog.h
+    finddialog.h \
+    paramdialog.h
 
 FORMS    += \
     mainwindow.ui \
@@ -47,7 +49,8 @@ FORMS    += \
     solverdialog.ui \
     gotolinedialog.ui \
     help.ui \
-    finddialog.ui
+    finddialog.ui \
+    paramdialog.ui
 
 RESOURCES += \
     minizincide.qrc

@@ -22,6 +22,7 @@
 #include "finddialog.h"
 #include "gotolinedialog.h"
 #include "help.h"
+#include "paramdialog.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -201,6 +202,8 @@ void MainWindow::init(const QString& project)
 
     findDialog = new FindDialog(this);
     findDialog->setModal(false);
+
+    paramDialog = new ParamDialog(this);
 
     helpWindow = new Help();
 
@@ -588,6 +591,99 @@ void MainWindow::addOutput(const QString& s, bool html)
         ui->outputConsole->insertPlainText(s);
 }
 
+void MainWindow::checkArgsOutput()
+{
+    QString l = process->readAll();
+    compileErrors += l;
+}
+
+void MainWindow::checkArgsFinished(int exitcode)
+{
+    QString additionalArgs;
+    if (exitcode!=0) {
+        checkArgsOutput();
+        compileErrors = compileErrors.simplified();
+        QRegExp undefined("symbol error: variable `(.*)' must be defined");
+        undefined.setMinimal(true);
+        int pos = 0;
+        QStringList undefinedArgs;
+        while ( (pos = undefined.indexIn(compileErrors,pos)) != -1 ) {
+            undefinedArgs << undefined.cap(1);;
+            pos += undefined.matchedLength();
+        }
+        if (undefinedArgs.size() > 0) {
+            QStringList params = paramDialog->getParams(undefinedArgs);
+            if (params.size()==0) {
+                procFinished(0);
+                return;
+            }
+            for (int i=0; i<undefinedArgs.size(); i++) {
+                if (params[i].isEmpty()) {
+                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                    procFinished(0);
+                    return;
+                }
+                additionalArgs += undefinedArgs[i]+"="+params[i]+"; ";
+            }
+        }
+    }
+    process = new QProcess(this);
+    process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+    connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+    connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+    connect(process, SIGNAL(error(QProcess::ProcessError)),
+            this, SLOT(procError(QProcess::ProcessError)));
+
+    QStringList args = parseConf(true);
+    if (!additionalArgs.isEmpty()) {
+        args << "-D" << additionalArgs;
+    }
+
+    tmpDir = new QTemporaryDir;
+    if (!tmpDir->isValid()) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        procFinished(0);
+    } else {
+        QFileInfo fi(curEditor->filepath);
+        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+        args << "-o" << currentFznTarget;
+        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        args << curEditor->filepath;
+        addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
+        if (!mznDistribPath.isEmpty()) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+            process->setProcessEnvironment(env);
+        }
+        process->start(mznDistribPath + MZN2FZN,args);
+        time = 0;
+        timer->start(500);
+        elapsedTime.start();
+    }
+}
+
+void MainWindow::checkArgs(QString filepath)
+{
+    process = new QProcess;
+    process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
+    process->setProcessChannelMode(QProcess::MergedChannels);
+    connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
+    connect(process, SIGNAL(finished(int)), this, SLOT(checkArgsFinished(int)));
+    connect(process, SIGNAL(error(QProcess::ProcessError)),
+            this, SLOT(procError(QProcess::ProcessError)));
+
+    QStringList args = parseConf(true);
+    args << "--instance-check-only";
+    args << filepath;
+    if (!mznDistribPath.isEmpty()) {
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+        process->setProcessEnvironment(env);
+    }
+    compileErrors = "";
+    process->start(mznDistribPath + MZN2FZN,args);
+}
+
 void MainWindow::on_actionRun_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
@@ -621,35 +717,7 @@ void MainWindow::on_actionRun_triggered()
             currentFznTarget = curEditor->filepath;
             runCompiledFzn(0);
         } else {
-            process = new QProcess(this);
-            process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-            connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
-            connect(process, SIGNAL(error(QProcess::ProcessError)),
-                    this, SLOT(procError(QProcess::ProcessError)));
-
-            QStringList args = parseConf(true);
-
-            tmpDir = new QTemporaryDir;
-            if (!tmpDir->isValid()) {
-                QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
-            } else {
-                QFileInfo fi(curEditor->filepath);
-                currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-                args << "-o" << currentFznTarget;
-                args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-                args << curEditor->filepath;
-                addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
-                if (!mznDistribPath.isEmpty()) {
-                    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                    env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                    process->setProcessEnvironment(env);
-                }
-                process->start(mznDistribPath + MZN2FZN,args);
-                time = 0;
-                timer->start(500);
-                elapsedTime.start();
-            }
+            checkArgs(curEditor->filepath);
         }
     }
 }
