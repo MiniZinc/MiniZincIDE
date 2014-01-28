@@ -283,7 +283,7 @@ MainWindow::~MainWindow()
         delete cleanupTmpDirs[i];
     }
     if (process) {
-        process->terminate();
+        process->kill();
         process->waitForFinished();
         delete process;
     }
@@ -888,7 +888,7 @@ void MainWindow::on_actionStop_triggered()
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
-        process->terminate();
+        process->kill();
         process->waitForFinished();
         delete process;
         process = NULL;
