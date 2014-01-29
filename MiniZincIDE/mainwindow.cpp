@@ -629,6 +629,7 @@ void MainWindow::checkArgsFinished(int exitcode)
         }
     }
     process = new QProcess(this);
+    processName = MZN2FZN;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
@@ -666,6 +667,7 @@ void MainWindow::checkArgsFinished(int exitcode)
 void MainWindow::checkArgs(QString filepath)
 {
     process = new QProcess;
+    processName = MZN2FZN;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
@@ -811,7 +813,16 @@ void MainWindow::procFinished(int) {
 
 void MainWindow::procError(QProcess::ProcessError e) {
     if (e==QProcess::FailedToStart) {
-        QMessageBox::critical(this, "MiniZinc IDE", "Failed to start the MiniZinc interpreter. Check your path settings.");
+        QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
+    } else {
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
+    }
+    procFinished(0);
+}
+
+void MainWindow::outputProcError(QProcess::ProcessError e) {
+    if (e==QProcess::FailedToStart) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
     }
@@ -927,7 +938,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
             connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
             connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
-                    this, SLOT(procError(QProcess::ProcessError)));
+                    this, SLOT(outputProcError(QProcess::ProcessError)));
             if (!mznDistribPath.isEmpty()) {
                 QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                 env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
@@ -938,6 +949,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             outputProcess->start(mznDistribPath+"solns2out",outargs);
 
             process = new QProcess(this);
+            processName = s.executable;
             process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
             connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
             connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
@@ -978,6 +990,7 @@ void MainWindow::on_actionCompile_triggered()
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
         process = new QProcess(this);
+        processName = MZN2FZN;
         process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));

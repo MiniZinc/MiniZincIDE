@@ -96,6 +96,7 @@ private slots:
     void procFinished(int);
 
     void procError(QProcess::ProcessError);
+    void outputProcError(QProcess::ProcessError);
 
     void on_actionSave_triggered();
     void on_actionQuit_triggered();
@@ -171,6 +172,7 @@ private:
     CodeEditor* curEditor;
     QWebView* webView;
     QProcess* process;
+    QString processName;
     QProcess* outputProcess;
     QTimer* timer;
     QTimer* solverTimeout;
