@@ -968,10 +968,17 @@ void MainWindow::runCompiledFzn(int exitcode)
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+"</div><br>");
             if (!mznDistribPath.isEmpty()) {
                 QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                QString dp = mznDistribPath;
+                dp.remove(dp.length()-1,1);
+                env.insert("PATH", env.value("PATH") + pathSep + dp);
+                dp.remove(dp.length()-4,4);
+                env.insert("MINIZINC", dp);
                 process->setProcessEnvironment(env);
             }
-            process->start(s.executable,args);
+            QString executable = s.executable;
+            if (s.builtin)
+                executable = mznDistribPath+executable;
+            process->start(executable,args);
             time = 0;
             timer->start(500);
         }
