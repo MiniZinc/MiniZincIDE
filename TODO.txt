@@ -1,4 +1,5 @@
 Features that would be nice to have:
+ * Show types
  * Integrated global constraint library browser
  * Save all data files before running
  * Auto indent
