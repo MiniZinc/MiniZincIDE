@@ -80,6 +80,13 @@ bool IDE::event(QEvent *e)
     }
 }
 
+IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
+    setApplicationVersion(MINIZINC_IDE_VERSION);
+    setOrganizationName("MiniZinc");
+    setOrganizationDomain("minizinc.org");
+    setApplicationName("MiniZinc IDE");
+}
+
 bool IDE::hasFile(const QString& path)
 {
     return documents.find(path) != documents.end();
@@ -1071,7 +1078,7 @@ void MainWindow::on_actionDefault_font_size_triggered()
 
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 {
-    AboutDialog().exec();
+    AboutDialog(ide()->applicationVersion()).exec();
 }
 
 void MainWindow::errorClicked(const QUrl & url)

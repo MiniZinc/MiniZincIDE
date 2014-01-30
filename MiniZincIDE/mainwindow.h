@@ -40,8 +40,7 @@ class MainWindow;
 class IDE : public QApplication {
     Q_OBJECT
 public:
-    IDE(int& argc, char* argv[]) :
-        QApplication(argc,argv) {}
+    IDE(int& argc, char* argv[]);
     struct Doc;
     typedef QMap<QString,Doc*> DMap;
     DMap documents;
