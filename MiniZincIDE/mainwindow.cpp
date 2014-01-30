@@ -493,7 +493,6 @@ void MainWindow::tabChange(int tab) {
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionRun->setEnabled(isMzn || isFzn);
             ui->actionCompile->setEnabled(isMzn);
-            bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionConstraint_Graph->setEnabled(isFzn);
 
             findDialog->setEditor(curEditor);
