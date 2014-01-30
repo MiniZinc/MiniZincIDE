@@ -1,0 +1,8 @@
+set of int: S = 1 .. 5;
+array[1 .. 5, 1 .. 5] of var S: a;
+array[1 .. 5, 1 .. 5] of var S: b;
+array[1 .. 5, 1 .. 5] of var S: c;
+var S: aa;
+var S: bb;
+var S: cc;
+output [ show(a), show(aa), show(b), show(bb), show(c), show(cc) ];

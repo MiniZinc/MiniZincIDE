@@ -12,12 +12,14 @@
 
 #include <QtWidgets>
 #include <QApplication>
+#include <QtWebKitWidgets>
 #include <QSet>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "aboutdialog.h"
 #include "codeeditor.h"
+#include "webpage.h"
 #include "fzndoc.h"
 #include "finddialog.h"
 #include "gotolinedialog.h"
@@ -491,6 +493,8 @@ void MainWindow::tabChange(int tab) {
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
             ui->actionRun->setEnabled(isMzn || isFzn);
             ui->actionCompile->setEnabled(isMzn);
+            bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+            ui->actionConstraint_Graph->setEnabled(isFzn);
 
             findDialog->setEditor(curEditor);
             ui->actionFind->setEnabled(true);
@@ -511,6 +515,7 @@ void MainWindow::tabChange(int tab) {
             ui->actionRedo->setEnabled(false);
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
+            ui->actionConstraint_Graph->setEnabled(false);
             ui->actionFind->setEnabled(false);
             ui->actionFind_next->setEnabled(false);
             ui->actionFind_previous->setEnabled(false);
@@ -1027,6 +1032,31 @@ void MainWindow::on_actionCompile_triggered()
         }
     }
 }
+
+void MainWindow::on_actionConstraint_Graph_triggered()
+{
+    
+    WebPage* page = new WebPage();
+    webView = new QWebView();
+    webView->setPage(page);
+    QString url = "qrc:/ConstraintGraph/index.html";
+    connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
+    webView->load(url);
+    webView->show();
+}
+
+void MainWindow::webview_loaded(bool ok) {
+    if (ok){
+        FznDoc fzndoc;
+        fzndoc.setstr(curEditor->document()->toPlainText());
+        webView->page()->mainFrame()->addToJavaScriptWindowObject("fznfile", &fzndoc);
+        QString code = "start_s(fznfile)";
+        webView->page()->mainFrame()->evaluateJavaScript(code);
+    } else {
+        qDebug() << "not ok";
+    }
+    
+} 
 
 void MainWindow::on_actionClear_output_triggered()
 {

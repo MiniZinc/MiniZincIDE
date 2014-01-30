@@ -1,0 +1,2 @@
+array[1 .. 6] of var 0 .. 36: mark;
+output [ "golomb ", show(mark), "\n" ];

@@ -1,0 +1,11 @@
+array [1..6] of var 0..36: mark :: output_array([1..6]);
+constraint int_eq(mark[1], 0);
+constraint int_lin_eq([-1, -1, 1], [ mark[1], mark[2]], 0) :: defines_var(INT____00001);
+constraint int_lin_eq([-1, -1, 1], [ mark[1], mark[3]], 0) :: defines_var(INT____00002);
+constraint int_lin_eq([-1, -1, 1], [ mark[1], mark[4]], 0) :: defines_var(INT____00003);
+constraint int_lt(mark[1], mark[2]);
+constraint int_lt(mark[2], mark[3]);
+constraint int_lt(mark[3], mark[4]);
+constraint int_lt(mark[4], mark[5]);
+constraint int_lt(mark[5], mark[6]);
+solve  :: int_search(mark, input_order, indomain, complete) minimize mark[6];

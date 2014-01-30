@@ -1,5 +1,30 @@
 <RCC>
     <qresource prefix="/">
+        <file>ConstraintGraph/index.html</file>
+        <file>ConstraintGraph/css/styles.css</file>
+        <file>ConstraintGraph/js/clustering.js</file>
+        <file>ConstraintGraph/js/data.js</file>
+        <file>ConstraintGraph/js/drawing_engine.js</file>
+        <file>ConstraintGraph/js/script.js</file>
+        <file>ConstraintGraph/js/tools.js</file>
+        <file>ConstraintGraph/from_tim/cola.js</file>
+        <file>ConstraintGraph/from_tim/d3.v3.js</file>
+        <file>ConstraintGraph/from_tim/descent.js</file>
+        <file>ConstraintGraph/from_tim/descent.js.map</file>
+        <file>ConstraintGraph/from_tim/descent.ts</file>
+        <file>ConstraintGraph/from_tim/injected.js</file>
+        <file>ConstraintGraph/from_tim/pqueue.js</file>
+        <file>ConstraintGraph/from_tim/pqueue.js.map</file>
+        <file>ConstraintGraph/from_tim/pqueue.ts</file>
+        <file>ConstraintGraph/from_tim/rbtree.js</file>
+        <file>ConstraintGraph/from_tim/rectangle.js</file>
+        <file>ConstraintGraph/from_tim/shortestpath.js</file>
+        <file>ConstraintGraph/from_tim/shortestpaths.js</file>
+        <file>ConstraintGraph/from_tim/shortestpaths.js.map</file>
+        <file>ConstraintGraph/from_tim/shortestpaths.ts</file>
+        <file>ConstraintGraph/from_tim/vpsc.js</file>
+        <file>ConstraintGraph/from_tim/vpsc.js.map</file>
+        <file>ConstraintGraph/from_tim/vpsc.ts</file>
         <file>images/mznlogo.png</file>
         <file>images/about.html</file>
         <file>images/mznicon.png</file>

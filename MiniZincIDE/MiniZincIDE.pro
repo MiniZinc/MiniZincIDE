@@ -24,6 +24,7 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
+    webpage.cpp \
     fzndoc.cpp \
     aboutdialog.cpp \
     solverdialog.cpp \
@@ -35,6 +36,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
+    webpage.h \
     fzndoc.h \
     aboutdialog.h \
     solverdialog.h \
