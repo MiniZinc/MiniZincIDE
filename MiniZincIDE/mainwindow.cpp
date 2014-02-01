@@ -401,7 +401,8 @@ void MainWindow::tabCloseRequest(int tab)
     ce->document()->setModified(false);
     ui->tabWidget->removeTab(tab);
     setupDznMenu();
-    ide()->removeEditor(ce->filepath,ce);
+    if (!ce->filepath.isEmpty())
+        ide()->removeEditor(ce->filepath,ce);
     delete ce;
     if (ui->tabWidget->count()==0) {
         on_actionNew_triggered();
