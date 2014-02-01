@@ -1383,6 +1383,7 @@ void MainWindow::saveProject(const QString& f)
             out << ui->conf_have_timeLimit->isChecked();
             out << (qint32)ui->conf_timeLimit->value();
             out << ui->conf_solver_verbose->isChecked();
+            out << (qint32)ui->tabWidget->currentIndex();
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
         }
@@ -1457,6 +1458,8 @@ void MainWindow::loadProject(const QString& filepath)
     if (version==102) {
         in >> p_b;
         ui->conf_solver_verbose->setChecked(p_b);
+        in >> p_i;
+        ui->tabWidget->setCurrentIndex(p_i);
     }
     projectPath = filepath;
 
