@@ -246,12 +246,17 @@ void MainWindow::init(const QString& project)
 
     setEditorFont(editorFont);
 
+    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_fd","-b lazy",true,false);
+    Solver g12cpx("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false);
+    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
+
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
-        solvers.append(Solver("G12 fd","flatzinc","-Gg12_fd","",true,false));
-        solvers.append(Solver("G12 lazyfd","flatzinc","-Gg12_fd","lazy",true,false));
-        solvers.append(Solver("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false));
-        solvers.append(Solver("G12 MIP","flatzinc","-Glinear","mip",true,false));
+        solvers.append(g12fd);
+        solvers.append(g12lazyfd);
+        solvers.append(g12cpx);
+        solvers.append(g12mip);
     } else {
         for (int i=0; i<nsolvers; i++) {
             settings.setArrayIndex(i);
@@ -262,6 +267,16 @@ void MainWindow::init(const QString& project)
             solver.backend = settings.value("backend").toString();
             solver.builtin = settings.value("builtin").toBool();
             solver.detach = settings.value("detach",false).toBool();
+            if (solver.builtin) {
+                if (solver.name=="G12 fd")
+                    solver = g12fd;
+                else if (solver.name=="G12 lazyfd")
+                    solver = g12lazyfd;
+                else if (solver.name=="G12 CPX")
+                    solver = g12cpx;
+                else if (solver.name=="G12 MIP")
+                    solver = g12mip;
+            }
             solvers.append(solver);
         }
     }
