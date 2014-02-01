@@ -1004,6 +1004,18 @@ void MainWindow::runCompiledFzn(int exitcode)
             QString executable = s.executable;
             if (s.builtin)
                 executable = mznDistribPath+executable;
+            if (ui->conf_solver_verbose->isChecked()) {
+                addOutput("<div style='color:blue;'>Command line:</div><br>");
+                QString cmdline = executable;
+                QRegExp white("\\s");
+                for (int i=0; i<args.size(); i++) {
+                    if (white.indexIn(args[i]) != -1)
+                        cmdline += " \""+args[i]+"\"";
+                    else
+                        cmdline += " "+args[i];
+                }
+                addOutput(cmdline);
+            }
             process->start(executable,args);
             time = 0;
             timer->start(500);
@@ -1341,7 +1353,7 @@ void MainWindow::saveProject(const QString& f)
             projectPath = filepath;
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
-            out << (quint32)101;
+            out << (quint32)102;
             out.setVersion(QDataStream::Qt_5_0);
             QStringList openFiles;
             for (int i=0; i<ui->tabWidget->count(); i++) {
@@ -1370,6 +1382,7 @@ void MainWindow::saveProject(const QString& f)
             out << ui->conf_seed->text();
             out << ui->conf_have_timeLimit->isChecked();
             out << (qint32)ui->conf_timeLimit->value();
+            out << ui->conf_solver_verbose->isChecked();
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
         }
@@ -1391,7 +1404,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
     quint32 version;
     in >> version;
-    if (version != 101) {
+    if (version != 101 && version != 102) {
         QMessageBox::warning(this, "MiniZinc IDE",
                              "Could not open project file (version mismatch)");
         close();
@@ -1441,6 +1454,10 @@ void MainWindow::loadProject(const QString& filepath)
     ui->conf_have_timeLimit->setChecked(p_b);
     in >> p_i;
     ui->conf_timeLimit->setValue(p_i);
+    if (version==102) {
+        in >> p_b;
+        ui->conf_solver_verbose->setChecked(p_b);
+    }
     projectPath = filepath;
 
     ide()->projects.insert(projectPath, this);
