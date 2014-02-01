@@ -1351,7 +1351,7 @@ void MainWindow::saveProject(const QString& f)
             }
             out << openFiles;
 
-            out << ""; // Used to be additional include path
+            out << QString(""); // Used to be additional include path
             out << (qint32)ui->conf_data_file->currentIndex();
             out << ui->conf_have_cmd_params->isChecked();
             out << ui->conf_cmd_params->text();
