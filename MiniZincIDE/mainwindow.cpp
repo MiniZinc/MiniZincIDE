@@ -778,10 +778,12 @@ void MainWindow::readOutput()
 {
     QProcess* readProc = (outputProcess==NULL ? process : outputProcess);
 
-    readProc->setReadChannel(QProcess::StandardOutput);
-    while (readProc->canReadLine()) {
-        QString l = readProc->readLine();
-        addOutput(l,false);
+    if (readProc != NULL) {
+        readProc->setReadChannel(QProcess::StandardOutput);
+        while (readProc->canReadLine()) {
+            QString l = readProc->readLine();
+            addOutput(l,false);
+        }
     }
 
     if (process != NULL) {
