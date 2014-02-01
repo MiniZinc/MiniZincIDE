@@ -563,7 +563,8 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "--no-optimize";
     if (compileOnly && ui->conf_verbose->isChecked())
         ret << "-v";
-    if (compileOnly && ui->conf_have_cmd_params->isChecked())
+    if (compileOnly && ui->conf_have_cmd_params->isChecked() &&
+        !ui->conf_cmd_params->text().isEmpty())
         ret << "-D"+ui->conf_cmd_params->text();
     if (compileOnly && ui->conf_data_file->currentText()!="None")
         ret << "-d"+ui->conf_data_file->currentText();
@@ -571,7 +572,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-a";
     if (!compileOnly && ui->conf_stats->isChecked())
         ret << "-s";
-    if (!compileOnly && ui->conf_nthreads->value() != 1)
+    if (!compileOnly && ui->conf_nthreads->value() > 1)
         ret << "-p"+QString::number(ui->conf_nthreads->value());
     if (!compileOnly && ui->conf_have_seed->isChecked())
         ret << "-r"+ui->conf_seed->text();
