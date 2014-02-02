@@ -1018,7 +1018,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                     else
                         cmdline += " "+args[i];
                 }
-                addOutput(cmdline);
+                addOutput("<div>"+cmdline+"</div><br>");
             }
             process->start(executable,args);
             time = 0;
