@@ -656,7 +656,10 @@ void MainWindow::checkArgsFinished(int exitcode)
     processName = MZN2FZN;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-    connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+    if (compileOnly)
+        connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
+    else
+        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
@@ -744,6 +747,7 @@ void MainWindow::on_actionRun_triggered()
             currentFznTarget = curEditor->filepath;
             runCompiledFzn(0);
         } else {
+            compileOnly = false;
             checkArgs(curEditor->filepath);
         }
     }
@@ -1030,39 +1034,34 @@ void MainWindow::runCompiledFzn(int exitcode)
 void MainWindow::on_actionCompile_triggered()
 {
     if (curEditor && curEditor->filepath!="") {
+        if (curEditor->document()->isModified()) {
+            if (!saveBeforeRunning) {
+                QMessageBox msgBox;
+                msgBox.setText("The model has been modified.");
+                msgBox.setInformativeText("Do you want to save it before compiling?");
+                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+                msgBox.addButton(QMessageBox::Cancel);
+                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+                msgBox.setDefaultButton(QMessageBox::Save);
+                msgBox.exec();
+                if (msgBox.clickedButton()==alwaysButton) {
+                    saveBeforeRunning = true;
+                }
+                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                    return;
+                }
+            }
+            on_actionSave_triggered();
+        }
+        if (curEditor->document()->isModified())
+            return;
         ui->actionRun->setEnabled(false);
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
-        process = new QProcess(this);
-        processName = MZN2FZN;
-        process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-        connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
-        connect(process, SIGNAL(error(QProcess::ProcessError)),
-                this, SLOT(procError(QProcess::ProcessError)));
 
-        QStringList args = parseConf(true);
-
-        tmpDir = new QTemporaryDir;
-        if (!tmpDir->isValid()) {
-            QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
-        } else {
-            QFileInfo fi(curEditor->filepath);
-            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-            args << "-o" << currentFznTarget;
-            args << curEditor->filepath;
-            addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
-            if (!mznDistribPath.isEmpty()) {
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                process->setProcessEnvironment(env);
-            }
-            process->start(mznDistribPath + MZN2FZN,args);
-            time = 0;
-            timer->start(500);
-            elapsedTime.start();
-        }
+        compileOnly = true;
+        checkArgs(curEditor->filepath);
     }
 }
 
