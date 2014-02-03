@@ -192,6 +192,7 @@ private:
     bool saveBeforeRunning;
     QString compileErrors;
     ParamDialog* paramDialog;
+    bool compileOnly;
 
     void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);

@@ -42,6 +42,14 @@ QStringList ParamDialog::getParams(QStringList params)
         previousParams = params;
         previousValues = values;
     }
+    for (int i=0; i<params.size(); i++) {
+        QWidget* w = formLayout->itemAt(i,QFormLayout::LabelRole)->widget();
+        formLayout->removeWidget(w);
+        delete w;
+        w = formLayout->itemAt(i,QFormLayout::FieldRole)->widget();
+        formLayout->removeWidget(w);
+        delete w;
+    }
     delete formLayout;
     return values;
 }
