@@ -33,6 +33,12 @@
 #define MZN2FZN "mzn2fzn"
 #endif
 
+#ifdef Q_OS_MAC
+#define fileDialogSuffix "/*"
+#else
+#define fileDialogSuffix "/"
+#endif
+
 struct IDE::Doc {
     QTextDocument td;
     QSet<CodeEditor*> editors;
@@ -293,9 +299,9 @@ void MainWindow::init(const QString& project)
 
     if (!project.isEmpty()) {
         loadProject(project);
-        lastPath = QFileInfo(project).absolutePath()+"/*";
+        lastPath = QFileInfo(project).absolutePath()+fileDialogSuffix;
     } else {
-        lastPath = QDir::homePath()+"/*";
+        lastPath = QDir::currentPath()+fileDialogSuffix;
     }
 }
 
@@ -364,7 +370,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
     if (fileName.isNull()) {
         fileName = QFileDialog::getOpenFileName(this, tr("Open File"), lastPath, "MiniZinc Files (*.mzn *.dzn *.fzn)");
         if (!fileName.isNull()) {
-            lastPath = QFileInfo(fileName).absolutePath()+"/*";
+            lastPath = QFileInfo(fileName).absolutePath()+fileDialogSuffix;
         }
     }
 
@@ -869,7 +875,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         QString dialogPath = ce->filepath.isEmpty() ? lastPath : ce->filepath;
         filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
         if (!filepath.isNull()) {
-            lastPath = QFileInfo(filepath).absolutePath()+"/*";
+            lastPath = QFileInfo(filepath).absolutePath()+fileDialogSuffix;
         }
     }
     if (!filepath.isEmpty()) {
@@ -1321,7 +1327,7 @@ void MainWindow::on_actionOpen_project_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), lastPath, "MiniZinc projects (*.mzp)");
     if (!fileName.isNull()) {
-        lastPath = QFileInfo(fileName).absolutePath()+"/*";
+        lastPath = QFileInfo(fileName).absolutePath()+fileDialogSuffix;
     }
 
     openProject(fileName);
@@ -1333,7 +1339,7 @@ void MainWindow::saveProject(const QString& f)
     if (filepath.isEmpty()) {
         filepath = QFileDialog::getSaveFileName(this,"Save project",lastPath,"MiniZinc projects (*.mzp)");
         if (!filepath.isNull()) {
-            lastPath = QFileInfo(filepath).absolutePath()+"/*";
+            lastPath = QFileInfo(filepath).absolutePath()+fileDialogSuffix;
         }
     }
     if (!filepath.isEmpty()) {
