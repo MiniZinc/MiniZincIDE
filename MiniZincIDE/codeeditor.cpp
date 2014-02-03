@@ -19,10 +19,7 @@ CodeEditor::initUI(QFont& font)
 {
     setFont(font);
 
-    const int tabStop = 2;  // 4 characters
-
-    QFontMetrics metrics(font);
-    setTabStopWidth(tabStop * metrics.width(' '));
+    setTabStopWidth(QFontMetrics(font).width('  '));
 
     lineNumbers= new LineNumbers(this);
 
