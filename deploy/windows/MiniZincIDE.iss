@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MiniZinc IDE"
-#define MyAppVersion "0.9"
+#define MyAppVersion "0.9.2"
 #define MyAppPublisher "NICTA and Monash University"
 #define MyAppURL "http://www.minizinc.org"
 #define MyAppExeName "MiniZincIDE.exe"
