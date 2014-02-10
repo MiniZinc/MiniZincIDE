@@ -15,9 +15,6 @@
 int main(int argc, char *argv[])
 {
     IDE a(argc, argv);
-    a.setOrganizationName("MiniZinc");
-    a.setOrganizationDomain("minizinc.org");
-    a.setApplicationName("MiniZinc IDE");
     QStringList args = QApplication::arguments();
     QStringList files;
     for (int i=1; i<args.size(); i++) {
