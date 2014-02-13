@@ -1076,28 +1076,15 @@ void MainWindow::on_actionCompile_triggered()
 
 void MainWindow::on_actionConstraint_Graph_triggered()
 {
-    
-    WebPage* page = new WebPage();
-    webView = new QWebView();
-    webView->setPage(page);
-    QString url = "qrc:/ConstraintGraph/index.html";
-    connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
-    webView->load(url);
-    webView->show();
+    new ConstraintGraph(curEditor->document()->toPlainText(), this);
+//    WebPage* page = new WebPage();
+//    webView = new QWebView();
+//    webView->setPage(page);
+//    QString url = "qrc:/ConstraintGraph/index.html";
+//    connect(webView, SIGNAL(loadFinished(bool)), this, SLOT(webview_loaded(bool)));
+//    webView->load(url);
+//    webView->show();
 }
-
-void MainWindow::webview_loaded(bool ok) {
-    if (ok){
-        FznDoc fzndoc;
-        fzndoc.setstr(curEditor->document()->toPlainText());
-        webView->page()->mainFrame()->addToJavaScriptWindowObject("fznfile", &fzndoc);
-        QString code = "start_s(fznfile)";
-        webView->page()->mainFrame()->evaluateJavaScript(code);
-    } else {
-        qDebug() << "not ok";
-    }
-    
-} 
 
 void MainWindow::on_actionClear_output_triggered()
 {

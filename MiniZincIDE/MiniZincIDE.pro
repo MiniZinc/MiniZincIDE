@@ -34,7 +34,8 @@ SOURCES += main.cpp\
     gotolinedialog.cpp \
     help.cpp \
     finddialog.cpp \
-    paramdialog.cpp
+    paramdialog.cpp \
+    constraintgraph.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -46,7 +47,8 @@ HEADERS  += mainwindow.h \
     gotolinedialog.h \
     help.h \
     finddialog.h \
-    paramdialog.h
+    paramdialog.h \
+    constraintgraph.h
 
 FORMS    += \
     mainwindow.ui \
@@ -55,7 +57,8 @@ FORMS    += \
     gotolinedialog.ui \
     help.ui \
     finddialog.ui \
-    paramdialog.ui
+    paramdialog.ui \
+    constraintgraph.ui
 
 RESOURCES += \
     minizincide.qrc

@@ -18,7 +18,6 @@
 #include <QProcess>
 #include <QTimer>
 #include <QLabel>
-#include <QWebView>
 #include <QSet>
 #include <QTemporaryDir>
 #include <QElapsedTimer>
@@ -29,6 +28,7 @@
 #include "solverdialog.h"
 #include "help.h"
 #include "paramdialog.h"
+#include "constraintgraph.h"
 
 namespace Ui {
 class MainWindow;
@@ -108,8 +108,6 @@ private slots:
 
     void on_actionConstraint_Graph_triggered();
 
-    void webview_loaded(bool);
-
     void openCompiledFzn(int);
 
     void runCompiledFzn(int);
@@ -173,7 +171,7 @@ protected:
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
-    QWebView* webView;
+    ConstraintGraph* constraintGraph;
     QProcess* process;
     QString processName;
     QProcess* outputProcess;
