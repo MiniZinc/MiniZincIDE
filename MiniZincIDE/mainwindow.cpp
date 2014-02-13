@@ -758,7 +758,7 @@ void MainWindow::on_actionRun_triggered()
     }
 }
 
-void MainWindow::setElapsedTime()
+QString MainWindow::setElapsedTime()
 {
     int hours = elapsedTime.elapsed() / 3600000;
     int minutes = (elapsedTime.elapsed() % 3600000) / 60000;
@@ -774,6 +774,7 @@ void MainWindow::setElapsedTime()
     if (hours==0 && minutes==0)
         elapsed += " "+QString().number(msec)+"msec";
     statusLabel->setText(elapsed);
+    return elapsed;
 }
 
 void MainWindow::statusTimerEvent()
@@ -834,7 +835,7 @@ void MainWindow::procFinished(int) {
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
     timer->stop();
-    setElapsedTime();
+    QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
     if (outputProcess) {
@@ -842,6 +843,7 @@ void MainWindow::procFinished(int) {
         outputProcess->waitForFinished();
         outputProcess = NULL;
     }
+    addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     delete tmpDir;
     tmpDir = NULL;
 }

@@ -201,7 +201,7 @@ private:
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
-    void setElapsedTime();
+    QString setElapsedTime();
     void setupDznMenu();
     void checkMznPath();
     IDE* ide();
