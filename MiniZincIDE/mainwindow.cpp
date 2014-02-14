@@ -726,8 +726,8 @@ void MainWindow::on_actionRun_triggered()
         if (curEditor->document()->isModified()) {
             if (!saveBeforeRunning) {
                 QMessageBox msgBox;
-                msgBox.setText("The model has been modified.");
-                msgBox.setInformativeText("Do you want to save it before running?");
+                msgBox.setText("The model has been modified. You have to save it before running.");
+                msgBox.setInformativeText("Do you want to save it now and then run?");
                 QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
                 msgBox.addButton(QMessageBox::Cancel);
                 QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
