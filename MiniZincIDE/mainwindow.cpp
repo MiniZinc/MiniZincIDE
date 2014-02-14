@@ -329,6 +329,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
+    QString absPath = QFileInfo(path).absoluteFilePath();
     if (path.isEmpty()) {
 
     } else if (openAsModified) {
@@ -342,12 +343,12 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
             return;
         }
     } else {
-        QPair<QTextDocument*,bool> d = ide()->loadFile(path,this);
+        QPair<QTextDocument*,bool> d = ide()->loadFile(absPath,this);
         doc = d.first;
         large = d.second;
     }
-    if (doc || !fileContents.isEmpty() || path.isEmpty()) {
-        CodeEditor* ce = new CodeEditor(doc,path,large,editorFont,ui->tabWidget,this);
+    if (doc || !fileContents.isEmpty() || absPath.isEmpty()) {
+        CodeEditor* ce = new CodeEditor(doc,absPath,large,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
@@ -357,7 +358,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
             curEditor->document()->setModified(true);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
-            ide()->registerEditor(path,curEditor);
+            ide()->registerEditor(absPath,curEditor);
         }
         setupDznMenu();
     }
