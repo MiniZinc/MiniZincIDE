@@ -1234,30 +1234,6 @@ void MainWindow::checkMznPath()
     }
 }
 
-void MainWindow::on_actionOnly_editor_triggered()
-{
-    QList<int> sizes;
-    sizes << 100;
-    sizes << 0;
-    ui->splitter->setSizes(sizes);
-}
-
-void MainWindow::on_actionOnly_output_triggered()
-{
-    QList<int> sizes;
-    sizes << 0;
-    sizes << 100;
-    ui->splitter->setSizes(sizes);
-}
-
-void MainWindow::on_actionSplit_triggered()
-{
-    QList<int> sizes;
-    sizes << ui->splitter->height()/3*2;
-    sizes << ui->splitter->height()/3;
-    ui->splitter->setSizes(sizes);
-}
-
 void MainWindow::on_actionShift_left_triggered()
 {
     QTextCursor cursor = curEditor->textCursor();
@@ -1553,4 +1529,16 @@ void MainWindow::on_action_Un_comment_triggered()
         block = block.next();
     } while (block.isValid() && block != endblock);
     cursor.endEditBlock();
+}
+
+void MainWindow::on_actionOnly_editor_triggered()
+{
+    if (!ui->outputDockWidget->isFloating())
+        ui->outputDockWidget->hide();
+}
+
+void MainWindow::on_actionSplit_triggered()
+{
+    if (!ui->outputDockWidget->isFloating())
+        ui->outputDockWidget->show();
 }

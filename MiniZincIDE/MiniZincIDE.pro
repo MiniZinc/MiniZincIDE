@@ -33,7 +33,8 @@ SOURCES += main.cpp\
     gotolinedialog.cpp \
     help.cpp \
     finddialog.cpp \
-    paramdialog.cpp
+    paramdialog.cpp \
+    outputdockwidget.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -44,7 +45,8 @@ HEADERS  += mainwindow.h \
     gotolinedialog.h \
     help.h \
     finddialog.h \
-    paramdialog.h
+    paramdialog.h \
+    outputdockwidget.h
 
 FORMS    += \
     mainwindow.ui \

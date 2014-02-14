@@ -134,12 +134,6 @@ private slots:
 
     void on_actionGo_to_line_triggered();
 
-    void on_actionOnly_editor_triggered();
-
-    void on_actionOnly_output_triggered();
-
-    void on_actionSplit_triggered();
-
     void on_actionShift_left_triggered();
 
     void on_actionShift_right_triggered();
@@ -163,6 +157,10 @@ private slots:
     void on_actionSave_all_triggered();
 
     void on_action_Un_comment_triggered();
+
+    void on_actionOnly_editor_triggered();
+
+    void on_actionSplit_triggered();
 
 protected:
     virtual void closeEvent(QCloseEvent*);
