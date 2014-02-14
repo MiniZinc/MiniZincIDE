@@ -169,11 +169,15 @@ void IDE::registerEditor(const QString& path, CodeEditor* ce)
 void IDE::removeEditor(const QString& path, CodeEditor* ce)
 {
     DMap::iterator it = documents.find(path);
-    QSet<CodeEditor*>& editors = it.value()->editors;
-    editors.remove(ce);
-    if (editors.empty()) {
-        delete it.value();
-        documents.remove(path);
+    if (it == documents.end()) {
+        qDebug() << "internal error: document " << path << " not found";
+    } else {
+        QSet<CodeEditor*>& editors = it.value()->editors;
+        editors.remove(ce);
+        if (editors.empty()) {
+            delete it.value();
+            documents.remove(path);
+        }
     }
 }
 
