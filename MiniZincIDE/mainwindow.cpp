@@ -482,8 +482,6 @@ void MainWindow::tabChange(int tab) {
         disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
                    this, SLOT(setWindowModified(bool)));
-        disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                   ui->actionSave, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(undoAvailable(bool)),
                    ui->actionUndo, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
@@ -505,8 +503,6 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
                     this, SLOT(setWindowModified(bool)));
-            connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                    ui->actionSave, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
                     ui->actionUndo, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
@@ -516,8 +512,8 @@ void MainWindow::tabChange(int tab) {
                 setWindowFilePath(curEditor->filename);
             else
                 setWindowFilePath(curEditor->filepath);
+            ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
-            ui->actionSave->setEnabled(curEditor->document()->isModified());
             ui->actionSelect_All->setEnabled(true);
             ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
