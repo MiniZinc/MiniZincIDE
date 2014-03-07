@@ -639,12 +639,12 @@ void MainWindow::checkArgsFinished(int exitcode)
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
-        QRegExp undefined("symbol error: variable `(.*)' must be defined");
+        QRegExp undefined("symbol error: variable `([a-zA-Z][a-zA-Z0-9_]*)' must be defined");
         undefined.setMinimal(true);
         int pos = 0;
         QStringList undefinedArgs;
         while ( (pos = undefined.indexIn(compileErrors,pos)) != -1 ) {
-            undefinedArgs << undefined.cap(1);;
+            undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
         if (undefinedArgs.size() > 0) {
