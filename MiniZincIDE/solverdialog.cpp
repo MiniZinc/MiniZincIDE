@@ -31,6 +31,8 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     }
     ui->solvers_combo->setCurrentIndex(0);
     defaultSolver = ui->solvers_combo->findText(def);
+    ui->solver_default->setChecked(0==defaultSolver);
+    ui->solver_default->setEnabled(0!=defaultSolver);
 }
 
 SolverDialog::~SolverDialog()
