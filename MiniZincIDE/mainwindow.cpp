@@ -635,6 +635,8 @@ void MainWindow::checkArgsOutput()
 
 void MainWindow::checkArgsFinished(int exitcode)
 {
+    if (processWasStopped)
+        return;
     QString additionalArgs;
     if (exitcode!=0) {
         checkArgsOutput();
@@ -665,6 +667,7 @@ void MainWindow::checkArgsFinished(int exitcode)
     }
     process = new QProcess(this);
     processName = MZN2FZN;
+    processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     if (compileOnly)
@@ -706,6 +709,7 @@ void MainWindow::checkArgs(QString filepath)
 {
     process = new QProcess;
     processName = MZN2FZN;
+    processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
@@ -943,16 +947,20 @@ void MainWindow::on_actionStop_triggered()
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
+        processWasStopped = true;
         process->kill();
         process->waitForFinished();
         delete process;
         process = NULL;
         addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        procFinished(0);
     }
 }
 
 void MainWindow::openCompiledFzn(int exitcode)
 {
+    if (processWasStopped)
+        return;
     if (exitcode==0) {
         openFile(currentFznTarget, true);
     }
@@ -961,6 +969,8 @@ void MainWindow::openCompiledFzn(int exitcode)
 
 void MainWindow::runCompiledFzn(int exitcode)
 {
+    if (processWasStopped)
+        return;
     if (exitcode==0) {
         QStringList args = parseConf(false);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
@@ -993,6 +1003,7 @@ void MainWindow::runCompiledFzn(int exitcode)
 
             process = new QProcess(this);
             processName = s.executable;
+            processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
             connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
             connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));

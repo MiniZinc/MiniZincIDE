@@ -171,6 +171,7 @@ private:
     QProcess* process;
     QString processName;
     QProcess* outputProcess;
+    bool processWasStopped;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
