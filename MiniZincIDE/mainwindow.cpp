@@ -335,7 +335,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
     QString fileContents;
     QString absPath = QFileInfo(path).absoluteFilePath();
     if (path.isEmpty()) {
-
+        absPath = path;
+        // Do nothing
     } else if (openAsModified) {
         QFile file(path);
         if (file.open(QFile::ReadOnly)) {
