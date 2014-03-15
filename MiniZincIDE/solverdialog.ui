@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>531</width>
-    <height>335</height>
+    <height>361</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Solvers</string>
+   <string>Preferences</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -20,9 +20,9 @@
    <property name="geometry">
     <rect>
      <x>440</x>
-     <y>300</y>
+     <y>330</y>
      <width>81</width>
-     <height>32</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="orientation">
@@ -249,6 +249,19 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QCheckBox" name="check_updates">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>300</y>
+     <width>351</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Check for updates to the IDE on startup once a day</string>
+   </property>
   </widget>
  </widget>
  <tabstops>

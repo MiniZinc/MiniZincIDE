@@ -13,6 +13,9 @@
 #include <QtWidgets>
 #include <QApplication>
 #include <QSet>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -91,6 +94,33 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
     setApplicationName("MiniZinc IDE");
+
+    QSettings settings;
+    settings.sync();
+
+    settings.beginGroup("ide");
+    if (settings.value("lastCheck",QDate()).toDate().isNull()) {
+        int checkUpdates =
+            QMessageBox::question(NULL,"Check for updates",
+                              "The MiniZinc IDE can check automatically once a day "
+                              "whether any updates are available. "
+                              "You can disable the check at any time "
+                              "in the preferences dialog.\n"
+                              "Do you want to enable the update check now?",
+                              QMessageBox::No|QMessageBox::Yes,QMessageBox::Yes);
+        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+        settings.setValue("checkforupdates",checkUpdates==QMessageBox::Yes);
+    }
+
+    if (settings.value("checkforupdates",false).toBool()) {
+        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
+            QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+            connect(manager, SIGNAL(finished(QNetworkReply*)),
+                    this, SLOT(versionCheckFinished(QNetworkReply*)));
+            manager->get(QNetworkRequest(QUrl("http://www.minizinc.org/ide/version-info.php")));
+        }
+    }
+    settings.endGroup();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -178,6 +208,27 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
             delete it.value();
             documents.remove(path);
         }
+    }
+}
+
+void
+IDE::versionCheckFinished(QNetworkReply *reply) {
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
+        QString currentVersion = reply->readAll();
+        if (true || currentVersion != applicationVersion()) {
+            int button = QMessageBox::information(NULL,"Update available",
+                                     "Version "+currentVersion+" of the MiniZinc IDE is now available. "
+                                     "You are currently using version "+applicationVersion()+
+                                     ".\nDo you want to open the MiniZinc IDE download page?",
+                                     QMessageBox::Cancel|QMessageBox::Ok,QMessageBox::Ok);
+            if (button==QMessageBox::Ok) {
+                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/ide/"));
+            }
+        }
+        QSettings settings;
+        settings.beginGroup("ide");
+        settings.setValue("lastCheck",QDate::currentDate());
+        settings.endGroup();
     }
 }
 

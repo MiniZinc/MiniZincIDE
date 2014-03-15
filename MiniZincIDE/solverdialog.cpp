@@ -15,6 +15,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QSettings>
 
 SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
                            const QString& mznPath, QWidget *parent) :
@@ -33,6 +34,10 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     defaultSolver = ui->solvers_combo->findText(def);
     ui->solver_default->setChecked(0==defaultSolver);
     ui->solver_default->setEnabled(0!=defaultSolver);
+    QSettings settings;
+    settings.beginGroup("ide");
+    ui->check_updates->setChecked(settings.value("checkforupdates",false).toBool());
+    settings.endGroup();
 }
 
 SolverDialog::~SolverDialog()
@@ -135,4 +140,12 @@ void SolverDialog::on_solver_default_stateChanged(int state)
         defaultSolver = ui->solvers_combo->currentIndex();
         ui->solver_default->setEnabled(false);
     }
+}
+
+void SolverDialog::on_check_updates_stateChanged(int checkstate)
+{
+    QSettings settings;
+    settings.beginGroup("ide");
+    settings.setValue("checkforupdates", checkstate==Qt::Checked);
+    settings.endGroup();
 }

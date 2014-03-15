@@ -36,6 +36,7 @@ class MainWindow;
 
 class FindDialog;
 class MainWindow;
+class QNetworkReply;
 
 class IDE : public QApplication {
     Q_OBJECT
@@ -55,6 +56,8 @@ public:
     void removeEditor(const QString& path, CodeEditor* ce);
 protected:
     bool event(QEvent *);
+protected slots:
+    void versionCheckFinished(QNetworkReply*);
 };
 
 class MainWindow : public QMainWindow
