@@ -715,6 +715,7 @@ void MainWindow::checkArgsFinished(int exitcode)
     process = new QProcess(this);
     processName = MZN2FZN;
     processWasStopped = false;
+    runSolns2Out = true;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     if (compileOnly)
@@ -807,6 +808,7 @@ void MainWindow::on_actionRun_triggered()
 
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
+            runSolns2Out = false;
             runCompiledFzn(0);
         } else {
             compileOnly = false;
@@ -1033,26 +1035,31 @@ void MainWindow::runCompiledFzn(int exitcode)
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
-            outputProcess = new QProcess(this);
-            outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
-            connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
-            connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
-                    this, SLOT(outputProcError(QProcess::ProcessError)));
-            if (!mznDistribPath.isEmpty()) {
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                outputProcess->setProcessEnvironment(env);
+            if (runSolns2Out) {
+                outputProcess = new QProcess(this);
+                outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+                connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+                connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+                connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
+                        this, SLOT(outputProcError(QProcess::ProcessError)));
+                if (!mznDistribPath.isEmpty()) {
+                    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                    env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                    outputProcess->setProcessEnvironment(env);
+                }
+                QStringList outargs;
+                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+                outputProcess->start(mznDistribPath+"solns2out",outargs);
             }
-            QStringList outargs;
-            outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-            outputProcess->start(mznDistribPath+"solns2out",outargs);
-
             process = new QProcess(this);
             processName = s.executable;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+            if (runSolns2Out) {
+                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+            } else {
+                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+            }
             connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
             connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
             connect(process, SIGNAL(error(QProcess::ProcessError)),

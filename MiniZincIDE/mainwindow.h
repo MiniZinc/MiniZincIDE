@@ -185,6 +185,7 @@ private:
     QString defaultSolver;
     QString mznDistribPath;
     QString currentFznTarget;
+    bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     FindDialog* findDialog;
