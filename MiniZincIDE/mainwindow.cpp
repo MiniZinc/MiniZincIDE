@@ -117,7 +117,10 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
             QNetworkAccessManager *manager = new QNetworkAccessManager(this);
             connect(manager, SIGNAL(finished(QNetworkReply*)),
                     this, SLOT(versionCheckFinished(QNetworkReply*)));
-            manager->get(QNetworkRequest(QUrl("http://www.minizinc.org/ide/version-info.php")));
+            QNetworkRequest request(QUrl("http://www.minizinc.org/ide/version-info.php"));
+            request.setRawHeader("User-Agent",
+                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
+            manager->get(request);
         }
     }
     settings.endGroup();
@@ -215,7 +218,7 @@ void
 IDE::versionCheckFinished(QNetworkReply *reply) {
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = reply->readAll();
-        if (true || currentVersion != applicationVersion()) {
+        if (currentVersion != applicationVersion()) {
             int button = QMessageBox::information(NULL,"Update available",
                                      "Version "+currentVersion+" of the MiniZinc IDE is now available. "
                                      "You are currently using version "+applicationVersion()+
