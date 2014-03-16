@@ -218,7 +218,7 @@ void
 IDE::versionCheckFinished(QNetworkReply *reply) {
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = reply->readAll();
-        if (currentVersion != applicationVersion()) {
+        if (currentVersion > applicationVersion()) {
             int button = QMessageBox::information(NULL,"Update available",
                                      "Version "+currentVersion+" of the MiniZinc IDE is now available. "
                                      "You are currently using version "+applicationVersion()+
