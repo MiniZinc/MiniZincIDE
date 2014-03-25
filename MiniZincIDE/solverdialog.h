@@ -56,6 +56,8 @@ private slots:
 
     void on_check_updates_stateChanged(int arg1);
 
+    void on_send_stats_stateChanged(int arg1);
+
 private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;

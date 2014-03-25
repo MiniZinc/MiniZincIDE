@@ -58,6 +58,8 @@ protected:
     bool event(QEvent *);
 protected slots:
     void versionCheckFinished(QNetworkReply*);
+public slots:
+    void checkUpdate(void);
 };
 
 class MainWindow : public QMainWindow

@@ -89,6 +89,33 @@ bool IDE::event(QEvent *e)
     }
 }
 
+void IDE::checkUpdate(void) {
+    QSettings settings;
+    settings.sync();
+
+    settings.beginGroup("ide");
+    if (settings.value("checkforupdates",false).toBool()) {
+        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
+            QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+            connect(manager, SIGNAL(finished(QNetworkReply*)),
+                    this, SLOT(versionCheckFinished(QNetworkReply*)));
+            QString url_s = "http://www.minizinc.org/ide/version-info.php";
+            if (settings.value("sendstats",false).toBool()) {
+                url_s += "?uid="+settings.value("uuid","unknown").toString();
+            }
+            QUrl url(url_s);
+            QNetworkRequest request(url);
+            request.setRawHeader("User-Agent",
+                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
+            manager->get(request);
+        }
+        QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
+    }
+    settings.endGroup();
+
+}
+
+
 IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
@@ -100,30 +127,29 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     settings.beginGroup("ide");
     if (settings.value("lastCheck",QDate()).toDate().isNull()) {
-        int checkUpdates =
-            QMessageBox::question(NULL,"Check for updates",
-                              "The MiniZinc IDE can check automatically once a day "
-                              "whether any updates are available. "
-                              "You can disable the check at any time "
-                              "in the preferences dialog.\n"
-                              "Do you want to enable the update check now?",
-                              QMessageBox::No|QMessageBox::Yes,QMessageBox::Yes);
-        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
-        settings.setValue("checkforupdates",checkUpdates==QMessageBox::Yes);
-    }
+        settings.setValue("uuid", QUuid::createUuid().toString());
 
-    if (settings.value("checkforupdates",false).toBool()) {
-        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
-            QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-            connect(manager, SIGNAL(finished(QNetworkReply*)),
-                    this, SLOT(versionCheckFinished(QNetworkReply*)));
-            QNetworkRequest request(QUrl("http://www.minizinc.org/ide/version-info.php"));
-            request.setRawHeader("User-Agent",
-                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
-            manager->get(request);
-        }
+        QMessageBox msgBox;
+        msgBox.setWindowTitle("Check for updates");
+        msgBox.setInformativeText("The MiniZinc IDE can check automatically once a day "
+                       "whether any updates are available. "
+                       "You can disable the check at any time "
+                       "in the preferences dialog.\n"
+                       "You can also help us improve the IDE by sending some "
+                       "anonymous statistics together with the check for updates.");
+        msgBox.setCheckBox(new QCheckBox("Include anonymous statistics"));
+        msgBox.setText("Do you want to automatically check for updates?");
+        msgBox.checkBox()->setChecked(true);
+        QPushButton* yesbutton = msgBox.addButton(QMessageBox::Yes);
+        msgBox.addButton(QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::Yes);
+        msgBox.exec();
+        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+        settings.setValue("checkforupdates",msgBox.clickedButton()==yesbutton);
+        settings.setValue("sendstats",msgBox.checkBox()->isChecked());
     }
     settings.endGroup();
+    checkUpdate();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -1220,6 +1246,11 @@ void MainWindow::errorClicked(const QUrl & url)
 
 void MainWindow::on_actionManage_solvers_triggered()
 {
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool checkUpdates = settings.value("checkforupdates",false).toBool();
+    settings.endGroup();
+
     SolverDialog sd(solvers,defaultSolver,mznDistribPath);
     sd.exec();
     defaultSolver = sd.def();
@@ -1237,7 +1268,13 @@ void MainWindow::on_actionManage_solvers_triggered()
     else
         ui->conf_solver->setCurrentText(defaultSolver);
 
-    QSettings settings;
+    settings.beginGroup("ide");
+    if (!checkUpdates && settings.value("checkforupdates",false).toBool()) {
+        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+        ide()->checkUpdate();
+    }
+    settings.endGroup();
+
     settings.beginGroup("minizinc");
     settings.setValue("mznpath",mznDistribPath);
     settings.setValue("defaultSolver",defaultSolver);
