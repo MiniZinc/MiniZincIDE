@@ -38,15 +38,31 @@ class FindDialog;
 class MainWindow;
 class QNetworkReply;
 
+class IDEStatistics {
+public:
+    int errorsShown;
+    int errorsClicked;
+    int modelsRun;
+    QStringList solvers;
+    QVariantMap toVariantMap(void);
+    IDEStatistics(void);
+    void init(QVariant v);
+    QByteArray toJson(void);
+    void resetCounts(void);
+};
+
 class IDE : public QApplication {
     Q_OBJECT
 public:
     IDE(int& argc, char* argv[]);
+    ~IDE(void);
     struct Doc;
     typedef QMap<QString,Doc*> DMap;
     DMap documents;
     typedef QMap<QString,MainWindow*> PMap;
     PMap projects;
+
+    IDEStatistics stats;
 
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);

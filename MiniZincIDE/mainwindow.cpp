@@ -42,6 +42,39 @@
 #define fileDialogSuffix "/"
 #endif
 
+IDEStatistics::IDEStatistics(void)
+    : errorsShown(0), errorsClicked(0), modelsRun(0) {}
+
+void IDEStatistics::init(QVariant v) {
+    if (v.isValid()) {
+        QMap<QString,QVariant> m = v.toMap();
+        errorsShown = m["errorsShown"].toInt();
+        errorsClicked = m["errorsClicked"].toInt();
+        modelsRun = m["modelsRun"].toInt();
+        solvers = m["solvers"].toStringList();
+    }
+}
+
+QVariantMap IDEStatistics::toVariantMap(void) {
+    QMap<QString,QVariant> m;
+    m["errorsShown"] = errorsShown;
+    m["errorsClicked"] = errorsClicked;
+    m["modelsRun"] = modelsRun;
+    m["solvers"] = solvers;
+    return m;
+}
+
+QByteArray IDEStatistics::toJson(void) {
+    QJsonDocument jd(QJsonObject::fromVariantMap(toVariantMap()));
+    return jd.toJson();
+}
+
+void IDEStatistics::resetCounts(void) {
+    errorsShown = 0;
+    errorsClicked = 0;
+    modelsRun = 0;
+}
+
 struct IDE::Doc {
     QTextDocument td;
     QSet<CodeEditor*> editors;
@@ -100,8 +133,10 @@ void IDE::checkUpdate(void) {
             connect(manager, SIGNAL(finished(QNetworkReply*)),
                     this, SLOT(versionCheckFinished(QNetworkReply*)));
             QString url_s = "http://www.minizinc.org/ide/version-info.php";
+            url_s += "?version="+applicationVersion();
             if (settings.value("sendstats",false).toBool()) {
-                url_s += "?uid="+settings.value("uuid","unknown").toString();
+                url_s += "&uid="+settings.value("uuid","unknown").toString();
+                url_s += "&stats="+stats.toJson();
             }
             QUrl url(url_s);
             QNetworkRequest request(url);
@@ -149,7 +184,16 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         settings.setValue("sendstats",msgBox.checkBox()->isChecked());
     }
     settings.endGroup();
+
+    stats.init(settings.value("statistics"));
+
     checkUpdate();
+}
+
+IDE::~IDE(void) {
+    QSettings settings;
+    settings.setValue("statistics",stats.toVariantMap());
+    qDebug() << stats.toJson();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -258,6 +302,7 @@ IDE::versionCheckFinished(QNetworkReply *reply) {
         settings.beginGroup("ide");
         settings.setValue("lastCheck",QDate::currentDate());
         settings.endGroup();
+        stats.resetCounts();
     }
 }
 
@@ -348,6 +393,7 @@ void MainWindow::init(const QString& project)
         solvers.append(g12cpx);
         solvers.append(g12mip);
     } else {
+        ide()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
             settings.setArrayIndex(i);
             Solver solver;
@@ -366,6 +412,8 @@ void MainWindow::init(const QString& project)
                     solver = g12cpx;
                 else if (solver.name=="G12 MIP")
                     solver = g12mip;
+            } else {
+                ide()->stats.solvers.append(solver.name);
             }
             solvers.append(solver);
         }
@@ -834,7 +882,7 @@ void MainWindow::on_actionRun_triggered()
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
-
+        ide()->stats.modelsRun++;
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
             runSolns2Out = false;
@@ -895,6 +943,7 @@ void MainWindow::readOutput()
                 QUrl url = QUrl::fromLocalFile(errexp.cap(1));
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
+                ide()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
             } else {
                 addOutput(l,false);
@@ -1220,6 +1269,7 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 
 void MainWindow::errorClicked(const QUrl & url)
 {
+    ide()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -1281,7 +1331,10 @@ void MainWindow::on_actionManage_solvers_triggered()
     settings.endGroup();
 
     settings.beginWriteArray("solvers");
+    QStringList solvers_list;
     for (int i=0; i<solvers.size(); i++) {
+        if (!solvers[i].builtin)
+            solvers_list.append(solvers[i].name);
         settings.setArrayIndex(i);
         settings.setValue("name",solvers[i].name);
         settings.setValue("executable",solvers[i].executable);
@@ -1290,6 +1343,7 @@ void MainWindow::on_actionManage_solvers_triggered()
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
     }
+    ide()->stats.solvers = solvers_list;
     settings.endArray();
 }
 
