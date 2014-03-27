@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 0.9.2
+VERSION = 0.9.3
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 macx {
