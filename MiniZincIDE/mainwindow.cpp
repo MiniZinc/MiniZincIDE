@@ -32,6 +32,7 @@
 #ifdef Q_OS_WIN
 #define pathSep ";"
 #define MZN2FZN "mzn2fzn.bat"
+#define MZNOS "win"
 #else
 #define pathSep ":"
 #define MZN2FZN "mzn2fzn"
@@ -39,8 +40,10 @@
 
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
+#define MZNOS "mac"
 #else
 #define fileDialogSuffix "/"
+#define MZNOS "linux"
 #endif
 
 IDEStatistics::IDEStatistics(void)
@@ -134,8 +137,10 @@ void IDE::checkUpdate(void) {
             connect(manager, SIGNAL(finished(QNetworkReply*)),
                     this, SLOT(versionCheckFinished(QNetworkReply*)));
             QString url_s = "http://www.minizinc.org/ide/version-info.php";
-            url_s += "?version="+applicationVersion();
             if (settings.value("sendstats",false).toBool()) {
+                url_s += "?version="+applicationVersion();
+                url_s += "&os=";
+                url_s += MZNOS;
                 url_s += "&uid="+settings.value("uuid","unknown").toString();
                 url_s += "&stats="+stats.toJson();
             }
