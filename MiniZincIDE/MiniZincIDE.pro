@@ -34,7 +34,8 @@ SOURCES += main.cpp\
     help.cpp \
     finddialog.cpp \
     paramdialog.cpp \
-    outputdockwidget.cpp
+    outputdockwidget.cpp \
+    checkupdatedialog.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -46,7 +47,8 @@ HEADERS  += mainwindow.h \
     help.h \
     finddialog.h \
     paramdialog.h \
-    outputdockwidget.h
+    outputdockwidget.h \
+    checkupdatedialog.h
 
 FORMS    += \
     mainwindow.ui \
@@ -55,7 +57,8 @@ FORMS    += \
     gotolinedialog.ui \
     help.ui \
     finddialog.ui \
-    paramdialog.ui
+    paramdialog.ui \
+    checkupdatedialog.ui
 
 RESOURCES += \
     minizincide.qrc

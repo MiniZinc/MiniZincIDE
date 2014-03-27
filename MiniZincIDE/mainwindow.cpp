@@ -26,6 +26,7 @@
 #include "gotolinedialog.h"
 #include "help.h"
 #include "paramdialog.h"
+#include "checkupdatedialog.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -164,24 +165,12 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     if (settings.value("lastCheck",QDate()).toDate().isNull()) {
         settings.setValue("uuid", QUuid::createUuid().toString());
 
-        QMessageBox msgBox;
-        msgBox.setWindowTitle("Check for updates");
-        msgBox.setInformativeText("The MiniZinc IDE can check automatically once a day "
-                       "whether any updates are available. "
-                       "You can disable the check at any time "
-                       "in the preferences dialog.\n"
-                       "You can also help us improve the IDE by sending some "
-                       "anonymous statistics together with the check for updates.");
-        msgBox.setCheckBox(new QCheckBox("Include anonymous statistics"));
-        msgBox.setText("Do you want to automatically check for updates?");
-        msgBox.checkBox()->setChecked(true);
-        QPushButton* yesbutton = msgBox.addButton(QMessageBox::Yes);
-        msgBox.addButton(QMessageBox::No);
-        msgBox.setDefaultButton(QMessageBox::Yes);
-        msgBox.exec();
+        CheckUpdateDialog cud;
+        int result = cud.exec();
+
         settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
-        settings.setValue("checkforupdates",msgBox.clickedButton()==yesbutton);
-        settings.setValue("sendstats",msgBox.checkBox()->isChecked());
+        settings.setValue("checkforupdates",result==QDialog::Accepted);
+        settings.setValue("sendstats",cud.sendStats());
     }
     settings.endGroup();
 
@@ -193,7 +182,6 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 IDE::~IDE(void) {
     QSettings settings;
     settings.setValue("statistics",stats.toVariantMap());
-    qDebug() << stats.toJson();
 }
 
 bool IDE::hasFile(const QString& path)
