@@ -2,14 +2,14 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MiniZinc IDE"
-#define MyAppVersion "0.9.2"
 #define MyAppPublisher "NICTA and Monash University"
 #define MyAppURL "http://www.minizinc.org"
 #define MyAppExeName "MiniZincIDE.exe"
 
 #define MyAppDirectory "C:\cygwin\home\Guido\MiniZincIDE\build-win\release"
-#define MyAppQtBin "C:\Qt\Qt5.2.0\5.2.0\msvc2010\bin"
-#define MyAppQtPlugins "C:\Qt\Qt5.2.0\5.2.0\msvc2010\plugins"
+#define MyAppQtBin "C:\Qt\Qt5.2.1\5.2.1\msvc2010\bin"
+#define MyAppQtPlugins "C:\Qt\Qt5.2.1\5.2.1\msvc2010\plugins"
+#define MyMSVCRedist "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VC100.CRT"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -39,6 +39,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#MyAppDirectory}\MiniZincIDE.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -46,18 +47,8 @@ Source: "{#MyAppQtBin}\libEGL.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\libGLESv2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Multimedia.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5MultimediaWidgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\Qt5Network.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5OpenGL.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Positioning.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\Qt5PrintSupport.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Qml.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Quick.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Sensors.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5Sql.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5WebKit.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppQtBin}\Qt5WebKitWidgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppQtBin}\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "{#MyAppQtPlugins}\accessible\*.dll"; DestDir: "{app}\accessible"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "{#MyAppQtPlugins}\bearer\*.dll"; DestDir: "{app}\bearer"; Flags: ignoreversion recursesubdirs createallsubdirs
