@@ -1644,7 +1644,10 @@ void MainWindow::on_action_Un_comment_triggered()
 {
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position());
+    if (beginBlock.blockNumber() > endblock.blockNumber())
+        std::swap(beginBlock,endblock);
+    endblock = endblock.next();
 
     QRegExp comment("^(\\s*%|\\s*$)");
     QRegExp comSpace("%\\s");
