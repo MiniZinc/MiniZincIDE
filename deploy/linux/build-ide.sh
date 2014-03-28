@@ -1,16 +1,22 @@
 #!/bin/bash
-VERSION=0.9.2
-PACKAGE=MiniZincIDE-$VERSION-linux-x86_64
-QTDIR=~/Qt5.2.0/5.2.0/gcc_64
+QTDIR=~/Qt5.2.1/5.2.1/gcc_64
 export PATH=$QTDIR/bin:$PATH
 rm -rf build-ide
 mkdir build-ide
+if [ "x$2" == "x" ]; then
+VERSION=$1
 cd build-ide
-wget http://www.minizinc.org/download/MiniZincIDE-$VERSION.tar.gz && \
-tar xzf MiniZincIDE-$VERSION.tar.gz && \
+wget http://www.minizinc.org/downloads/MiniZincIDE/MiniZincIDE-$VERSION.tgz
+else
+VERSION=$2
+cp $1 build-ide/MiniZincIDE-$VERSION.tgz
+cd build-ide
+fi
+PACKAGE=MiniZincIDE-$VERSION-linux-x86_64
+tar xzf MiniZincIDE-$VERSION.tgz && \
 cd MiniZincIDE-$VERSION && \
 qmake -makefile && \
-make -j4 && \
+make -j2 && \
 mkdir $PACKAGE && \
 mv MiniZincIDE $PACKAGE/ && \
 mkdir $PACKAGE/lib && \
