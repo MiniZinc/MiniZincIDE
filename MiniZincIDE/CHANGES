@@ -1,0 +1,19 @@
+?
+  v0.9.3
+  - Add elapsed time to output
+  - Fix crash for files given as command line arguments
+  - Make output window undockable
+  - Add check for updates on startup
+  - Fix bugs #4, #5, #8, #9
+2014-02-03
+  v0.9.2
+  - Add verbose solver option
+  - Save currently open project tab in project file
+  - Ignore empty additional model parameters
+  - Fix crash when closing modified Untitled tabs without saving
+  - Fix crash after error message from solver
+  - Fix project file format
+  - Ask for parameter input when compiling (not just when solving)
+2014-01-30
+  v0.9.1
+  Initial release

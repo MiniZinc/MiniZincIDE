@@ -36,16 +36,33 @@ class MainWindow;
 
 class FindDialog;
 class MainWindow;
+class QNetworkReply;
+
+class IDEStatistics {
+public:
+    int errorsShown;
+    int errorsClicked;
+    int modelsRun;
+    QStringList solvers;
+    QVariantMap toVariantMap(void);
+    IDEStatistics(void);
+    void init(QVariant v);
+    QByteArray toJson(void);
+    void resetCounts(void);
+};
 
 class IDE : public QApplication {
     Q_OBJECT
 public:
     IDE(int& argc, char* argv[]);
+    ~IDE(void);
     struct Doc;
     typedef QMap<QString,Doc*> DMap;
     DMap documents;
     typedef QMap<QString,MainWindow*> PMap;
     PMap projects;
+
+    IDEStatistics stats;
 
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
@@ -55,6 +72,10 @@ public:
     void removeEditor(const QString& path, CodeEditor* ce);
 protected:
     bool event(QEvent *);
+protected slots:
+    void versionCheckFinished(QNetworkReply*);
+public slots:
+    void checkUpdate(void);
 };
 
 class MainWindow : public QMainWindow
@@ -134,12 +155,6 @@ private slots:
 
     void on_actionGo_to_line_triggered();
 
-    void on_actionOnly_editor_triggered();
-
-    void on_actionOnly_output_triggered();
-
-    void on_actionSplit_triggered();
-
     void on_actionShift_left_triggered();
 
     void on_actionShift_right_triggered();
@@ -164,6 +179,10 @@ private slots:
 
     void on_action_Un_comment_triggered();
 
+    void on_actionOnly_editor_triggered();
+
+    void on_actionSplit_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -173,6 +192,7 @@ private:
     QProcess* process;
     QString processName;
     QProcess* outputProcess;
+    bool processWasStopped;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
@@ -183,6 +203,7 @@ private:
     QString defaultSolver;
     QString mznDistribPath;
     QString currentFznTarget;
+    bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     FindDialog* findDialog;
@@ -201,7 +222,7 @@ private:
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
-    void setElapsedTime();
+    QString setElapsedTime();
     void setupDznMenu();
     void checkMznPath();
     IDE* ide();

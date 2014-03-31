@@ -13,6 +13,9 @@
 #include <QtWidgets>
 #include <QApplication>
 #include <QSet>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -23,11 +26,13 @@
 #include "gotolinedialog.h"
 #include "help.h"
 #include "paramdialog.h"
+#include "checkupdatedialog.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 #define pathSep ";"
 #define MZN2FZN "mzn2fzn.bat"
+#define MZNOS "win"
 #else
 #define pathSep ":"
 #define MZN2FZN "mzn2fzn"
@@ -35,9 +40,44 @@
 
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
+#define MZNOS "mac"
 #else
 #define fileDialogSuffix "/"
+#define MZNOS "linux"
 #endif
+
+IDEStatistics::IDEStatistics(void)
+    : errorsShown(0), errorsClicked(0), modelsRun(0) {}
+
+void IDEStatistics::init(QVariant v) {
+    if (v.isValid()) {
+        QMap<QString,QVariant> m = v.toMap();
+        errorsShown = m["errorsShown"].toInt();
+        errorsClicked = m["errorsClicked"].toInt();
+        modelsRun = m["modelsRun"].toInt();
+        solvers = m["solvers"].toStringList();
+    }
+}
+
+QVariantMap IDEStatistics::toVariantMap(void) {
+    QMap<QString,QVariant> m;
+    m["errorsShown"] = errorsShown;
+    m["errorsClicked"] = errorsClicked;
+    m["modelsRun"] = modelsRun;
+    m["solvers"] = solvers;
+    return m;
+}
+
+QByteArray IDEStatistics::toJson(void) {
+    QJsonDocument jd(QJsonObject::fromVariantMap(toVariantMap()));
+    return jd.toJson();
+}
+
+void IDEStatistics::resetCounts(void) {
+    errorsShown = 0;
+    errorsClicked = 0;
+    modelsRun = 0;
+}
 
 struct IDE::Doc {
     QTextDocument td;
@@ -86,11 +126,67 @@ bool IDE::event(QEvent *e)
     }
 }
 
+void IDE::checkUpdate(void) {
+    QSettings settings;
+    settings.sync();
+
+    settings.beginGroup("ide");
+    if (settings.value("checkforupdates",false).toBool()) {
+        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
+            QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+            connect(manager, SIGNAL(finished(QNetworkReply*)),
+                    this, SLOT(versionCheckFinished(QNetworkReply*)));
+            QString url_s = "http://www.minizinc.org/ide/version-info.php";
+            if (settings.value("sendstats",false).toBool()) {
+                url_s += "?version="+applicationVersion();
+                url_s += "&os=";
+                url_s += MZNOS;
+                url_s += "&uid="+settings.value("uuid","unknown").toString();
+                url_s += "&stats="+stats.toJson();
+            }
+            QUrl url(url_s);
+            QNetworkRequest request(url);
+            request.setRawHeader("User-Agent",
+                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
+            manager->get(request);
+        }
+        QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
+    }
+    settings.endGroup();
+
+}
+
+
 IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
     setApplicationName("MiniZinc IDE");
+
+    QSettings settings;
+    settings.sync();
+
+    settings.beginGroup("ide");
+    if (settings.value("lastCheck",QDate()).toDate().isNull()) {
+        settings.setValue("uuid", QUuid::createUuid().toString());
+
+        CheckUpdateDialog cud;
+        int result = cud.exec();
+
+        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+        settings.setValue("checkforupdates",result==QDialog::Accepted);
+        settings.setValue("sendstats",cud.sendStats());
+    }
+    settings.endGroup();
+
+    stats.init(settings.value("statistics"));
+
+    checkUpdate();
+}
+
+IDE::~IDE(void) {
+    QSettings settings;
+    settings.setValue("statistics",stats.toVariantMap());
 }
 
 bool IDE::hasFile(const QString& path)
@@ -169,11 +265,37 @@ void IDE::registerEditor(const QString& path, CodeEditor* ce)
 void IDE::removeEditor(const QString& path, CodeEditor* ce)
 {
     DMap::iterator it = documents.find(path);
-    QSet<CodeEditor*>& editors = it.value()->editors;
-    editors.remove(ce);
-    if (editors.empty()) {
-        delete it.value();
-        documents.remove(path);
+    if (it == documents.end()) {
+        qDebug() << "internal error: document " << path << " not found";
+    } else {
+        QSet<CodeEditor*>& editors = it.value()->editors;
+        editors.remove(ce);
+        if (editors.empty()) {
+            delete it.value();
+            documents.remove(path);
+        }
+    }
+}
+
+void
+IDE::versionCheckFinished(QNetworkReply *reply) {
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
+        QString currentVersion = reply->readAll();
+        if (currentVersion > applicationVersion()) {
+            int button = QMessageBox::information(NULL,"Update available",
+                                     "Version "+currentVersion+" of the MiniZinc IDE is now available. "
+                                     "You are currently using version "+applicationVersion()+
+                                     ".\nDo you want to open the MiniZinc IDE download page?",
+                                     QMessageBox::Cancel|QMessageBox::Ok,QMessageBox::Ok);
+            if (button==QMessageBox::Ok) {
+                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/ide/"));
+            }
+        }
+        QSettings settings;
+        settings.beginGroup("ide");
+        settings.setValue("lastCheck",QDate::currentDate());
+        settings.endGroup();
+        stats.resetCounts();
     }
 }
 
@@ -264,6 +386,7 @@ void MainWindow::init(const QString& project)
         solvers.append(g12cpx);
         solvers.append(g12mip);
     } else {
+        ide()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
             settings.setArrayIndex(i);
             Solver solver;
@@ -282,6 +405,8 @@ void MainWindow::init(const QString& project)
                     solver = g12cpx;
                 else if (solver.name=="G12 MIP")
                     solver = g12mip;
+            } else {
+                ide()->stats.solvers.append(solver.name);
             }
             solvers.append(solver);
         }
@@ -329,8 +454,10 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
+    QString absPath = QFileInfo(path).absoluteFilePath();
     if (path.isEmpty()) {
-
+        absPath = path;
+        // Do nothing
     } else if (openAsModified) {
         QFile file(path);
         if (file.open(QFile::ReadOnly)) {
@@ -342,12 +469,12 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
             return;
         }
     } else {
-        QPair<QTextDocument*,bool> d = ide()->loadFile(path,this);
+        QPair<QTextDocument*,bool> d = ide()->loadFile(absPath,this);
         doc = d.first;
         large = d.second;
     }
-    if (doc || !fileContents.isEmpty() || path.isEmpty()) {
-        CodeEditor* ce = new CodeEditor(doc,path,large,editorFont,ui->tabWidget,this);
+    if (doc || !fileContents.isEmpty() || absPath.isEmpty()) {
+        CodeEditor* ce = new CodeEditor(doc,absPath,large,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
@@ -357,7 +484,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
             curEditor->document()->setModified(true);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
-            ide()->registerEditor(path,curEditor);
+            ide()->registerEditor(absPath,curEditor);
         }
         setupDznMenu();
     }
@@ -476,8 +603,6 @@ void MainWindow::tabChange(int tab) {
         disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
                    this, SLOT(setWindowModified(bool)));
-        disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                   ui->actionSave, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(undoAvailable(bool)),
                    ui->actionUndo, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
@@ -499,8 +624,6 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
                     this, SLOT(setWindowModified(bool)));
-            connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                    ui->actionSave, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
                     ui->actionUndo, SLOT(setEnabled(bool)));
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
@@ -510,8 +633,8 @@ void MainWindow::tabChange(int tab) {
                 setWindowFilePath(curEditor->filename);
             else
                 setWindowFilePath(curEditor->filepath);
+            ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
-            ui->actionSave->setEnabled(curEditor->document()->isModified());
             ui->actionSelect_All->setEnabled(true);
             ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
@@ -629,16 +752,18 @@ void MainWindow::checkArgsOutput()
 
 void MainWindow::checkArgsFinished(int exitcode)
 {
+    if (processWasStopped)
+        return;
     QString additionalArgs;
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
-        QRegExp undefined("symbol error: variable `(.*)' must be defined");
+        QRegExp undefined("symbol error: variable `([a-zA-Z][a-zA-Z0-9_]*)' must be defined");
         undefined.setMinimal(true);
         int pos = 0;
         QStringList undefinedArgs;
         while ( (pos = undefined.indexIn(compileErrors,pos)) != -1 ) {
-            undefinedArgs << undefined.cap(1);;
+            undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
         if (undefinedArgs.size() > 0) {
@@ -659,6 +784,8 @@ void MainWindow::checkArgsFinished(int exitcode)
     }
     process = new QProcess(this);
     processName = MZN2FZN;
+    processWasStopped = false;
+    runSolns2Out = true;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     if (compileOnly)
@@ -700,6 +827,7 @@ void MainWindow::checkArgs(QString filepath)
 {
     process = new QProcess;
     processName = MZN2FZN;
+    processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
@@ -725,8 +853,8 @@ void MainWindow::on_actionRun_triggered()
         if (curEditor->document()->isModified()) {
             if (!saveBeforeRunning) {
                 QMessageBox msgBox;
-                msgBox.setText("The model has been modified.");
-                msgBox.setInformativeText("Do you want to save it before running?");
+                msgBox.setText("The model has been modified. You have to save it before running.");
+                msgBox.setInformativeText("Do you want to save it now and then run?");
                 QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
                 msgBox.addButton(QMessageBox::Cancel);
                 QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
@@ -747,9 +875,10 @@ void MainWindow::on_actionRun_triggered()
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
-
+        ide()->stats.modelsRun++;
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
+            runSolns2Out = false;
             runCompiledFzn(0);
         } else {
             compileOnly = false;
@@ -758,7 +887,7 @@ void MainWindow::on_actionRun_triggered()
     }
 }
 
-void MainWindow::setElapsedTime()
+QString MainWindow::setElapsedTime()
 {
     int hours = elapsedTime.elapsed() / 3600000;
     int minutes = (elapsedTime.elapsed() % 3600000) / 60000;
@@ -774,6 +903,7 @@ void MainWindow::setElapsedTime()
     if (hours==0 && minutes==0)
         elapsed += " "+QString().number(msec)+"msec";
     statusLabel->setText(elapsed);
+    return elapsed;
 }
 
 void MainWindow::statusTimerEvent()
@@ -806,6 +936,7 @@ void MainWindow::readOutput()
                 QUrl url = QUrl::fromLocalFile(errexp.cap(1));
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
+                ide()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
             } else {
                 addOutput(l,false);
@@ -834,7 +965,7 @@ void MainWindow::procFinished(int) {
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
     timer->stop();
-    setElapsedTime();
+    QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
     if (outputProcess) {
@@ -842,6 +973,7 @@ void MainWindow::procFinished(int) {
         outputProcess->waitForFinished();
         outputProcess = NULL;
     }
+    addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     delete tmpDir;
     tmpDir = NULL;
 }
@@ -935,16 +1067,20 @@ void MainWindow::on_actionStop_triggered()
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
+        processWasStopped = true;
         process->kill();
         process->waitForFinished();
         delete process;
         process = NULL;
         addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        procFinished(0);
     }
 }
 
 void MainWindow::openCompiledFzn(int exitcode)
 {
+    if (processWasStopped)
+        return;
     if (exitcode==0) {
         openFile(currentFznTarget, true);
     }
@@ -953,6 +1089,8 @@ void MainWindow::openCompiledFzn(int exitcode)
 
 void MainWindow::runCompiledFzn(int exitcode)
 {
+    if (processWasStopped)
+        return;
     if (exitcode==0) {
         QStringList args = parseConf(false);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
@@ -968,25 +1106,31 @@ void MainWindow::runCompiledFzn(int exitcode)
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
-            outputProcess = new QProcess(this);
-            outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
-            connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
-            connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
-                    this, SLOT(outputProcError(QProcess::ProcessError)));
-            if (!mznDistribPath.isEmpty()) {
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                outputProcess->setProcessEnvironment(env);
+            if (runSolns2Out) {
+                outputProcess = new QProcess(this);
+                outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+                connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+                connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+                connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
+                        this, SLOT(outputProcError(QProcess::ProcessError)));
+                if (!mznDistribPath.isEmpty()) {
+                    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                    env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
+                    outputProcess->setProcessEnvironment(env);
+                }
+                QStringList outargs;
+                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+                outputProcess->start(mznDistribPath+"solns2out",outargs);
             }
-            QStringList outargs;
-            outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-            outputProcess->start(mznDistribPath+"solns2out",outargs);
-
             process = new QProcess(this);
             processName = s.executable;
+            processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-            connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+            if (runSolns2Out) {
+                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+            } else {
+                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
+            }
             connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
             connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
             connect(process, SIGNAL(error(QProcess::ProcessError)),
@@ -1118,6 +1262,7 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 
 void MainWindow::errorClicked(const QUrl & url)
 {
+    ide()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -1144,6 +1289,11 @@ void MainWindow::errorClicked(const QUrl & url)
 
 void MainWindow::on_actionManage_solvers_triggered()
 {
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool checkUpdates = settings.value("checkforupdates",false).toBool();
+    settings.endGroup();
+
     SolverDialog sd(solvers,defaultSolver,mznDistribPath);
     sd.exec();
     defaultSolver = sd.def();
@@ -1161,14 +1311,23 @@ void MainWindow::on_actionManage_solvers_triggered()
     else
         ui->conf_solver->setCurrentText(defaultSolver);
 
-    QSettings settings;
+    settings.beginGroup("ide");
+    if (!checkUpdates && settings.value("checkforupdates",false).toBool()) {
+        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+        ide()->checkUpdate();
+    }
+    settings.endGroup();
+
     settings.beginGroup("minizinc");
     settings.setValue("mznpath",mznDistribPath);
     settings.setValue("defaultSolver",defaultSolver);
     settings.endGroup();
 
     settings.beginWriteArray("solvers");
+    QStringList solvers_list;
     for (int i=0; i<solvers.size(); i++) {
+        if (!solvers[i].builtin)
+            solvers_list.append(solvers[i].name);
         settings.setArrayIndex(i);
         settings.setValue("name",solvers[i].name);
         settings.setValue("executable",solvers[i].executable);
@@ -1177,6 +1336,7 @@ void MainWindow::on_actionManage_solvers_triggered()
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
     }
+    ide()->stats.solvers = solvers_list;
     settings.endArray();
 }
 
@@ -1229,30 +1389,6 @@ void MainWindow::checkMznPath()
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
     }
-}
-
-void MainWindow::on_actionOnly_editor_triggered()
-{
-    QList<int> sizes;
-    sizes << 100;
-    sizes << 0;
-    ui->splitter->setSizes(sizes);
-}
-
-void MainWindow::on_actionOnly_output_triggered()
-{
-    QList<int> sizes;
-    sizes << 0;
-    sizes << 100;
-    ui->splitter->setSizes(sizes);
-}
-
-void MainWindow::on_actionSplit_triggered()
-{
-    QList<int> sizes;
-    sizes << ui->splitter->height()/3*2;
-    sizes << ui->splitter->height()/3;
-    ui->splitter->setSizes(sizes);
 }
 
 void MainWindow::on_actionShift_left_triggered()
@@ -1513,7 +1649,10 @@ void MainWindow::on_action_Un_comment_triggered()
 {
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.position());
+    if (beginBlock.blockNumber() > endblock.blockNumber())
+        std::swap(beginBlock,endblock);
+    endblock = endblock.next();
 
     QRegExp comment("^(\\s*%|\\s*$)");
     QRegExp comSpace("%\\s");
@@ -1550,4 +1689,16 @@ void MainWindow::on_action_Un_comment_triggered()
         block = block.next();
     } while (block.isValid() && block != endblock);
     cursor.endEditBlock();
+}
+
+void MainWindow::on_actionOnly_editor_triggered()
+{
+    if (!ui->outputDockWidget->isFloating())
+        ui->outputDockWidget->hide();
+}
+
+void MainWindow::on_actionSplit_triggered()
+{
+    if (!ui->outputDockWidget->isFloating())
+        ui->outputDockWidget->show();
 }
