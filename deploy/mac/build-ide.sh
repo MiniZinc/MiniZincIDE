@@ -1,9 +1,15 @@
 #!/bin/bash
-VERSION=0.9.2
 rm -rf build-ide
 mkdir build-ide
-cd build-ide
-wget http://www.minizinc.org/downloads/MiniZincIDE/MiniZincIDE-$VERSION.tgz && \
+if [ "x$2" == "x" ]; then
+  VERSION=$1
+  cd build-ide
+  wget http://www.minizinc.org/downloads/MiniZincIDE/MiniZincIDE-$VERSION.tgz
+else
+  VERSION=$2
+  cp $1 build-ide/MiniZincIDE-$VERSION.tgz
+  cd build-ide
+fi
 tar xzf MiniZincIDE-$VERSION.tgz && \
 cd MiniZincIDE-$VERSION && \
 qmake -makefile && \
