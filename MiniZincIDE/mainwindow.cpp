@@ -31,6 +31,7 @@
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 #define pathSep ";"
+#define fileDialogSuffix "/"
 #define MZN2FZN "mzn2fzn.bat"
 #define MZNOS "win"
 #else
