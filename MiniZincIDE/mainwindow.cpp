@@ -36,14 +36,13 @@
 #else
 #define pathSep ":"
 #define MZN2FZN "mzn2fzn"
-#endif
-
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
 #define MZNOS "mac"
 #else
 #define fileDialogSuffix "/"
 #define MZNOS "linux"
+#endif
 #endif
 
 IDEStatistics::IDEStatistics(void)
