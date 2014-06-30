@@ -222,6 +222,8 @@ private:
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
+    void setLastPath(const QString& s);
+    QString getLastPath(void);
     QString setElapsedTime();
     void setupDznMenu();
     void checkMznPath();

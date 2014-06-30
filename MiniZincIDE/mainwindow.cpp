@@ -424,9 +424,11 @@ void MainWindow::init(const QString& project)
 
     if (!project.isEmpty()) {
         loadProject(project);
-        lastPath = QFileInfo(project).absolutePath()+fileDialogSuffix;
+        setLastPath(QFileInfo(project).absolutePath()+fileDialogSuffix);
     } else {
-        lastPath = QDir::currentPath()+fileDialogSuffix;
+        if (getLastPath().isEmpty()) {
+            setLastPath(QDir::currentPath()+fileDialogSuffix);
+        }
     }
 }
 
@@ -490,14 +492,30 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
     }
 }
 
+void MainWindow::setLastPath(const QString &s)
+{
+    lastPath = s;
+    QSettings settings;
+    settings.beginGroup("Path");
+    settings.setValue("lastPath", lastPath);
+    settings.endGroup();
+}
+
+QString MainWindow::getLastPath(void)
+{
+    QSettings settings;
+    settings.beginGroup("Path");
+    return settings.value("lastPath","").toString();
+}
+
 void MainWindow::openFile(const QString &path, bool openAsModified)
 {
     QString fileName = path;
 
     if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), lastPath, "MiniZinc Files (*.mzn *.dzn *.fzn)");
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn)");
         if (!fileName.isNull()) {
-            lastPath = QFileInfo(fileName).absolutePath()+fileDialogSuffix;
+            setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
     }
 
@@ -648,6 +666,8 @@ void MainWindow::tabChange(int tab) {
             ui->actionFind_next->setEnabled(true);
             ui->actionFind_previous->setEnabled(true);
             ui->actionReplace->setEnabled(true);
+            ui->actionShift_left->setEnabled(true);
+            ui->actionShift_right->setEnabled(true);
             curEditor->setFocus();
         } else {
             curEditor = NULL;
@@ -666,6 +686,8 @@ void MainWindow::tabChange(int tab) {
             ui->actionFind_next->setEnabled(false);
             ui->actionFind_previous->setEnabled(false);
             ui->actionReplace->setEnabled(false);
+            ui->actionShift_left->setEnabled(false);
+            ui->actionShift_right->setEnabled(false);
             findDialog->close();
             setWindowFilePath(projectPath);
             setWindowModified(false);
@@ -1004,10 +1026,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         if (ce != curEditor) {
             ui->tabWidget->setCurrentIndex(tabIndex);
         }
-        QString dialogPath = ce->filepath.isEmpty() ? lastPath : ce->filepath;
+        QString dialogPath = ce->filepath.isEmpty() ? getLastPath(): ce->filepath;
         filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
         if (!filepath.isNull()) {
-            lastPath = QFileInfo(filepath).absolutePath()+fileDialogSuffix;
+            setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
         }
     }
     if (!filepath.isEmpty()) {
@@ -1382,9 +1404,9 @@ void MainWindow::checkMznPath()
     QProcess p;
     QStringList args;
     args << "-v";
-    p.start(mznDistribPath+"minizinc", args);
+    p.start(mznDistribPath+"mzn2fzn", args);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
@@ -1461,9 +1483,9 @@ void MainWindow::openProject(const QString& fileName)
 
 void MainWindow::on_actionOpen_project_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), lastPath, "MiniZinc projects (*.mzp)");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), getLastPath(), "MiniZinc projects (*.mzp)");
     if (!fileName.isNull()) {
-        lastPath = QFileInfo(fileName).absolutePath()+fileDialogSuffix;
+        setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
     }
 
     openProject(fileName);
@@ -1473,9 +1495,9 @@ void MainWindow::saveProject(const QString& f)
 {
     QString filepath = f;
     if (filepath.isEmpty()) {
-        filepath = QFileDialog::getSaveFileName(this,"Save project",lastPath,"MiniZinc projects (*.mzp)");
+        filepath = QFileDialog::getSaveFileName(this,"Save project",getLastPath(),"MiniZinc projects (*.mzp)");
         if (!filepath.isNull()) {
-            lastPath = QFileInfo(filepath).absolutePath()+fileDialogSuffix;
+            setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
         }
     }
     if (!filepath.isEmpty()) {
