@@ -32,11 +32,9 @@
 #ifdef Q_OS_WIN
 #define pathSep ";"
 #define fileDialogSuffix "/"
-#define MZN2FZN "mzn2fzn.bat"
 #define MZNOS "win"
 #else
 #define pathSep ":"
-#define MZN2FZN "mzn2fzn"
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
 #define MZNOS "mac"
@@ -839,7 +837,7 @@ void MainWindow::checkArgsFinished(int exitcode)
         }
     }
     process = new QProcess(this);
-    processName = MZN2FZN;
+    processName = mzn2fzn_executable;
     processWasStopped = false;
     runSolns2Out = true;
     process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
@@ -872,7 +870,7 @@ void MainWindow::checkArgsFinished(int exitcode)
             env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
             process->setProcessEnvironment(env);
         }
-        process->start(mznDistribPath + MZN2FZN,args);
+        process->start(mznDistribPath + mzn2fzn_executable,args);
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -881,8 +879,15 @@ void MainWindow::checkArgsFinished(int exitcode)
 
 void MainWindow::checkArgs(QString filepath)
 {
+    if (mzn2fzn_executable=="") {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+        return;
+    }
     process = new QProcess;
-    processName = MZN2FZN;
+    processName = mzn2fzn_executable;
     processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
@@ -900,11 +905,18 @@ void MainWindow::checkArgs(QString filepath)
         process->setProcessEnvironment(env);
     }
     compileErrors = "";
-    process->start(mznDistribPath + MZN2FZN,args);
+    process->start(mznDistribPath + mzn2fzn_executable,args);
 }
 
 void MainWindow::on_actionRun_triggered()
 {
+    if (mzn2fzn_executable=="") {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+        return;
+    }
     if (curEditor && curEditor->filepath!="") {
         if (curEditor->document()->isModified()) {
             if (!saveBeforeRunning) {
@@ -1239,6 +1251,13 @@ void MainWindow::runCompiledFzn(int exitcode)
 
 void MainWindow::on_actionCompile_triggered()
 {
+    if (mzn2fzn_executable=="") {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+        return;
+    }
     if (curEditor && curEditor->filepath!="") {
         if (curEditor->document()->isModified()) {
             if (!saveBeforeRunning) {
@@ -1439,12 +1458,20 @@ void MainWindow::checkMznPath()
     QProcess p;
     QStringList args;
     args << "-v";
+    mzn2fzn_executable = "";
     p.start(mznDistribPath+"mzn2fzn", args);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
-                                       QMessageBox::Ok | QMessageBox::Cancel);
-        if (ret == QMessageBox::Ok)
-            on_actionManage_solvers_triggered();
+        p.start(mznDistribPath+"mzn2fzn.bat", args);
+        if (!p.waitForStarted() || !p.waitForFinished()) {
+            int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                           QMessageBox::Ok | QMessageBox::Cancel);
+            if (ret == QMessageBox::Ok)
+                on_actionManage_solvers_triggered();
+        } else {
+            mzn2fzn_executable = "mzn2fzn.bat";
+        }
+    } else {
+        mzn2fzn_executable = "mzn2fzn";
     }
 }
 

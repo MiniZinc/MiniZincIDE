@@ -225,6 +225,7 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
+    QString mzn2fzn_executable;
 
     void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);
