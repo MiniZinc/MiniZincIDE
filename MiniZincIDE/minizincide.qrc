@@ -4,4 +4,20 @@
         <file>images/about.html</file>
         <file>images/mznicon.png</file>
     </qresource>
+    <qresource prefix="/icons">
+        <file>images/document-new.png</file>
+        <file>images/document-open.png</file>
+        <file>images/document-save.png</file>
+        <file>images/edit-find-replace.png</file>
+        <file>images/edit-paste.png</file>
+        <file>images/edit-redo.png</file>
+        <file>images/edit-undo.png</file>
+        <file>images/format-indent-less.png</file>
+        <file>images/format-indent-more.png</file>
+        <file>images/media-playback-start.png</file>
+        <file>images/media-playback-stop.png</file>
+        <file>images/process-stop.png</file>
+        <file>images/edit-copy.png</file>
+        <file>images/edit-cut.png</file>
+    </qresource>
 </RCC>

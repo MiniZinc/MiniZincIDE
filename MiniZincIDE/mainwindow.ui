@@ -17,8 +17,23 @@
    <iconset resource="minizincide.qrc">
     <normaloff>:/images/mznicon.png</normaloff>:/images/mznicon.png</iconset>
   </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="sizePolicy">
@@ -476,7 +491,51 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="separator"/>
+   <addaction name="actionCopy"/>
+   <addaction name="actionCut"/>
+   <addaction name="actionPaste"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="actionShift_left"/>
+   <addaction name="actionShift_right"/>
+   <addaction name="separator"/>
+   <addaction name="actionRun"/>
+   <addaction name="actionStop"/>
+  </widget>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/document-open.png</normaloff>:/icons/images/document-open.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Open...</string>
    </property>
@@ -485,6 +544,10 @@
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/document-save.png</normaloff>:/icons/images/document-save.png</iconset>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
@@ -509,6 +572,10 @@
    </property>
   </action>
   <action name="actionNew">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/document-new.png</normaloff>:/icons/images/document-new.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;New</string>
    </property>
@@ -517,6 +584,10 @@
    </property>
   </action>
   <action name="actionUndo">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-undo.png</normaloff>:/icons/images/edit-undo.png</iconset>
+   </property>
    <property name="text">
     <string>Undo</string>
    </property>
@@ -525,6 +596,10 @@
    </property>
   </action>
   <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-redo.png</normaloff>:/icons/images/edit-redo.png</iconset>
+   </property>
    <property name="text">
     <string>Redo</string>
    </property>
@@ -533,6 +608,10 @@
    </property>
   </action>
   <action name="actionCut">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-cut.png</normaloff>:/icons/images/edit-cut.png</iconset>
+   </property>
    <property name="text">
     <string>Cut</string>
    </property>
@@ -541,6 +620,10 @@
    </property>
   </action>
   <action name="actionCopy">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-copy.png</normaloff>:/icons/images/edit-copy.png</iconset>
+   </property>
    <property name="text">
     <string>Copy</string>
    </property>
@@ -549,6 +632,10 @@
    </property>
   </action>
   <action name="actionPaste">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-paste.png</normaloff>:/icons/images/edit-paste.png</iconset>
+   </property>
    <property name="text">
     <string>Paste</string>
    </property>
@@ -573,6 +660,10 @@
    </property>
   </action>
   <action name="actionRun">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/media-playback-start.png</normaloff>:/icons/images/media-playback-start.png</iconset>
+   </property>
    <property name="text">
     <string>Run</string>
    </property>
@@ -586,6 +677,10 @@
    </property>
   </action>
   <action name="actionStop">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/media-playback-stop.png</normaloff>:/icons/images/media-playback-stop.png</iconset>
+   </property>
    <property name="text">
     <string>Stop</string>
    </property>
@@ -676,6 +771,10 @@
    </property>
   </action>
   <action name="actionShift_left">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/format-indent-less.png</normaloff>:/icons/images/format-indent-less.png</iconset>
+   </property>
    <property name="text">
     <string>Shift left</string>
    </property>
@@ -684,6 +783,10 @@
    </property>
   </action>
   <action name="actionShift_right">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/format-indent-more.png</normaloff>:/icons/images/format-indent-more.png</iconset>
+   </property>
    <property name="text">
     <string>Shift right</string>
    </property>
@@ -731,6 +834,10 @@
    </property>
   </action>
   <action name="actionFind">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/edit-find-replace.png</normaloff>:/icons/images/edit-find-replace.png</iconset>
+   </property>
    <property name="text">
     <string>Find...</string>
    </property>
