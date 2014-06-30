@@ -62,6 +62,9 @@ public:
     typedef QMap<QString,MainWindow*> PMap;
     PMap projects;
 
+    QStringList recentFiles;
+    QStringList recentProjects;
+
     IDEStatistics stats;
 
     bool hasFile(const QString& path);
@@ -187,6 +190,10 @@ private slots:
 
     void on_actionNext_tab_triggered();
 
+    void recentFileMenuAction(QAction*);
+
+    void recentProjectMenuAction(QAction*);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -231,6 +238,8 @@ private:
     QString setElapsedTime();
     void setupDznMenu();
     void checkMznPath();
+    void updateRecentProjects(const QString& p);
+    void updateRecentFiles(const QString& p);
     IDE* ide();
 public:
     void openProject(const QString& fileName);

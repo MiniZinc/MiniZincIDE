@@ -376,8 +376,24 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuRecent_Files">
+     <property name="title">
+      <string>Recent Files</string>
+     </property>
+     <addaction name="separator"/>
+     <addaction name="actionClear_menu"/>
+    </widget>
+    <widget class="QMenu" name="menuRecent_Projects">
+     <property name="title">
+      <string>Recent Projects</string>
+     </property>
+     <addaction name="separator"/>
+     <addaction name="actionClear_menu_2"/>
+    </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
+    <addaction name="menuRecent_Files"/>
+    <addaction name="menuRecent_Projects"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_as"/>
@@ -890,6 +906,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+}</string>
+   </property>
+  </action>
+  <action name="actionClear_menu">
+   <property name="text">
+    <string>Clear menu</string>
+   </property>
+  </action>
+  <action name="actionClear_menu_2">
+   <property name="text">
+    <string>Clear menu</string>
    </property>
   </action>
  </widget>

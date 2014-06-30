@@ -153,7 +153,6 @@ void IDE::checkUpdate(void) {
         QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
     }
     settings.endGroup();
-
 }
 
 
@@ -178,6 +177,10 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         settings.setValue("sendstats",cud.sendStats());
     }
     settings.endGroup();
+    settings.beginGroup("Recent");
+    recentFiles = settings.value("files",QStringList()).toStringList();
+    recentProjects = settings.value("projects",QStringList()).toStringList();
+    settings.endGroup();
 
     stats.init(settings.value("statistics"));
 
@@ -187,6 +190,10 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 IDE::~IDE(void) {
     QSettings settings;
     settings.setValue("statistics",stats.toVariantMap());
+    settings.beginGroup("Recent");
+    settings.setValue("files",recentFiles);
+    settings.setValue("projects",recentProjects);
+    settings.endGroup();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -342,6 +349,11 @@ void MainWindow::init(const QString& project)
 
     helpWindow = new Help();
 
+    updateRecentProjects("");
+    updateRecentFiles("");
+    connect(ui->menuRecent_Files, SIGNAL(triggered(QAction*)), this, SLOT(recentFileMenuAction(QAction*)));
+    connect(ui->menuRecent_Projects, SIGNAL(triggered(QAction*)), this, SLOT(recentProjectMenuAction(QAction*)));
+
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
     timer = new QTimer(this);
@@ -472,6 +484,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
         }
     } else {
         QPair<QTextDocument*,bool> d = ide()->loadFile(absPath,this);
+        updateRecentFiles(absPath);
         doc = d.first;
         large = d.second;
     }
@@ -1077,6 +1090,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                 ce->document()->setModified(false);
                 ce->filename = QFileInfo(filepath).fileName();
                 ui->tabWidget->setTabText(tabIndex,ce->filename);
+                updateRecentFiles(filepath);
                 if (ce==curEditor)
                     tabChange(tabIndex);
             } else {
@@ -1512,6 +1526,53 @@ void MainWindow::on_actionOpen_project_triggered()
     openProject(fileName);
 }
 
+void MainWindow::updateRecentProjects(const QString& p) {
+    if (!p.isEmpty()) {
+        ide()->recentProjects.removeAll(p);
+        ide()->recentProjects.insert(0,p);
+        while (ide()->recentProjects.size() > 7)
+            ide()->recentProjects.pop_back();
+    }
+    ui->menuRecent_Projects->clear();
+    for (int i=0; i<ide()->recentProjects.size(); i++) {
+        ui->menuRecent_Projects->addAction(ide()->recentProjects[i]);
+    }
+    ui->menuRecent_Projects->addSeparator();
+    ui->menuRecent_Projects->addAction("Clear Menu");
+}
+void MainWindow::updateRecentFiles(const QString& p) {
+    if (!p.isEmpty()) {
+        ide()->recentFiles.removeAll(p);
+        ide()->recentFiles.insert(0,p);
+        while (ide()->recentFiles.size() > 7)
+            ide()->recentFiles.pop_back();
+    }
+    ui->menuRecent_Files->clear();
+    for (int i=0; i<ide()->recentFiles.size(); i++) {
+        ui->menuRecent_Files->addAction(ide()->recentFiles[i]);
+    }
+    ui->menuRecent_Files->addSeparator();
+    ui->menuRecent_Files->addAction("Clear Menu");
+}
+
+void MainWindow::recentFileMenuAction(QAction* a) {
+    if (a->text()=="Clear Menu") {
+        ide()->recentFiles.clear();
+        updateRecentFiles("");
+    } else {
+        openFile(a->text());
+    }
+}
+
+void MainWindow::recentProjectMenuAction(QAction* a) {
+    if (a->text()=="Clear Menu") {
+        ide()->recentProjects.clear();
+        updateRecentProjects("");
+    } else {
+        openProject(a->text());
+    }
+}
+
 void MainWindow::saveProject(const QString& f)
 {
     QString filepath = f;
@@ -1534,6 +1595,8 @@ void MainWindow::saveProject(const QString& f)
                 ide()->projects.insert(filepath,this);
             }
             projectPath = filepath;
+            updateRecentProjects(projectPath);
+            tabChange(ui->tabWidget->currentIndex());
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
             out << (quint32)102;
@@ -1597,6 +1660,7 @@ void MainWindow::loadProject(const QString& filepath)
     in.setVersion(QDataStream::Qt_5_0);
 
     projectPath = filepath;
+    updateRecentProjects(projectPath);
 
     QStringList openFiles;
     in >> openFiles;
@@ -1648,6 +1712,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
 
     ide()->projects.insert(projectPath, this);
+    tabChange(ui->tabWidget->currentIndex());
 
 }
 
