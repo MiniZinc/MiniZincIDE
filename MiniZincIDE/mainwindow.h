@@ -183,6 +183,10 @@ private slots:
 
     void on_actionSplit_triggered();
 
+    void on_actionPrevious_tab_triggered();
+
+    void on_actionNext_tab_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

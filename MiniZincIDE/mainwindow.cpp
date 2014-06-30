@@ -1724,3 +1724,17 @@ void MainWindow::on_actionSplit_triggered()
     if (!ui->outputDockWidget->isFloating())
         ui->outputDockWidget->show();
 }
+
+void MainWindow::on_actionPrevious_tab_triggered()
+{
+    if (ui->tabWidget->currentIndex() > 0) {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->currentIndex()-1);
+    }
+}
+
+void MainWindow::on_actionNext_tab_triggered()
+{
+    if (ui->tabWidget->currentIndex() < ui->tabWidget->count()-1) {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->currentIndex()+1);
+    }
+}
