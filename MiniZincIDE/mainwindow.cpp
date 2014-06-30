@@ -647,10 +647,23 @@ void MainWindow::tabChange(int tab) {
             connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                     ui->actionRedo, SLOT(setEnabled(bool)));
             setWindowModified(curEditor->document()->isModified());
-            if (curEditor->filepath.isEmpty())
+            QString p;
+            p += " ";
+            p += QChar(0x2014);
+            p += " ";
+            if (projectPath.isEmpty()) {
+                p += "Untitled Project";
+            } else {
+                QFileInfo fi(projectPath);
+                p += "Project: "+fi.baseName();
+            }
+            if (curEditor->filepath.isEmpty()) {
                 setWindowFilePath(curEditor->filename);
-            else
+                setWindowTitle(curEditor->filename+p);
+            } else {
                 setWindowFilePath(curEditor->filepath);
+                setWindowTitle(curEditor->filename+p);
+            }
             ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
             ui->actionSelect_All->setEnabled(true);
@@ -690,6 +703,14 @@ void MainWindow::tabChange(int tab) {
             ui->actionShift_right->setEnabled(false);
             findDialog->close();
             setWindowFilePath(projectPath);
+            QString p;
+            if (projectPath.isEmpty()) {
+                p = "Untitled Project";
+            } else {
+                QFileInfo fi(projectPath);
+                p = "Project: "+fi.baseName();
+            }
+            setWindowTitle(p);
             setWindowModified(false);
         }
     }
@@ -1575,6 +1596,8 @@ void MainWindow::loadProject(const QString& filepath)
     }
     in.setVersion(QDataStream::Qt_5_0);
 
+    projectPath = filepath;
+
     QStringList openFiles;
     in >> openFiles;
     for (int i=0; i<openFiles.size(); i++) {
@@ -1623,7 +1646,6 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         ui->tabWidget->setCurrentIndex(p_i);
     }
-    projectPath = filepath;
 
     ide()->projects.insert(projectPath, this);
 
