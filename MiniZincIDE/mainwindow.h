@@ -29,6 +29,7 @@
 #include "solverdialog.h"
 #include "help.h"
 #include "paramdialog.h"
+#include "project.h"
 
 namespace Ui {
 class MainWindow;
@@ -228,6 +229,7 @@ private:
     ParamDialog* paramDialog;
     bool compileOnly;
     QString mzn2fzn_executable;
+    Project project;
 
     void createEditor(const QString& path, bool openAsModified);
     QStringList parseConf(bool compileOnly);

@@ -19,5 +19,6 @@
         <file>images/process-stop.png</file>
         <file>images/edit-copy.png</file>
         <file>images/edit-cut.png</file>
+        <file>images/folder.png</file>
     </qresource>
 </RCC>

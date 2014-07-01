@@ -336,7 +336,7 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
 
 }
 
-void MainWindow::init(const QString& project)
+void MainWindow::init(const QString& projectFile)
 {
     ui->setupUi(this);
 
@@ -435,14 +435,15 @@ void MainWindow::init(const QString& project)
     if (!defaultSolver.isEmpty())
         ui->conf_solver->setCurrentText(defaultSolver);
 
-    if (!project.isEmpty()) {
-        loadProject(project);
-        setLastPath(QFileInfo(project).absolutePath()+fileDialogSuffix);
+    if (!projectFile.isEmpty()) {
+        loadProject(projectFile);
+        setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
     } else {
         if (getLastPath().isEmpty()) {
             setLastPath(QDir::currentPath()+fileDialogSuffix);
         }
     }
+    ui->projectView->setModel(&project);
 }
 
 MainWindow::~MainWindow()
@@ -1630,14 +1631,15 @@ void MainWindow::saveProject(const QString& f)
             tabChange(ui->tabWidget->currentIndex());
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
-            out << (quint32)102;
+            out << (quint32)103;
             out.setVersion(QDataStream::Qt_5_0);
             QStringList openFiles;
+            QDir projectDir = QFileInfo(filepath).absoluteDir();
             for (int i=0; i<ui->tabWidget->count(); i++) {
                 if (ui->tabWidget->widget(i)!=ui->configuration) {
                     CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
                     if (!ce->filepath.isEmpty())
-                        openFiles << ce->filepath;
+                        openFiles << projectDir.relativeFilePath(ce->filepath);
                 }
             }
             out << openFiles;
@@ -1661,6 +1663,11 @@ void MainWindow::saveProject(const QString& f)
             out << (qint32)ui->conf_timeLimit->value();
             out << ui->conf_solver_verbose->isChecked();
             out << (qint32)ui->tabWidget->currentIndex();
+            QStringList projectFilesRelPath;
+            for (int i=0; i<project.noOfFiles(); i++) {
+                projectFilesRelPath << projectDir.relativeFilePath(project.file(i));
+            }
+            out << projectFilesRelPath;
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
         }
@@ -1682,7 +1689,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
     quint32 version;
     in >> version;
-    if (version != 101 && version != 102) {
+    if (version != 101 && version != 102 && version != 103) {
         QMessageBox::warning(this, "MiniZinc IDE",
                              "Could not open project file (version mismatch)");
         close();
@@ -1692,12 +1699,14 @@ void MainWindow::loadProject(const QString& filepath)
 
     projectPath = filepath;
     updateRecentProjects(projectPath);
+    project.setRoot(projectPath);
+    QString basePath;
+    if (version==103) {
+        basePath = QFileInfo(filepath).absolutePath()+"/";
+    }
 
     QStringList openFiles;
     in >> openFiles;
-    for (int i=0; i<openFiles.size(); i++) {
-        openFile(openFiles[i],false);
-    }
     QString p_s;
     qint32 p_i;
     bool p_b;
@@ -1740,6 +1749,19 @@ void MainWindow::loadProject(const QString& filepath)
         ui->conf_solver_verbose->setChecked(p_b);
         in >> p_i;
         ui->tabWidget->setCurrentIndex(p_i);
+    }
+    QStringList projectFilesRelPath;
+    if (version==103) {
+        in >> projectFilesRelPath;
+    } else {
+        projectFilesRelPath = openFiles;
+    }
+    for (int i=0; i<projectFilesRelPath.size(); i++) {
+        project.addFile(basePath+projectFilesRelPath[i]);
+    }
+
+    for (int i=0; i<openFiles.size(); i++) {
+        openFile(basePath+openFiles[i],false);
     }
 
     ide()->projects.insert(projectPath, this);

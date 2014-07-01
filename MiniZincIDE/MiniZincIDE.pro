@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
-    checkupdatedialog.cpp
+    checkupdatedialog.cpp \
+    project.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -48,7 +49,8 @@ HEADERS  += mainwindow.h \
     finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
-    checkupdatedialog.h
+    checkupdatedialog.h \
+    project.h
 
 FORMS    += \
     mainwindow.ui \
