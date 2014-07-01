@@ -339,6 +339,9 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
 void MainWindow::init(const QString& projectFile)
 {
     ui->setupUi(this);
+    QWidget* toolBarSpacer = new QWidget();
+    toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->toolBar->insertWidget(ui->actionShow_project_explorer, toolBarSpacer);
 
     findDialog = new FindDialog(this);
     findDialog->setModal(false);
@@ -444,6 +447,7 @@ void MainWindow::init(const QString& projectFile)
         }
     }
     ui->projectView->setModel(&project);
+    ui->projectExplorerDockWidget->hide();
 }
 
 MainWindow::~MainWindow()
@@ -1887,5 +1891,16 @@ void MainWindow::on_actionHide_tool_bar_triggered()
     } else {
         ui->toolBar->hide();
         ui->actionHide_tool_bar->setText("Show tool bar");
+    }
+}
+
+void MainWindow::on_actionShow_project_explorer_triggered()
+{
+    if (ui->projectExplorerDockWidget->isHidden()) {
+        ui->projectExplorerDockWidget->show();
+        ui->actionShow_project_explorer->setText("Hide project explorer");
+    } else {
+        ui->projectExplorerDockWidget->hide();
+        ui->actionShow_project_explorer->setText("Show project explorer");
     }
 }

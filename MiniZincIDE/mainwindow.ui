@@ -464,6 +464,8 @@
     <addaction name="separator"/>
     <addaction name="actionHide_tool_bar"/>
     <addaction name="separator"/>
+    <addaction name="actionShow_project_explorer"/>
+    <addaction name="separator"/>
     <addaction name="actionClear_output"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -556,8 +558,15 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
+   <addaction name="actionShow_project_explorer"/>
   </widget>
-  <widget class="QDockWidget" name="dockWidget">
+  <widget class="QDockWidget" name="projectExplorerDockWidget">
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
@@ -582,6 +591,18 @@
        </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="indentation">
+        <number>10</number>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+       <property name="animated">
+        <bool>true</bool>
+       </property>
+       <property name="headerHidden">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -960,6 +981,15 @@
   <action name="actionHide_tool_bar">
    <property name="text">
     <string>Hide tool bar</string>
+   </property>
+  </action>
+  <action name="actionShow_project_explorer">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/package-x-generic.png</normaloff>:/icons/images/package-x-generic.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show project explorer</string>
    </property>
   </action>
  </widget>

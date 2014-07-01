@@ -197,6 +197,8 @@ private slots:
 
     void on_actionHide_tool_bar_triggered();
 
+    void on_actionShow_project_explorer_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
