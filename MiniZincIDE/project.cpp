@@ -22,9 +22,11 @@ void Project::setRoot(const QString &fileName)
     projectRoot = fileName;
 }
 
-void Project::addFile(const QString &fileName)
+void Project::addFile(QTreeView* treeView, const QString &fileName)
 {
-    files << fileName;
+    if (_files.contains(fileName))
+        return;
+    _files << fileName;
     QFileInfo fi(fileName);
     QString absFileName = fi.absoluteFilePath();
     QString relFileName;
@@ -52,11 +54,13 @@ void Project::addFile(const QString &fileName)
         isMiniZinc = false;
     }
     QStandardItem* prevItem = curItem;
+    treeView->expand(curItem->index());
     curItem = curItem->child(0);
     int i=0;
     while (curItem != NULL) {
         if (curItem->text() == path.first()) {
             path.pop_front();
+            treeView->expand(curItem->index());
             prevItem = curItem;
             curItem = curItem->child(0);
             i = 0;
@@ -73,6 +77,33 @@ void Project::addFile(const QString &fileName)
             newItem->setIcon(QIcon(":/images/mznicon.png"));
         }
         prevItem->appendRow(newItem);
+        treeView->expand(newItem->index());
         prevItem = newItem;
     }
+}
+
+QString Project::fileAtIndex(const QModelIndex &index)
+{
+    QStandardItem* item = itemFromIndex(index);
+    if (item->hasChildren())
+        return "";
+    QString fileName;
+    while (item != NULL && item->parent() != NULL && item->parent() != invisibleRootItem() ) {
+        if (fileName.isEmpty())
+            fileName = item->text();
+        else
+            fileName = item->text()+"/"+fileName;
+        item = item->parent();
+    }
+    if (fileName.isEmpty())
+        return "";
+    if (!projectRoot.isEmpty()) {
+        return QFileInfo(projectRoot).absolutePath()+"/"+fileName;
+    }
+    return fileName;
+}
+
+Qt::ItemFlags Project::flags(const QModelIndex&) const
+{
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
 }

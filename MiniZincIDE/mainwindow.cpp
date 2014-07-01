@@ -448,6 +448,30 @@ void MainWindow::init(const QString& projectFile)
     }
     ui->projectView->setModel(&project);
     ui->projectExplorerDockWidget->hide();
+    connect(ui->projectView, SIGNAL(activated(QModelIndex)),
+            this, SLOT(activateFileInProject(QModelIndex)));
+}
+
+void MainWindow::activateFileInProject(const QModelIndex &index)
+{
+    QString fileName = project.fileAtIndex(index);
+
+    if (!fileName.isEmpty()) {
+        bool foundFile = false;
+        for (int i=0; i<ui->tabWidget->count(); i++) {
+            if (ui->tabWidget->widget(i) != ui->configuration) {
+                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                if (ce->filepath == fileName) {
+                    ui->tabWidget->setCurrentIndex(i);
+                    foundFile = true;
+                    break;
+                }
+            }
+        }
+        if (!foundFile) {
+            createEditor(fileName,false);
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -505,6 +529,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
             curEditor->document()->setModified(true);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
+            project.addFile(ui->projectView, absPath);
             ide()->registerEditor(absPath,curEditor);
         }
         setupDznMenu();
@@ -1668,8 +1693,9 @@ void MainWindow::saveProject(const QString& f)
             out << ui->conf_solver_verbose->isChecked();
             out << (qint32)ui->tabWidget->currentIndex();
             QStringList projectFilesRelPath;
-            for (int i=0; i<project.noOfFiles(); i++) {
-                projectFilesRelPath << projectDir.relativeFilePath(project.file(i));
+            for (QSet<QString>::const_iterator it = project.files().begin();
+                 it != project.files().end(); ++it) {
+                projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
         } else {
@@ -1761,7 +1787,7 @@ void MainWindow::loadProject(const QString& filepath)
         projectFilesRelPath = openFiles;
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
-        project.addFile(basePath+projectFilesRelPath[i]);
+        project.addFile(ui->projectView, basePath+projectFilesRelPath[i]);
     }
 
     for (int i=0; i<openFiles.size(); i++) {

@@ -199,6 +199,8 @@ private slots:
 
     void on_actionShow_project_explorer_triggered();
 
+    void activateFileInProject(const QModelIndex& index);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

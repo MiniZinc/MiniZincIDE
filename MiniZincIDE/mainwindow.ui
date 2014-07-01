@@ -562,7 +562,7 @@
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>

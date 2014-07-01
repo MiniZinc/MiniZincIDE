@@ -1,20 +1,22 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include <QStringList>
+#include <QSet>
 #include <QStandardItemModel>
+#include <QTreeView>
 
 class Project : public QStandardItemModel
 {
 public:
     Project();
     void setRoot(const QString& fileName);
-    void addFile(const QString& fileName);
-    int noOfFiles(void) const { return files.size(); }
-    QString file(int i) const { return files[i]; }
+    void addFile(QTreeView* treeView, const QString& fileName);
+    const QSet<QString>& files(void) const { return _files; }
+    QString fileAtIndex(const QModelIndex& index);
+    virtual Qt::ItemFlags flags(const QModelIndex& index) const;
 protected:
     QString projectRoot;
-    QStringList files;
+    QSet<QString> _files;
     QStandardItem* mzn;
     QStandardItem* dzn;
     QStandardItem* fzn;
