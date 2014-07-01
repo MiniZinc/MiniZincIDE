@@ -194,6 +194,8 @@ private slots:
 
     void recentProjectMenuAction(QAction*);
 
+    void on_actionHide_tool_bar_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:

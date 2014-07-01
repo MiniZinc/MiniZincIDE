@@ -380,6 +380,9 @@ void MainWindow::init(const QString& project)
     ui->outputConsole->setFont(editorFont);
     resize(settings.value("size", QSize(400, 400)).toSize());
     move(settings.value("pos", QPoint(200, 200)).toPoint());
+    if (settings.value("toolbarHidden", false).toBool()) {
+        on_actionHide_tool_bar_triggered();
+    }
     settings.endGroup();
 
     setEditorFont(editorFont);
@@ -616,6 +619,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("editorFont", editorFont);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
+    settings.setValue("toolbarHidden", ui->toolBar->isHidden());
     settings.endGroup();
     helpWindow->close();
     e->accept();
@@ -1850,5 +1854,16 @@ void MainWindow::on_actionNext_tab_triggered()
 {
     if (ui->tabWidget->currentIndex() < ui->tabWidget->count()-1) {
         ui->tabWidget->setCurrentIndex(ui->tabWidget->currentIndex()+1);
+    }
+}
+
+void MainWindow::on_actionHide_tool_bar_triggered()
+{
+    if (ui->toolBar->isHidden()) {
+        ui->toolBar->show();
+        ui->actionHide_tool_bar->setText("Hide tool bar");
+    } else {
+        ui->toolBar->hide();
+        ui->actionHide_tool_bar->setText("Show tool bar");
     }
 }

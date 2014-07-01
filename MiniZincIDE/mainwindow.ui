@@ -462,6 +462,8 @@
     <addaction name="actionPrevious_tab"/>
     <addaction name="actionNext_tab"/>
     <addaction name="separator"/>
+    <addaction name="actionHide_tool_bar"/>
+    <addaction name="separator"/>
     <addaction name="actionClear_output"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -916,6 +918,11 @@
   <action name="actionClear_menu_2">
    <property name="text">
     <string>Clear menu</string>
+   </property>
+  </action>
+  <action name="actionHide_tool_bar">
+   <property name="text">
+    <string>Hide tool bar</string>
    </property>
   </action>
  </widget>
