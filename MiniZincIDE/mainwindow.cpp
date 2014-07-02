@@ -332,7 +332,7 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
-        openFile(files.at(i),false);
+        openFile(files[i],false);
 
 }
 
@@ -620,6 +620,14 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         large = d.second;
     }
     if (doc || !fileContents.isEmpty() || isNewFile) {
+        if (ui->tabWidget->count()==2) {
+            CodeEditor* ce =
+                    static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
+                                                 ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
+            if (ce->filepath == "" && !ce->document()->isModified()) {
+                tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
+            }
+        }
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
