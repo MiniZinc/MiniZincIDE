@@ -1015,7 +1015,16 @@ void MainWindow::checkArgsFinished(int exitcode)
         args << "-o" << currentFznTarget;
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << curEditor->filepath;
-        addOutput("<div style='color:blue;'>Compiling "+curEditor->filename+"</div><br>");
+        QString compiling = curEditor->filename;
+        if (ui->conf_data_file->currentText()!="None") {
+            compiling += " with data ";
+            QFileInfo fi(ui->conf_data_file->currentText());
+            compiling += fi.fileName();
+        }
+        if (!additionalArgs.isEmpty()) {
+            compiling += ", additional arguments " + additionalArgs;
+        }
+        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
         if (!mznDistribPath.isEmpty()) {
             QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
             env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
