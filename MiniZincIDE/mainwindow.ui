@@ -390,8 +390,10 @@
      <addaction name="separator"/>
      <addaction name="actionClear_menu_2"/>
     </widget>
-    <addaction name="actionNew"/>
+    <addaction name="actionNewModel_file"/>
+    <addaction name="actionNewData_file"/>
     <addaction name="actionOpen"/>
+    <addaction name="actionAdd_to_project"/>
     <addaction name="menuRecent_Files"/>
     <addaction name="menuRecent_Projects"/>
     <addaction name="separator"/>
@@ -544,7 +546,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionNew"/>
+   <addaction name="actionNewModel_file"/>
+   <addaction name="actionNewData_file"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="separator"/>
@@ -647,18 +650,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
-   </property>
-  </action>
-  <action name="actionNew">
-   <property name="icon">
-    <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/document-new.png</normaloff>:/icons/images/document-new.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;New</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionUndo">
@@ -990,6 +981,38 @@
    </property>
    <property name="text">
     <string>Show project explorer</string>
+   </property>
+  </action>
+  <action name="actionNewModel_file">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/document-new.png</normaloff>:/icons/images/document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>New model</string>
+   </property>
+   <property name="toolTip">
+    <string>New model</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionNewData_file">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/document-new.png</normaloff>:/icons/images/document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>New data</string>
+   </property>
+   <property name="toolTip">
+    <string>New data</string>
+   </property>
+  </action>
+  <action name="actionAdd_to_project">
+   <property name="text">
+    <string>Add files to project...</string>
    </property>
   </action>
  </widget>

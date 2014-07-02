@@ -343,6 +343,8 @@ void MainWindow::init(const QString& projectFile)
     toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ui->toolBar->insertWidget(ui->actionShow_project_explorer, toolBarSpacer);
 
+    newFileCounter = 1;
+
     findDialog = new FindDialog(this);
     findDialog->setModal(false);
 
@@ -450,26 +452,113 @@ void MainWindow::init(const QString& projectFile)
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
+
+    projectContextMenu = new QMenu(ui->projectView);
+    projectOpen = projectContextMenu->addAction("Open file", this, SLOT(onActionProjectOpen_triggered()));
+    projectRemove = projectContextMenu->addAction("Remove from project", this, SLOT(onActionProjectRemove_triggered()));
+    projectRename = projectContextMenu->addAction("Rename file", this, SLOT(onActionProjectRename_triggered()));
+    projectRunWith = projectContextMenu->addAction("Run model with this data", this, SLOT(onActionProjectRunWith_triggered()));
+    projectAdd = projectContextMenu->addAction("Add existing file...", this, SLOT(onActionProjectAdd_triggered()));
+
+    ui->projectView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->projectView, SIGNAL(customContextMenuRequested(QPoint)),
+            this, SLOT(onProjectCustomContextMenu(QPoint)));
+    connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
+}
+
+void MainWindow::onProjectCustomContextMenu(const QPoint & point)
+{
+    projectSelectedIndex = ui->projectView->indexAt(point);
+    QString file = project.fileAtIndex(projectSelectedIndex);
+    if (!file.isEmpty()) {
+        projectSelectedFile = file;
+        projectOpen->setEnabled(true);
+        projectRemove->setEnabled(true);
+        projectRename->setEnabled(true);
+        projectRunWith->setEnabled(ui->actionRun->isEnabled() && file.endsWith(".dzn"));
+        projectContextMenu->exec(ui->projectView->mapToGlobal(point));
+    } else {
+        projectOpen->setEnabled(false);
+        projectRemove->setEnabled(false);
+        projectRename->setEnabled(false);
+        projectRunWith->setEnabled(false);
+        projectContextMenu->exec(ui->projectView->mapToGlobal(point));
+    }
+}
+
+void MainWindow::onActionProjectAdd_triggered()
+{
+    QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
+
+    for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
+        setLastPath(QFileInfo(*it).absolutePath()+fileDialogSuffix);
+        project.addFile(ui->projectView, *it);
+    }
+}
+
+void MainWindow::on_actionAdd_to_project_triggered()
+{
+    onActionProjectAdd_triggered();
+}
+
+void MainWindow::onActionProjectOpen_triggered()
+{
+    activateFileInProject(projectSelectedIndex);
+}
+
+void MainWindow::onActionProjectRemove_triggered()
+{
+    int tabCount = ui->tabWidget->count();
+    if (!projectSelectedFile.isEmpty()) {
+        for (int i=0; i<tabCount; i++) {
+            if (ui->tabWidget->widget(i) != ui->configuration) {
+                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                if (ce->filepath == projectSelectedFile) {
+                    tabCloseRequest(i);
+                    if (ui->tabWidget->count() == tabCount)
+                        return;
+                    tabCount = ui->tabWidget->count();
+                    i--;
+                }
+            }
+        }
+    }
+    project.removeFile(projectSelectedFile);
+}
+
+void MainWindow::onActionProjectRename_triggered()
+{
+    project.setEditable(projectSelectedIndex);
+    ui->projectView->edit(projectSelectedIndex);
+}
+
+void MainWindow::onActionProjectRunWith_triggered()
+{
+    ui->conf_data_file->setCurrentIndex(ui->conf_data_file->findText(projectSelectedFile));
+    on_actionRun_triggered();
 }
 
 void MainWindow::activateFileInProject(const QModelIndex &index)
 {
-    QString fileName = project.fileAtIndex(index);
-
-    if (!fileName.isEmpty()) {
-        bool foundFile = false;
-        for (int i=0; i<ui->tabWidget->count(); i++) {
-            if (ui->tabWidget->widget(i) != ui->configuration) {
-                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-                if (ce->filepath == fileName) {
-                    ui->tabWidget->setCurrentIndex(i);
-                    foundFile = true;
-                    break;
+    if (project.isProjectFile(index)) {
+        ui->tabWidget->setCurrentWidget(ui->configuration);
+    } else {
+        QString fileName = project.fileAtIndex(index);
+        if (!fileName.isEmpty()) {
+            bool foundFile = false;
+            for (int i=0; i<ui->tabWidget->count(); i++) {
+                if (ui->tabWidget->widget(i) != ui->configuration) {
+                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                    if (ce->filepath == fileName) {
+                        ui->tabWidget->setCurrentIndex(i);
+                        foundFile = true;
+                        break;
+                    }
                 }
             }
-        }
-        if (!foundFile) {
-            createEditor(fileName,false);
+            if (!foundFile) {
+                createEditor(fileName,false,false);
+            }
         }
     }
 }
@@ -489,17 +578,24 @@ MainWindow::~MainWindow()
     delete paramDialog;
 }
 
-void MainWindow::on_actionNew_triggered()
+void MainWindow::on_actionNewModel_file_triggered()
 {
-    createEditor(QString(),false);
+    createEditor(".mzn",false,true);
 }
 
-void MainWindow::createEditor(const QString& path, bool openAsModified) {
+void MainWindow::on_actionNewData_file_triggered()
+{
+    createEditor(".dzn",false,true);
+}
+
+void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
-    QString absPath = QFileInfo(path).absoluteFilePath();
-    if (path.isEmpty()) {
+    QString absPath = QFileInfo(path).canonicalFilePath();
+    if (isNewFile) {
+        absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
+    } else if (path.isEmpty()) {
         absPath = path;
         // Do nothing
     } else if (openAsModified) {
@@ -518,8 +614,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified) {
         doc = d.first;
         large = d.second;
     }
-    if (doc || !fileContents.isEmpty() || absPath.isEmpty()) {
-        CodeEditor* ce = new CodeEditor(doc,absPath,large,editorFont,ui->tabWidget,this);
+    if (doc || !fileContents.isEmpty() || isNewFile) {
+        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,ui->tabWidget,this);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
         curEditor->setFocus();
@@ -564,7 +660,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
     }
 
     if (!fileName.isEmpty()) {
-        createEditor(fileName, openAsModified);
+        createEditor(fileName, openAsModified, false);
     }
 
 }
@@ -599,7 +695,7 @@ void MainWindow::tabCloseRequest(int tab)
         ide()->removeEditor(ce->filepath,ce);
     delete ce;
     if (ui->tabWidget->count()==0) {
-        on_actionNew_triggered();
+        on_actionNewModel_file_triggered();
     }
 }
 
@@ -810,14 +906,9 @@ void MainWindow::setupDznMenu()
 {
     ui->conf_data_file->clear();
     ui->conf_data_file->addItem("None");
-    for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            if (!ce->filepath.isEmpty() && ce->filepath.endsWith(".dzn") &&
-                ui->conf_data_file->findText(ce->filepath) == -1) {
-                    ui->conf_data_file->addItem(ce->filepath);
-            }
-        }
+    QStringList dataFiles = project.dataFiles();
+    for (int i=0; i<dataFiles.size(); i++) {
+        ui->conf_data_file->addItem(dataFiles[i]);
     }
 }
 
@@ -1106,7 +1197,8 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         if (ce != curEditor) {
             ui->tabWidget->setCurrentIndex(tabIndex);
         }
-        QString dialogPath = ce->filepath.isEmpty() ? getLastPath(): ce->filepath;
+        QString dialogPath = ce->filepath.isEmpty() ? getLastPath()+"/"+ce->filename: ce->filepath;
+
         filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
         if (!filepath.isNull()) {
             setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
@@ -1130,6 +1222,8 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     if (ce->filepath != "") {
                         ide()->removeEditor(ce->filepath,ce);
                     }
+                    project.removeFile(ce->filepath);
+                    project.addFile(ui->projectView, filepath);
                     ce->filepath = filepath;
                     setupDznMenu();
                 }
@@ -1141,6 +1235,24 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     tabChange(tabIndex);
             } else {
                 QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
+            }
+        }
+    }
+}
+
+void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
+{
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (ce->filepath==oldPath) {
+                ce->filepath = newPath;
+                ce->filename = QFileInfo(newPath).fileName();
+                ui->tabWidget->setTabText(i,ce->filename);
+                updateRecentFiles(newPath);
+                setupDznMenu();
+                if (ce==curEditor)
+                    tabChange(i);
             }
         }
     }
@@ -1654,6 +1766,7 @@ void MainWindow::saveProject(const QString& f)
             if (projectPath != filepath) {
                 ide()->projects.remove(projectPath);
                 ide()->projects.insert(filepath,this);
+                project.setRoot(ui->projectView, filepath);
             }
             projectPath = filepath;
             updateRecentProjects(projectPath);
@@ -1693,8 +1806,9 @@ void MainWindow::saveProject(const QString& f)
             out << ui->conf_solver_verbose->isChecked();
             out << (qint32)ui->tabWidget->currentIndex();
             QStringList projectFilesRelPath;
-            for (QSet<QString>::const_iterator it = project.files().begin();
-                 it != project.files().end(); ++it) {
+            QStringList projectFiles = project.files();
+            for (QList<QString>::const_iterator it = projectFiles.begin();
+                 it != projectFiles.end(); ++it) {
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
@@ -1729,7 +1843,7 @@ void MainWindow::loadProject(const QString& filepath)
 
     projectPath = filepath;
     updateRecentProjects(projectPath);
-    project.setRoot(projectPath);
+    project.setRoot(ui->projectView, projectPath);
     QString basePath;
     if (version==103) {
         basePath = QFileInfo(filepath).absolutePath()+"/";

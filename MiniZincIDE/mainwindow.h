@@ -95,7 +95,6 @@ private:
     void init(const QString& project);
 
 private slots:
-    void on_actionNew_triggered();
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
 
@@ -199,7 +198,27 @@ private slots:
 
     void on_actionShow_project_explorer_triggered();
 
-    void activateFileInProject(const QModelIndex& index);
+    void activateFileInProject(const QModelIndex&);
+
+    void onProjectCustomContextMenu(const QPoint&);
+
+    void onActionProjectOpen_triggered();
+
+    void onActionProjectRemove_triggered();
+
+    void onActionProjectRename_triggered();
+
+    void onActionProjectRunWith_triggered();
+
+    void onActionProjectAdd_triggered();
+
+    void on_actionNewModel_file_triggered();
+
+    void on_actionNewData_file_triggered();
+
+    void on_actionAdd_to_project_triggered();
+
+    void fileRenamed(const QString&, const QString&);
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -234,8 +253,17 @@ private:
     bool compileOnly;
     QString mzn2fzn_executable;
     Project project;
+    QMenu* projectContextMenu;
+    QAction* projectOpen;
+    QAction* projectRemove;
+    QAction* projectRename;
+    QAction* projectRunWith;
+    QAction* projectAdd;
+    QString projectSelectedFile;
+    QModelIndex projectSelectedIndex;
+    int newFileCounter;
 
-    void createEditor(const QString& path, bool openAsModified);
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile);
     QStringList parseConf(bool compileOnly);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
