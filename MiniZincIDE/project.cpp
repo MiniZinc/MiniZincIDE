@@ -14,10 +14,14 @@ Project::Project()
     invisibleRootItem()->appendRow(dzn);
     other = new QStandardItem("Other");
     invisibleRootItem()->appendRow(other);
+    _isModified = false;
 }
 
 void Project::setRoot(QTreeView* treeView, const QString &fileName)
 {
+    if (fileName == projectRoot)
+        return;
+    _isModified = true;
     projectFile->setText(QFileInfo(fileName).fileName());
     projectFile->setIcon(QIcon(":/images/mznicon.png"));
     QStringList allFiles = files();
@@ -64,6 +68,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
         curItem = other;
         isMiniZinc = false;
     }
+    setModified(true);
     QStandardItem* prevItem = curItem;
     treeView->expand(curItem->index());
     curItem = curItem->child(0);
@@ -148,6 +153,7 @@ void Project::setRunningModel(const QModelIndex &index)
         itemFont.setBold(false);
         item->setFont(itemFont);
     }
+    setModified(true);
     QStandardItem* item = itemFromIndex(index);
     QFont itemFont = item->font();
     itemFont.setBold(true);
@@ -164,6 +170,7 @@ void Project::removeFile(const QString &fileName)
         qDebug() << "Internal error: file " << fileName << " not in project";
         return;
     }
+    setModified(true);
     QModelIndex index = _files[fileName];
     _files.remove(fileName);
     QStandardItem* cur = itemFromIndex(index);
@@ -177,6 +184,16 @@ void Project::removeFile(const QString &fileName)
 void Project::setEditable(const QModelIndex &index)
 {
     editable = index;
+}
+
+void Project::setModified(bool flag)
+{
+    if (!projectRoot.isEmpty()) {
+        if (_isModified != flag) {
+            emit modificationChanged(flag);
+            _isModified = flag;
+        }
+    }
 }
 
 bool Project::setData(const QModelIndex& index, const QVariant& value, int role)

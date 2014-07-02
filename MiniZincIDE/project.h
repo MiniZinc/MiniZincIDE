@@ -21,9 +21,13 @@ public:
     void setEditable(const QModelIndex& index);
     virtual bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole );
     bool isProjectFile(const QModelIndex& index) { return projectFile->index()==index; }
+    bool isModified() const { return _isModified; }
+    void setModified(bool flag);
 signals:
     void fileRenamed(const QString& oldName, const QString& newName);
+    void modificationChanged(bool);
 protected:
+    bool _isModified;
     QString projectRoot;
     QMap<QString, QModelIndex> _files;
     QStandardItem* projectFile;

@@ -443,14 +443,6 @@ void MainWindow::init(const QString& projectFile)
     if (!defaultSolver.isEmpty())
         ui->conf_solver->setCurrentText(defaultSolver);
 
-    if (!projectFile.isEmpty()) {
-        loadProject(projectFile);
-        setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
-    } else {
-        if (getLastPath().isEmpty()) {
-            setLastPath(QDir::currentPath()+fileDialogSuffix);
-        }
-    }
     ui->projectView->setModel(&project);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
@@ -467,6 +459,15 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->projectView, SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(onProjectCustomContextMenu(QPoint)));
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
+
+    if (!projectFile.isEmpty()) {
+        loadProject(projectFile);
+        setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
+    } else {
+        if (getLastPath().isEmpty()) {
+            setLastPath(QDir::currentPath()+fileDialogSuffix);
+        }
+    }
 }
 
 void MainWindow::onProjectCustomContextMenu(const QPoint & point)
@@ -720,6 +721,15 @@ void MainWindow::closeEvent(QCloseEvent* e) {
             return;
         }
     }
+    if (project.isModified()) {
+        int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                       "The project has been modified.\nDo you want to discard the changes or cancel?",
+                                       QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Cancel) {
+            e->ignore();
+            return;
+        }
+    }
     if (process) {
         int ret = QMessageBox::warning(this, "MiniZinc IDE",
                                        "MiniZinc is currently running a solver.\nDo you want to quit anyway and stop the current process?",
@@ -829,6 +839,9 @@ void MainWindow::tabChange(int tab) {
             curEditor->setFocus();
         } else {
             curEditor = NULL;
+            setWindowModified(project.isModified());
+            connect(&project, SIGNAL(modificationChanged(bool)),
+                    this, SLOT(setWindowModified(bool)));
             ui->actionClose->setEnabled(false);
             ui->actionSave->setEnabled(false);
             ui->actionSave_as->setEnabled(false);
@@ -856,7 +869,6 @@ void MainWindow::tabChange(int tab) {
                 p = "Project: "+fi.baseName();
             }
             setWindowTitle(p);
-            setWindowModified(false);
         }
     }
 }
@@ -1817,6 +1829,8 @@ void MainWindow::saveProject(const QString& f)
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
+            project.setModified(false);
+
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
         }
@@ -1911,6 +1925,8 @@ void MainWindow::loadProject(const QString& filepath)
     for (int i=0; i<openFiles.size(); i++) {
         openFile(basePath+openFiles[i],false);
     }
+
+    project.setModified(false);
 
     ide()->projects.insert(projectPath, this);
     tabChange(ui->tabWidget->currentIndex());
