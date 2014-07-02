@@ -18,6 +18,7 @@
 #include <QSettings>
 
 SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
+                           bool openAsAddNew,
                            const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
@@ -40,6 +41,8 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     ui->send_stats->setChecked(settings.value("sendstats",false).toBool());
     ui->send_stats->setEnabled(ui->check_updates->isChecked());
     settings.endGroup();
+    if (openAsAddNew)
+        ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
 }
 
 SolverDialog::~SolverDialog()

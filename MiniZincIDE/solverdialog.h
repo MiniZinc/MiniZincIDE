@@ -37,6 +37,7 @@ class SolverDialog : public QDialog
 
 public:
     explicit SolverDialog(QVector<Solver>& solvers, const QString& def,
+                          bool openAsAddNew,
                           const QString& mznPath, QWidget *parent = 0);
     ~SolverDialog();
     QString mznPath();

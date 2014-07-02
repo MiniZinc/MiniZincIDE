@@ -148,7 +148,7 @@ private slots:
 
     void on_actionDefault_font_size_triggered();
 
-    void on_actionManage_solvers_triggered();
+    void on_actionManage_solvers_triggered(bool addNew=false);
 
     void on_actionFind_triggered();
 
@@ -221,6 +221,8 @@ private slots:
     void fileRenamed(const QString&, const QString&);
 
     void on_conf_timeLimit_valueChanged(int arg1);
+
+    void on_conf_solver_activated(const QString &arg1);
 
 protected:
     virtual void closeEvent(QCloseEvent*);

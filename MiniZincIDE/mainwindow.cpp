@@ -440,6 +440,7 @@ void MainWindow::init(const QString& projectFile)
     checkMznPath();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    ui->conf_solver->addItem("Add new solver...");
     if (!defaultSolver.isEmpty())
         ui->conf_solver->setCurrentText(defaultSolver);
 
@@ -1535,14 +1536,14 @@ void MainWindow::errorClicked(const QUrl & url)
     }
 }
 
-void MainWindow::on_actionManage_solvers_triggered()
+void MainWindow::on_actionManage_solvers_triggered(bool addNew)
 {
     QSettings settings;
     settings.beginGroup("ide");
     bool checkUpdates = settings.value("checkforupdates",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,defaultSolver,mznDistribPath);
+    SolverDialog sd(solvers,defaultSolver,addNew,mznDistribPath);
     sd.exec();
     defaultSolver = sd.def();
     mznDistribPath = sd.mznPath();
@@ -2093,5 +2094,12 @@ void MainWindow::on_conf_timeLimit_valueChanged(int arg1)
         ui->conf_timeLimit_label->setText("seconds (disabled)");
     } else {
         ui->conf_timeLimit_label->setText("seconds");
+    }
+}
+
+void MainWindow::on_conf_solver_activated(const QString &arg1)
+{
+    if (arg1=="Add new solver...") {
+        on_actionManage_solvers_triggered(true);
     }
 }
