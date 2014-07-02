@@ -116,7 +116,7 @@ private slots:
 
     void pipeOutput();
 
-    void procFinished(int);
+    void procFinished(int, bool showTime=true);
 
     void procError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);

@@ -974,7 +974,7 @@ void MainWindow::checkArgsFinished(int exitcode)
         if (undefinedArgs.size() > 0 && undefinedArgs.size() <= 10) {
             QStringList params = paramDialog->getParams(undefinedArgs);
             if (params.size()==0) {
-                procFinished(0);
+                procFinished(0,false);
                 return;
             }
             for (int i=0; i<undefinedArgs.size(); i++) {
@@ -1187,7 +1187,7 @@ void MainWindow::pipeOutput()
     outputProcess->write(process->readAllStandardOutput());
 }
 
-void MainWindow::procFinished(int) {
+void MainWindow::procFinished(int, bool showTime) {
     readOutput();
     ui->actionRun->setEnabled(true);
     ui->actionCompile->setEnabled(true);
@@ -1202,7 +1202,9 @@ void MainWindow::procFinished(int) {
         outputProcess->waitForFinished();
         outputProcess = NULL;
     }
-    addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
+    if (showTime) {
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
+    }
     delete tmpDir;
     tmpDir = NULL;
 }
