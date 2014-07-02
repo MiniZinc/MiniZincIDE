@@ -970,7 +970,7 @@ void MainWindow::checkArgsFinished(int exitcode)
             undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
-        if (undefinedArgs.size() > 0) {
+        if (undefinedArgs.size() > 0 && undefinedArgs.size() <= 10) {
             QStringList params = paramDialog->getParams(undefinedArgs);
             if (params.size()==0) {
                 procFinished(0);
