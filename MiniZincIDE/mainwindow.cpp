@@ -1351,7 +1351,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             connect(process, SIGNAL(error(QProcess::ProcessError)),
                     this, SLOT(procError(QProcess::ProcessError)));
 
-            if (ui->conf_have_timeLimit->isChecked()) {
+            if (ui->conf_timeLimit->text() != "0") {
                 bool ok;
                 int timeout = ui->conf_timeLimit->text().toInt(&ok);
                 if (ok)
@@ -1801,7 +1801,7 @@ void MainWindow::saveProject(const QString& f)
             out << (qint32)ui->conf_nthreads->value();
             out << ui->conf_have_seed->isChecked();
             out << ui->conf_seed->text();
-            out << ui->conf_have_timeLimit->isChecked();
+            out << false; // used to be whether time limit is checked
             out << (qint32)ui->conf_timeLimit->value();
             out << ui->conf_solver_verbose->isChecked();
             out << (qint32)ui->tabWidget->currentIndex();
@@ -1884,8 +1884,7 @@ void MainWindow::loadProject(const QString& filepath)
     ui->conf_have_seed->setChecked(p_b);
     in >> p_s;
     ui->conf_seed->setText(p_s);
-    in >> p_b;
-    ui->conf_have_timeLimit->setChecked(p_b);
+    in >> p_b; // used to be whether time limit is checked
     in >> p_i;
     ui->conf_timeLimit->setValue(p_i);
     if (version==102) {
@@ -2042,5 +2041,14 @@ void MainWindow::on_actionShow_project_explorer_triggered()
     } else {
         ui->projectExplorerDockWidget->hide();
         ui->actionShow_project_explorer->setText("Show project explorer");
+    }
+}
+
+void MainWindow::on_conf_timeLimit_valueChanged(int arg1)
+{
+    if (arg1==0) {
+        ui->conf_timeLimit_label->setText("seconds (disabled)");
+    } else {
+        ui->conf_timeLimit_label->setText("seconds");
     }
 }

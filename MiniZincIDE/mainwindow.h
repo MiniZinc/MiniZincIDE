@@ -220,6 +220,8 @@ private slots:
 
     void fileRenamed(const QString&, const QString&);
 
+    void on_conf_timeLimit_valueChanged(int arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
