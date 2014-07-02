@@ -388,6 +388,9 @@ void MainWindow::init(const QString& projectFile)
     if (settings.value("toolbarHidden", false).toBool()) {
         on_actionHide_tool_bar_triggered();
     }
+    if (settings.value("outputWindowHidden", true).toBool()) {
+        on_actionOnly_editor_triggered();
+    }
     settings.endGroup();
 
     setEditorFont(editorFont);
@@ -746,6 +749,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
+    settings.setValue("outputWindowHidden", ui->outputConsole->isHidden());
     settings.endGroup();
     helpWindow->close();
     e->accept();
@@ -1068,6 +1072,7 @@ void MainWindow::on_actionRun_triggered()
         ui->actionCompile->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+        on_actionSplit_triggered();
         ide()->stats.modelsRun++;
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
@@ -1909,7 +1914,9 @@ void MainWindow::loadProject(const QString& filepath)
 
     ide()->projects.insert(projectPath, this);
     tabChange(ui->tabWidget->currentIndex());
-
+    if (ui->projectExplorerDockWidget->isHidden()) {
+        on_actionShow_project_explorer_triggered();
+    }
 }
 
 void MainWindow::on_actionSave_project_triggered()

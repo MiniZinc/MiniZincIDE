@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>899</height>
+    <height>982</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -424,18 +424,12 @@
             </widget>
            </item>
           </layout>
-          <zorder></zorder>
-          <zorder></zorder>
           <zorder>conf_stats</zorder>
           <zorder>conf_solver_verbose</zorder>
-          <zorder></zorder>
-          <zorder></zorder>
-          <zorder></zorder>
           <zorder>label</zorder>
           <zorder>label_7</zorder>
           <zorder>conf_verbose</zorder>
           <zorder>conf_optimize</zorder>
-          <zorder></zorder>
          </widget>
         </item>
         <item>
@@ -663,6 +657,9 @@
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Project</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
