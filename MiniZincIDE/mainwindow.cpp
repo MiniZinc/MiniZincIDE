@@ -464,6 +464,7 @@ void MainWindow::init(const QString& projectFile)
         loadProject(projectFile);
         setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
     } else {
+        on_actionNewModel_file_triggered();
         if (getLastPath().isEmpty()) {
             setLastPath(QDir::currentPath()+fileDialogSuffix);
         }
@@ -1691,7 +1692,18 @@ void MainWindow::openProject(const QString& fileName)
         IDE::PMap& pmap = ide()->projects;
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
-            if (ui->tabWidget->count()==1) {
+            bool currentEmptyProject = (ui->tabWidget->count()==2);
+            if (currentEmptyProject) {
+                CodeEditor* ce =
+                        static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
+                                                     ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
+                if (ce->filepath != "" || ce->document()->isModified()) {
+                    currentEmptyProject = false;
+                } else {
+                    tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
+                }
+            }
+            if (currentEmptyProject) {
                 loadProject(fileName);
             } else {
                 MainWindow* mw = new MainWindow(fileName);
