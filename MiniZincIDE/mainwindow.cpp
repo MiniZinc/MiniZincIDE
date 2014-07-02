@@ -768,7 +768,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
-    settings.setValue("outputWindowHidden", ui->outputConsole->isHidden());
+    settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
     settings.endGroup();
     helpWindow->close();
     e->accept();
