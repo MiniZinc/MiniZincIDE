@@ -228,7 +228,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
             return qMakePair(&d->td,d->large);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
-                                 "Could not open file",
+                                 "Could not open file "+path,
                                  QMessageBox::Ok);
             QTextDocument* nd = NULL;
             return qMakePair(nd,false);
@@ -254,7 +254,7 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
             }
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
-                                 "Could not open file",
+                                 "Could not open file "+path,
                                  QMessageBox::Ok);
         }
     }
@@ -610,11 +610,17 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             fileContents = file.readAll();
         } else {
             QMessageBox::warning(this,"MiniZinc IDE",
-                                 "Could not open file.",
+                                 "Could not open file "+path,
                                  QMessageBox::Ok);
             return;
         }
     } else {
+        if (absPath.isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE",
+                                 "Could not open file "+path,
+                                 QMessageBox::Ok);
+            return;
+        }
         QPair<QTextDocument*,bool> d = ide()->loadFile(absPath,this);
         updateRecentFiles(absPath);
         doc = d.first;
@@ -1951,7 +1957,12 @@ void MainWindow::loadProject(const QString& filepath)
         projectFilesRelPath = openFiles;
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
-        project.addFile(ui->projectView, basePath+projectFilesRelPath[i]);
+        QFileInfo fi(basePath+projectFilesRelPath[i]);
+        if (fi.exists()) {
+            project.addFile(ui->projectView, basePath+projectFilesRelPath[i]);
+        } else {
+            QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
+        }
     }
 
     for (int i=0; i<openFiles.size(); i++) {
