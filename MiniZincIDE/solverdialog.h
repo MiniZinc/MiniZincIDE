@@ -14,6 +14,7 @@
 #define SOLVERDIALOG_H
 
 #include <QDialog>
+#include <QProcess>
 
 namespace Ui {
 class SolverDialog;
@@ -31,6 +32,12 @@ struct Solver {
     Solver(void) {}
 };
 
+class MznProcess : public QProcess {
+public:
+    MznProcess(QObject* parent=NULL) : QProcess(parent) {}
+    void start(const QString& program, const QStringList& arguments, const QString& path);
+};
+
 class SolverDialog : public QDialog
 {
     Q_OBJECT
@@ -38,10 +45,14 @@ class SolverDialog : public QDialog
 public:
     explicit SolverDialog(QVector<Solver>& solvers, const QString& def,
                           bool openAsAddNew,
-                          const QString& mznPath, QWidget *parent = 0);
+                          const QString& mznPath,
+                          QWidget *parent = 0);
     ~SolverDialog();
     QString mznPath();
     QString def();
+    static void checkMzn2fznExecutable(const QString& mznDistribPath,
+                                       QString& mzn2fzn_executable,
+                                       QString& mzn2fzn_version_string);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -59,10 +70,13 @@ private slots:
 
     void on_send_stats_stateChanged(int arg1);
 
+    void on_mznDistribPath_editingFinished();
+
 private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;
     int defaultSolver;
+    void editingFinished(bool showError);
 };
 
 #endif // SOLVERDIALOG_H

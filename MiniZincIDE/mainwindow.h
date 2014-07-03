@@ -230,9 +230,9 @@ private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
     QWebView* webView;
-    QProcess* process;
+    MznProcess* process;
     QString processName;
-    QProcess* outputProcess;
+    MznProcess* outputProcess;
     bool processWasStopped;
     QTimer* timer;
     QTimer* solverTimeout;

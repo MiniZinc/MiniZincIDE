@@ -993,7 +993,7 @@ void MainWindow::checkArgsFinished(int exitcode)
             }
         }
     }
-    process = new QProcess(this);
+    process = new MznProcess(this);
     processName = mzn2fzn_executable;
     processWasStopped = false;
     runSolns2Out = true;
@@ -1031,12 +1031,7 @@ void MainWindow::checkArgsFinished(int exitcode)
             compiling += ", additional arguments " + additionalArgs;
         }
         addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
-        if (!mznDistribPath.isEmpty()) {
-            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-            env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-            process->setProcessEnvironment(env);
-        }
-        process->start(mznDistribPath + mzn2fzn_executable,args);
+        process->start(mzn2fzn_executable,args,mznDistribPath);
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -1052,7 +1047,7 @@ void MainWindow::checkArgs(QString filepath)
             on_actionManage_solvers_triggered();
         return;
     }
-    process = new QProcess;
+    process = new MznProcess(this);
     processName = mzn2fzn_executable;
     processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
@@ -1065,13 +1060,8 @@ void MainWindow::checkArgs(QString filepath)
     QStringList args = parseConf(true);
     args << "--instance-check-only";
     args << filepath;
-    if (!mznDistribPath.isEmpty()) {
-        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-        process->setProcessEnvironment(env);
-    }
     compileErrors = "";
-    process->start(mznDistribPath + mzn2fzn_executable,args);
+    process->start(mzn2fzn_executable,args,mznDistribPath);
 }
 
 void MainWindow::on_actionRun_triggered()
@@ -1152,7 +1142,7 @@ void MainWindow::statusTimerEvent()
 
 void MainWindow::readOutput()
 {
-    QProcess* readProc = (outputProcess==NULL ? process : outputProcess);
+    MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
 
     if (readProc != NULL) {
         readProc->setReadChannel(QProcess::StandardOutput);
@@ -1366,22 +1356,17 @@ void MainWindow::runCompiledFzn(int exitcode)
             procFinished(exitcode);
         } else {
             if (runSolns2Out) {
-                outputProcess = new QProcess(this);
+                outputProcess = new MznProcess(this);
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
                         this, SLOT(outputProcError(QProcess::ProcessError)));
-                if (!mznDistribPath.isEmpty()) {
-                    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                    env.insert("PATH", env.value("PATH") + pathSep + mznDistribPath);
-                    outputProcess->setProcessEnvironment(env);
-                }
                 QStringList outargs;
                 outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start(mznDistribPath+"solns2out",outargs);
+                outputProcess->start("solns2out",outargs,mznDistribPath);
             }
-            process = new QProcess(this);
+            process = new MznProcess(this);
             processName = s.executable;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
@@ -1404,18 +1389,7 @@ void MainWindow::runCompiledFzn(int exitcode)
 
             elapsedTime.start();
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+"</div><br>");
-            if (!mznDistribPath.isEmpty()) {
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                QString dp = mznDistribPath;
-                dp.remove(dp.length()-1,1);
-                env.insert("PATH", env.value("PATH") + pathSep + dp);
-                dp.remove(dp.length()-4,4);
-                env.insert("MINIZINC", dp);
-                process->setProcessEnvironment(env);
-            }
             QString executable = s.executable;
-            if (s.builtin)
-                executable = mznDistribPath+executable;
             if (ui->conf_solver_verbose->isChecked()) {
                 addOutput("<div style='color:blue;'>Command line:</div><br>");
                 QString cmdline = executable;
@@ -1428,7 +1402,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                 }
                 addOutput("<div>"+cmdline+"</div><br>");
             }
-            process->start(executable,args);
+            process->start(executable,args,mznDistribPath);
             time = 0;
             timer->start(500);
         }
@@ -1646,23 +1620,15 @@ void MainWindow::on_actionGo_to_line_triggered()
 
 void MainWindow::checkMznPath()
 {
-    QProcess p;
-    QStringList args;
-    args << "-v";
-    mzn2fzn_executable = "";
-    p.start(mznDistribPath+"mzn2fzn", args);
-    if (!p.waitForStarted() || !p.waitForFinished()) {
-        p.start(mznDistribPath+"mzn2fzn.bat", args);
-        if (!p.waitForStarted() || !p.waitForFinished()) {
-            int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
-                                           QMessageBox::Ok | QMessageBox::Cancel);
-            if (ret == QMessageBox::Ok)
-                on_actionManage_solvers_triggered();
-        } else {
-            mzn2fzn_executable = "mzn2fzn.bat";
-        }
-    } else {
-        mzn2fzn_executable = "mzn2fzn";
+    QString ignoreVersionString;
+    SolverDialog::checkMzn2fznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString);
+
+    if (mzn2fzn_executable.isEmpty()) {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+        return;
     }
 }
 
