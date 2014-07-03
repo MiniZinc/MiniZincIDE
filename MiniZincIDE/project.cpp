@@ -1,3 +1,15 @@
+/*
+ *  Author:
+ *     Guido Tack <guido.tack@monash.edu>
+ *
+ *  Copyright:
+ *     NICTA 2013
+ */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "project.h"
 
 #include <QFileInfo>
@@ -9,10 +21,15 @@ Project::Project()
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
     mzn = new QStandardItem("Models");
+    QFont font = mzn->font();
+    font.setBold(true);
+    mzn->setFont(font);
     invisibleRootItem()->appendRow(mzn);
-    dzn = new QStandardItem("Data");
+    dzn = new QStandardItem("Data (right-click to run)");
+    dzn->setFont(font);
     invisibleRootItem()->appendRow(dzn);
     other = new QStandardItem("Other");
+    other->setFont(font);
     invisibleRootItem()->appendRow(other);
     _isModified = false;
 }
@@ -131,6 +148,9 @@ Qt::ItemFlags Project::flags(const QModelIndex& index) const
     if (index==editable) {
         return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
     } else {
+        QStandardItem* item = itemFromIndex(index);
+        if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
+            return Qt::ItemIsSelectable;
         return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
     }
 }
