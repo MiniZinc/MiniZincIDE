@@ -166,8 +166,6 @@ private slots:
 
     void on_actionNew_project_triggered();
 
-    void on_actionOpen_project_triggered();
-
     void on_actionSave_project_triggered();
 
     void on_actionSave_project_as_triggered();
@@ -224,6 +222,8 @@ private slots:
 
     void on_conf_solver_activated(const QString &arg1);
 
+    void onClipboardChanged();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -266,6 +266,9 @@ private:
     QString projectSelectedFile;
     QModelIndex projectSelectedIndex;
     int newFileCounter;
+    QAction* fakeRunAction;
+    QAction* fakeStopAction;
+    QAction* fakeCompileAction;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile);
     QStringList parseConf(bool compileOnly);

@@ -484,7 +484,6 @@
     <addaction name="actionClose"/>
     <addaction name="separator"/>
     <addaction name="actionNew_project"/>
-    <addaction name="actionOpen_project"/>
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
     <addaction name="actionClose_project"/>
@@ -575,7 +574,7 @@
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="allowedAreas">
-    <set>Qt::BottomDockWidgetArea</set>
+    <set>Qt::BottomDockWidgetArea|Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
     <string>Output</string>
@@ -627,7 +626,6 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionNewModel_file"/>
-   <addaction name="actionNewData_file"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="separator"/>
@@ -651,7 +649,7 @@
     <set>QDockWidget::DockWidgetMovable</set>
    </property>
    <property name="allowedAreas">
-    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+    <set>Qt::BottomDockWidgetArea|Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
     <string>Project</string>
@@ -709,6 +707,9 @@
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionSave">
    <property name="icon">
@@ -721,6 +722,9 @@
    <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionSave_as">
    <property name="text">
@@ -729,6 +733,9 @@
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionClose">
    <property name="text">
@@ -736,6 +743,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionUndo">
@@ -749,6 +759,9 @@
    <property name="shortcut">
     <string>Ctrl+Z</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionRedo">
    <property name="icon">
@@ -760,6 +773,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Z</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionCut">
@@ -773,6 +789,9 @@
    <property name="shortcut">
     <string>Ctrl+X</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionCopy">
    <property name="icon">
@@ -785,6 +804,9 @@
    <property name="shortcut">
     <string>Ctrl+C</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionPaste">
    <property name="icon">
@@ -796,6 +818,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+V</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionSelect_All">
@@ -931,10 +956,16 @@
      <normaloff>:/icons/images/format-indent-less.png</normaloff>:/icons/images/format-indent-less.png</iconset>
    </property>
    <property name="text">
+    <string>Shift selection left</string>
+   </property>
+   <property name="iconText">
     <string>Shift left</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+[</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionShift_right">
@@ -943,10 +974,16 @@
      <normaloff>:/icons/images/format-indent-more.png</normaloff>:/icons/images/format-indent-more.png</iconset>
    </property>
    <property name="text">
+    <string>Shift selection right</string>
+   </property>
+   <property name="iconText">
     <string>Shift right</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+]</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionHelp">
@@ -960,14 +997,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+N</string>
-   </property>
-  </action>
-  <action name="actionOpen_project">
-   <property name="text">
-    <string>Open project</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+O</string>
    </property>
   </action>
   <action name="actionSave_project">
@@ -998,6 +1027,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionFind_next">
@@ -1068,6 +1100,9 @@
    <property name="text">
     <string>Show project explorer</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionNewModel_file">
    <property name="icon">
@@ -1083,6 +1118,9 @@
    <property name="shortcut">
     <string>Ctrl+N</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionNewData_file">
    <property name="icon">
@@ -1094,6 +1132,9 @@
    </property>
    <property name="toolTip">
     <string>New data</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionAdd_to_project">

@@ -11,12 +11,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "project.h"
+#include "ui_mainwindow.h"
 
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
 
-Project::Project()
+Project::Project(Ui::MainWindow *ui0) : ui(ui0)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -85,7 +86,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
         curItem = other;
         isMiniZinc = false;
     }
-    setModified(true);
+    setModified(true, true);
     QStandardItem* prevItem = curItem;
     treeView->expand(curItem->index());
     curItem = curItem->child(0);
@@ -165,23 +166,6 @@ QStringList Project::dataFiles(void) const
     return ret;
 }
 
-void Project::setRunningModel(const QModelIndex &index)
-{
-    if (runningModel.isValid()) {
-        QStandardItem* item = itemFromIndex(runningModel);
-        QFont itemFont = item->font();
-        itemFont.setBold(false);
-        item->setFont(itemFont);
-    }
-    setModified(true);
-    QStandardItem* item = itemFromIndex(index);
-    QFont itemFont = item->font();
-    itemFont.setBold(true);
-    item->setFont(itemFont);
-    runningModel = index;
-
-}
-
 void Project::removeFile(const QString &fileName)
 {
     if (fileName.isEmpty())
@@ -190,7 +174,7 @@ void Project::removeFile(const QString &fileName)
         qDebug() << "Internal error: file " << fileName << " not in project";
         return;
     }
-    setModified(true);
+    setModified(true, true);
     QModelIndex index = _files[fileName];
     _files.remove(fileName);
     QStandardItem* cur = itemFromIndex(index);
@@ -206,12 +190,15 @@ void Project::setEditable(const QModelIndex &index)
     editable = index;
 }
 
-void Project::setModified(bool flag)
+void Project::setModified(bool flag, bool files)
 {
     if (!projectRoot.isEmpty()) {
         if (_isModified != flag) {
             emit modificationChanged(flag);
             _isModified = flag;
+            if (files) {
+                _filesModified = _isModified;
+            }
         }
     }
 }
@@ -232,4 +219,245 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     } else {
         return false;
     }
+}
+
+void Project::currentDataFileIndex(int i, bool init)
+{
+    if (init) {
+        _currentDatafileIndex = i;
+        ui->conf_data_file->setCurrentIndex(i);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::haveExtraArgs(bool b, bool init)
+{
+    if (init) {
+        _haveExtraArgs = b;
+        ui->conf_have_cmd_params->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::extraArgs(const QString& a, bool init)
+{
+    if (init) {
+        _extraArgs = a;
+        ui->conf_cmd_params->setText(a);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::mzn2fznVerbose(bool b, bool init)
+{
+    if (init) {
+        _mzn2fzn_verbose= b;
+        ui->conf_verbose->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::mzn2fznOptimize(bool b, bool init)
+{
+    if (init) {
+        _mzn2fzn_optimize = b;
+        ui->conf_optimize->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::currentSolver(const QString& s, bool init)
+{
+    if (init) {
+        _currentSolver = s;
+        ui->conf_solver->setCurrentText(s);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::n_solutions(int n, bool init)
+{
+    if (init) {
+        _n_solutions = n;
+        ui->conf_nsol->setValue(n);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::printAll(bool b, bool init)
+{
+    if (init) {
+        _printAll = b;
+        ui->conf_printall->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::printStats(bool b, bool init)
+{
+    if (init) {
+        _printStats = b;
+        ui->conf_stats->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::haveSolverFlags(bool b, bool init)
+{
+    if (init) {
+        _haveSolverFlags = b;
+        ui->conf_have_solverFlags->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::solverFlags(const QString& s, bool init)
+{
+    if (init) {
+        _solverFlags = s;
+        ui->conf_solverFlags->setText(s);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::n_threads(int n, bool init)
+{
+    if (init) {
+        _n_threads = n;
+        ui->conf_nthreads->setValue(n);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::haveSeed(bool b, bool init)
+{
+    if (init) {
+        _haveSeed = b;
+        ui->conf_have_seed->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::seed(const QString& s, bool init)
+{
+    if (init) {
+        _seed = s;
+        ui->conf_seed->setText(s);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::timeLimit(int n, bool init)
+{
+    if (init) {
+        _timeLimit = n;
+        ui->conf_timeLimit->setValue(n);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::solverVerbose(bool b, bool init)
+{
+    if (init) {
+        _solverVerbose = b;
+        ui->conf_solver_verbose->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+int Project::currentDataFileIndex(void) const
+{
+    return ui->conf_data_file->currentIndex();
+}
+
+QString Project::currentDataFile(void) const
+{
+    return ui->conf_data_file->currentText();
+}
+
+void Project::checkModified()
+{
+    if (projectRoot.isEmpty() || _filesModified)
+        return;
+    if (currentDataFileIndex() != ui->conf_data_file->currentIndex()) {
+        setModified(true);
+        return;
+    }
+    if (haveExtraArgs() != ui->conf_have_cmd_params->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (extraArgs() != ui->conf_cmd_params->text()) {
+        setModified(true);
+        return;
+    }
+    if (mzn2fznVerbose() != ui->conf_verbose->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (mzn2fznOptimize() != ui->conf_optimize->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (currentSolver() != ui->conf_solver->currentText()) {
+        setModified(true);
+        return;
+    }
+    if (n_solutions() != ui->conf_nsol->value()) {
+        setModified(true);
+        return;
+    }
+    if (printAll() != ui->conf_printall->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (printStats() != ui->conf_stats->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (haveSolverFlags() != ui->conf_have_solverFlags->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (solverFlags() != ui->conf_solverFlags->text()) {
+        setModified(true);
+        return;
+    }
+    if (n_threads() != ui->conf_nthreads->value()) {
+        setModified(true);
+        return;
+    }
+    if (haveSeed() != ui->conf_have_seed->isChecked()) {
+        setModified(true);
+        return;
+    }
+    if (seed() != ui->conf_seed->text()) {
+        setModified(true);
+        return;
+    }
+    if (timeLimit() != ui->conf_timeLimit->value()) {
+        setModified(true);
+        return;
+    }
+    if (solverVerbose() != ui->conf_solver_verbose->isChecked()) {
+        setModified(true);
+        return;
+    }
+    setModified(false);
 }

@@ -316,7 +316,8 @@ MainWindow::MainWindow(const QString& project, QWidget *parent) :
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
-    saveBeforeRunning(false)
+    saveBeforeRunning(false),
+    project(ui)
 {
     init(project);
 }
@@ -328,7 +329,8 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
-    saveBeforeRunning(false)
+    saveBeforeRunning(false),
+    project(ui)
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
@@ -351,6 +353,21 @@ void MainWindow::init(const QString& projectFile)
     paramDialog = new ParamDialog(this);
 
     helpWindow = new Help();
+
+    fakeRunAction = new QAction(this);
+    fakeRunAction->setShortcut(Qt::CTRL+Qt::Key_R);
+    fakeRunAction->setEnabled(true);
+    this->addAction(fakeRunAction);
+
+    fakeCompileAction = new QAction(this);
+    fakeCompileAction->setShortcut(Qt::CTRL+Qt::Key_B);
+    fakeCompileAction->setEnabled(true);
+    this->addAction(fakeCompileAction);
+
+    fakeStopAction = new QAction(this);
+    fakeStopAction->setShortcut(Qt::CTRL+Qt::Key_E);
+    fakeStopAction->setEnabled(true);
+    this->addAction(fakeStopAction);
 
     updateRecentProjects("");
     updateRecentFiles("");
@@ -444,6 +461,8 @@ void MainWindow::init(const QString& projectFile)
     if (!defaultSolver.isEmpty())
         ui->conf_solver->setCurrentText(defaultSolver);
 
+    connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
+
     ui->projectView->setModel(&project);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
@@ -461,6 +480,22 @@ void MainWindow::init(const QString& projectFile)
             this, SLOT(onProjectCustomContextMenu(QPoint)));
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
 
+    connect(ui->conf_data_file, SIGNAL(currentIndexChanged(int)), &project, SLOT(currentDataFileIndex(int)));
+    connect(ui->conf_have_cmd_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraArgs(bool)));
+    connect(ui->conf_cmd_params, SIGNAL(textEdited(QString)), &project, SLOT(extraArgs(QString)));
+    connect(ui->conf_verbose, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznVerbose(bool)));
+    connect(ui->conf_optimize, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznOptimize(bool)));
+    connect(ui->conf_solver, SIGNAL(currentIndexChanged(QString)), &project, SLOT(currentSolver(QString)));
+    connect(ui->conf_nsol, SIGNAL(valueChanged(int)), &project, SLOT(n_solutions(int)));
+    connect(ui->conf_printall, SIGNAL(toggled(bool)), &project, SLOT(printAll(bool)));
+    connect(ui->conf_stats, SIGNAL(toggled(bool)), &project, SLOT(printStats(bool)));
+    connect(ui->conf_have_solverFlags, SIGNAL(toggled(bool)), &project, SLOT(haveSolverFlags(bool)));
+    connect(ui->conf_nthreads, SIGNAL(valueChanged(int)), &project, SLOT(n_threads(int)));
+    connect(ui->conf_have_seed, SIGNAL(toggled(bool)), &project, SLOT(haveSeed(bool)));
+    connect(ui->conf_seed, SIGNAL(textEdited(QString)), &project, SLOT(seed(QString)));
+    connect(ui->conf_timeLimit, SIGNAL(valueChanged(int)), &project, SLOT(timeLimit(int)));
+    connect(ui->conf_solver_verbose, SIGNAL(toggled(bool)), &project, SLOT(solverVerbose(bool)));
+
     if (!projectFile.isEmpty()) {
         loadProject(projectFile);
         setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
@@ -470,6 +505,7 @@ void MainWindow::init(const QString& projectFile)
             setLastPath(QDir::currentPath()+fileDialogSuffix);
         }
     }
+
 }
 
 void MainWindow::onProjectCustomContextMenu(const QPoint & point)
@@ -673,14 +709,18 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
     QString fileName = path;
 
     if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn)");
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
     }
 
     if (!fileName.isEmpty()) {
-        createEditor(fileName, openAsModified, false);
+        if (fileName.endsWith(".mzp")) {
+            openProject(fileName);
+        } else {
+            createEditor(fileName, openAsModified, false);
+        }
     }
 
 }
@@ -842,7 +882,9 @@ void MainWindow::tabChange(int tab) {
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
             bool isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
             bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+            fakeRunAction->setEnabled(! (isMzn || isFzn));
             ui->actionRun->setEnabled(isMzn || isFzn);
+            fakeCompileAction->setEnabled(!isMzn);
             ui->actionCompile->setEnabled(isMzn);
 
             findDialog->setEditor(curEditor);
@@ -867,6 +909,8 @@ void MainWindow::tabChange(int tab) {
             ui->actionSelect_All->setEnabled(false);
             ui->actionUndo->setEnabled(false);
             ui->actionRedo->setEnabled(false);
+            fakeRunAction->setEnabled(true);
+            fakeCompileAction->setEnabled(true);
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
             ui->actionFind->setEnabled(false);
@@ -903,31 +947,30 @@ void MainWindow::on_actionOpen_triggered()
 QStringList MainWindow::parseConf(bool compileOnly)
 {
     QStringList ret;
-    if (compileOnly && !ui->conf_optimize->isChecked())
+    if (compileOnly && !project.mzn2fznOptimize())
         ret << "--no-optimize";
-    if (compileOnly && ui->conf_verbose->isChecked())
+    if (compileOnly && project.mzn2fznVerbose())
         ret << "-v";
-    if (compileOnly && ui->conf_have_cmd_params->isChecked() &&
-        !ui->conf_cmd_params->text().isEmpty())
-        ret << "-D"+ui->conf_cmd_params->text();
-    if (compileOnly && ui->conf_data_file->currentText()!="None")
-        ret << "-d"+ui->conf_data_file->currentText();
-    if (!compileOnly && ui->conf_printall->isChecked())
+    if (compileOnly && project.haveExtraArgs() &&
+        !project.extraArgs().isEmpty())
+        ret << "-D"+project.extraArgs();
+    if (compileOnly && project.currentDataFile()!="None")
+        ret << "-d"+project.currentDataFile();
+    if (!compileOnly && project.printAll())
         ret << "-a";
-    if (!compileOnly && ui->conf_stats->isChecked())
+    if (!compileOnly && project.printStats())
         ret << "-s";
-    if (!compileOnly && ui->conf_nthreads->value() > 1)
-        ret << "-p"+QString::number(ui->conf_nthreads->value());
-    if (!compileOnly && ui->conf_have_seed->isChecked())
-        ret << "-r"+ui->conf_seed->text();
-    if (!compileOnly && ui->conf_have_solverFlags->isChecked()) {
+    if (!compileOnly && project.n_threads() > 1)
+        ret << "-p"+QString::number(project.n_threads());
+    if (!compileOnly && project.haveSeed())
+        ret << "-r"+project.seed();
+    if (!compileOnly && project.haveSolverFlags()) {
         QStringList solverArgs =
-                ui->conf_solverFlags->text().split(" ",
-                                                   QString::SkipEmptyParts);
+                project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (!compileOnly && ui->conf_nsol->value() != 1)
-        ret << "-n"+QString::number(ui->conf_nsol->value());
+    if (!compileOnly && project.n_solutions() != 1)
+        ret << "-n"+QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
@@ -1022,9 +1065,9 @@ void MainWindow::checkArgsFinished(int exitcode)
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << curEditor->filepath;
         QString compiling = curEditor->filename;
-        if (ui->conf_data_file->currentText()!="None") {
+        if (project.currentDataFile()!="None") {
             compiling += " with data ";
-            QFileInfo fi(ui->conf_data_file->currentText());
+            QFileInfo fi(project.currentDataFile());
             compiling += fi.fileName();
         }
         if (!additionalArgs.isEmpty()) {
@@ -1095,8 +1138,11 @@ void MainWindow::on_actionRun_triggered()
         }
         if (curEditor->document()->isModified())
             return;
+        fakeRunAction->setEnabled(true);
         ui->actionRun->setEnabled(false);
+        fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
+        fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
         on_actionSplit_triggered();
@@ -1185,8 +1231,11 @@ void MainWindow::pipeOutput()
 
 void MainWindow::procFinished(int, bool showTime) {
     readOutput();
+    fakeRunAction->setEnabled(false);
     ui->actionRun->setEnabled(true);
+    fakeCompileAction->setEnabled(false);
     ui->actionCompile->setEnabled(true);
+    fakeStopAction->setEnabled(true);
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
     timer->stop();
@@ -1380,17 +1429,15 @@ void MainWindow::runCompiledFzn(int exitcode)
             connect(process, SIGNAL(error(QProcess::ProcessError)),
                     this, SLOT(procError(QProcess::ProcessError)));
 
-            if (ui->conf_timeLimit->text() != "0") {
-                bool ok;
-                int timeout = ui->conf_timeLimit->text().toInt(&ok);
-                if (ok)
-                    solverTimeout->start(timeout*1000);
+            if (project.timeLimit() != 0) {
+                int timeout = project.timeLimit();
+                solverTimeout->start(timeout*1000);
             }
 
             elapsedTime.start();
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+"</div><br>");
             QString executable = s.executable;
-            if (ui->conf_solver_verbose->isChecked()) {
+            if (project.solverVerbose()) {
                 addOutput("<div style='color:blue;'>Command line:</div><br>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
@@ -1444,8 +1491,11 @@ void MainWindow::on_actionCompile_triggered()
         }
         if (curEditor->document()->isModified())
             return;
+        fakeRunAction->setEnabled(true);
         ui->actionRun->setEnabled(false);
+        fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
+        fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
 
@@ -1711,16 +1761,6 @@ void MainWindow::openProject(const QString& fileName)
     }
 }
 
-void MainWindow::on_actionOpen_project_triggered()
-{
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Project"), getLastPath(), "MiniZinc projects (*.mzp)");
-    if (!fileName.isNull()) {
-        setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
-    }
-
-    openProject(fileName);
-}
-
 void MainWindow::updateRecentProjects(const QString& p) {
     if (!p.isEmpty()) {
         ide()->recentProjects.removeAll(p);
@@ -1789,8 +1829,8 @@ void MainWindow::saveProject(const QString& f)
                 ide()->projects.remove(projectPath);
                 ide()->projects.insert(filepath,this);
                 project.setRoot(ui->projectView, filepath);
+                projectPath = filepath;
             }
-            projectPath = filepath;
             updateRecentProjects(projectPath);
             tabChange(ui->tabWidget->currentIndex());
             QDataStream out(&file);
@@ -1809,23 +1849,23 @@ void MainWindow::saveProject(const QString& f)
             out << openFiles;
 
             out << QString(""); // Used to be additional include path
-            out << (qint32)ui->conf_data_file->currentIndex();
-            out << ui->conf_have_cmd_params->isChecked();
-            out << ui->conf_cmd_params->text();
-            out << ui->conf_verbose->isChecked();
-            out << ui->conf_optimize->isChecked();
-            out << ui->conf_solver->currentText();
-            out << (qint32)ui->conf_nsol->value();
-            out << ui->conf_printall->isChecked();
-            out << ui->conf_stats->isChecked();
-            out << ui->conf_have_solverFlags->isChecked();
-            out << ui->conf_solverFlags->text();
-            out << (qint32)ui->conf_nthreads->value();
-            out << ui->conf_have_seed->isChecked();
-            out << ui->conf_seed->text();
+            out << (qint32)project.currentDataFileIndex();
+            out << project.haveExtraArgs();
+            out << project.extraArgs();
+            out << project.mzn2fznVerbose();
+            out << project.mzn2fznOptimize();
+            out << project.currentSolver();
+            out << (qint32)project.n_solutions();
+            out << project.printAll();
+            out << project.printStats();
+            out << project.haveSolverFlags();
+            out << project.solverFlags();
+            out << (qint32)project.n_threads();
+            out << project.haveSeed();
+            out << project.seed();
             out << false; // used to be whether time limit is checked
-            out << (qint32)ui->conf_timeLimit->value();
-            out << ui->conf_solver_verbose->isChecked();
+            out << (qint32)project.timeLimit();
+            out << project.solverVerbose();
             out << (qint32)ui->tabWidget->currentIndex();
             QStringList projectFilesRelPath;
             QStringList projectFiles = project.files();
@@ -1834,7 +1874,7 @@ void MainWindow::saveProject(const QString& f)
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
-            project.setModified(false);
+            project.setModified(false, true);
 
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
@@ -1881,39 +1921,39 @@ void MainWindow::loadProject(const QString& filepath)
 
     in >> p_s; // Used to be additional include path
     in >> p_i;
-    ui->conf_data_file->setCurrentIndex(p_i);
+    project.currentDataFileIndex(p_i, true);
     in >> p_b;
-    ui->conf_have_cmd_params->setChecked(p_b);
+    project.haveExtraArgs(p_b, true);
     in >> p_s;
-    ui->conf_cmd_params->setText(p_s);
+    project.extraArgs(p_s, true);
     in >> p_b;
-    ui->conf_verbose->setChecked(p_b);
+    project.mzn2fznVerbose(p_b, true);
     in >> p_b;
-    ui->conf_optimize->setChecked(p_b);
+    project.mzn2fznOptimize(p_b, true);
     in >> p_s;
-    ui->conf_solver->setCurrentText(p_s);
+    project.currentSolver(p_s, true);
     in >> p_i;
-    ui->conf_nsol->setValue(p_i);
+    project.n_solutions(p_i, true);
     in >> p_b;
-    ui->conf_printall->setChecked(p_b);
+    project.printAll(p_b, true);
     in >> p_b;
-    ui->conf_stats->setChecked(p_b);
+    project.printStats(p_b, true);
     in >> p_b;
-    ui->conf_have_solverFlags->setChecked(p_b);
+    project.haveSolverFlags(p_b, true);
     in >> p_s;
-    ui->conf_solverFlags->setText(p_s);
+    project.solverFlags(p_s, true);
     in >> p_i;
-    ui->conf_nthreads->setValue(p_i);
+    project.n_threads(p_i, true);
     in >> p_b;
-    ui->conf_have_seed->setChecked(p_b);
+    project.haveSeed(p_b, true);
     in >> p_s;
-    ui->conf_seed->setText(p_s);
+    project.seed(p_s, true);
     in >> p_b; // used to be whether time limit is checked
     in >> p_i;
-    ui->conf_timeLimit->setValue(p_i);
-    if (version==102) {
+    project.timeLimit(p_i, true);
+    if (version==102 || version==103) {
         in >> p_b;
-        ui->conf_solver_verbose->setChecked(p_b);
+        project.solverVerbose(p_b, true);
         in >> p_i;
         ui->tabWidget->setCurrentIndex(p_i);
     }
@@ -1936,7 +1976,7 @@ void MainWindow::loadProject(const QString& filepath)
         openFile(basePath+openFiles[i],false);
     }
 
-    project.setModified(false);
+    project.setModified(false, true);
 
     ide()->projects.insert(projectPath, this);
     tabChange(ui->tabWidget->currentIndex());
@@ -2091,4 +2131,9 @@ void MainWindow::on_conf_solver_activated(const QString &arg1)
     if (arg1=="Add new solver...") {
         on_actionManage_solvers_triggered(true);
     }
+}
+
+void MainWindow::onClipboardChanged()
+{
+    ui->actionPaste->setEnabled(!QApplication::clipboard()->text().isEmpty());
 }
