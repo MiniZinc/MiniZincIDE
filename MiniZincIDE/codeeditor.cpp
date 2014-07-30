@@ -39,7 +39,7 @@ CodeEditor::initUI(QFont& font)
     setFocus();
 }
 
-CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool large,
+CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                        QFont& font, QTabWidget* t, QWidget *parent) :
     QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
 {
@@ -47,9 +47,9 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool large,
         QPlainTextEdit::setDocument(doc);
     }
     initUI(font);
-    if (path.isEmpty()) {
+    if (isNewFile) {
         filepath = "";
-        filename = "Untitled";
+        filename = path;
     } else {
         filepath = QFileInfo(path).absoluteFilePath();
         filename = QFileInfo(path).fileName();
