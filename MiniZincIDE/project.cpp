@@ -474,67 +474,67 @@ void Project::checkModified()
 {
     if (projectRoot.isEmpty() || _filesModified)
         return;
-    if (currentDataFileIndex() != ui->conf_data_file->currentIndex()) {
+    if (currentDataFileIndex() != _currentDatafileIndex) {
         setModified(true);
         return;
     }
-    if (haveExtraArgs() != ui->conf_have_cmd_params->isChecked()) {
+    if (haveExtraArgs() != _haveExtraArgs) {
         setModified(true);
         return;
     }
-    if (extraArgs() != ui->conf_cmd_params->text()) {
+    if (extraArgs() != _extraArgs) {
         setModified(true);
         return;
     }
-    if (mzn2fznVerbose() != ui->conf_verbose->isChecked()) {
+    if (mzn2fznVerbose() != _mzn2fzn_verbose) {
         setModified(true);
         return;
     }
-    if (mzn2fznOptimize() != ui->conf_optimize->isChecked()) {
+    if (mzn2fznOptimize() != _mzn2fzn_optimize) {
         setModified(true);
         return;
     }
-    if (currentSolver() != ui->conf_solver->currentText()) {
+    if (currentSolver() != _currentSolver) {
         setModified(true);
         return;
     }
-    if (n_solutions() != ui->conf_nsol->value()) {
+    if (n_solutions() != _n_solutions) {
         setModified(true);
         return;
     }
-    if (printAll() != ui->conf_printall->isChecked()) {
+    if (printAll() != _printAll) {
         setModified(true);
         return;
     }
-    if (printStats() != ui->conf_stats->isChecked()) {
+    if (printStats() != _printStats) {
         setModified(true);
         return;
     }
-    if (haveSolverFlags() != ui->conf_have_solverFlags->isChecked()) {
+    if (haveSolverFlags() != _haveSolverFlags) {
         setModified(true);
         return;
     }
-    if (solverFlags() != ui->conf_solverFlags->text()) {
+    if (solverFlags() != _solverFlags) {
         setModified(true);
         return;
     }
-    if (n_threads() != ui->conf_nthreads->value()) {
+    if (n_threads() != _n_threads) {
         setModified(true);
         return;
     }
-    if (haveSeed() != ui->conf_have_seed->isChecked()) {
+    if (haveSeed() != _haveSeed) {
         setModified(true);
         return;
     }
-    if (seed() != ui->conf_seed->text()) {
+    if (seed() != _seed) {
         setModified(true);
         return;
     }
-    if (timeLimit() != ui->conf_timeLimit->value()) {
+    if (timeLimit() != _timeLimit) {
         setModified(true);
         return;
     }
-    if (solverVerbose() != ui->conf_solver_verbose->isChecked()) {
+    if (solverVerbose() != _solverVerbose) {
         setModified(true);
         return;
     }
