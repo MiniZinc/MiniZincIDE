@@ -1390,6 +1390,7 @@ void MainWindow::runCompiledFzn(int exitcode)
     if (processWasStopped)
         return;
     if (exitcode==0) {
+        readOutput();
         QStringList args = parseConf(false);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
         if (!s.backend.isEmpty())
