@@ -22,7 +22,8 @@ mv MiniZincIDE $PACKAGE/ && \
 mkdir $PACKAGE/lib && \
 for q in \
   libicui18n.so.51 libicuuc.so.51 libicudata.so.51 \
-  libQt5Core.so.5 libQt5DBus.so.5 libQt5Gui.so.5 libQt5Widgets.so.5; do \
+  libQt5Core.so.5 libQt5DBus.so.5 libQt5Gui.so.5 libQt5Widgets.so.5 \
+  libQt5Network.so.5; do \
   cp $QTDIR/lib/$q $PACKAGE/lib/; \
 done && \
 cp -r $QTDIR/plugins $PACKAGE/ && \
