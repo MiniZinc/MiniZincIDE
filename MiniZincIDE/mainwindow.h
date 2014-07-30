@@ -29,6 +29,7 @@
 #include "solverdialog.h"
 #include "help.h"
 #include "paramdialog.h"
+#include "project.h"
 
 namespace Ui {
 class MainWindow;
@@ -62,6 +63,9 @@ public:
     typedef QMap<QString,MainWindow*> PMap;
     PMap projects;
 
+    QStringList recentFiles;
+    QStringList recentProjects;
+
     IDEStatistics stats;
 
     bool hasFile(const QString& path);
@@ -91,7 +95,6 @@ private:
     void init(const QString& project);
 
 private slots:
-    void on_actionNew_triggered();
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
 
@@ -113,7 +116,7 @@ private slots:
 
     void pipeOutput();
 
-    void procFinished(int);
+    void procFinished(int, bool showTime=true);
 
     void procError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);
@@ -145,7 +148,7 @@ private slots:
 
     void on_actionDefault_font_size_triggered();
 
-    void on_actionManage_solvers_triggered();
+    void on_actionManage_solvers_triggered(bool addNew=false);
 
     void on_actionFind_triggered();
 
@@ -162,8 +165,6 @@ private slots:
     void on_actionHelp_triggered();
 
     void on_actionNew_project_triggered();
-
-    void on_actionOpen_project_triggered();
 
     void on_actionSave_project_triggered();
 
@@ -183,15 +184,55 @@ private slots:
 
     void on_actionSplit_triggered();
 
+    void on_actionPrevious_tab_triggered();
+
+    void on_actionNext_tab_triggered();
+
+    void recentFileMenuAction(QAction*);
+
+    void recentProjectMenuAction(QAction*);
+
+    void on_actionHide_tool_bar_triggered();
+
+    void on_actionShow_project_explorer_triggered();
+
+    void activateFileInProject(const QModelIndex&);
+
+    void onProjectCustomContextMenu(const QPoint&);
+
+    void onActionProjectOpen_triggered();
+
+    void onActionProjectRemove_triggered();
+
+    void onActionProjectRename_triggered();
+
+    void onActionProjectRunWith_triggered();
+
+    void onActionProjectAdd_triggered();
+
+    void on_actionNewModel_file_triggered();
+
+    void on_actionNewData_file_triggered();
+
+    void fileRenamed(const QString&, const QString&);
+
+    void on_conf_timeLimit_valueChanged(int arg1);
+
+    void on_conf_solver_activated(const QString &arg1);
+
+    void onClipboardChanged();
+
+    void on_conf_data_file_activated(const QString &arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
     QWebView* webView;
-    QProcess* process;
+    MznProcess* process;
     QString processName;
-    QProcess* outputProcess;
+    MznProcess* outputProcess;
     bool processWasStopped;
     QTimer* timer;
     QTimer* solverTimeout;
@@ -214,17 +255,36 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
+    QString mzn2fzn_executable;
+    Project project;
+    QMenu* projectContextMenu;
+    QAction* projectOpen;
+    QAction* projectRemove;
+    QAction* projectRename;
+    QAction* projectRunWith;
+    QAction* projectAdd;
+    QString projectSelectedFile;
+    QModelIndex projectSelectedIndex;
+    int newFileCounter;
+    QAction* fakeRunAction;
+    QAction* fakeStopAction;
+    QAction* fakeCompileAction;
 
-    void createEditor(const QString& path, bool openAsModified);
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile);
     QStringList parseConf(bool compileOnly);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void addOutput(const QString& s, bool html=true);
+    void setLastPath(const QString& s);
+    QString getLastPath(void);
     QString setElapsedTime();
     void setupDznMenu();
     void checkMznPath();
+    void updateRecentProjects(const QString& p);
+    void updateRecentFiles(const QString& p);
+    void addFileToProject(bool dznOnly);
     IDE* ide();
 public:
     void openProject(const QString& fileName);

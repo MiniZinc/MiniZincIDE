@@ -16,8 +16,26 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QSettings>
+#include <QProcess>
+
+#include <QtGlobal>
+#ifdef Q_OS_WIN
+#define pathSep ";"
+#define fileDialogSuffix "/"
+#define MZNOS "win"
+#else
+#define pathSep ":"
+#ifdef Q_OS_MAC
+#define fileDialogSuffix "/*"
+#define MZNOS "mac"
+#else
+#define fileDialogSuffix "/"
+#define MZNOS "linux"
+#endif
+#endif
 
 SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
+                           bool openAsAddNew,
                            const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
@@ -40,6 +58,9 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     ui->send_stats->setChecked(settings.value("sendstats",false).toBool());
     ui->send_stats->setEnabled(ui->check_updates->isChecked());
     settings.endGroup();
+    if (openAsAddNew)
+        ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
+    editingFinished(false);
 }
 
 SolverDialog::~SolverDialog()
@@ -123,6 +144,7 @@ void SolverDialog::on_mznpath_select_clicked()
     fd.setOption(QFileDialog::ShowDirsOnly, true);
     if (fd.exec()) {
         ui->mznDistribPath->setText(fd.selectedFiles().first());
+        on_mznDistribPath_editingFinished();
     }
 }
 
@@ -159,4 +181,75 @@ void SolverDialog::on_send_stats_stateChanged(int checkstate)
     settings.beginGroup("ide");
     settings.setValue("sendstats", checkstate==Qt::Checked);
     settings.endGroup();
+}
+
+void SolverDialog::checkMzn2fznExecutable(const QString& mznDistribPath,
+                                          QString& mzn2fzn_executable,
+                                          QString& mzn2fzn_version_string)
+{
+    MznProcess p;
+    QStringList args;
+    args << "--version";
+    mzn2fzn_executable = "";
+    mzn2fzn_version_string = "";
+    p.start("mzn2fzn", args, mznDistribPath);
+    if (!p.waitForStarted() || !p.waitForFinished()) {
+        p.start("mzn2fzn.bat", args, mznDistribPath);
+        if (!p.waitForStarted() || !p.waitForFinished()) {
+            return;
+        } else {
+            mzn2fzn_executable = "mzn2fzn.bat";
+        }
+    } else {
+        mzn2fzn_executable = "mzn2fzn";
+    }
+    mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
+}
+
+void SolverDialog::editingFinished(bool showError)
+{
+    QString mzn2fzn_executable;
+    QString mzn2fzn_version;
+    checkMzn2fznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version);
+    if (mzn2fzn_executable.isEmpty()) {
+        if (showError) {
+            QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",
+                                 QMessageBox::Ok);
+        }
+        if (mzn2fzn_version.isEmpty()) {
+            ui->mzn2fzn_version->setText("None");
+        } else {
+            ui->mzn2fzn_version->setText("None. Error message:\n"+mzn2fzn_version);
+        }
+    } else {
+        ui->mzn2fzn_version->setText(mzn2fzn_version);
+    }
+}
+
+void SolverDialog::on_mznDistribPath_editingFinished()
+{
+    editingFinished(true);
+}
+
+void MznProcess::start(const QString &program, const QStringList &arguments, const QString &path)
+{
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    QString curPath = env.value("PATH");
+    if (!path.isEmpty()) {
+        env.insert("PATH", path + pathSep + curPath);
+        setProcessEnvironment(env);
+#ifdef Q_OS_WIN
+        _putenv_s("PATH", (path + pathSep + curPath).toStdString().c_str());
+#else
+        setenv("PATH", (path + pathSep + curPath).toStdString().c_str(), 1);
+#endif
+    }
+    QProcess::start(program,arguments);
+    if (!path.isEmpty()) {
+#ifdef Q_OS_WIN
+        _putenv_s("PATH", curPath.toStdString().c_str());
+#else
+        setenv("PATH", curPath.toStdString().c_str(), 1);
+#endif
+    }
 }

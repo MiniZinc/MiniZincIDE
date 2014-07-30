@@ -22,7 +22,7 @@ class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 public:
-    explicit CodeEditor(QTextDocument* doc, const QString& path, bool large,
+    explicit CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                         QFont& font, QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();

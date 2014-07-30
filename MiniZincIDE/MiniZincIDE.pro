@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 0.9.3
+VERSION = 0.9.4
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 macx {
@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
-    checkupdatedialog.cpp
+    checkupdatedialog.cpp \
+    project.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -48,7 +49,8 @@ HEADERS  += mainwindow.h \
     finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
-    checkupdatedialog.h
+    checkupdatedialog.h \
+    project.h
 
 FORMS    += \
     mainwindow.ui \

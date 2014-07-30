@@ -1,4 +1,16 @@
 ?
+  v0.9.4
+  - Project "drawer", better handling of projects
+  - Tool bar
+  - Limit additional arguments dialog to at most 10 parameters
+  - Show MiniZinc version information in configuration dialog
+  - More consistent handling of PATHs to MiniZinc and solvers
+  - Print name of data files and additional arguments when running
+    a solver
+  - On Mac OS, enable QuickLook for MiniZinc files
+  - Add recent files and projects to file menu
+  - File dialogs open in the previously used directory
+2014-04-01
   v0.9.3
   - Add elapsed time to output
   - Fix crash for files given as command line arguments
