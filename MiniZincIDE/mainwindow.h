@@ -214,8 +214,6 @@ private slots:
 
     void on_actionNewData_file_triggered();
 
-    void on_actionAdd_to_project_triggered();
-
     void fileRenamed(const QString&, const QString&);
 
     void on_conf_timeLimit_valueChanged(int arg1);
@@ -223,6 +221,8 @@ private slots:
     void on_conf_solver_activated(const QString &arg1);
 
     void onClipboardChanged();
+
+    void on_conf_data_file_activated(const QString &arg1);
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -284,6 +284,7 @@ private:
     void checkMznPath();
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
+    void addFileToProject(bool dznOnly);
     IDE* ide();
 public:
     void openProject(const QString& fileName);

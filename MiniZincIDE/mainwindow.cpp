@@ -530,17 +530,24 @@ void MainWindow::onProjectCustomContextMenu(const QPoint & point)
 
 void MainWindow::onActionProjectAdd_triggered()
 {
-    QStringList fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
+    addFileToProject(false);
+}
+
+void MainWindow::addFileToProject(bool dznOnly)
+{
+    QStringList fileNames;
+    if (dznOnly) {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
+        fileNames.append(fileName);
+    } else {
+        fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
+    }
 
     for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
         setLastPath(QFileInfo(*it).absolutePath()+fileDialogSuffix);
         project.addFile(ui->projectView, *it);
     }
-}
-
-void MainWindow::on_actionAdd_to_project_triggered()
-{
-    onActionProjectAdd_triggered();
+    setupDznMenu();
 }
 
 void MainWindow::onActionProjectOpen_triggered()
@@ -985,6 +992,7 @@ void MainWindow::setupDznMenu()
     for (int i=0; i<dataFiles.size(); i++) {
         ui->conf_data_file->addItem(dataFiles[i]);
     }
+    ui->conf_data_file->addItem("Add data file to project...");
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
@@ -2137,4 +2145,15 @@ void MainWindow::on_conf_solver_activated(const QString &arg1)
 void MainWindow::onClipboardChanged()
 {
     ui->actionPaste->setEnabled(!QApplication::clipboard()->text().isEmpty());
+}
+
+void MainWindow::on_conf_data_file_activated(const QString &arg1)
+{
+    if (arg1=="Add data file to project...") {
+        int nFiles = ui->conf_data_file->count();
+        addFileToProject(true);
+        if (nFiles < ui->conf_data_file->count()) {
+            ui->conf_data_file->setCurrentIndex(ui->conf_data_file->count()-2);
+        }
+    }
 }
