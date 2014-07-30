@@ -199,6 +199,24 @@ void Project::setModified(bool flag, bool files)
             if (files) {
                 _filesModified = _isModified;
             }
+            if (!_isModified) {
+                currentDataFileIndex(currentDataFileIndex(),true);
+                haveExtraArgs(haveExtraArgs(),true);
+                extraArgs(extraArgs(),true);
+                mzn2fznVerbose(mzn2fznVerbose(),true);
+                mzn2fznOptimize(mzn2fznOptimize(),true);
+                currentSolver(currentSolver(),true);
+                n_solutions(n_solutions(),true);
+                printAll(printAll(),true);
+                printStats(printStats(),true);
+                haveSolverFlags(haveSolverFlags(),true);
+                solverFlags(solverFlags(),true);
+                n_threads(n_threads(),true);
+                haveSeed(haveSeed(),true);
+                seed(seed(),true);
+                timeLimit(timeLimit(),true);
+                solverVerbose(solverVerbose(),true);
+            }
         }
     }
 }
@@ -219,6 +237,67 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     } else {
         return false;
     }
+}
+
+bool Project::haveExtraArgs(void) const
+{
+    return ui->conf_have_cmd_params->isChecked();
+}
+QString Project::extraArgs(void) const
+{
+    return ui->conf_cmd_params->text();
+}
+bool Project::mzn2fznVerbose(void) const
+{
+    return ui->conf_verbose->isChecked();
+}
+bool Project::mzn2fznOptimize(void) const
+{
+    return ui->conf_optimize->isChecked();
+}
+QString Project::currentSolver(void) const
+{
+    return ui->conf_solver->currentText();
+}
+int Project::n_solutions(void) const
+{
+    return ui->conf_nsol->value();
+}
+bool Project::printAll(void) const
+{
+    return ui->conf_printall->isChecked();
+}
+bool Project::printStats(void) const
+{
+    return ui->conf_stats->isChecked();
+}
+bool Project::haveSolverFlags(void) const
+{
+    return ui->conf_have_solverFlags->isChecked();
+}
+QString Project::solverFlags(void) const
+{
+    return ui->conf_solverFlags->text();
+}
+int Project::n_threads(void) const
+{
+    return ui->conf_nthreads->value();
+}
+bool Project::haveSeed(void) const
+{
+    return ui->conf_have_seed->isChecked();
+}
+QString Project::seed(void) const
+{
+    return ui->conf_seed->text();
+}
+int Project::timeLimit(void) const
+{
+    return ui->conf_timeLimit->value();
+}
+bool Project::solverVerbose(void) const
+{
+    return ui->conf_solver_verbose->isChecked();
 }
 
 void Project::currentDataFileIndex(int i, bool init)

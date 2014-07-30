@@ -41,21 +41,21 @@ public:
 
     int currentDataFileIndex(void) const;
     QString currentDataFile(void) const;
-    bool haveExtraArgs(void) const { return _haveExtraArgs; }
-    QString extraArgs(void) const { return _extraArgs; }
-    bool mzn2fznVerbose(void) const { return _mzn2fzn_verbose; }
-    bool mzn2fznOptimize(void) const { return _mzn2fzn_optimize; }
-    QString currentSolver(void) const { return _currentSolver; }
-    int n_solutions(void) const { return _n_solutions; }
-    bool printAll(void) const { return _printAll; }
-    bool printStats(void) const { return _printStats; }
-    bool haveSolverFlags(void) const { return _haveSolverFlags; }
-    QString solverFlags(void) const { return _solverFlags; }
-    int n_threads(void) const { return _n_threads; }
-    bool haveSeed(void) const { return _haveSeed; }
-    QString seed(void) const { return _seed; }
-    int timeLimit(void) const { return _timeLimit; }
-    bool solverVerbose(void) const { return _solverVerbose; }
+    bool haveExtraArgs(void) const;
+    QString extraArgs(void) const;
+    bool mzn2fznVerbose(void) const;
+    bool mzn2fznOptimize(void) const;
+    QString currentSolver(void) const;
+    int n_solutions(void) const;
+    bool printAll(void) const;
+    bool printStats(void) const;
+    bool haveSolverFlags(void) const;
+    QString solverFlags(void) const;
+    int n_threads(void) const;
+    bool haveSeed(void) const;
+    QString seed(void) const;
+    int timeLimit(void) const;
+    bool solverVerbose(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
     void haveExtraArgs(bool b, bool init=false);
