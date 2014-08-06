@@ -122,7 +122,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
 QString Project::fileAtIndex(const QModelIndex &index)
 {
     QStandardItem* item = itemFromIndex(index);
-    if (item->hasChildren())
+    if (item==NULL || item->hasChildren())
         return "";
     QString fileName;
     while (item != NULL && item->parent() != NULL && item->parent() != invisibleRootItem() ) {
