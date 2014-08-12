@@ -94,9 +94,11 @@ public:
 private:
     void init(const QString& project);
 
-private slots:
+public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
+
+private slots:
 
     void on_actionClose_triggered();
 
@@ -288,6 +290,7 @@ private:
     IDE* ide();
 public:
     void openProject(const QString& fileName);
+    bool isEmptyProject(void);
 };
 
 #endif // MAINWINDOW_H

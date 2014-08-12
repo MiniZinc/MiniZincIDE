@@ -1,4 +1,10 @@
 ?
+  v0.9.5
+  - load new projects or files into existing project if it is empty
+    and unmodified (avoids opening a new window)
+  - fixed a bug when right-clicking into an empty area in the project
+    explorer
+2014-07-31
   v0.9.4
   - Project "drawer", better handling of projects
   - Tool bar

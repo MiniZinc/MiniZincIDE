@@ -17,16 +17,19 @@ int main(int argc, char *argv[])
     IDE a(argc, argv);
     QStringList args = QApplication::arguments();
     QStringList files;
+    bool hadProject = false;
     for (int i=1; i<args.size(); i++) {
         if (args[i].endsWith(".mzp")) {
             MainWindow* mw = new MainWindow(args[i]);
             mw->show();
+            hadProject = true;
         } else {
             files << args[i];
         }
     }
-    MainWindow w(files);
-    w.show();
-
+    if (!hadProject) {
+        MainWindow* w = new MainWindow(files);
+        w->show();
+    }
     return a.exec();
 }

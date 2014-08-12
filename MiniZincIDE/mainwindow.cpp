@@ -107,15 +107,19 @@ bool IDE::event(QEvent *e)
                 it.value()->activateWindow();
             }
         } else {
-            QStringList files;
-            files << file;
-            MainWindow* mw = new MainWindow(files);
             MainWindow* curw = static_cast<MainWindow*>(activeWindow());
-            if (curw!=NULL) {
-                QPoint p = curw->pos();
-                mw->move(p.x()+20, p.y()+20);
+            if (curw != NULL && curw->isEmptyProject()) {
+                curw->openFile(file);
+            } else {
+                QStringList files;
+                files << file;
+                MainWindow* mw = new MainWindow(files);
+                if (curw!=NULL) {
+                    QPoint p = curw->pos();
+                    mw->move(p.x()+20, p.y()+20);
+                }
+                mw->show();
             }
-            mw->show();
         }
         return true;
     }
@@ -1738,24 +1742,26 @@ void MainWindow::on_actionNew_project_triggered()
     mw->show();
 }
 
+bool MainWindow::isEmptyProject(void)
+{
+    if (ui->tabWidget->count() == 1) {
+        return !project.isModified();
+    }
+    if (ui->tabWidget->count() != 2)
+        return false;
+    CodeEditor* ce =
+            static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
+                                         ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
+    return ce->filepath == "" && !ce->document()->isModified() && !project.isModified();
+}
+
 void MainWindow::openProject(const QString& fileName)
 {
     if (!fileName.isEmpty()) {
         IDE::PMap& pmap = ide()->projects;
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
-            bool currentEmptyProject = (ui->tabWidget->count()==2);
-            if (currentEmptyProject) {
-                CodeEditor* ce =
-                        static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
-                                                     ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
-                if (ce->filepath != "" || ce->document()->isModified()) {
-                    currentEmptyProject = false;
-                } else {
-                    tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
-                }
-            }
-            if (currentEmptyProject) {
+            if (isEmptyProject()) {
                 loadProject(fileName);
             } else {
                 MainWindow* mw = new MainWindow(fileName);
