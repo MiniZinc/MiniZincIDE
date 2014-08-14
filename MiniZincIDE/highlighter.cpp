@@ -67,6 +67,10 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
     rules.append(rule);
 
     setEditorFont(font);
+
+    commentStartExp = QRegExp("/\\*");
+    commentEndExp = QRegExp("\\*/");
+
 }
 
 void Highlighter::setEditorFont(QFont& font)
@@ -107,4 +111,21 @@ void Highlighter::highlightBlock(const QString &text)
     }
     setCurrentBlockUserData(bd);
     setCurrentBlockState(0);
+
+    int commentStartIndex = 0;
+    if (previousBlockState() != 1) {
+        commentStartIndex = commentStartExp.indexIn(text);
+    }
+    while (commentStartIndex >= 0) {
+        int commentEndIndex = commentEndExp.indexIn(text, commentStartIndex);
+        int commentLength;
+        if (commentEndIndex == -1) {
+            setCurrentBlockState(1);
+            commentLength = text.length() - commentStartIndex;
+        } else {
+            commentLength = commentEndIndex - commentStartIndex + commentEndExp.matchedLength();
+        }
+        setFormat(commentStartIndex, commentLength, commentFormat);
+        commentStartIndex = commentStartExp.indexIn(text, commentStartIndex + commentLength);
+    }
 }
