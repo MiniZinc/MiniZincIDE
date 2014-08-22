@@ -186,7 +186,64 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     stats.init(settings.value("statistics"));
 
+    helpWindow = new Help();
+
+#ifdef Q_OS_MAC
+    MainWindow* mw = new MainWindow(QString());
+    const QMenuBar* mwb = mw->ui->menubar;
+    defaultMenuBar = new QMenuBar(0);
+
+    QList<QObject*> lst = mwb->children();
+    foreach (QObject* mo, lst) {
+        if (QMenu* m = qobject_cast<QMenu*>(mo)) {
+            if (m->title()=="&File" || m->title()=="Help") {
+                QMenu* nm = defaultMenuBar->addMenu(m->title());
+                foreach (QAction* a, m->actions()) {
+                    if (a->isSeparator()) {
+                        nm->addSeparator();
+                    } else {
+                        QAction* na = nm->addAction(a->text());
+                        na->setShortcut(a->shortcut());
+                        if (a==mw->ui->actionQuit) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(quit()));
+                        } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
+                        } else if (a==mw->ui->actionOpen) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
+                        } else if (a==mw->ui->actionHelp) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(help()));
+                        } else {
+                            na->setEnabled(false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    delete mw;
+#endif
+
     checkUpdate();
+}
+
+void IDE::newProject()
+{
+    MainWindow* mw = new MainWindow(QString());
+    mw->show();
+}
+
+void IDE::openFile()
+{
+    MainWindow* mw = new MainWindow(QString());
+    mw->openFile();
+    mw->show();
+}
+
+void IDE::help()
+{
+    helpWindow->show();
+    helpWindow->raise();
+    helpWindow->activateWindow();
 }
 
 IDE::~IDE(void) {
@@ -313,8 +370,7 @@ IDE* MainWindow::ide()
     return static_cast<IDE*>(qApp);
 }
 
-MainWindow::MainWindow(const QString& project, QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
@@ -326,8 +382,7 @@ MainWindow::MainWindow(const QString& project, QWidget *parent) :
     init(project);
 }
 
-MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
@@ -342,9 +397,50 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
 
 }
 
+void MainWindow::showWindowMenu()
+{
+    ui->menuWindow->clear();
+    ui->menuWindow->addAction(minimizeAction);
+    ui->menuWindow->addSeparator();
+    for (QSet<MainWindow*>::iterator it = ide()->mainWindows.begin();
+         it != ide()->mainWindows.end(); ++it) {
+        QAction* windowAction = ui->menuWindow->addAction((*it)->windowTitle());
+        QVariant v = qVariantFromValue(static_cast<void*>(*it));
+        windowAction->setData(v);
+        windowAction->setCheckable(true);
+        if (*it == this) {
+            windowAction->setChecked(true);
+        }
+    }
+}
+
+void MainWindow::windowMenuSelected(QAction* a)
+{
+    if (a==minimizeAction) {
+        showMinimized();
+    } else {
+        QMainWindow* mw = static_cast<QMainWindow*>(a->data().value<void*>());
+        mw->showNormal();
+        mw->raise();
+        mw->activateWindow();
+    }
+}
+
 void MainWindow::init(const QString& projectFile)
 {
+    ide()->mainWindows.insert(this);
     ui->setupUi(this);
+    setAttribute(Qt::WA_DeleteOnClose, true);
+    minimizeAction = new QAction("&Minimize",this);
+    minimizeAction->setShortcut(Qt::CTRL+Qt::Key_M);
+#ifdef Q_OS_MAC
+    connect(ui->menuWindow, SIGNAL(aboutToShow()), this, SLOT(showWindowMenu()));
+    connect(ui->menuWindow, SIGNAL(triggered(QAction*)), this, SLOT(windowMenuSelected(QAction*)));
+    ui->menuWindow->addAction(minimizeAction);
+    ui->menuWindow->addSeparator();
+#else
+    ui->menuWindow->hide();
+#endif
     QWidget* toolBarSpacer = new QWidget();
     toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ui->toolBar->insertWidget(ui->actionShow_project_explorer, toolBarSpacer);
@@ -355,8 +451,6 @@ void MainWindow::init(const QString& projectFile)
     findDialog->setModal(false);
 
     paramDialog = new ParamDialog(this);
-
-    helpWindow = new Help();
 
     fakeRunAction = new QAction(this);
     fakeRunAction->setShortcut(Qt::CTRL+Qt::Key_R);
@@ -627,8 +721,8 @@ MainWindow::~MainWindow()
         delete process;
     }
     delete ui;
-    delete helpWindow;
     delete paramDialog;
+    ide()->mainWindows.remove(this);
 }
 
 void MainWindow::on_actionNewModel_file_triggered()
@@ -828,7 +922,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
     settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
     settings.endGroup();
-    helpWindow->close();
     e->accept();
 }
 
@@ -1731,7 +1824,7 @@ void MainWindow::on_actionShift_right_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    helpWindow->show();
+    ide()->help();
 }
 
 void MainWindow::on_actionNew_project_triggered()
