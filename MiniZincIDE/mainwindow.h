@@ -70,6 +70,7 @@ public:
 
     IDEStatistics stats;
 
+    MainWindow* lastDefaultProject;
     Help* helpWindow;
 
 #ifdef Q_OS_MAC

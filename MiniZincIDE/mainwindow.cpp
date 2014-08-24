@@ -108,8 +108,9 @@ bool IDE::event(QEvent *e)
             }
         } else {
             MainWindow* curw = static_cast<MainWindow*>(activeWindow());
-            if (curw != NULL && curw->isEmptyProject()) {
+            if (curw != NULL && (curw->isEmptyProject() || curw==lastDefaultProject)) {
                 curw->openFile(file);
+                lastDefaultProject = curw;
             } else {
                 QStringList files;
                 files << file;
@@ -119,6 +120,7 @@ bool IDE::event(QEvent *e)
                     mw->move(p.x()+20, p.y()+20);
                 }
                 mw->show();
+                lastDefaultProject = mw;
             }
         }
         return true;
@@ -186,6 +188,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     stats.init(settings.value("statistics"));
 
+    lastDefaultProject = NULL;
     helpWindow = new Help();
 
 #ifdef Q_OS_MAC
