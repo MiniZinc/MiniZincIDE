@@ -443,6 +443,7 @@ void MainWindow::init(const QString& projectFile)
     ui->menuWindow->addSeparator();
 #else
     ui->menuWindow->hide();
+    ui->menubar->removeAction(ui->menuWindow->menuAction());
 #endif
     QWidget* toolBarSpacer = new QWidget();
     toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
