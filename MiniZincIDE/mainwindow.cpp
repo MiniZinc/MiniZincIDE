@@ -515,7 +515,7 @@ void MainWindow::init(const QString& projectFile)
     setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_fd","-b lazy",true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
     Solver g12cpx("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false);
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
 
