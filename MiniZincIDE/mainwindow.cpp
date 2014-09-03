@@ -1313,7 +1313,8 @@ void MainWindow::readOutput()
             QString l = process->readLine();
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
-                QUrl url = QUrl::fromLocalFile(errexp.cap(1));
+                QString errFile = errexp.cap(1).trimmed();
+                QUrl url = QUrl::fromLocalFile(errFile);
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
                 ide()->stats.errorsShown++;
