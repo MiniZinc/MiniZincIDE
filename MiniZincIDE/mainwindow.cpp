@@ -917,6 +917,8 @@ void MainWindow::closeEvent(QCloseEvent* e) {
                 ide()->removeEditor(ce->filepath,ce);
         }
     }
+    if (!projectPath.isEmpty())
+        ide()->projects.remove(projectPath);
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -2110,8 +2112,6 @@ void MainWindow::on_actionSave_project_as_triggered()
 
 void MainWindow::on_actionClose_project_triggered()
 {
-    if (!projectPath.isEmpty())
-        ide()->projects.remove(projectPath);
     close();
 }
 
