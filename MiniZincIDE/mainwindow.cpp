@@ -346,6 +346,18 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
     }
 }
 
+void IDE::renameFile(const QString& oldPath, const QString& newPath)
+{
+    DMap::iterator it = documents.find(oldPath);
+    if (it == documents.end()) {
+        qDebug() << "internal error: document " << oldPath << " not found";
+    } else {
+        Doc* doc = it.value();
+        documents.remove(oldPath);
+        documents.insert(newPath, doc);
+    }
+}
+
 void
 IDE::versionCheckFinished(QNetworkReply *reply) {
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
@@ -1443,13 +1455,14 @@ void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
             if (ce->filepath==oldPath) {
                 ce->filepath = newPath;
                 ce->filename = QFileInfo(newPath).fileName();
+                ide()->renameFile(oldPath,newPath);
                 ui->tabWidget->setTabText(i,ce->filename);
                 updateRecentFiles(newPath);
-                setupDznMenu();
                 if (ce==curEditor)
                     tabChange(i);
             }
         }
+        setupDznMenu();
     }
 }
 

@@ -83,6 +83,7 @@ public:
     QTextDocument* addDocument(const QString& path, QTextDocument* doc, CodeEditor* ce);
     void registerEditor(const QString& path, CodeEditor* ce);
     void removeEditor(const QString& path, CodeEditor* ce);
+    void renameFile(const QString& oldPath, const QString& newPath);
 protected:
     bool event(QEvent *);
 protected slots:
