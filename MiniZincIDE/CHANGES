@@ -1,9 +1,19 @@
-?
+2014-09-18
   v0.9.5
   - load new projects or files into existing project if it is empty
     and unmodified (avoids opening a new window)
   - fixed a bug when right-clicking into an empty area in the project
     explorer
+  - fixed a bug when renaming files (in particular data files) in the
+    project explorer
+  - add support for multi-line (C-style) comments in the syntax
+    highlighting
+  - on Mac OS, show a Window menu to make it easy to switch between
+    open projects, and open all files dragged onto the dock icon
+    in the same project
+  - fixed the hard-coded library path for the G12 lazyfd solver
+  - fixed a bug that could cause a crash when closing and re-opening
+    a project
 2014-07-31
   v0.9.4
   - Project "drawer", better handling of projects
