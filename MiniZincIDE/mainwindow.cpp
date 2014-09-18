@@ -107,15 +107,21 @@ bool IDE::event(QEvent *e)
                 it.value()->activateWindow();
             }
         } else {
-            QStringList files;
-            files << file;
-            MainWindow* mw = new MainWindow(files);
             MainWindow* curw = static_cast<MainWindow*>(activeWindow());
-            if (curw!=NULL) {
-                QPoint p = curw->pos();
-                mw->move(p.x()+20, p.y()+20);
+            if (curw != NULL && (curw->isEmptyProject() || curw==lastDefaultProject)) {
+                curw->openFile(file);
+                lastDefaultProject = curw;
+            } else {
+                QStringList files;
+                files << file;
+                MainWindow* mw = new MainWindow(files);
+                if (curw!=NULL) {
+                    QPoint p = curw->pos();
+                    mw->move(p.x()+20, p.y()+20);
+                }
+                mw->show();
+                lastDefaultProject = mw;
             }
-            mw->show();
         }
         return true;
     }
@@ -182,7 +188,65 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     stats.init(settings.value("statistics"));
 
+    lastDefaultProject = NULL;
+    helpWindow = new Help();
+
+#ifdef Q_OS_MAC
+    MainWindow* mw = new MainWindow(QString());
+    const QMenuBar* mwb = mw->ui->menubar;
+    defaultMenuBar = new QMenuBar(0);
+
+    QList<QObject*> lst = mwb->children();
+    foreach (QObject* mo, lst) {
+        if (QMenu* m = qobject_cast<QMenu*>(mo)) {
+            if (m->title()=="&File" || m->title()=="Help") {
+                QMenu* nm = defaultMenuBar->addMenu(m->title());
+                foreach (QAction* a, m->actions()) {
+                    if (a->isSeparator()) {
+                        nm->addSeparator();
+                    } else {
+                        QAction* na = nm->addAction(a->text());
+                        na->setShortcut(a->shortcut());
+                        if (a==mw->ui->actionQuit) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(quit()));
+                        } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
+                        } else if (a==mw->ui->actionOpen) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
+                        } else if (a==mw->ui->actionHelp) {
+                            connect(na,SIGNAL(triggered()),this,SLOT(help()));
+                        } else {
+                            na->setEnabled(false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    delete mw;
+#endif
+
     checkUpdate();
+}
+
+void IDE::newProject()
+{
+    MainWindow* mw = new MainWindow(QString());
+    mw->show();
+}
+
+void IDE::openFile()
+{
+    MainWindow* mw = new MainWindow(QString());
+    mw->openFile();
+    mw->show();
+}
+
+void IDE::help()
+{
+    helpWindow->show();
+    helpWindow->raise();
+    helpWindow->activateWindow();
 }
 
 IDE::~IDE(void) {
@@ -282,6 +346,18 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
     }
 }
 
+void IDE::renameFile(const QString& oldPath, const QString& newPath)
+{
+    DMap::iterator it = documents.find(oldPath);
+    if (it == documents.end()) {
+        qDebug() << "internal error: document " << oldPath << " not found";
+    } else {
+        Doc* doc = it.value();
+        documents.remove(oldPath);
+        documents.insert(newPath, doc);
+    }
+}
+
 void
 IDE::versionCheckFinished(QNetworkReply *reply) {
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
@@ -309,8 +385,7 @@ IDE* MainWindow::ide()
     return static_cast<IDE*>(qApp);
 }
 
-MainWindow::MainWindow(const QString& project, QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
@@ -322,8 +397,7 @@ MainWindow::MainWindow(const QString& project, QWidget *parent) :
     init(project);
 }
 
-MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
     process(NULL),
@@ -338,9 +412,51 @@ MainWindow::MainWindow(const QStringList& files, QWidget *parent) :
 
 }
 
+void MainWindow::showWindowMenu()
+{
+    ui->menuWindow->clear();
+    ui->menuWindow->addAction(minimizeAction);
+    ui->menuWindow->addSeparator();
+    for (QSet<MainWindow*>::iterator it = ide()->mainWindows.begin();
+         it != ide()->mainWindows.end(); ++it) {
+        QAction* windowAction = ui->menuWindow->addAction((*it)->windowTitle());
+        QVariant v = qVariantFromValue(static_cast<void*>(*it));
+        windowAction->setData(v);
+        windowAction->setCheckable(true);
+        if (*it == this) {
+            windowAction->setChecked(true);
+        }
+    }
+}
+
+void MainWindow::windowMenuSelected(QAction* a)
+{
+    if (a==minimizeAction) {
+        showMinimized();
+    } else {
+        QMainWindow* mw = static_cast<QMainWindow*>(a->data().value<void*>());
+        mw->showNormal();
+        mw->raise();
+        mw->activateWindow();
+    }
+}
+
 void MainWindow::init(const QString& projectFile)
 {
+    ide()->mainWindows.insert(this);
     ui->setupUi(this);
+    setAttribute(Qt::WA_DeleteOnClose, true);
+    minimizeAction = new QAction("&Minimize",this);
+    minimizeAction->setShortcut(Qt::CTRL+Qt::Key_M);
+#ifdef Q_OS_MAC
+    connect(ui->menuWindow, SIGNAL(aboutToShow()), this, SLOT(showWindowMenu()));
+    connect(ui->menuWindow, SIGNAL(triggered(QAction*)), this, SLOT(windowMenuSelected(QAction*)));
+    ui->menuWindow->addAction(minimizeAction);
+    ui->menuWindow->addSeparator();
+#else
+    ui->menuWindow->hide();
+    ui->menubar->removeAction(ui->menuWindow->menuAction());
+#endif
     QWidget* toolBarSpacer = new QWidget();
     toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ui->toolBar->insertWidget(ui->actionShow_project_explorer, toolBarSpacer);
@@ -351,8 +467,6 @@ void MainWindow::init(const QString& projectFile)
     findDialog->setModal(false);
 
     paramDialog = new ParamDialog(this);
-
-    helpWindow = new Help();
 
     fakeRunAction = new QAction(this);
     fakeRunAction->setShortcut(Qt::CTRL+Qt::Key_R);
@@ -413,7 +527,7 @@ void MainWindow::init(const QString& projectFile)
     setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_fd","-b lazy",true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
     Solver g12cpx("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false);
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
 
@@ -623,8 +737,8 @@ MainWindow::~MainWindow()
         delete process;
     }
     delete ui;
-    delete helpWindow;
     delete paramDialog;
+    ide()->mainWindows.remove(this);
 }
 
 void MainWindow::on_actionNewModel_file_triggered()
@@ -815,6 +929,8 @@ void MainWindow::closeEvent(QCloseEvent* e) {
                 ide()->removeEditor(ce->filepath,ce);
         }
     }
+    if (!projectPath.isEmpty())
+        ide()->projects.remove(projectPath);
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -824,7 +940,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
     settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
     settings.endGroup();
-    helpWindow->close();
     e->accept();
 }
 
@@ -1212,7 +1327,8 @@ void MainWindow::readOutput()
             QString l = process->readLine();
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
-                QUrl url = QUrl::fromLocalFile(errexp.cap(1));
+                QString errFile = errexp.cap(1).trimmed();
+                QUrl url = QUrl::fromLocalFile(errFile);
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
                 ide()->stats.errorsShown++;
@@ -1339,13 +1455,14 @@ void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
             if (ce->filepath==oldPath) {
                 ce->filepath = newPath;
                 ce->filename = QFileInfo(newPath).fileName();
+                ide()->renameFile(oldPath,newPath);
                 ui->tabWidget->setTabText(i,ce->filename);
                 updateRecentFiles(newPath);
-                setupDznMenu();
                 if (ce==curEditor)
                     tabChange(i);
             }
         }
+        setupDznMenu();
     }
 }
 
@@ -1727,7 +1844,7 @@ void MainWindow::on_actionShift_right_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    helpWindow->show();
+    ide()->help();
 }
 
 void MainWindow::on_actionNew_project_triggered()
@@ -1738,24 +1855,26 @@ void MainWindow::on_actionNew_project_triggered()
     mw->show();
 }
 
+bool MainWindow::isEmptyProject(void)
+{
+    if (ui->tabWidget->count() == 1) {
+        return !project.isModified();
+    }
+    if (ui->tabWidget->count() != 2)
+        return false;
+    CodeEditor* ce =
+            static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
+                                         ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
+    return ce->filepath == "" && !ce->document()->isModified() && !project.isModified();
+}
+
 void MainWindow::openProject(const QString& fileName)
 {
     if (!fileName.isEmpty()) {
         IDE::PMap& pmap = ide()->projects;
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
-            bool currentEmptyProject = (ui->tabWidget->count()==2);
-            if (currentEmptyProject) {
-                CodeEditor* ce =
-                        static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
-                                                     ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
-                if (ce->filepath != "" || ce->document()->isModified()) {
-                    currentEmptyProject = false;
-                } else {
-                    tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
-                }
-            }
-            if (currentEmptyProject) {
+            if (isEmptyProject()) {
                 loadProject(fileName);
             } else {
                 MainWindow* mw = new MainWindow(fileName);
@@ -2006,8 +2125,6 @@ void MainWindow::on_actionSave_project_as_triggered()
 
 void MainWindow::on_actionClose_project_triggered()
 {
-    if (!projectPath.isEmpty())
-        ide()->projects.remove(projectPath);
     close();
 }
 

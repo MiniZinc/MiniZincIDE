@@ -48,6 +48,9 @@ private:
 
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;
+    QRegExp commentStartExp;
+    QRegExp commentEndExp;
+
 };
 
 #endif // HIGHLIGHTER_H

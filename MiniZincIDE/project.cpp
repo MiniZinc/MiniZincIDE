@@ -122,7 +122,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
 QString Project::fileAtIndex(const QModelIndex &index)
 {
     QStandardItem* item = itemFromIndex(index);
-    if (item->hasChildren())
+    if (item==NULL || item->hasChildren())
         return "";
     QString fileName;
     while (item != NULL && item->parent() != NULL && item->parent() != invisibleRootItem() ) {
@@ -230,8 +230,9 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     QString filePath = QFileInfo(fileAtIndex(index)).canonicalPath();
     bool success = QFile::rename(filePath+"/"+oldName,filePath+"/"+value.toString());
     if (success) {
-        _files[value.toString()] = _files[oldName];
-        _files.remove(oldName);
+        _files[filePath+"/"+value.toString()] = _files[filePath+"/"+oldName];
+        _files.remove(filePath+"/"+oldName);
+        setModified(true, true);
         emit fileRenamed(filePath+"/"+oldName,filePath+"/"+value.toString());
         return QStandardItemModel::setData(index,value,role);
     } else {

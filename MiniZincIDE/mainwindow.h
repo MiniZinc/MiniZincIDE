@@ -24,6 +24,7 @@
 #include <QElapsedTimer>
 #include <QApplication>
 #include <QMap>
+#include <QSet>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -62,11 +63,19 @@ public:
     DMap documents;
     typedef QMap<QString,MainWindow*> PMap;
     PMap projects;
+    QSet<MainWindow*> mainWindows;
 
     QStringList recentFiles;
     QStringList recentProjects;
 
     IDEStatistics stats;
+
+    MainWindow* lastDefaultProject;
+    Help* helpWindow;
+
+#ifdef Q_OS_MAC
+    QMenuBar* defaultMenuBar;
+#endif
 
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
@@ -74,29 +83,35 @@ public:
     QTextDocument* addDocument(const QString& path, QTextDocument* doc, CodeEditor* ce);
     void registerEditor(const QString& path, CodeEditor* ce);
     void removeEditor(const QString& path, CodeEditor* ce);
+    void renameFile(const QString& oldPath, const QString& newPath);
 protected:
     bool event(QEvent *);
 protected slots:
     void versionCheckFinished(QNetworkReply*);
+    void newProject(void);
+    void openFile(void);
 public slots:
     void checkUpdate(void);
+    void help(void);
 };
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+    friend class IDE;
 public:
-    explicit MainWindow(const QString& project = QString(), QWidget *parent = 0);
-    explicit MainWindow(const QStringList& files, QWidget *parent = 0);
+    explicit MainWindow(const QString& project = QString());
+    explicit MainWindow(const QStringList& files);
     ~MainWindow();
 
 private:
     void init(const QString& project);
 
-private slots:
+public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
+
+private slots:
 
     void on_actionClose_triggered();
 
@@ -224,6 +239,9 @@ private slots:
 
     void on_conf_data_file_activated(const QString &arg1);
 
+    void showWindowMenu(void);
+    void windowMenuSelected(QAction*);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 private:
@@ -248,7 +266,6 @@ private:
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     FindDialog* findDialog;
-    Help* helpWindow;
     QString projectPath;
     QString lastPath;
     bool saveBeforeRunning;
@@ -269,6 +286,7 @@ private:
     QAction* fakeRunAction;
     QAction* fakeStopAction;
     QAction* fakeCompileAction;
+    QAction* minimizeAction;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile);
     QStringList parseConf(bool compileOnly);
@@ -288,6 +306,7 @@ private:
     IDE* ide();
 public:
     void openProject(const QString& fileName);
+    bool isEmptyProject(void);
 };
 
 #endif // MAINWINDOW_H
