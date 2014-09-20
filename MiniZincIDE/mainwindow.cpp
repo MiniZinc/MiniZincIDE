@@ -309,7 +309,9 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
     if (it.value()->large) {
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
-            it.value()->td.setPlainText(file.readAll());
+            QTextStream file_stream(&file);
+            file_stream.setCodec("UTF-8");
+            it.value()->td.setPlainText(file_stream.readAll());
             it.value()->large = false;
             it.value()->td.setModified(false);
             QSet<CodeEditor*>::iterator ed = it.value()->editors.begin();
@@ -1420,6 +1422,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
                 QTextStream out(&file);
+                out.setCodec(QTextCodec::codecForName("UTF-8"));
                 out << ce->document()->toPlainText();
                 file.close();
                 if (filepath != ce->filepath) {
