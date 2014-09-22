@@ -1510,15 +1510,42 @@ void MainWindow::openCompiledFzn(int exitcode)
     if (exitcode==0) {
         QFile file(currentFznTarget);
         int fsize = file.size() / (1024*1024);
-        if (file.size() <= 10*1024*1024 ||
-            QMessageBox::warning(this, "MiniZinc IDE",
-              QString("Compilation resulted in a large FlatZinc file (")+
-              QString().setNum(fsize)+" MB). Opening "
-                                     "the file may slow down the IDE and potentially "
-                                     "affect its stability. Do you want to open anyway?",
-                                     QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok) {
-            openFile(currentFznTarget, true);
+        if (file.size() > 10*1024*1024) {
+            QMessageBox::StandardButton sb =
+                    QMessageBox::warning(this, "MiniZinc IDE",
+                                         QString("Compilation resulted in a large FlatZinc file (")+
+                                         QString().setNum(fsize)+" MB). Opening "
+                                         "the file may slow down the IDE and potentially "
+                                         "affect its stability. Do you want to open it anyway, save it, or discard the file?",
+                                         QMessageBox::Open | QMessageBox::Discard | QMessageBox::Save);
+            switch (sb) {
+            case QMessageBox::Save:
+            {
+                bool success = true;
+                do {
+                QString savepath = QFileDialog::getSaveFileName(this,"Save FlatZinc",getLastPath(),"FlatZinc files (*.fzn)");
+                if (!savepath.isNull() && !savepath.isEmpty()) {
+                    QFile oldfile(savepath);
+                    if (oldfile.exists()) {
+                        if (!oldfile.remove()) {
+                            success = false;
+                        }
+                    }
+                    QFile newfile(currentFznTarget);
+                    newfile.copy(savepath);
+                }
+                } while (!success);
+                procFinished(exitcode);
+                return;
+            }
+            case QMessageBox::Discard:
+                procFinished(exitcode);
+                return;
+            default:
+                break;
+            }
         }
+        openFile(currentFznTarget, true);
     }
     procFinished(exitcode);
 }
