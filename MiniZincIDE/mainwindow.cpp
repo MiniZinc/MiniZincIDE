@@ -281,7 +281,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             Doc* d = new Doc;
-            if (path.endsWith(".dzn") && file.size() > 5*1024*1024) {
+            if ( (path.endsWith(".dzn") || path.endsWith(".fzn")) && file.size() > 5*1024*1024) {
                 d->large = true;
             } else {
                 d->td.setPlainText(file.readAll());
@@ -1508,7 +1508,17 @@ void MainWindow::openCompiledFzn(int exitcode)
     if (processWasStopped)
         return;
     if (exitcode==0) {
-        openFile(currentFznTarget, true);
+        QFile file(currentFznTarget);
+        int fsize = file.size() / (1024*1024);
+        if (file.size() <= 10*1024*1024 ||
+            QMessageBox::warning(this, "MiniZinc IDE",
+              QString("Compilation resulted in a large FlatZinc file (")+
+              QString().setNum(fsize)+" MB). Opening "
+                                     "the file may slow down the IDE and potentially "
+                                     "affect its stability. Do you want to open anyway?",
+                                     QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok) {
+            openFile(currentFznTarget, true);
+        }
     }
     procFinished(exitcode);
 }
