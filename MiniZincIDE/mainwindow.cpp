@@ -740,7 +740,6 @@ MainWindow::~MainWindow()
     }
     delete ui;
     delete paramDialog;
-    ide()->mainWindows.remove(this);
 }
 
 void MainWindow::on_actionNewModel_file_triggered()
@@ -933,6 +932,8 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
     if (!projectPath.isEmpty())
         ide()->projects.remove(projectPath);
+
+    ide()->mainWindows.remove(this);
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -1485,7 +1486,15 @@ void MainWindow::on_actionSave_as_triggered()
 
 void MainWindow::on_actionQuit_triggered()
 {
+#ifdef Q_OS_MAC
+    int lastWindow = 1;
+#else
+    int lastWindow = 0;
+#endif
     qApp->closeAllWindows();
+    if (ide()->mainWindows.size() == lastWindow) {
+        ide()->quit();
+    }
 }
 
 void MainWindow::on_actionStop_triggered()
