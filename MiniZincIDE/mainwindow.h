@@ -244,6 +244,8 @@ private slots:
 
 protected:
     virtual void closeEvent(QCloseEvent*);
+    virtual void dragEnterEvent(QDragEnterEvent *);
+    virtual void dropEvent(QDropEvent *);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

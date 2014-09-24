@@ -447,6 +447,7 @@ void MainWindow::init(const QString& projectFile)
 {
     ide()->mainWindows.insert(this);
     ui->setupUi(this);
+    setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
     minimizeAction->setShortcut(Qt::CTRL+Qt::Key_M);
@@ -944,6 +945,22 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
     settings.endGroup();
     e->accept();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent* event) {
+    const QMimeData* mimeData = event->mimeData();
+    if (mimeData->hasUrls()) {
+        QList<QUrl> urlList = mimeData->urls();
+        for (int i=0; i<urlList.size(); i++) {
+            openFile(urlList[i].toLocalFile());
+        }
+    }
+    event->acceptProposedAction();
 }
 
 void MainWindow::tabChange(int tab) {

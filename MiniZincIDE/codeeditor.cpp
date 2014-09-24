@@ -60,6 +60,7 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
         connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
         loadContentsButton = pb;
     }
+    setAcceptDrops(false);
 }
 
 void CodeEditor::loadContents()
