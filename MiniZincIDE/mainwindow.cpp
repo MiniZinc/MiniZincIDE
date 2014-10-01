@@ -1244,7 +1244,7 @@ void MainWindow::checkArgs(QString filepath)
             this, SLOT(procError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true);
-    args << "--instance-check-only";
+    args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
     process->start(mzn2fzn_executable,args,mznDistribPath);
