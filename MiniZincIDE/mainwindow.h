@@ -246,6 +246,7 @@ protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
+    bool eventFilter(QObject *, QEvent *);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

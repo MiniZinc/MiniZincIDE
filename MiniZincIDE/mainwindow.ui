@@ -810,9 +810,6 @@
    <property name="text">
     <string>Copy</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+C</string>
-   </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
    </property>

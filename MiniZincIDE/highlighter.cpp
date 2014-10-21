@@ -129,3 +129,68 @@ void Highlighter::highlightBlock(const QString &text)
         commentStartIndex = commentStartExp.indexIn(text, commentStartIndex + commentLength);
     }
 }
+
+#include <QTextCursor>
+#include <QTextDocumentFragment>
+#include <QTextLayout>
+#include <QTextEdit>
+#include <QApplication>
+#include <QClipboard>
+#include <QMimeData>
+
+class MyMimeDataExporter : public QTextEdit {
+public:
+    QMimeData* md(void) const {
+        QMimeData* mymd = createMimeDataFromSelection();
+        mymd->removeFormat("text/plain");
+        return mymd;
+    }
+};
+
+void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
+{
+    QTextDocument* tempDocument(new QTextDocument);
+    Q_ASSERT(tempDocument);
+    QTextCursor tempCursor(tempDocument);
+
+    tempCursor.insertFragment(cursor.selection());
+    tempCursor.select(QTextCursor::Document);
+
+    QTextCharFormat textfmt = cursor.charFormat();
+    textfmt.setFont(quoteFormat.font());
+    tempCursor.setCharFormat(textfmt);
+
+    QTextBlock start = document()->findBlock(cursor.selectionStart());
+    QTextBlock end = document()->findBlock(cursor.selectionEnd());
+    end = end.next();
+    const int selectionStart = cursor.selectionStart();
+    const int endOfDocument = tempDocument->characterCount() - 1;
+    for(QTextBlock current = start; current.isValid() and current not_eq end; current = current.next()) {
+        const QTextLayout* layout(current.layout());
+
+        foreach(const QTextLayout::FormatRange &range, layout->additionalFormats()) {
+            const int start = current.position() + range.start - selectionStart;
+            const int end = start + range.length;
+            if(end <= 0 or start >= endOfDocument)
+                continue;
+            tempCursor.setPosition(qMax(start, 0));
+            tempCursor.setPosition(qMin(end, endOfDocument), QTextCursor::KeepAnchor);
+            tempCursor.setCharFormat(range.format);
+        }
+    }
+
+    for(QTextBlock block = tempDocument->begin(); block.isValid(); block = block.next())
+        block.setUserState(-1);
+
+    tempCursor.select(QTextCursor::Document);
+    QTextBlockFormat blockFormat = cursor.blockFormat();
+    blockFormat.setNonBreakableLines(true);
+    tempCursor.setBlockFormat(blockFormat);
+
+    MyMimeDataExporter te;
+    te.setDocument(tempDocument);
+    te.selectAll();
+    QMimeData* mimeData = te.md();
+    QApplication::clipboard()->setMimeData(mimeData);
+    delete tempDocument;
+}

@@ -38,6 +38,7 @@
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
 #define MZNOS "mac"
+#include "rtfexporter.h"
 #else
 #define fileDialogSuffix "/"
 #define MZNOS "linux"
@@ -55,6 +56,9 @@ void IDEStatistics::init(QVariant v) {
         modelsRun = m["modelsRun"].toInt();
         solvers = m["solvers"].toStringList();
     }
+#ifdef Q_OS_MAC
+    (void) new MyRtfMime();
+#endif
 }
 
 QVariantMap IDEStatistics::toVariantMap(void) {
@@ -447,6 +451,7 @@ void MainWindow::init(const QString& projectFile)
 {
     ide()->mainWindows.insert(this);
     ui->setupUi(this);
+    ui->outputConsole->installEventFilter(this);
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
@@ -2338,5 +2343,24 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
         if (nFiles < ui->conf_data_file->count()) {
             ui->conf_data_file->setCurrentIndex(ui->conf_data_file->count()-2);
         }
+    }
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
+{
+    if (obj == ui->outputConsole) {
+        if (ev->type() == QEvent::KeyPress) {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(ev);
+            if (keyEvent == QKeySequence::Copy) {
+                ui->outputConsole->copy();
+                return true;
+            } else if (keyEvent == QKeySequence::Cut) {
+                ui->outputConsole->cut();
+                return true;
+            }
+        }
+        return false;
+    } else {
+        return QMainWindow::eventFilter(obj,ev);
     }
 }

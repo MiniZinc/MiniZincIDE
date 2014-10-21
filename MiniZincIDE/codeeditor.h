@@ -34,6 +34,7 @@ protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);
     virtual void keyPressEvent(QKeyEvent *e);
+    bool eventFilter(QObject *, QEvent *);
 private slots:
     void setLineNumbersWidth(int newBlockCount);
     void cursorChange();
@@ -51,6 +52,8 @@ signals:
 
 public slots:
     void loadedLargeFile();
+    void copy();
+    void cut();
 };
 
 class LineNumbers: public QWidget
