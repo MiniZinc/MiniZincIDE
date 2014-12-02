@@ -84,8 +84,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>592</width>
-             <height>592</height>
+             <width>601</width>
+             <height>594</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -322,6 +322,20 @@
                 </layout>
                </item>
                <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_9">
+                 <item>
+                  <widget class="QCheckBox" name="conf_have_mzn2fzn_params">
+                   <property name="text">
+                    <string>Additional mzn2fzn arguments:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="conf_mzn2fzn_params"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
                 <widget class="QLabel" name="label">
                  <property name="text">
                   <string>Solver options:</string>
@@ -431,6 +445,7 @@
               <zorder>label_7</zorder>
               <zorder>conf_verbose</zorder>
               <zorder>conf_optimize</zorder>
+              <zorder>layoutWidget</zorder>
              </widget>
             </item>
            </layout>
@@ -449,7 +464,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="nativeMenuBar">

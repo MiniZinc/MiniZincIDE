@@ -605,6 +605,8 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->conf_data_file, SIGNAL(currentIndexChanged(int)), &project, SLOT(currentDataFileIndex(int)));
     connect(ui->conf_have_cmd_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraArgs(bool)));
     connect(ui->conf_cmd_params, SIGNAL(textEdited(QString)), &project, SLOT(extraArgs(QString)));
+    connect(ui->conf_have_mzn2fzn_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraMzn2FznArgs(bool)));
+    connect(ui->conf_mzn2fzn_params, SIGNAL(textEdited(QString)), &project, SLOT(extraMzn2FznArgs(QString)));
     connect(ui->conf_verbose, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznVerbose(bool)));
     connect(ui->conf_optimize, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznOptimize(bool)));
     connect(ui->conf_solver, SIGNAL(currentIndexChanged(QString)), &project, SLOT(currentSolver(QString)));
@@ -1101,6 +1103,9 @@ QStringList MainWindow::parseConf(bool compileOnly)
     if (compileOnly && project.haveExtraArgs() &&
         !project.extraArgs().isEmpty())
         ret << "-D"+project.extraArgs();
+    if (compileOnly && project.haveExtraMzn2FznArgs() &&
+        !project.extraMzn2FznArgs().isEmpty())
+        ret << ""+project.extraMzn2FznArgs();
     if (compileOnly && project.currentDataFile()!="None")
         ret << "-d"+project.currentDataFile();
     if (!compileOnly && project.printAll())
@@ -2051,6 +2056,8 @@ void MainWindow::saveProject(const QString& f)
             out << (qint32)project.currentDataFileIndex();
             out << project.haveExtraArgs();
             out << project.extraArgs();
+            out << project.haveExtraMzn2FznArgs();
+            out << project.extraMzn2FznArgs();
             out << project.mzn2fznVerbose();
             out << project.mzn2fznOptimize();
             out << project.currentSolver();
@@ -2125,6 +2132,10 @@ void MainWindow::loadProject(const QString& filepath)
     project.haveExtraArgs(p_b, true);
     in >> p_s;
     project.extraArgs(p_s, true);
+    in >> p_b;
+    project.haveExtraMzn2FznArgs(p_b, true);
+    in >> p_s;
+    project.extraMzn2FznArgs(p_s, true);
     in >> p_b;
     project.mzn2fznVerbose(p_b, true);
     in >> p_b;

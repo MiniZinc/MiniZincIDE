@@ -248,6 +248,14 @@ QString Project::extraArgs(void) const
 {
     return ui->conf_cmd_params->text();
 }
+bool Project::haveExtraMzn2FznArgs(void) const
+{
+    return ui->conf_have_mzn2fzn_params->isChecked();
+}
+QString Project::extraMzn2FznArgs(void) const
+{
+    return ui->conf_mzn2fzn_params->text();
+}
 bool Project::mzn2fznVerbose(void) const
 {
     return ui->conf_verbose->isChecked();
@@ -326,6 +334,26 @@ void Project::extraArgs(const QString& a, bool init)
     if (init) {
         _extraArgs = a;
         ui->conf_cmd_params->setText(a);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::haveExtraMzn2FznArgs(bool b, bool init)
+{
+    if (init) {
+        _haveExtraMzn2FznArgs = b;
+        ui->conf_have_mzn2fzn_params->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::extraMzn2FznArgs(const QString& a, bool init)
+{
+    if (init) {
+        _extraMzn2FznArgs = a;
+        ui->conf_mzn2fzn_params->setText(a);
     } else {
         checkModified();
     }
