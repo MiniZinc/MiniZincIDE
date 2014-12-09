@@ -1,0 +1,3 @@
+[submodule "StandaloneGist"]
+	path = StandaloneGist
+	url = redbull:/home/guidot/repos/StandaloneGist.git
