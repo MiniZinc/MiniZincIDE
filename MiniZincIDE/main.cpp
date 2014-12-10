@@ -11,6 +11,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mainwindow.h"
+#include "../StandaloneGist/gistmainwindow.h"
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +32,13 @@ int main(int argc, char *argv[])
         MainWindow* w = new MainWindow(files);
         w->show();
     }
+
+    GistMainWindow g;
+
+    QObject::connect(&a, SIGNAL(focusChanged(QWidget*,QWidget*)),
+                         g.getGist(), SLOT(onFocusChanged(QWidget*,QWidget*)));
+
+
 #ifdef Q_OS_MAC
     a.setQuitOnLastWindowClosed(false);
 #endif

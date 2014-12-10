@@ -39,7 +39,7 @@ SOURCES += main.cpp\
     paramdialog.cpp \
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
-    project.cpp
+    project.cpp \
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -54,7 +54,7 @@ HEADERS  += mainwindow.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    rtfexporter.h
+    rtfexporter.h \
 
 FORMS    += \
     mainwindow.ui \
@@ -68,3 +68,70 @@ FORMS    += \
 
 RESOURCES += \
     minizincide.qrc
+
+
+# ***** STANDALONE_GIST PART *****
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += printsupport
+
+CONFIG += c++11
+
+SOURCES += \
+    ../StandaloneGist/gistmainwindow.cpp \
+    ../StandaloneGist/heap.cpp \
+    ../StandaloneGist/nodewidget.cpp \
+    ../StandaloneGist/drawingcursor.cpp \
+    ../StandaloneGist/treecanvas.cpp \
+    ../StandaloneGist/visualnode.cpp \
+    ../StandaloneGist/nodestats.cpp \
+    ../StandaloneGist/preferences.cpp \
+    ../StandaloneGist/qtgist.cpp \
+    ../StandaloneGist/spacenode.cpp \
+    ../StandaloneGist/node.cpp \
+    ../StandaloneGist/data.cpp \
+    ../StandaloneGist/treedialog.cpp \
+    ../StandaloneGist/receiverthread.cpp \
+    ../StandaloneGist/treebuilder.cpp \
+    ../StandaloneGist/treecomparison.cpp \
+
+HEADERS  += \
+    ../StandaloneGist/gistmainwindow.h \
+    ../StandaloneGist/qtgist.hh \
+    ../StandaloneGist/treecanvas.hh \
+    ../StandaloneGist/visualnode.hh \
+    ../StandaloneGist/spacenode.hh \
+    ../StandaloneGist/node.hh \
+    ../StandaloneGist/node.hpp \
+    ../StandaloneGist/spacenode.hpp \
+    ../StandaloneGist/visualnode.hpp \
+    ../StandaloneGist/heap.hpp \
+    ../StandaloneGist/nodestats.hh \
+    ../StandaloneGist/preferences.hh \
+    ../StandaloneGist/nodewidget.hh \
+    ../StandaloneGist/drawingcursor.hh \
+    ../StandaloneGist/drawingcursor.hpp \
+    ../StandaloneGist/nodecursor.hh \
+    ../StandaloneGist/nodecursor.hpp \
+    ../StandaloneGist/layoutcursor.hh \
+    ../StandaloneGist/layoutcursor.hpp \
+    ../StandaloneGist/nodevisitor.hh \
+    ../StandaloneGist/nodevisitor.hpp \
+    ../StandaloneGist/zoomToFitIcon.hpp \
+    ../StandaloneGist/data.hh \
+    ../StandaloneGist/treedialog.hh \
+    ../StandaloneGist/receiverthread.hh \
+    ../StandaloneGist/treebuilder.hh \
+    ../StandaloneGist/treecomparison.hh \
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/release/ -lzmq
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/debug/ -lzmq
+else:unix: LIBS += -L$$PWD/../../../../../../usr/local/lib/ -lzmq -ldl
+
+INCLUDEPATH += $$PWD/../../../../../../../../usr/local/include
+DEPENDPATH += $$PWD/../../../../../../../../usr/local/include
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../../../usr/local/lib/release/libzmq.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../../../usr/local/lib/debug/libzmq.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../../../usr/local/lib/release/zmq.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../../../../../../usr/local/lib/debug/zmq.lib
+else:unix: PRE_TARGETDEPS += $$PWD/../../../../../../../usr/local/lib/libzmq.a
