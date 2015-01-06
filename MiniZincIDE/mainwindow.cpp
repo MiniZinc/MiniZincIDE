@@ -542,16 +542,20 @@ void MainWindow::init(const QString& projectFile)
     setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
+    bool hadg12fd = false;
     Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
-    Solver g12cpx("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false);
+    bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
+    bool hadg12mip = false;
+    Solver gecode("Gecode (bundled)","fzn-gecode","-G gecode","",true,false);
+    bool hadgecode = false;
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(g12fd);
         solvers.append(g12lazyfd);
-        solvers.append(g12cpx);
         solvers.append(g12mip);
+        solvers.append(gecode);
     } else {
         IDE::instance()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
@@ -564,19 +568,32 @@ void MainWindow::init(const QString& projectFile)
             solver.builtin = settings.value("builtin").toBool();
             solver.detach = settings.value("detach",false).toBool();
             if (solver.builtin) {
-                if (solver.name=="G12 fd")
+                if (solver.name=="G12 fd") {
                     solver = g12fd;
-                else if (solver.name=="G12 lazyfd")
+                    hadg12fd = true;
+                } else if (solver.name=="G12 lazyfd") {
                     solver = g12lazyfd;
-                else if (solver.name=="G12 CPX")
-                    solver = g12cpx;
-                else if (solver.name=="G12 MIP")
+                    hadg12lazyfd = true;
+                } else if (solver.name=="G12 MIP") {
                     solver = g12mip;
+                    hadg12mip = true;
+                } else if (solver.name=="Gecode (bundled)") {
+                    solver = gecode;
+                    hadgecode = true;
+                }
             } else {
                 IDE::instance()->stats.solvers.append(solver.name);
             }
             solvers.append(solver);
         }
+        if (!hadg12fd)
+            solvers.append(g12fd);
+        if (!hadg12lazyfd)
+            solvers.append(g12lazyfd);
+        if (!hadg12mip)
+            solvers.append(g12mip);
+        if (!hadgecode)
+            solvers.append(gecode);
     }
     settings.endArray();
     settings.beginGroup("minizinc");
