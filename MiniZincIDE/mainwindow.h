@@ -84,6 +84,8 @@ public:
     void registerEditor(const QString& path, CodeEditor* ce);
     void removeEditor(const QString& path, CodeEditor* ce);
     void renameFile(const QString& oldPath, const QString& newPath);
+    QString appDir(void) const;
+    static IDE* instance(void);
 protected:
     bool event(QEvent *);
 protected slots:
@@ -264,6 +266,7 @@ private:
     QVector<Solver> solvers;
     QString defaultSolver;
     QString mznDistribPath;
+    QString getMznDistribPath(void) const;
     QString currentFznTarget;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
@@ -306,7 +309,6 @@ private:
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
-    IDE* ide();
 public:
     void openProject(const QString& fileName);
     bool isEmptyProject(void);

@@ -12,6 +12,7 @@
 
 #include "solverdialog.h"
 #include "ui_solverdialog.h"
+#include "mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -192,9 +193,10 @@ void SolverDialog::checkMzn2fznExecutable(const QString& mznDistribPath,
     args << "--version";
     mzn2fzn_executable = "";
     mzn2fzn_version_string = "";
-    p.start("mzn2fzn", args, mznDistribPath);
+    QString internalPath = mznDistribPath.isEmpty() ? IDE::instance()->appDir() : mznDistribPath;
+    p.start("mzn2fzn", args, internalPath);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        p.start("mzn2fzn.bat", args, mznDistribPath);
+        p.start("mzn2fzn.bat", args, internalPath);
         if (!p.waitForStarted() || !p.waitForFinished()) {
             return;
         } else {
