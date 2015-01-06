@@ -171,7 +171,7 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
         foreach(const QTextLayout::FormatRange &range, layout->additionalFormats()) {
             const int start = current.position() + range.start - selectionStart;
             const int end = start + range.length;
-            if(end <= 0 or start >= endOfDocument)
+            if(end <= 0 || start >= endOfDocument)
                 continue;
             tempCursor.setPosition(qMax(start, 0));
             tempCursor.setPosition(qMin(end, endOfDocument), QTextCursor::KeepAnchor);
