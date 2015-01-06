@@ -193,10 +193,9 @@ void SolverDialog::checkMzn2fznExecutable(const QString& mznDistribPath,
     args << "--version";
     mzn2fzn_executable = "";
     mzn2fzn_version_string = "";
-    QString internalPath = mznDistribPath.isEmpty() ? IDE::instance()->appDir() : mznDistribPath;
-    p.start("mzn2fzn", args, internalPath);
+    p.start("mzn2fzn", args, mznDistribPath);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        p.start("mzn2fzn.bat", args, internalPath);
+        p.start("mzn2fzn.bat", args, mznDistribPath);
         if (!p.waitForStarted() || !p.waitForFinished()) {
             return;
         } else {
@@ -237,21 +236,20 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString curPath = env.value("PATH");
-    if (!path.isEmpty()) {
-        env.insert("PATH", path + pathSep + curPath);
-        setProcessEnvironment(env);
+    QString addPath = IDE::instance()->appDir() + pathSep;
+    if (!path.isEmpty())
+        addPath = path + pathSep + addPath;
+    env.insert("PATH", addPath + pathSep + curPath);
+    setProcessEnvironment(env);
 #ifdef Q_OS_WIN
-        _putenv_s("PATH", (path + pathSep + curPath).toStdString().c_str());
+    _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
 #else
-        setenv("PATH", (path + pathSep + curPath).toStdString().c_str(), 1);
+    setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
-    }
     QProcess::start(program,arguments);
-    if (!path.isEmpty()) {
 #ifdef Q_OS_WIN
-        _putenv_s("PATH", curPath.toStdString().c_str());
+    _putenv_s("PATH", curPath.toStdString().c_str());
 #else
-        setenv("PATH", curPath.toStdString().c_str(), 1);
+    setenv("PATH", curPath.toStdString().c_str(), 1);
 #endif
-    }
 }

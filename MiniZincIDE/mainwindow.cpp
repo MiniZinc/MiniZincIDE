@@ -1165,11 +1165,7 @@ void MainWindow::checkArgsOutput()
 }
 
 QString MainWindow::getMznDistribPath(void) const {
-    if (mznDistribPath.isEmpty()) {
-        return IDE::instance()->appDir();
-    } else {
-        return mznDistribPath;
-    }
+    return mznDistribPath;
 }
 
 void MainWindow::checkArgsFinished(int exitcode)
