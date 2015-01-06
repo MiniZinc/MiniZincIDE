@@ -165,7 +165,7 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
     end = end.next();
     const int selectionStart = cursor.selectionStart();
     const int endOfDocument = tempDocument->characterCount() - 1;
-    for(QTextBlock current = start; current.isValid() and current not_eq end; current = current.next()) {
+    for(QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
         const QTextLayout* layout(current.layout());
 
         foreach(const QTextLayout::FormatRange &range, layout->additionalFormats()) {
