@@ -388,7 +388,7 @@ IDE::versionCheckFinished(QNetworkReply *reply) {
 
 QString IDE::appDir(void) const {
 #ifdef Q_OS_MAC
-    return applicationDirPath()+"../Resources/";
+    return applicationDirPath()+"/../Resources/";
 #else
     return applicationDirPath();
 #endif

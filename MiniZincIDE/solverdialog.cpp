@@ -236,7 +236,7 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString curPath = env.value("PATH");
-    QString addPath = IDE::instance()->appDir() + pathSep;
+    QString addPath = IDE::instance()->appDir();
     if (!path.isEmpty())
         addPath = path + pathSep + addPath;
     env.insert("PATH", addPath + pathSep + curPath);
