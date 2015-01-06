@@ -547,7 +547,7 @@ void MainWindow::init(const QString& projectFile)
     bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
     bool hadg12mip = false;
-    Solver gecode("Gecode (bundled)","fzn-gecode","-G gecode","",true,false);
+    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
     bool hadgecode = false;
 
     int nsolvers = settings.beginReadArray("solvers");
