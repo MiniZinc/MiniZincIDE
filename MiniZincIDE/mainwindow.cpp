@@ -1558,12 +1558,22 @@ void MainWindow::on_actionStop_triggered()
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
         processWasStopped = true;
-        process->kill();
-        process->waitForFinished();
-        delete process;
-        process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div><br>");
-        procFinished(0);
+
+#ifdef Q_OS_WIN
+        AttachConsole(process->pid()->dwProcessId);
+        SetConsoleCtrlHandler(NULL, TRUE);
+        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+#else
+        ::kill(process->pid(), SIGINT);
+#endif
+        if (!process->waitForFinished(100)) {
+            process->kill();
+            process->waitForFinished();
+            delete process;
+            process = NULL;
+            addOutput("<div style='color:blue;'>Stopped.</div><br>");
+            procFinished(0);
+        }
     }
 }
 
