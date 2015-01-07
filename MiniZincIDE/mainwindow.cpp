@@ -1126,27 +1126,27 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-v";
     if (compileOnly && project.haveExtraArgs() &&
         !project.extraArgs().isEmpty())
-        ret << "-D"+project.extraArgs();
+        ret << "-D" << project.extraArgs();
     if (compileOnly && project.haveExtraMzn2FznArgs() &&
         !project.extraMzn2FznArgs().isEmpty())
         ret << ""+project.extraMzn2FznArgs();
     if (compileOnly && project.currentDataFile()!="None")
-        ret << "-d"+project.currentDataFile();
+        ret << "-d" << project.currentDataFile();
     if (!compileOnly && project.printAll())
         ret << "-a";
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
-        ret << "-p"+QString::number(project.n_threads());
+        ret << "-p" << QString::number(project.n_threads());
     if (!compileOnly && project.haveSeed())
-        ret << "-r"+project.seed();
+        ret << "-r" << project.seed();
     if (!compileOnly && project.haveSolverFlags()) {
         QStringList solverArgs =
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
     if (!compileOnly && project.n_solutions() != 1)
-        ret << "-n"+QString::number(project.n_solutions());
+        ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
