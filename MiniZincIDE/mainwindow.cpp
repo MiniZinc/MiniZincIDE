@@ -16,6 +16,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <csignal>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
