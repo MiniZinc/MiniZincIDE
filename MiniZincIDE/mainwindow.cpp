@@ -227,6 +227,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
             }
         }
     }
+    mainWindows.remove(mw);
     delete mw;
 #endif
 
