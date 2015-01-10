@@ -1156,6 +1156,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
 
 void MainWindow::setupDznMenu()
 {
+    QString curText = ui->conf_data_file->currentText();
     ui->conf_data_file->clear();
     ui->conf_data_file->addItem("None");
     QStringList dataFiles = project.dataFiles();
@@ -1163,6 +1164,7 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->addItem(dataFiles[i]);
     }
     ui->conf_data_file->addItem("Add data file to project...");
+    ui->conf_data_file->setCurrentText(curText);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
