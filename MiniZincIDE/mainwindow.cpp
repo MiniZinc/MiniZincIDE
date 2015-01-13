@@ -1643,6 +1643,18 @@ void MainWindow::runCompiledFzn(int exitcode)
 
         if (s.detach) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div><br>");
+            if (project.solverVerbose()) {
+                addOutput("<div style='color:blue;'>Command line:</div><br>");
+                QString cmdline = s.executable;
+                QRegExp white("\\s");
+                for (int i=0; i<args.size(); i++) {
+                    if (white.indexIn(args[i]) != -1)
+                        cmdline += " \""+args[i]+"\"";
+                    else
+                        cmdline += " "+args[i];
+                }
+                addOutput("<div>"+cmdline+"</div><br>");
+            }
             QProcess::startDetached(s.executable,args,QFileInfo(curEditor->filepath).absolutePath());
             cleanupTmpDirs.append(tmpDir);
             tmpDir = NULL;
