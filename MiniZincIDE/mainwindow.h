@@ -86,6 +86,8 @@ public:
     void renameFile(const QString& oldPath, const QString& newPath);
     QString appDir(void) const;
     static IDE* instance(void);
+    QString getLastPath(void);
+    void setLastPath(const QString& path);
 protected:
     bool event(QEvent *);
 protected slots:
@@ -274,7 +276,6 @@ private:
     QVector<MznProcess*> cleanupProcesses;
     FindDialog* findDialog;
     QString projectPath;
-    QString lastPath;
     bool saveBeforeRunning;
     QString compileErrors;
     ParamDialog* paramDialog;

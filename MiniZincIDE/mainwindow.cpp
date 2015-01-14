@@ -241,11 +241,35 @@ void IDE::newProject()
     mw->show();
 }
 
+QString IDE::getLastPath(void) {
+    QSettings settings;
+    settings.beginGroup("Path");
+    return settings.value("lastPath","").toString();
+}
+
+void IDE::setLastPath(const QString& path) {
+    QSettings settings;
+    settings.beginGroup("Path");
+    settings.setValue("lastPath", path);
+    settings.endGroup();
+}
+
 void IDE::openFile()
 {
-    MainWindow* mw = new MainWindow(QString());
-    mw->openFile();
-    mw->show();
+    QString fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
+    if (!fileName.isNull()) {
+        setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
+    }
+
+    if (!fileName.isEmpty()) {
+        MainWindow* mw = new MainWindow(QString());
+        if (fileName.endsWith(".mzp")) {
+            mw->openProject(fileName);
+        } else {
+            mw->createEditor(fileName, false, false);
+        }
+        mw->show();
+    }
 }
 
 void IDE::help()
@@ -851,18 +875,12 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
 
 void MainWindow::setLastPath(const QString &s)
 {
-    lastPath = s;
-    QSettings settings;
-    settings.beginGroup("Path");
-    settings.setValue("lastPath", lastPath);
-    settings.endGroup();
+    IDE::instance()->setLastPath(s);
 }
 
 QString MainWindow::getLastPath(void)
 {
-    QSettings settings;
-    settings.beginGroup("Path");
-    return settings.value("lastPath","").toString();
+    return IDE::instance()->getLastPath();
 }
 
 void MainWindow::openFile(const QString &path, bool openAsModified)
