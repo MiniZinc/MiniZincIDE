@@ -767,6 +767,11 @@ MainWindow::~MainWindow()
     for (int i=0; i<cleanupTmpDirs.size(); i++) {
         delete cleanupTmpDirs[i];
     }
+    for (int i=0; i<cleanupProcesses.size(); i++) {
+        cleanupProcesses[i]->kill();
+        cleanupProcesses[i]->waitForFinished();
+        delete cleanupProcesses[i];
+    }
     if (process) {
         process->kill();
         process->waitForFinished();
@@ -1643,9 +1648,14 @@ void MainWindow::runCompiledFzn(int exitcode)
 
         if (s.detach) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div><br>");
+
+            MznProcess* detached_process = new MznProcess(this);
+            detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+
+            QString executable = s.executable;
             if (project.solverVerbose()) {
                 addOutput("<div style='color:blue;'>Command line:</div><br>");
-                QString cmdline = s.executable;
+                QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
                     if (white.indexIn(args[i]) != -1)
@@ -1655,8 +1665,9 @@ void MainWindow::runCompiledFzn(int exitcode)
                 }
                 addOutput("<div>"+cmdline+"</div><br>");
             }
-            QProcess::startDetached(s.executable,args,QFileInfo(curEditor->filepath).absolutePath());
+            detached_process->start(executable,args,getMznDistribPath());
             cleanupTmpDirs.append(tmpDir);
+            cleanupProcesses.append(detached_process);
             tmpDir = NULL;
             procFinished(exitcode);
         } else {

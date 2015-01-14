@@ -271,6 +271,7 @@ private:
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
+    QVector<MznProcess*> cleanupProcesses;
     FindDialog* findDialog;
     QString projectPath;
     QString lastPath;
