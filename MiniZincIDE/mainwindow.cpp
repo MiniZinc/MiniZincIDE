@@ -573,15 +573,15 @@ void MainWindow::init(const QString& projectFile)
     bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
     bool hadg12mip = false;
-    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
-    bool hadgecode = false;
+//    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
+//    bool hadgecode = false;
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(g12fd);
         solvers.append(g12lazyfd);
         solvers.append(g12mip);
-        solvers.append(gecode);
+//        solvers.append(gecode);
     } else {
         IDE::instance()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
@@ -603,10 +603,11 @@ void MainWindow::init(const QString& projectFile)
                 } else if (solver.name=="G12 MIP") {
                     solver = g12mip;
                     hadg12mip = true;
-                } else if (solver.name=="Gecode (bundled)") {
-                    solver = gecode;
-                    hadgecode = true;
                 }
+//                else if (solver.name=="Gecode (bundled)") {
+//                    solver = gecode;
+//                    hadgecode = true;
+//                }
             } else {
                 IDE::instance()->stats.solvers.append(solver.name);
             }
@@ -618,8 +619,8 @@ void MainWindow::init(const QString& projectFile)
             solvers.append(g12lazyfd);
         if (!hadg12mip)
             solvers.append(g12mip);
-        if (!hadgecode)
-            solvers.append(gecode);
+//        if (!hadgecode)
+//            solvers.append(gecode);
     }
     settings.endArray();
     settings.beginGroup("minizinc");
