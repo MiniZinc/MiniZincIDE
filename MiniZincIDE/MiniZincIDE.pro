@@ -11,12 +11,15 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 0.9.5
+VERSION = 0.9.6
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 macx {
     ICON = mznide.icns
     QMAKE_INFO_PLIST = mznide.plist
+    OBJECTIVE_SOURCES += rtfexporter.mm
+    QT += macextras
+    LIBS += -framework Cocoa
 }
 
 RC_ICONS = mznide.ico
@@ -50,7 +53,8 @@ HEADERS  += mainwindow.h \
     paramdialog.h \
     outputdockwidget.h \
     checkupdatedialog.h \
-    project.h
+    project.h \
+    rtfexporter.h
 
 FORMS    += \
     mainwindow.ui \

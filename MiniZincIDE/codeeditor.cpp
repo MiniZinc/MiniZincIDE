@@ -60,6 +60,8 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
         connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
         loadContentsButton = pb;
     }
+    setAcceptDrops(false);
+    installEventFilter(this);
 }
 
 void CodeEditor::loadContents()
@@ -318,4 +320,31 @@ void CodeEditor::setEditorFont(QFont& font)
     document()->setDefaultFont(font);
     highlighter->setEditorFont(font);
     highlighter->rehighlight();
+}
+
+bool CodeEditor::eventFilter(QObject *, QEvent *ev)
+{
+    if (ev->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(ev);
+        if (keyEvent == QKeySequence::Copy) {
+            copy();
+            return true;
+        } else if (keyEvent == QKeySequence::Cut) {
+            cut();
+            return true;
+        }
+    }
+    return false;
+}
+
+void CodeEditor::copy()
+{
+    highlighter->copyHighlightedToClipboard(textCursor());
+}
+
+
+void CodeEditor::cut()
+{
+    highlighter->copyHighlightedToClipboard(textCursor());
+    textCursor().removeSelectedText();
 }

@@ -84,6 +84,10 @@ public:
     void registerEditor(const QString& path, CodeEditor* ce);
     void removeEditor(const QString& path, CodeEditor* ce);
     void renameFile(const QString& oldPath, const QString& newPath);
+    QString appDir(void) const;
+    static IDE* instance(void);
+    QString getLastPath(void);
+    void setLastPath(const QString& path);
 protected:
     bool event(QEvent *);
 protected slots:
@@ -244,6 +248,9 @@ private slots:
 
 protected:
     virtual void closeEvent(QCloseEvent*);
+    virtual void dragEnterEvent(QDragEnterEvent *);
+    virtual void dropEvent(QDropEvent *);
+    bool eventFilter(QObject *, QEvent *);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -261,13 +268,14 @@ private:
     QVector<Solver> solvers;
     QString defaultSolver;
     QString mznDistribPath;
+    QString getMznDistribPath(void) const;
     QString currentFznTarget;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
+    QVector<MznProcess*> cleanupProcesses;
     FindDialog* findDialog;
     QString projectPath;
-    QString lastPath;
     bool saveBeforeRunning;
     QString compileErrors;
     ParamDialog* paramDialog;
@@ -303,7 +311,6 @@ private:
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
-    IDE* ide();
 public:
     void openProject(const QString& fileName);
     bool isEmptyProject(void);

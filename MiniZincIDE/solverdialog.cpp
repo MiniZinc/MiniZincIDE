@@ -12,6 +12,7 @@
 
 #include "solverdialog.h"
 #include "ui_solverdialog.h"
+#include "mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -235,21 +236,20 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString curPath = env.value("PATH");
-    if (!path.isEmpty()) {
-        env.insert("PATH", path + pathSep + curPath);
-        setProcessEnvironment(env);
+    QString addPath = IDE::instance()->appDir();
+    if (!path.isEmpty())
+        addPath = path + pathSep + addPath;
+    env.insert("PATH", addPath + pathSep + curPath);
+    setProcessEnvironment(env);
 #ifdef Q_OS_WIN
-        _putenv_s("PATH", (path + pathSep + curPath).toStdString().c_str());
+    _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
 #else
-        setenv("PATH", (path + pathSep + curPath).toStdString().c_str(), 1);
+    setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
-    }
     QProcess::start(program,arguments);
-    if (!path.isEmpty()) {
 #ifdef Q_OS_WIN
-        _putenv_s("PATH", curPath.toStdString().c_str());
+    _putenv_s("PATH", curPath.toStdString().c_str());
 #else
-        setenv("PATH", curPath.toStdString().c_str(), 1);
+    setenv("PATH", curPath.toStdString().c_str(), 1);
 #endif
-    }
 }
