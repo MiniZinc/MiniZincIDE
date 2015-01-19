@@ -427,6 +427,7 @@ IDE* IDE::instance(void) {
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -439,6 +440,7 @@ MainWindow::MainWindow(const QString& project) :
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -1403,7 +1405,30 @@ void MainWindow::readOutput()
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
-            addOutput(l,false);
+            if (outputJSHandler=="none") {
+                addOutput(l,false);
+            } else {
+                if (l.startsWith("%%%mzn-json:")) {
+                    if (outputJSHandler.isEmpty()) {
+                        outputJSHandler=l.mid(12);
+                    }
+                } else {
+                    if (outputJSHandler.isEmpty()) {
+                        outputJSHandler="none";
+                        addOutput(l,false);
+                    } else {
+                        if (l=="----------\n") {
+                            openJSONViewer(outputJSHandler, jsonOutput);
+                            jsonOutput.clear();
+                        } else if (l=="==========\n") {
+                            curHtmlWindow = NULL;
+                            jsonOutput.clear();
+                        } else {
+                            jsonOutput.push_back(l);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1434,6 +1459,17 @@ void MainWindow::readOutput()
     }
 }
 
+void MainWindow::openJSONViewer(const QString &js, const QStringList &json)
+{
+    if (curHtmlWindow==NULL) {
+        QString url = js;
+        url.remove(QRegExp("[\\n\\t\\r]"));
+        curHtmlWindow = new HTMLWindow("file:"+url);
+        curHtmlWindow->show();
+    }
+    curHtmlWindow->addJson(json.join(' '));
+}
+
 void MainWindow::pipeOutput()
 {
     outputProcess->write(process->readAllStandardOutput());
@@ -1456,6 +1492,8 @@ void MainWindow::procFinished(int, bool showTime) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
         outputProcess = NULL;
+        outputJSHandler = "";
+        jsonOutput.clear();
     }
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
@@ -1692,6 +1730,7 @@ void MainWindow::runCompiledFzn(int exitcode)
         } else {
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
+                outputJSHandler = "";
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));

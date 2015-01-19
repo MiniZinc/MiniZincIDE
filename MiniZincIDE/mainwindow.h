@@ -31,6 +31,7 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "project.h"
+#include "htmlwindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -251,14 +252,17 @@ protected:
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
     bool eventFilter(QObject *, QEvent *);
+    void openJSONViewer(const QString& js, const QStringList& json);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
-    QWebView* webView;
+    HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
     MznProcess* outputProcess;
     bool processWasStopped;
+    QString outputJSHandler;
+    QStringList jsonOutput;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;

@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     paramdialog.cpp \
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
-    project.cpp
+    project.cpp \
+    htmlwindow.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -54,7 +55,8 @@ HEADERS  += mainwindow.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    rtfexporter.h
+    rtfexporter.h \
+    htmlwindow.h
 
 FORMS    += \
     mainwindow.ui \
@@ -64,7 +66,8 @@ FORMS    += \
     help.ui \
     finddialog.ui \
     paramdialog.ui \
-    checkupdatedialog.ui
+    checkupdatedialog.ui \
+    htmlwindow.ui
 
 RESOURCES += \
     minizincide.qrc
