@@ -1488,6 +1488,7 @@ void MainWindow::procFinished(int, bool showTime) {
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
+    curHtmlWindow = NULL;
     if (outputProcess) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
