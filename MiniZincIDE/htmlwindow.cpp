@@ -35,9 +35,13 @@ HTMLWindow::pageLoadFinished(bool ok)
 void
 HTMLWindow::addJson(const QString &json0)
 {
+    QString j = json0;
+    j.replace("'","\\'");
+    j.replace("\"","\\\"");
+    j.replace("\n"," ");
     if (loadFinished) {
-        ui->webView->page()->mainFrame()->evaluateJavaScript("addSolution("+json0+")");
+        ui->webView->page()->mainFrame()->evaluateJavaScript("addSolution('"+j+"')");
     } else {
-        json.push_back("addSolution("+json0+")");
+        json.push_back("addSolution('"+j+"')");
     }
 }
