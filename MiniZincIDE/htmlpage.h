@@ -10,12 +10,15 @@ class HTMLPage : public QWebPage
     Q_OBJECT
 protected:
     MainWindow* _mw;
+    QStringList json;
+    bool loadFinished;
 public:
     explicit HTMLPage(MainWindow* mw, QWidget *parent = 0);
     virtual void javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID);
-signals:
+    void addSolution(const QString& json);
 
-public slots:
+private slots:
+    void pageLoadFinished(bool ok);
 
 };
 

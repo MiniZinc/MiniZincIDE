@@ -2,19 +2,24 @@
 #include "ui_htmlwindow.h"
 #include "htmlpage.h"
 
-#include "QWebFrame"
-
+#include <QWebView>
 #include <QDebug>
 
-HTMLWindow::HTMLWindow(const QString& url, MainWindow* mw, QWidget *parent) :
+HTMLWindow::HTMLWindow(const QStringList& url, MainWindow* mw, QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::HTMLWindow),
-    loadFinished(false)
+    ui(new Ui::HTMLWindow)
 {
     ui->setupUi(this);
-    ui->webView->setPage(new HTMLPage(mw));
-    ui->webView->load(url);
-    connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(pageLoadFinished(bool)));
+
+    for (int i=0; i<url.size(); i++) {
+        QWebView* wv = new QWebView;
+        HTMLPage* p = new HTMLPage(mw);
+        pages.append(p);
+        wv->setPage(p);
+        wv->load(url[i]);
+        ui->mdiArea->addSubWindow(wv);
+    }
+
 }
 
 HTMLWindow::~HTMLWindow()
@@ -22,28 +27,7 @@ HTMLWindow::~HTMLWindow()
     delete ui;
 }
 
-void
-HTMLWindow::pageLoadFinished(bool ok)
+void HTMLWindow::addSolution(int nVis, const QString &json)
 {
-    if (ok) {
-        loadFinished = true;
-        for (int i=0; i<json.size(); i++) {
-            ui->webView->page()->mainFrame()->evaluateJavaScript(json[i]);
-        }
-        json.clear();
-    }
-}
-
-void
-HTMLWindow::addJson(const QString &json0)
-{
-    QString j = json0;
-    j.replace("'","\\'");
-    j.replace("\"","\\\"");
-    j.replace("\n"," ");
-    if (loadFinished) {
-        ui->webView->page()->mainFrame()->evaluateJavaScript("addSolution('"+j+"')");
-    } else {
-        json.push_back("addSolution('"+j+"')");
-    }
+    pages[nVis]->addSolution(json);
 }

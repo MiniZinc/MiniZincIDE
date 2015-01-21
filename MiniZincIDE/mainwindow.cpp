@@ -1464,10 +1464,12 @@ void MainWindow::openJSONViewer(const QString &js, const QStringList &json)
     if (curHtmlWindow==NULL) {
         QString url = js;
         url.remove(QRegExp("[\\n\\t\\r]"));
-        curHtmlWindow = new HTMLWindow("file:"+url, this);
+        QStringList urls;
+        urls.append("file:"+url);
+        curHtmlWindow = new HTMLWindow(urls, this);
         curHtmlWindow->show();
     }
-    curHtmlWindow->addJson(json.join(' '));
+    curHtmlWindow->addSolution(0, json.join(' '));
 }
 
 void MainWindow::pipeOutput()
