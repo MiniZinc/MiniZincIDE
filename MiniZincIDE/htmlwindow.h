@@ -7,12 +7,14 @@ namespace Ui {
 class HTMLWindow;
 }
 
+class MainWindow;
+
 class HTMLWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit HTMLWindow(const QString& url, QWidget *parent = 0);
+    explicit HTMLWindow(const QString& url, MainWindow* mw, QWidget *parent = 0);
     ~HTMLWindow();
     void addJson(const QString& json);
 private:

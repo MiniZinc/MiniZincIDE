@@ -306,7 +306,6 @@ private:
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
-    void addOutput(const QString& s, bool html=true);
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime();
@@ -316,6 +315,7 @@ private:
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
 public:
+    void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
 };

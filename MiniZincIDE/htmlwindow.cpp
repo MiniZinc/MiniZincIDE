@@ -1,16 +1,18 @@
 #include "htmlwindow.h"
 #include "ui_htmlwindow.h"
+#include "htmlpage.h"
 
 #include "QWebFrame"
 
 #include <QDebug>
 
-HTMLWindow::HTMLWindow(const QString& url, QWidget *parent) :
+HTMLWindow::HTMLWindow(const QString& url, MainWindow* mw, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::HTMLWindow),
     loadFinished(false)
 {
     ui->setupUi(this);
+    ui->webView->setPage(new HTMLPage(mw));
     ui->webView->load(url);
     connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(pageLoadFinished(bool)));
 }

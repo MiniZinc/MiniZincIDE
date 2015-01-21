@@ -40,7 +40,8 @@ SOURCES += main.cpp\
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
     project.cpp \
-    htmlwindow.cpp
+    htmlwindow.cpp \
+    htmlpage.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -56,7 +57,8 @@ HEADERS  += mainwindow.h \
     checkupdatedialog.h \
     project.h \
     rtfexporter.h \
-    htmlwindow.h
+    htmlwindow.h \
+    htmlpage.h
 
 FORMS    += \
     mainwindow.ui \

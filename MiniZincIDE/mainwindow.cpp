@@ -1464,7 +1464,7 @@ void MainWindow::openJSONViewer(const QString &js, const QStringList &json)
     if (curHtmlWindow==NULL) {
         QString url = js;
         url.remove(QRegExp("[\\n\\t\\r]"));
-        curHtmlWindow = new HTMLWindow("file:"+url);
+        curHtmlWindow = new HTMLWindow("file:"+url, this);
         curHtmlWindow->show();
     }
     curHtmlWindow->addJson(json.join(' '));
