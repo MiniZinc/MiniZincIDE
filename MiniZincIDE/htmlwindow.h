@@ -11,12 +11,21 @@ class HTMLWindow;
 
 class MainWindow;
 
+class VisWindowSpec {
+public:
+    QString url;
+    Qt::DockWidgetArea area;
+    VisWindowSpec(const QString& url0, const Qt::DockWidgetArea& area0 = Qt::TopDockWidgetArea)
+        : url(url0), area(area0) {}
+    VisWindowSpec(void) {}
+};
+
 class HTMLWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit HTMLWindow(const QStringList& url, MainWindow* mw, QWidget *parent = 0);
+    explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent = 0);
     ~HTMLWindow();
 
     void addSolution(int nVis, const QString& json);

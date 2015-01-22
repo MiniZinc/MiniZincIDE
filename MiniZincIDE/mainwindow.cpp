@@ -1424,16 +1424,26 @@ void MainWindow::readOutput()
                 } else {
                     JSONOutput[curJSONHandler].append(l);
                 }
-            } else if (l.startsWith("%%%mzn-json:")) {
-                inJSONHandler = true;
-                JSONOutput.append(QStringList(l.mid(12)));
             } else {
-                if (curJSONHandler > 0 && l == "----------\n") {
-                    openJSONViewer();
-                    JSONOutput.clear();
-                    curJSONHandler = 0;
+                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
+                if (pattern.exactMatch(l)) {
+                    inJSONHandler = true;
+                    QStringList sl;
+                    sl.append(pattern.capturedTexts()[2]);
+                    if (pattern.capturedTexts()[1].isEmpty()) {
+                        sl.append("top");
+                    } else {
+                        sl.append(pattern.capturedTexts()[1]);
+                    }
+                    JSONOutput.append(sl);
                 } else {
-                    addOutput(l,false);
+                    if (curJSONHandler > 0 && l == "----------\n") {
+                        openJSONViewer();
+                        JSONOutput.clear();
+                        curJSONHandler = 0;
+                    } else {
+                        addOutput(l,false);
+                    }
                 }
             }
         }
@@ -1469,19 +1479,25 @@ void MainWindow::readOutput()
 void MainWindow::openJSONViewer(void)
 {
     if (curHtmlWindow==NULL) {
-        QStringList urls;
+        QVector<VisWindowSpec> specs;
         for (int i=0; i<JSONOutput.size(); i++) {
             QString url = JSONOutput[i].first();
+            Qt::DockWidgetArea area = Qt::TopDockWidgetArea;
+            if (JSONOutput[i][1]=="top") {
+                area = Qt::TopDockWidgetArea;
+            } else if (JSONOutput[i][1]=="bottom") {
+                area = Qt::BottomDockWidgetArea;
+            }
             url.remove(QRegExp("[\\n\\t\\r]"));
-            urls.append("file:"+url);
+            specs.append(VisWindowSpec("file:"+url,area));
+            JSONOutput[i].pop_front();
+            JSONOutput[i].pop_front();
         }
-        curHtmlWindow = new HTMLWindow(urls, this);
+        curHtmlWindow = new HTMLWindow(specs, this);
         curHtmlWindow->show();
     }
     for (int i=0; i<JSONOutput.size(); i++) {
-        QStringList json = JSONOutput[i];
-        json.pop_front();
-        curHtmlWindow->addSolution(i, json.join(' '));
+        curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
     }
 }
 

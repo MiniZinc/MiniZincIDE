@@ -5,24 +5,27 @@
 #include <QWebView>
 #include <QMdiSubWindow>
 #include <QDebug>
+#include <QDockWidget>
 
-HTMLWindow::HTMLWindow(const QStringList& url, MainWindow* mw, QWidget *parent) :
+HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::HTMLWindow)
 {
     ui->setupUi(this);
 
-    for (int i=0; i<url.size(); i++) {
+    for (int i=0; i<specs.size(); i++) {
         QWebView* wv = new QWebView;
         HTMLPage* p = new HTMLPage(mw,wv);
         pages.append(p);
         wv->setPage(p);
-        loadQueue.append(QPair<QWebView*,QString>(wv,url[i]));
-        ui->mdiArea->addSubWindow(wv);
+        loadQueue.append(QPair<QWebView*,QString>(wv,specs[i].url));
+        QDockWidget* dw = new QDockWidget(this);
+        dw->setFeatures(QDockWidget::DockWidgetMovable);
+        dw->setWidget(wv);
+        addDockWidget(specs[i].area,dw);
     }
-    ui->mdiArea->tileSubWindows();
 
-    if (url.size() > 0) {
+    if (specs.size() > 0) {
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
         QWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;

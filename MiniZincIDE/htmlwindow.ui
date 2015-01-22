@@ -14,11 +14,19 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="QMdiArea" name="mdiArea"/>
-    </item>
-   </layout>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>5</height>
+    </size>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
