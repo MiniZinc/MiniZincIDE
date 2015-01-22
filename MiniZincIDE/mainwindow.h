@@ -252,7 +252,7 @@ protected:
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
     bool eventFilter(QObject *, QEvent *);
-    void openJSONViewer(const QString& js, const QStringList& json);
+    void openJSONViewer(void);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -261,8 +261,9 @@ private:
     QString processName;
     MznProcess* outputProcess;
     bool processWasStopped;
-    QString outputJSHandler;
-    QStringList jsonOutput;
+    int curJSONHandler;
+    bool inJSONHandler;
+    QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
@@ -318,6 +319,7 @@ public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
+    void selectJSONSolution(HTMLPage* source, int n);
 };
 
 #endif // MAINWINDOW_H

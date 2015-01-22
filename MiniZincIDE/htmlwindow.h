@@ -2,7 +2,8 @@
 #define HTMLWINDOW_H
 
 #include <QMainWindow>
-#include <htmlpage.h>
+#include <QWebView>
+#include "htmlpage.h"
 
 namespace Ui {
 class HTMLWindow;
@@ -19,9 +20,13 @@ public:
     ~HTMLWindow();
 
     void addSolution(int nVis, const QString& json);
+    void selectSolution(HTMLPage* source, int n);
 private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;
+    QVector<QPair<QWebView*,QString> > loadQueue;
+private slots:
+    void loadFinished(bool);
 };
 
 #endif // HTMLWINDOW_H

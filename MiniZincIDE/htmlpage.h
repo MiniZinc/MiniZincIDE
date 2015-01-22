@@ -16,10 +16,13 @@ public:
     explicit HTMLPage(MainWindow* mw, QWidget *parent = 0);
     virtual void javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID);
     void addSolution(const QString& json);
+    void showSolution(int n);
+public slots:
+    void selectSolution(int n);
 
 private slots:
     void pageLoadFinished(bool ok);
-
+    void jsCleared(void);
 };
 
 #endif // HTMLPAGE_H

@@ -1405,28 +1405,23 @@ void MainWindow::readOutput()
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
-            if (outputJSHandler=="none") {
-                addOutput(l,false);
-            } else {
-                if (l.startsWith("%%%mzn-json:")) {
-                    if (outputJSHandler.isEmpty()) {
-                        outputJSHandler=l.mid(12);
-                    }
+            if (inJSONHandler) {
+                if (l.startsWith("%%%mzn-json-end")) {
+                    curJSONHandler++;
+                    inJSONHandler = false;
                 } else {
-                    if (outputJSHandler.isEmpty()) {
-                        outputJSHandler="none";
-                        addOutput(l,false);
-                    } else {
-                        if (l=="----------\n") {
-                            openJSONViewer(outputJSHandler, jsonOutput);
-                            jsonOutput.clear();
-                        } else if (l=="==========\n") {
-                            curHtmlWindow = NULL;
-                            jsonOutput.clear();
-                        } else {
-                            jsonOutput.push_back(l);
-                        }
-                    }
+                    JSONOutput[curJSONHandler].append(l);
+                }
+            } else if (l.startsWith("%%%mzn-json:")) {
+                inJSONHandler = true;
+                JSONOutput.append(QStringList(l.mid(12)));
+            } else {
+                if (curJSONHandler > 0 && l == "----------\n") {
+                    openJSONViewer();
+                    JSONOutput.clear();
+                    curJSONHandler = 0;
+                } else {
+                    addOutput(l,false);
                 }
             }
         }
@@ -1459,17 +1454,30 @@ void MainWindow::readOutput()
     }
 }
 
-void MainWindow::openJSONViewer(const QString &js, const QStringList &json)
+void MainWindow::openJSONViewer(void)
 {
     if (curHtmlWindow==NULL) {
-        QString url = js;
-        url.remove(QRegExp("[\\n\\t\\r]"));
         QStringList urls;
-        urls.append("file:"+url);
+        for (int i=0; i<JSONOutput.size(); i++) {
+            QString url = JSONOutput[i].first();
+            url.remove(QRegExp("[\\n\\t\\r]"));
+            urls.append("file:"+url);
+        }
         curHtmlWindow = new HTMLWindow(urls, this);
         curHtmlWindow->show();
     }
-    curHtmlWindow->addSolution(0, json.join(' '));
+    for (int i=0; i<JSONOutput.size(); i++) {
+        QStringList json = JSONOutput[i];
+        json.pop_front();
+        curHtmlWindow->addSolution(i, json.join(' '));
+    }
+}
+
+void MainWindow::selectJSONSolution(HTMLPage* source, int n)
+{
+    if (curHtmlWindow!=NULL) {
+        curHtmlWindow->selectSolution(source,n);
+    }
 }
 
 void MainWindow::pipeOutput()
@@ -1490,13 +1498,12 @@ void MainWindow::procFinished(int, bool showTime) {
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
-    curHtmlWindow = NULL;
     if (outputProcess) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
         outputProcess = NULL;
-        outputJSHandler = "";
-        jsonOutput.clear();
+        inJSONHandler = false;
+        JSONOutput.clear();
     }
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
@@ -1733,7 +1740,10 @@ void MainWindow::runCompiledFzn(int exitcode)
         } else {
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
-                outputJSHandler = "";
+                inJSONHandler = false;
+                curJSONHandler = 0;
+                JSONOutput.clear();
+                curHtmlWindow = NULL;
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
