@@ -1219,7 +1219,8 @@ void MainWindow::checkArgsFinished(int exitcode)
 {
     if (processWasStopped)
         return;
-    QString additionalArgs;
+    QString additionalCmdlineParams;
+    QString additionalDataFile;
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
@@ -1231,19 +1232,22 @@ void MainWindow::checkArgsFinished(int exitcode)
             undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
-        if (undefinedArgs.size() > 0 && undefinedArgs.size() <= 10) {
-            QStringList params = paramDialog->getParams(undefinedArgs);
-            if (params.size()==0) {
-                procFinished(0,false);
-                return;
-            }
-            for (int i=0; i<undefinedArgs.size(); i++) {
-                if (params[i].isEmpty()) {
-                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                    procFinished(0);
+        if (undefinedArgs.size() > 0) {
+            QStringList params;
+            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFile);
+            if (additionalDataFile.isEmpty()) {
+                if (params.size()==0) {
+                    procFinished(0,false);
                     return;
                 }
-                additionalArgs += undefinedArgs[i]+"="+params[i]+"; ";
+                for (int i=0; i<undefinedArgs.size(); i++) {
+                    if (params[i].isEmpty()) {
+                        QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                        procFinished(0);
+                        return;
+                    }
+                    additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                }
             }
         }
     }
@@ -1261,8 +1265,11 @@ void MainWindow::checkArgsFinished(int exitcode)
             this, SLOT(procError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true);
-    if (!additionalArgs.isEmpty()) {
-        args << "-D" << additionalArgs;
+    if (!additionalCmdlineParams.isEmpty()) {
+        args << "-D" << additionalCmdlineParams;
+    }
+    if (!additionalDataFile.isEmpty()) {
+        args << "-d" << additionalDataFile;
     }
 
     tmpDir = new QTemporaryDir;
@@ -1281,8 +1288,13 @@ void MainWindow::checkArgsFinished(int exitcode)
             QFileInfo fi(project.currentDataFile());
             compiling += fi.fileName();
         }
-        if (!additionalArgs.isEmpty()) {
-            compiling += ", additional arguments " + additionalArgs;
+        if (!additionalDataFile.isEmpty()) {
+            compiling += ", with additional data ";
+            QFileInfo fi(additionalDataFile);
+            compiling += fi.fileName();
+        }
+        if (!additionalCmdlineParams.isEmpty()) {
+            compiling += ", additional arguments " + additionalCmdlineParams;
         }
         addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
         process->start(mzn2fzn_executable,args,getMznDistribPath());
