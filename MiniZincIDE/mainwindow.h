@@ -25,6 +25,7 @@
 #include <QApplication>
 #include <QMap>
 #include <QSet>
+#include <QFileSystemWatcher>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -78,6 +79,8 @@ public:
     QMenuBar* defaultMenuBar;
 #endif
 
+    QFileSystemWatcher fsWatch;
+
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
     void loadLargeFile(const QString& path, QWidget* parent);
@@ -95,6 +98,7 @@ protected slots:
     void versionCheckFinished(QNetworkReply*);
     void newProject(void);
     void openFile(void);
+    void fileModified(const QString&);
 public slots:
     void checkUpdate(void);
     void help(void);

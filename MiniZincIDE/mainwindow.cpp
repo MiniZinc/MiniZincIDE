@@ -196,6 +196,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     lastDefaultProject = NULL;
     helpWindow = new Help();
 
+    connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
+
 #ifdef Q_OS_MAC
     MainWindow* mw = new MainWindow(QString());
     const QMenuBar* mwb = mw->ui->menubar;
@@ -233,6 +235,44 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 #endif
 
     checkUpdate();
+}
+
+void IDE::fileModified(const QString &f)
+{
+    DMap::iterator it = documents.find(f);
+    if (it != documents.end()) {
+        QFileInfo fi(f);
+        QMessageBox msg;
+
+        if (!fi.exists()) {
+            msg.setText("The file "+fi.fileName()+" has been removed or renamed outside MiniZinc IDE.");
+            msg.setStandardButtons(QMessageBox::Ok);
+        } else {
+            msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
+            if (it.value()->td.isModified()) {
+                msg.setInformativeText("Do you want to reload the file and discard your changes?");
+            } else {
+                msg.setInformativeText("Do you want to reload the file?");
+            }
+            QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
+            msg.addButton("Reload", QMessageBox::AcceptRole);
+            msg.exec();
+            if (msg.clickedButton()==cancelButton) {
+                it.value()->td.setModified(true);
+            } else {
+                QFile file(f);
+                if (file.open(QFile::ReadOnly | QFile::Text)) {
+                    it.value()->td.setPlainText(file.readAll());
+                    it.value()->td.setModified(false);
+                } else {
+                    QMessageBox::warning(NULL, "MiniZinc IDE",
+                                         "Could not reload file "+f,
+                                         QMessageBox::Ok);
+                    it.value()->td.setModified(true);
+                }
+            }
+        }
+    }
 }
 
 void IDE::newProject()
@@ -301,6 +341,7 @@ QTextDocument* IDE::addDocument(const QString& path, QTextDocument *doc, CodeEdi
     d->editors.insert(ce);
     d->large = false;
     documents.insert(path,d);
+    fsWatch.addPath(path);
     return &d->td;
 }
 
@@ -319,6 +360,8 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
             }
             d->td.setModified(false);
             documents.insert(path,d);
+            if (!d->large)
+                fsWatch.addPath(path);
             return qMakePair(&d->td,d->large);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
@@ -348,6 +391,7 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
             for (; ed != it.value()->editors.end(); ++ed) {
                 (*ed)->loadedLargeFile();
             }
+            fsWatch.addPath(path);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
                                  "Could not open file "+path,
@@ -374,6 +418,7 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
         if (editors.empty()) {
             delete it.value();
             documents.remove(path);
+            fsWatch.removePath(path);
         }
     }
 }
@@ -386,7 +431,9 @@ void IDE::renameFile(const QString& oldPath, const QString& newPath)
     } else {
         Doc* doc = it.value();
         documents.remove(oldPath);
+        fsWatch.removePath(oldPath);
         documents.insert(newPath, doc);
+        fsWatch.addPath(newPath);
     }
 }
 
@@ -1579,6 +1626,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                                  QMessageBox::Ok);
 
         } else {
+            IDE::instance()->fsWatch.removePath(filepath);
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
                 QTextStream out(&file);
@@ -1606,6 +1654,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             } else {
                 QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
             }
+            IDE::instance()->fsWatch.addPath(filepath);
         }
     }
 }
