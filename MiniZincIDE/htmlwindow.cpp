@@ -51,6 +51,13 @@ void HTMLWindow::selectSolution(HTMLPage *source, int n)
     }
 }
 
+void HTMLWindow::finish(qint64 runtime)
+{
+    for (int i=0; i<pages.size(); i++) {
+        pages[i]->finish(runtime);
+    }
+}
+
 void HTMLWindow::loadFinished(bool)
 {
     disconnect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));

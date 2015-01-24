@@ -17,6 +17,7 @@ public:
     virtual void javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID);
     void addSolution(const QString& json);
     void showSolution(int n);
+    void finish(qint64 runtime);
 public slots:
     void selectSolution(int n);
 

@@ -14,7 +14,7 @@ HTMLPage::HTMLPage(MainWindow* mw, QWidget *parent) :
 void
 HTMLPage::javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID)
 {
-    _mw->addOutput("<div style='color:red;'>JavaScript message: source " +sourceID + ", line no. " + QString().number(lineNumber) + ": " + message + "</div>\n");
+    _mw->addOutput("<div style='color:red;'>JavaScript message: source " +sourceID + ", line no. " + QString().number(lineNumber) + ": " + message + "</div><br>\n");
 }
 
 void
@@ -52,6 +52,17 @@ HTMLPage::addSolution(const QString &json0)
         mainFrame()->evaluateJavaScript("addSolution('"+j+"')");
     } else {
         json.push_back("addSolution('"+j+"')");
+    }
+}
+
+void
+HTMLPage::finish(qint64 runtime)
+{
+    QString jscall = "if (typeof finish == 'function') { finish("+QString().number(runtime)+"); }";
+    if (loadFinished) {
+        mainFrame()->evaluateJavaScript(jscall);
+    } else {
+        json.push_back(jscall);
     }
 }
 

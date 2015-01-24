@@ -30,6 +30,7 @@ public:
 
     void addSolution(int nVis, const QString& json);
     void selectSolution(HTMLPage* source, int n);
+    void finish(qint64 runtime);
 private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;

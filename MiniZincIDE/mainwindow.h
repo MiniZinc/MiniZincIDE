@@ -257,6 +257,7 @@ protected:
     virtual void dropEvent(QDropEvent *);
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
+    void finishJSONViewer(void);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -267,6 +268,7 @@ private:
     bool processWasStopped;
     int curJSONHandler;
     bool inJSONHandler;
+    bool hadNonJSONOutput;
     QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;

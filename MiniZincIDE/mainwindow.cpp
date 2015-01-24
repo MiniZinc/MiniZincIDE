@@ -1465,7 +1465,11 @@ void MainWindow::readOutput()
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
             if (inJSONHandler) {
-                if (l.startsWith("%%%mzn-json-end")) {
+                if (l == "%%%mzn-json-time\n") {
+                    JSONOutput[curJSONHandler].insert(2, "[");
+                    JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
+                } else
+                    if (l.startsWith("%%%mzn-json-end")) {
                     curJSONHandler++;
                     inJSONHandler = false;
                 } else {
@@ -1488,8 +1492,15 @@ void MainWindow::readOutput()
                         openJSONViewer();
                         JSONOutput.clear();
                         curJSONHandler = 0;
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
+                    } else if (curHtmlWindow && l == "==========\n") {
+                        finishJSONViewer();
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
                     } else {
                         addOutput(l,false);
+                        hadNonJSONOutput = true;
                     }
                 }
             }
@@ -1537,14 +1548,21 @@ void MainWindow::openJSONViewer(void)
             }
             url.remove(QRegExp("[\\n\\t\\r]"));
             specs.append(VisWindowSpec("file:"+url,area));
-            JSONOutput[i].pop_front();
-            JSONOutput[i].pop_front();
         }
         curHtmlWindow = new HTMLWindow(specs, this);
         curHtmlWindow->show();
     }
     for (int i=0; i<JSONOutput.size(); i++) {
+        JSONOutput[i].pop_front();
+        JSONOutput[i].pop_front();
         curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+    }
+}
+
+void MainWindow::finishJSONViewer(void)
+{
+    if (curHtmlWindow) {
+        curHtmlWindow->finish(elapsedTime.elapsed());
     }
 }
 
@@ -1577,6 +1595,7 @@ void MainWindow::procFinished(int, bool showTime) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
         outputProcess = NULL;
+        finishJSONViewer();
         inJSONHandler = false;
         JSONOutput.clear();
     }
@@ -1821,6 +1840,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                 curJSONHandler = 0;
                 JSONOutput.clear();
                 curHtmlWindow = NULL;
+                hadNonJSONOutput = false;
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
