@@ -1509,8 +1509,17 @@ void MainWindow::readOutput()
 
     if (process != NULL) {
         process->setReadChannel(QProcess::StandardError);
-        while (process->canReadLine()) {
-            QString l = process->readLine();
+        for (;;) {
+            QString l;
+            if (process->canReadLine()) {
+                l = process->readLine();
+            } else if (process->state()==QProcess::NotRunning) {
+                if (process->atEnd())
+                    break;
+                l = process->readAll()+"\n";
+            } else {
+                break;
+            }
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
@@ -1527,8 +1536,17 @@ void MainWindow::readOutput()
 
     if (outputProcess != NULL) {
         outputProcess->setReadChannel(QProcess::StandardError);
-        while (outputProcess->canReadLine()) {
-            QString l = outputProcess->readLine();
+        for (;;) {
+            QString l;
+            if (outputProcess->canReadLine()) {
+                l = outputProcess->readLine();
+            } else if (outputProcess->state()==QProcess::NotRunning) {
+                if (outputProcess->atEnd())
+                    break;
+                l = outputProcess->readAll()+"\n";
+            } else {
+                break;
+            }
             addOutput(l,false);
         }
     }
