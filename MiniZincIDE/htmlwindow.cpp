@@ -6,6 +6,7 @@
 #include <QMdiSubWindow>
 #include <QDebug>
 #include <QDockWidget>
+#include <QCloseEvent>
 
 HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent) :
     QMainWindow(parent),
@@ -68,4 +69,10 @@ void HTMLWindow::loadFinished(bool)
         QString url0 = loadQueue[0].second;
         wv0->load(url0);
     }
+}
+
+void HTMLWindow::closeEvent(QCloseEvent * event)
+{
+    emit closeWindow();
+    event->accept();
 }

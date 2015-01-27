@@ -1568,6 +1568,7 @@ void MainWindow::openJSONViewer(void)
             specs.append(VisWindowSpec("file:"+url,area));
         }
         curHtmlWindow = new HTMLWindow(specs, this);
+        connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
         curHtmlWindow->show();
     }
     for (int i=0; i<JSONOutput.size(); i++) {
@@ -1582,6 +1583,13 @@ void MainWindow::finishJSONViewer(void)
     if (curHtmlWindow) {
         curHtmlWindow->finish(elapsedTime.elapsed());
     }
+}
+
+void MainWindow::closeHTMLWindow(void)
+{
+    on_actionStop_triggered();
+    delete curHtmlWindow;
+    curHtmlWindow = NULL;
 }
 
 void MainWindow::selectJSONSolution(HTMLPage* source, int n)
@@ -1857,7 +1865,11 @@ void MainWindow::runCompiledFzn(int exitcode)
                 inJSONHandler = false;
                 curJSONHandler = 0;
                 JSONOutput.clear();
-                curHtmlWindow = NULL;
+                if (curHtmlWindow) {
+                    disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+                    curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+                    curHtmlWindow = NULL;
+                }
                 hadNonJSONOutput = false;
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));

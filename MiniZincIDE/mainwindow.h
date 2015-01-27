@@ -250,7 +250,7 @@ private slots:
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
-
+    void closeHTMLWindow(void);
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

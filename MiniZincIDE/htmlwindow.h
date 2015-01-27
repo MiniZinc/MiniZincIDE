@@ -35,8 +35,12 @@ private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;
     QVector<QPair<QWebView*,QString> > loadQueue;
+protected:
+    void closeEvent(QCloseEvent *);
 private slots:
     void loadFinished(bool);
+signals:
+    void closeWindow(void);
 };
 
 #endif // HTMLWINDOW_H
