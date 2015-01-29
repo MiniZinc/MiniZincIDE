@@ -1465,7 +1465,8 @@ void MainWindow::readOutput()
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
             if (inJSONHandler) {
-                if (l == "%%%mzn-json-time\n") {
+                l = l.trimmed();
+                if (l.startsWith("%%%mzn-json-time")) {
                     JSONOutput[curJSONHandler].insert(2, "[");
                     JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
                 } else
@@ -1477,7 +1478,7 @@ void MainWindow::readOutput()
                 }
             } else {
                 QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
-                if (pattern.exactMatch(l)) {
+                if (pattern.exactMatch(l.trimmed())) {
                     inJSONHandler = true;
                     QStringList sl;
                     sl.append(pattern.capturedTexts()[2]);
@@ -1488,13 +1489,13 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
-                    if (curJSONHandler > 0 && l == "----------\n") {
+                    if (curJSONHandler > 0 && l.trimmed() == "----------") {
                         openJSONViewer();
                         JSONOutput.clear();
                         curJSONHandler = 0;
                         if (hadNonJSONOutput)
                             addOutput(l,false);
-                    } else if (curHtmlWindow && l == "==========\n") {
+                    } else if (curHtmlWindow && l.trimmed() == "==========") {
                         finishJSONViewer();
                         if (hadNonJSONOutput)
                             addOutput(l,false);
@@ -1565,7 +1566,7 @@ void MainWindow::openJSONViewer(void)
                 area = Qt::BottomDockWidgetArea;
             }
             url.remove(QRegExp("[\\n\\t\\r]"));
-            specs.append(VisWindowSpec("file:"+url,area));
+            specs.append(VisWindowSpec(url,area));
         }
         curHtmlWindow = new HTMLWindow(specs, this);
         connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));

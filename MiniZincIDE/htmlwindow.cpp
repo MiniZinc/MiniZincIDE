@@ -30,7 +30,7 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
         QWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;
-        wv0->load(url0);
+        wv0->load(QUrl::fromUserInput(url0));
     }
 }
 
@@ -67,7 +67,7 @@ void HTMLWindow::loadFinished(bool)
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
         QWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;
-        wv0->load(url0);
+        wv0->load(QUrl::fromUserInput(url0));
     }
 }
 
