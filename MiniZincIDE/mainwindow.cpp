@@ -604,8 +604,8 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
     ui->outputConsole->setFont(editorFont);
-    resize(settings.value("size", QSize(400, 400)).toSize());
-    move(settings.value("pos", QPoint(200, 200)).toPoint());
+    resize(settings.value("size", QSize(800, 600)).toSize());
+    move(settings.value("pos", QPoint(100, 100)).toPoint());
     if (settings.value("toolbarHidden", false).toBool()) {
         on_actionHide_tool_bar_triggered();
     }
