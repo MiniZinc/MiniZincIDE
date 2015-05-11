@@ -12,6 +12,7 @@
 
 #include "mainwindow.h"
 #include "../StandaloneGist/gistmainwindow.h"
+#include "../StandaloneGist/globalhelper.hh"
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +33,10 @@ int main(int argc, char *argv[])
         MainWindow* w = new MainWindow(files);
         w->show();
     }
+
+    GlobalParser clParser;
+
+    clParser.process(a);
 
     GistMainWindow g;
 

@@ -78,6 +78,7 @@ CONFIG += c++11
 
 SOURCES += \
     ../StandaloneGist/gistmainwindow.cpp \
+    ../StandaloneGist/globalhelper.cpp \
     ../StandaloneGist/heap.cpp \
     ../StandaloneGist/nodewidget.cpp \
     ../StandaloneGist/drawingcursor.cpp \
@@ -89,13 +90,19 @@ SOURCES += \
     ../StandaloneGist/spacenode.cpp \
     ../StandaloneGist/node.cpp \
     ../StandaloneGist/data.cpp \
-    ../StandaloneGist/treedialog.cpp \
+    ../StandaloneGist/base_tree_dialog.cpp \
+    ../StandaloneGist/solver_tree_dialog.cpp \
+    ../StandaloneGist/cmp_tree_dialog.cpp \
     ../StandaloneGist/receiverthread.cpp \
     ../StandaloneGist/treebuilder.cpp \
+    ../StandaloneGist/readingQueue.cpp \
     ../StandaloneGist/treecomparison.cpp \
+    ../StandaloneGist/pixelview.cpp \
+
 
 HEADERS  += \
     ../StandaloneGist/gistmainwindow.h \
+    ../StandaloneGist/globalhelper.hh \
     ../StandaloneGist/qtgist.hh \
     ../StandaloneGist/treecanvas.hh \
     ../StandaloneGist/visualnode.hh \
@@ -118,10 +125,14 @@ HEADERS  += \
     ../StandaloneGist/nodevisitor.hpp \
     ../StandaloneGist/zoomToFitIcon.hpp \
     ../StandaloneGist/data.hh \
-    ../StandaloneGist/treedialog.hh \
+    ../StandaloneGist/base_tree_dialog.hh \
+    ../StandaloneGist/solver_tree_dialog.hh \
+    ../StandaloneGist/cmp_tree_dialog.hh \
     ../StandaloneGist/receiverthread.hh \
     ../StandaloneGist/treebuilder.hh \
+    ../StandaloneGist/readingQueue.hh \
     ../StandaloneGist/treecomparison.hh \
+    ../StandaloneGist/pixelview.hh
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/release/ -lzmq
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/debug/ -lzmq
