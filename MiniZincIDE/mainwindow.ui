@@ -445,7 +445,6 @@
               <zorder>label_7</zorder>
               <zorder>conf_verbose</zorder>
               <zorder>conf_optimize</zorder>
-              <zorder>layoutWidget</zorder>
              </widget>
             </item>
            </layout>

@@ -25,12 +25,14 @@
 #include <QApplication>
 #include <QMap>
 #include <QSet>
+#include <QFileSystemWatcher>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
 #include "help.h"
 #include "paramdialog.h"
 #include "project.h"
+#include "htmlwindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -77,6 +79,8 @@ public:
     QMenuBar* defaultMenuBar;
 #endif
 
+    QFileSystemWatcher fsWatch;
+
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
     void loadLargeFile(const QString& path, QWidget* parent);
@@ -84,12 +88,17 @@ public:
     void registerEditor(const QString& path, CodeEditor* ce);
     void removeEditor(const QString& path, CodeEditor* ce);
     void renameFile(const QString& oldPath, const QString& newPath);
+    QString appDir(void) const;
+    static IDE* instance(void);
+    QString getLastPath(void);
+    void setLastPath(const QString& path);
 protected:
     bool event(QEvent *);
 protected slots:
     void versionCheckFinished(QNetworkReply*);
     void newProject(void);
     void openFile(void);
+    void fileModified(const QString&);
 public slots:
     void checkUpdate(void);
     void help(void);
@@ -241,20 +250,26 @@ private slots:
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
-
+    void closeHTMLWindow(void);
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
     bool eventFilter(QObject *, QEvent *);
+    void openJSONViewer(void);
+    void finishJSONViewer(void);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
-    QWebView* webView;
+    HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
     MznProcess* outputProcess;
     bool processWasStopped;
+    int curJSONHandler;
+    bool inJSONHandler;
+    bool hadNonJSONOutput;
+    QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
@@ -264,13 +279,14 @@ private:
     QVector<Solver> solvers;
     QString defaultSolver;
     QString mznDistribPath;
+    QString getMznDistribPath(void) const;
     QString currentFznTarget;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
+    QVector<MznProcess*> cleanupProcesses;
     FindDialog* findDialog;
     QString projectPath;
-    QString lastPath;
     bool saveBeforeRunning;
     QString compileErrors;
     ParamDialog* paramDialog;
@@ -297,7 +313,6 @@ private:
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
-    void addOutput(const QString& s, bool html=true);
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime();
@@ -306,10 +321,11 @@ private:
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
-    IDE* ide();
 public:
+    void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
+    void selectJSONSolution(HTMLPage* source, int n);
 };
 
 #endif // MAINWINDOW_H

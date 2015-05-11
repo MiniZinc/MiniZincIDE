@@ -16,6 +16,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <csignal>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -195,6 +196,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     lastDefaultProject = NULL;
     helpWindow = new Help();
 
+    connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
+
 #ifdef Q_OS_MAC
     MainWindow* mw = new MainWindow(QString());
     const QMenuBar* mwb = mw->ui->menubar;
@@ -227,10 +230,49 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
             }
         }
     }
+    mainWindows.remove(mw);
     delete mw;
 #endif
 
     checkUpdate();
+}
+
+void IDE::fileModified(const QString &f)
+{
+    DMap::iterator it = documents.find(f);
+    if (it != documents.end()) {
+        QFileInfo fi(f);
+        QMessageBox msg;
+
+        if (!fi.exists()) {
+            msg.setText("The file "+fi.fileName()+" has been removed or renamed outside MiniZinc IDE.");
+            msg.setStandardButtons(QMessageBox::Ok);
+        } else {
+            msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
+            if (it.value()->td.isModified()) {
+                msg.setInformativeText("Do you want to reload the file and discard your changes?");
+            } else {
+                msg.setInformativeText("Do you want to reload the file?");
+            }
+            QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
+            msg.addButton("Reload", QMessageBox::AcceptRole);
+            msg.exec();
+            if (msg.clickedButton()==cancelButton) {
+                it.value()->td.setModified(true);
+            } else {
+                QFile file(f);
+                if (file.open(QFile::ReadOnly | QFile::Text)) {
+                    it.value()->td.setPlainText(file.readAll());
+                    it.value()->td.setModified(false);
+                } else {
+                    QMessageBox::warning(NULL, "MiniZinc IDE",
+                                         "Could not reload file "+f,
+                                         QMessageBox::Ok);
+                    it.value()->td.setModified(true);
+                }
+            }
+        }
+    }
 }
 
 void IDE::newProject()
@@ -239,11 +281,35 @@ void IDE::newProject()
     mw->show();
 }
 
+QString IDE::getLastPath(void) {
+    QSettings settings;
+    settings.beginGroup("Path");
+    return settings.value("lastPath","").toString();
+}
+
+void IDE::setLastPath(const QString& path) {
+    QSettings settings;
+    settings.beginGroup("Path");
+    settings.setValue("lastPath", path);
+    settings.endGroup();
+}
+
 void IDE::openFile()
 {
-    MainWindow* mw = new MainWindow(QString());
-    mw->openFile();
-    mw->show();
+    QString fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
+    if (!fileName.isNull()) {
+        setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
+    }
+
+    if (!fileName.isEmpty()) {
+        MainWindow* mw = new MainWindow(QString());
+        if (fileName.endsWith(".mzp")) {
+            mw->openProject(fileName);
+        } else {
+            mw->createEditor(fileName, false, false);
+        }
+        mw->show();
+    }
 }
 
 void IDE::help()
@@ -275,6 +341,7 @@ QTextDocument* IDE::addDocument(const QString& path, QTextDocument *doc, CodeEdi
     d->editors.insert(ce);
     d->large = false;
     documents.insert(path,d);
+    fsWatch.addPath(path);
     return &d->td;
 }
 
@@ -293,6 +360,8 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
             }
             d->td.setModified(false);
             documents.insert(path,d);
+            if (!d->large)
+                fsWatch.addPath(path);
             return qMakePair(&d->td,d->large);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
@@ -322,6 +391,7 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
             for (; ed != it.value()->editors.end(); ++ed) {
                 (*ed)->loadedLargeFile();
             }
+            fsWatch.addPath(path);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
                                  "Could not open file "+path,
@@ -348,6 +418,7 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
         if (editors.empty()) {
             delete it.value();
             documents.remove(path);
+            fsWatch.removePath(path);
         }
     }
 }
@@ -360,7 +431,9 @@ void IDE::renameFile(const QString& oldPath, const QString& newPath)
     } else {
         Doc* doc = it.value();
         documents.remove(oldPath);
+        fsWatch.removePath(oldPath);
         documents.insert(newPath, doc);
+        fsWatch.addPath(newPath);
     }
 }
 
@@ -386,14 +459,22 @@ IDE::versionCheckFinished(QNetworkReply *reply) {
     }
 }
 
-IDE* MainWindow::ide()
-{
+QString IDE::appDir(void) const {
+#ifdef Q_OS_MAC
+    return applicationDirPath()+"/../Resources/";
+#else
+    return applicationDirPath();
+#endif
+}
+
+IDE* IDE::instance(void) {
     return static_cast<IDE*>(qApp);
 }
 
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -406,6 +487,7 @@ MainWindow::MainWindow(const QString& project) :
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -423,8 +505,8 @@ void MainWindow::showWindowMenu()
     ui->menuWindow->clear();
     ui->menuWindow->addAction(minimizeAction);
     ui->menuWindow->addSeparator();
-    for (QSet<MainWindow*>::iterator it = ide()->mainWindows.begin();
-         it != ide()->mainWindows.end(); ++it) {
+    for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
+         it != IDE::instance()->mainWindows.end(); ++it) {
         QAction* windowAction = ui->menuWindow->addAction((*it)->windowTitle());
         QVariant v = qVariantFromValue(static_cast<void*>(*it));
         windowAction->setData(v);
@@ -449,7 +531,7 @@ void MainWindow::windowMenuSelected(QAction* a)
 
 void MainWindow::init(const QString& projectFile)
 {
-    ide()->mainWindows.insert(this);
+    IDE::instance()->mainWindows.insert(this);
     ui->setupUi(this);
     ui->outputConsole->installEventFilter(this);
     setAcceptDrops(true);
@@ -522,8 +604,8 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
     ui->outputConsole->setFont(editorFont);
-    resize(settings.value("size", QSize(400, 400)).toSize());
-    move(settings.value("pos", QPoint(200, 200)).toPoint());
+    resize(settings.value("size", QSize(800, 600)).toSize());
+    move(settings.value("pos", QPoint(100, 100)).toPoint());
     if (settings.value("toolbarHidden", false).toBool()) {
         on_actionHide_tool_bar_triggered();
     }
@@ -535,18 +617,22 @@ void MainWindow::init(const QString& projectFile)
     setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
+    bool hadg12fd = false;
     Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
-    Solver g12cpx("G12 CPX","fzn_cpx","-Gg12_cpx","",true,false);
+    bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
+    bool hadg12mip = false;
+//    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
+//    bool hadgecode = false;
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
         solvers.append(g12fd);
         solvers.append(g12lazyfd);
-        solvers.append(g12cpx);
         solvers.append(g12mip);
+//        solvers.append(gecode);
     } else {
-        ide()->stats.solvers.clear();
+        IDE::instance()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
             settings.setArrayIndex(i);
             Solver solver;
@@ -557,19 +643,33 @@ void MainWindow::init(const QString& projectFile)
             solver.builtin = settings.value("builtin").toBool();
             solver.detach = settings.value("detach",false).toBool();
             if (solver.builtin) {
-                if (solver.name=="G12 fd")
+                if (solver.name=="G12 fd") {
                     solver = g12fd;
-                else if (solver.name=="G12 lazyfd")
+                    hadg12fd = true;
+                } else if (solver.name=="G12 lazyfd") {
                     solver = g12lazyfd;
-                else if (solver.name=="G12 CPX")
-                    solver = g12cpx;
-                else if (solver.name=="G12 MIP")
+                    hadg12lazyfd = true;
+                } else if (solver.name=="G12 MIP") {
                     solver = g12mip;
+                    hadg12mip = true;
+                }
+//                else if (solver.name=="Gecode (bundled)") {
+//                    solver = gecode;
+//                    hadgecode = true;
+//                }
             } else {
-                ide()->stats.solvers.append(solver.name);
+                IDE::instance()->stats.solvers.append(solver.name);
             }
             solvers.append(solver);
         }
+        if (!hadg12fd)
+            solvers.append(g12fd);
+        if (!hadg12lazyfd)
+            solvers.append(g12lazyfd);
+        if (!hadg12mip)
+            solvers.append(g12mip);
+//        if (!hadgecode)
+//            solvers.append(gecode);
     }
     settings.endArray();
     settings.beginGroup("minizinc");
@@ -741,6 +841,11 @@ MainWindow::~MainWindow()
     for (int i=0; i<cleanupTmpDirs.size(); i++) {
         delete cleanupTmpDirs[i];
     }
+    for (int i=0; i<cleanupProcesses.size(); i++) {
+        cleanupProcesses[i]->kill();
+        cleanupProcesses[i]->waitForFinished();
+        delete cleanupProcesses[i];
+    }
     if (process) {
         process->kill();
         process->waitForFinished();
@@ -787,7 +892,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
                                  QMessageBox::Ok);
             return;
         }
-        QPair<QTextDocument*,bool> d = ide()->loadFile(absPath,this);
+        QPair<QTextDocument*,bool> d = IDE::instance()->loadFile(absPath,this);
         updateRecentFiles(absPath);
         doc = d.first;
         large = d.second;
@@ -812,7 +917,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
             project.addFile(ui->projectView, absPath);
-            ide()->registerEditor(absPath,curEditor);
+            IDE::instance()->registerEditor(absPath,curEditor);
         }
         setupDznMenu();
     }
@@ -820,18 +925,12 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
 
 void MainWindow::setLastPath(const QString &s)
 {
-    lastPath = s;
-    QSettings settings;
-    settings.beginGroup("Path");
-    settings.setValue("lastPath", lastPath);
-    settings.endGroup();
+    IDE::instance()->setLastPath(s);
 }
 
 QString MainWindow::getLastPath(void)
 {
-    QSettings settings;
-    settings.beginGroup("Path");
-    return settings.value("lastPath","").toString();
+    return IDE::instance()->getLastPath();
 }
 
 void MainWindow::openFile(const QString &path, bool openAsModified)
@@ -882,7 +981,7 @@ void MainWindow::tabCloseRequest(int tab)
     ui->tabWidget->removeTab(tab);
     setupDznMenu();
     if (!ce->filepath.isEmpty())
-        ide()->removeEditor(ce->filepath,ce);
+        IDE::instance()->removeEditor(ce->filepath,ce);
     delete ce;
     if (ui->tabWidget->count()==0) {
         on_actionNewModel_file_triggered();
@@ -935,13 +1034,13 @@ void MainWindow::closeEvent(QCloseEvent* e) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
             ce->setDocument(NULL);
             if (ce->filepath != "")
-                ide()->removeEditor(ce->filepath,ce);
+                IDE::instance()->removeEditor(ce->filepath,ce);
         }
     }
     if (!projectPath.isEmpty())
-        ide()->projects.remove(projectPath);
+        IDE::instance()->projects.remove(projectPath);
 
-    ide()->mainWindows.remove(this);
+    IDE::instance()->mainWindows.remove(this);
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -1102,27 +1201,27 @@ QStringList MainWindow::parseConf(bool compileOnly)
         ret << "-v";
     if (compileOnly && project.haveExtraArgs() &&
         !project.extraArgs().isEmpty())
-        ret << "-D"+project.extraArgs();
+        ret << "-D" << project.extraArgs();
     if (compileOnly && project.haveExtraMzn2FznArgs() &&
         !project.extraMzn2FznArgs().isEmpty())
         ret << ""+project.extraMzn2FznArgs();
     if (compileOnly && project.currentDataFile()!="None")
-        ret << "-d"+project.currentDataFile();
+        ret << "-d" << project.currentDataFile();
     if (!compileOnly && project.printAll())
         ret << "-a";
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
-        ret << "-p"+QString::number(project.n_threads());
+        ret << "-p" << QString::number(project.n_threads());
     if (!compileOnly && project.haveSeed())
-        ret << "-r"+project.seed();
+        ret << "-r" << project.seed();
     if (!compileOnly && project.haveSolverFlags()) {
         QStringList solverArgs =
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
     if (!compileOnly && project.n_solutions() != 1)
-        ret << "-n"+QString::number(project.n_solutions());
+        ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
@@ -1131,6 +1230,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
 
 void MainWindow::setupDznMenu()
 {
+    QString curText = ui->conf_data_file->currentText();
     ui->conf_data_file->clear();
     ui->conf_data_file->addItem("None");
     QStringList dataFiles = project.dataFiles();
@@ -1138,6 +1238,7 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->addItem(dataFiles[i]);
     }
     ui->conf_data_file->addItem("Add data file to project...");
+    ui->conf_data_file->setCurrentText(curText);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
@@ -1157,11 +1258,16 @@ void MainWindow::checkArgsOutput()
     compileErrors += l;
 }
 
+QString MainWindow::getMznDistribPath(void) const {
+    return mznDistribPath;
+}
+
 void MainWindow::checkArgsFinished(int exitcode)
 {
     if (processWasStopped)
         return;
-    QString additionalArgs;
+    QString additionalCmdlineParams;
+    QString additionalDataFile;
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
@@ -1173,19 +1279,22 @@ void MainWindow::checkArgsFinished(int exitcode)
             undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
-        if (undefinedArgs.size() > 0 && undefinedArgs.size() <= 10) {
-            QStringList params = paramDialog->getParams(undefinedArgs);
-            if (params.size()==0) {
-                procFinished(0,false);
-                return;
-            }
-            for (int i=0; i<undefinedArgs.size(); i++) {
-                if (params[i].isEmpty()) {
-                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                    procFinished(0);
+        if (undefinedArgs.size() > 0) {
+            QStringList params;
+            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFile);
+            if (additionalDataFile.isEmpty()) {
+                if (params.size()==0) {
+                    procFinished(0,false);
                     return;
                 }
-                additionalArgs += undefinedArgs[i]+"="+params[i]+"; ";
+                for (int i=0; i<undefinedArgs.size(); i++) {
+                    if (params[i].isEmpty()) {
+                        QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                        procFinished(0);
+                        return;
+                    }
+                    additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                }
             }
         }
     }
@@ -1203,8 +1312,11 @@ void MainWindow::checkArgsFinished(int exitcode)
             this, SLOT(procError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true);
-    if (!additionalArgs.isEmpty()) {
-        args << "-D" << additionalArgs;
+    if (!additionalCmdlineParams.isEmpty()) {
+        args << "-D" << additionalCmdlineParams;
+    }
+    if (!additionalDataFile.isEmpty()) {
+        args << "-d" << additionalDataFile;
     }
 
     tmpDir = new QTemporaryDir;
@@ -1223,11 +1335,16 @@ void MainWindow::checkArgsFinished(int exitcode)
             QFileInfo fi(project.currentDataFile());
             compiling += fi.fileName();
         }
-        if (!additionalArgs.isEmpty()) {
-            compiling += ", additional arguments " + additionalArgs;
+        if (!additionalDataFile.isEmpty()) {
+            compiling += ", with additional data ";
+            QFileInfo fi(additionalDataFile);
+            compiling += fi.fileName();
+        }
+        if (!additionalCmdlineParams.isEmpty()) {
+            compiling += ", additional arguments " + additionalCmdlineParams;
         }
         addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
-        process->start(mzn2fzn_executable,args,mznDistribPath);
+        process->start(mzn2fzn_executable,args,getMznDistribPath());
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -1257,7 +1374,7 @@ void MainWindow::checkArgs(QString filepath)
     args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
-    process->start(mzn2fzn_executable,args,mznDistribPath);
+    process->start(mzn2fzn_executable,args,getMznDistribPath());
 }
 
 void MainWindow::on_actionRun_triggered()
@@ -1299,7 +1416,7 @@ void MainWindow::on_actionRun_triggered()
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
         on_actionSplit_triggered();
-        ide()->stats.modelsRun++;
+        IDE::instance()->stats.modelsRun++;
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
             runSolns2Out = false;
@@ -1347,21 +1464,70 @@ void MainWindow::readOutput()
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
-            addOutput(l,false);
+            if (inJSONHandler) {
+                l = l.trimmed();
+                if (l.startsWith("%%%mzn-json-time")) {
+                    JSONOutput[curJSONHandler].insert(2, "[");
+                    JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
+                } else
+                    if (l.startsWith("%%%mzn-json-end")) {
+                    curJSONHandler++;
+                    inJSONHandler = false;
+                } else {
+                    JSONOutput[curJSONHandler].append(l);
+                }
+            } else {
+                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
+                if (pattern.exactMatch(l.trimmed())) {
+                    inJSONHandler = true;
+                    QStringList sl;
+                    sl.append(pattern.capturedTexts()[2]);
+                    if (pattern.capturedTexts()[1].isEmpty()) {
+                        sl.append("top");
+                    } else {
+                        sl.append(pattern.capturedTexts()[1]);
+                    }
+                    JSONOutput.append(sl);
+                } else {
+                    if (curJSONHandler > 0 && l.trimmed() == "----------") {
+                        openJSONViewer();
+                        JSONOutput.clear();
+                        curJSONHandler = 0;
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
+                    } else if (curHtmlWindow && l.trimmed() == "==========") {
+                        finishJSONViewer();
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
+                    } else {
+                        addOutput(l,false);
+                        hadNonJSONOutput = true;
+                    }
+                }
+            }
         }
     }
 
     if (process != NULL) {
         process->setReadChannel(QProcess::StandardError);
-        while (process->canReadLine()) {
-            QString l = process->readLine();
+        for (;;) {
+            QString l;
+            if (process->canReadLine()) {
+                l = process->readLine();
+            } else if (process->state()==QProcess::NotRunning) {
+                if (process->atEnd())
+                    break;
+                l = process->readAll()+"\n";
+            } else {
+                break;
+            }
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
                 QUrl url = QUrl::fromLocalFile(errFile);
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
-                ide()->stats.errorsShown++;
+                IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
             } else {
                 addOutput(l,false);
@@ -1371,10 +1537,66 @@ void MainWindow::readOutput()
 
     if (outputProcess != NULL) {
         outputProcess->setReadChannel(QProcess::StandardError);
-        while (outputProcess->canReadLine()) {
-            QString l = outputProcess->readLine();
+        for (;;) {
+            QString l;
+            if (outputProcess->canReadLine()) {
+                l = outputProcess->readLine();
+            } else if (outputProcess->state()==QProcess::NotRunning) {
+                if (outputProcess->atEnd())
+                    break;
+                l = outputProcess->readAll()+"\n";
+            } else {
+                break;
+            }
             addOutput(l,false);
         }
+    }
+}
+
+void MainWindow::openJSONViewer(void)
+{
+    if (curHtmlWindow==NULL) {
+        QVector<VisWindowSpec> specs;
+        for (int i=0; i<JSONOutput.size(); i++) {
+            QString url = JSONOutput[i].first();
+            Qt::DockWidgetArea area = Qt::TopDockWidgetArea;
+            if (JSONOutput[i][1]=="top") {
+                area = Qt::TopDockWidgetArea;
+            } else if (JSONOutput[i][1]=="bottom") {
+                area = Qt::BottomDockWidgetArea;
+            }
+            url.remove(QRegExp("[\\n\\t\\r]"));
+            specs.append(VisWindowSpec(url,area));
+        }
+        curHtmlWindow = new HTMLWindow(specs, this);
+        connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+        curHtmlWindow->show();
+    }
+    for (int i=0; i<JSONOutput.size(); i++) {
+        JSONOutput[i].pop_front();
+        JSONOutput[i].pop_front();
+        curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+    }
+}
+
+void MainWindow::finishJSONViewer(void)
+{
+    if (curHtmlWindow) {
+        curHtmlWindow->finish(elapsedTime.elapsed());
+    }
+}
+
+void MainWindow::closeHTMLWindow(void)
+{
+    on_actionStop_triggered();
+    delete curHtmlWindow;
+    curHtmlWindow = NULL;
+}
+
+void MainWindow::selectJSONSolution(HTMLPage* source, int n)
+{
+    if (curHtmlWindow!=NULL) {
+        curHtmlWindow->selectSolution(source,n);
     }
 }
 
@@ -1400,6 +1622,9 @@ void MainWindow::procFinished(int, bool showTime) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
         outputProcess = NULL;
+        finishJSONViewer();
+        inJSONHandler = false;
+        JSONOutput.clear();
     }
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
@@ -1442,11 +1667,12 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         }
     }
     if (!filepath.isEmpty()) {
-        if (filepath != ce->filepath && ide()->hasFile(filepath)) {
+        if (filepath != ce->filepath && IDE::instance()->hasFile(filepath)) {
             QMessageBox::warning(this,"MiniZinc IDE","Cannot overwrite open file.",
                                  QMessageBox::Ok);
 
         } else {
+            IDE::instance()->fsWatch.removePath(filepath);
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
                 QTextStream out(&file);
@@ -1455,10 +1681,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                 file.close();
                 if (filepath != ce->filepath) {
                     QTextDocument* newdoc =
-                            ide()->addDocument(filepath,ce->document(),ce);
+                            IDE::instance()->addDocument(filepath,ce->document(),ce);
                     ce->setDocument(newdoc);
                     if (ce->filepath != "") {
-                        ide()->removeEditor(ce->filepath,ce);
+                        IDE::instance()->removeEditor(ce->filepath,ce);
                     }
                     project.removeFile(ce->filepath);
                     project.addFile(ui->projectView, filepath);
@@ -1474,6 +1700,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             } else {
                 QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
             }
+            IDE::instance()->fsWatch.addPath(filepath);
         }
     }
 }
@@ -1486,7 +1713,7 @@ void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
             if (ce->filepath==oldPath) {
                 ce->filepath = newPath;
                 ce->filename = QFileInfo(newPath).fileName();
-                ide()->renameFile(oldPath,newPath);
+                IDE::instance()->renameFile(oldPath,newPath);
                 ui->tabWidget->setTabText(i,ce->filename);
                 updateRecentFiles(newPath);
                 if (ce==curEditor)
@@ -1519,8 +1746,8 @@ void MainWindow::on_actionQuit_triggered()
     int lastWindow = 0;
 #endif
     qApp->closeAllWindows();
-    if (ide()->mainWindows.size() == lastWindow) {
-        ide()->quit();
+    if (IDE::instance()->mainWindows.size() <= lastWindow) {
+        IDE::instance()->quit();
     }
 }
 
@@ -1530,12 +1757,22 @@ void MainWindow::on_actionStop_triggered()
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
         processWasStopped = true;
-        process->kill();
-        process->waitForFinished();
-        delete process;
-        process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div><br>");
-        procFinished(0);
+
+#ifdef Q_OS_WIN
+        AttachConsole(process->pid()->dwProcessId);
+        SetConsoleCtrlHandler(NULL, TRUE);
+        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+#else
+        ::kill(process->pid(), SIGINT);
+#endif
+        if (!process->waitForFinished(100)) {
+            process->kill();
+            process->waitForFinished();
+            delete process;
+            process = NULL;
+            addOutput("<div style='color:blue;'>Stopped.</div><br>");
+            procFinished(0);
+        }
     }
 }
 
@@ -1601,13 +1838,40 @@ void MainWindow::runCompiledFzn(int exitcode)
 
         if (s.detach) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div><br>");
-            QProcess::startDetached(s.executable,args,QFileInfo(curEditor->filepath).absolutePath());
+
+            MznProcess* detached_process = new MznProcess(this);
+            detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+
+            QString executable = s.executable;
+            if (project.solverVerbose()) {
+                addOutput("<div style='color:blue;'>Command line:</div><br>");
+                QString cmdline = executable;
+                QRegExp white("\\s");
+                for (int i=0; i<args.size(); i++) {
+                    if (white.indexIn(args[i]) != -1)
+                        cmdline += " \""+args[i]+"\"";
+                    else
+                        cmdline += " "+args[i];
+                }
+                addOutput("<div>"+cmdline+"</div><br>");
+            }
+            detached_process->start(executable,args,getMznDistribPath());
             cleanupTmpDirs.append(tmpDir);
+            cleanupProcesses.append(detached_process);
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
+                inJSONHandler = false;
+                curJSONHandler = 0;
+                JSONOutput.clear();
+                if (curHtmlWindow) {
+                    disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+                    curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+                    curHtmlWindow = NULL;
+                }
+                hadNonJSONOutput = false;
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
@@ -1615,7 +1879,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                         this, SLOT(outputProcError(QProcess::ProcessError)));
                 QStringList outargs;
                 outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start("solns2out",outargs,mznDistribPath);
+                outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
             process = new MznProcess(this);
             processName = s.executable;
@@ -1651,7 +1915,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                 }
                 addOutput("<div>"+cmdline+"</div><br>");
             }
-            process->start(executable,args,mznDistribPath);
+            process->start(executable,args,getMznDistribPath());
             time = 0;
             timer->start(500);
         }
@@ -1749,12 +2013,12 @@ void MainWindow::on_actionDefault_font_size_triggered()
 
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 {
-    AboutDialog(ide()->applicationVersion()).exec();
+    AboutDialog(IDE::instance()->applicationVersion()).exec();
 }
 
 void MainWindow::errorClicked(const QUrl & url)
 {
-    ide()->stats.errorsClicked++;
+    IDE::instance()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -1791,7 +2055,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     sd.exec();
     defaultSolver = sd.def();
     mznDistribPath = sd.mznPath();
-    if (! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
+    if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
     checkMznPath();
     QString curSelection = ui->conf_solver->currentText();
@@ -1807,7 +2071,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     settings.beginGroup("ide");
     if (!checkUpdates && settings.value("checkforupdates",false).toBool()) {
         settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
-        ide()->checkUpdate();
+        IDE::instance()->checkUpdate();
     }
     settings.endGroup();
 
@@ -1829,7 +2093,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
     }
-    ide()->stats.solvers = solvers_list;
+    IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();
 }
 
@@ -1920,7 +2184,7 @@ void MainWindow::on_actionShift_right_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    ide()->help();
+    IDE::instance()->help();
 }
 
 void MainWindow::on_actionNew_project_triggered()
@@ -1947,7 +2211,7 @@ bool MainWindow::isEmptyProject(void)
 void MainWindow::openProject(const QString& fileName)
 {
     if (!fileName.isEmpty()) {
-        IDE::PMap& pmap = ide()->projects;
+        IDE::PMap& pmap = IDE::instance()->projects;
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
             if (isEmptyProject()) {
@@ -1967,28 +2231,28 @@ void MainWindow::openProject(const QString& fileName)
 
 void MainWindow::updateRecentProjects(const QString& p) {
     if (!p.isEmpty()) {
-        ide()->recentProjects.removeAll(p);
-        ide()->recentProjects.insert(0,p);
-        while (ide()->recentProjects.size() > 7)
-            ide()->recentProjects.pop_back();
+        IDE::instance()->recentProjects.removeAll(p);
+        IDE::instance()->recentProjects.insert(0,p);
+        while (IDE::instance()->recentProjects.size() > 7)
+            IDE::instance()->recentProjects.pop_back();
     }
     ui->menuRecent_Projects->clear();
-    for (int i=0; i<ide()->recentProjects.size(); i++) {
-        ui->menuRecent_Projects->addAction(ide()->recentProjects[i]);
+    for (int i=0; i<IDE::instance()->recentProjects.size(); i++) {
+        ui->menuRecent_Projects->addAction(IDE::instance()->recentProjects[i]);
     }
     ui->menuRecent_Projects->addSeparator();
     ui->menuRecent_Projects->addAction("Clear Menu");
 }
 void MainWindow::updateRecentFiles(const QString& p) {
     if (!p.isEmpty()) {
-        ide()->recentFiles.removeAll(p);
-        ide()->recentFiles.insert(0,p);
-        while (ide()->recentFiles.size() > 7)
-            ide()->recentFiles.pop_back();
+        IDE::instance()->recentFiles.removeAll(p);
+        IDE::instance()->recentFiles.insert(0,p);
+        while (IDE::instance()->recentFiles.size() > 7)
+            IDE::instance()->recentFiles.pop_back();
     }
     ui->menuRecent_Files->clear();
-    for (int i=0; i<ide()->recentFiles.size(); i++) {
-        ui->menuRecent_Files->addAction(ide()->recentFiles[i]);
+    for (int i=0; i<IDE::instance()->recentFiles.size(); i++) {
+        ui->menuRecent_Files->addAction(IDE::instance()->recentFiles[i]);
     }
     ui->menuRecent_Files->addSeparator();
     ui->menuRecent_Files->addAction("Clear Menu");
@@ -1996,7 +2260,7 @@ void MainWindow::updateRecentFiles(const QString& p) {
 
 void MainWindow::recentFileMenuAction(QAction* a) {
     if (a->text()=="Clear Menu") {
-        ide()->recentFiles.clear();
+        IDE::instance()->recentFiles.clear();
         updateRecentFiles("");
     } else {
         openFile(a->text());
@@ -2005,7 +2269,7 @@ void MainWindow::recentFileMenuAction(QAction* a) {
 
 void MainWindow::recentProjectMenuAction(QAction* a) {
     if (a->text()=="Clear Menu") {
-        ide()->recentProjects.clear();
+        IDE::instance()->recentProjects.clear();
         updateRecentProjects("");
     } else {
         openProject(a->text());
@@ -2022,7 +2286,7 @@ void MainWindow::saveProject(const QString& f)
         }
     }
     if (!filepath.isEmpty()) {
-        if (projectPath != filepath && ide()->projects.contains(filepath)) {
+        if (projectPath != filepath && IDE::instance()->projects.contains(filepath)) {
             QMessageBox::warning(this,"MiniZinc IDE","Cannot overwrite existing open project.",
                                  QMessageBox::Ok);
             return;
@@ -2030,8 +2294,8 @@ void MainWindow::saveProject(const QString& f)
         QFile file(filepath);
         if (file.open(QFile::WriteOnly | QFile::Text)) {
             if (projectPath != filepath) {
-                ide()->projects.remove(projectPath);
-                ide()->projects.insert(filepath,this);
+                IDE::instance()->projects.remove(projectPath);
+                IDE::instance()->projects.insert(filepath,this);
                 project.setRoot(ui->projectView, filepath);
                 projectPath = filepath;
             }
@@ -2188,7 +2452,7 @@ void MainWindow::loadProject(const QString& filepath)
 
     project.setModified(false, true);
 
-    ide()->projects.insert(projectPath, this);
+    IDE::instance()->projects.insert(projectPath, this);
     tabChange(ui->tabWidget->currentIndex());
     if (ui->projectExplorerDockWidget->isHidden()) {
         on_actionShow_project_explorer_triggered();

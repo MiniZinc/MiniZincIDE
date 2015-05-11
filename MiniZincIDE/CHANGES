@@ -1,3 +1,18 @@
+2015-01-10
+  v0.9.6
+  - When killing a process (using the Stop action or timeout), send CTRL-C
+    first, which allows the solver to exit gracefully. Solvers that do not
+    react to CTRL-C are killed as before.
+  - Fix copy/paste actions to also work in output window and to create
+    rich text (including syntax colouring)
+  - Avoid creating an empty .fzn file during compilation
+  - Accept drag-and-drop to main window, opens dragged files
+  - Quit menu action on Mac OS actually quits instead of just closing all
+    open windows
+  - Warn when loading large FlatZinc files
+  - Assume UTF8 text encoding when loading and saving files
+  - Keep selection of .dzn file in configuration tab when opening another
+    .dzn file
 2014-09-18
   v0.9.5
   - load new projects or files into existing project if it is empty
