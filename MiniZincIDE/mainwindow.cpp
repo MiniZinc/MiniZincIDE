@@ -196,6 +196,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     lastDefaultProject = NULL;
     helpWindow = new Help();
 
+    connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
+
 #ifdef Q_OS_MAC
     MainWindow* mw = new MainWindow(QString());
     const QMenuBar* mwb = mw->ui->menubar;
@@ -233,6 +235,44 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 #endif
 
     checkUpdate();
+}
+
+void IDE::fileModified(const QString &f)
+{
+    DMap::iterator it = documents.find(f);
+    if (it != documents.end()) {
+        QFileInfo fi(f);
+        QMessageBox msg;
+
+        if (!fi.exists()) {
+            msg.setText("The file "+fi.fileName()+" has been removed or renamed outside MiniZinc IDE.");
+            msg.setStandardButtons(QMessageBox::Ok);
+        } else {
+            msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
+            if (it.value()->td.isModified()) {
+                msg.setInformativeText("Do you want to reload the file and discard your changes?");
+            } else {
+                msg.setInformativeText("Do you want to reload the file?");
+            }
+            QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
+            msg.addButton("Reload", QMessageBox::AcceptRole);
+            msg.exec();
+            if (msg.clickedButton()==cancelButton) {
+                it.value()->td.setModified(true);
+            } else {
+                QFile file(f);
+                if (file.open(QFile::ReadOnly | QFile::Text)) {
+                    it.value()->td.setPlainText(file.readAll());
+                    it.value()->td.setModified(false);
+                } else {
+                    QMessageBox::warning(NULL, "MiniZinc IDE",
+                                         "Could not reload file "+f,
+                                         QMessageBox::Ok);
+                    it.value()->td.setModified(true);
+                }
+            }
+        }
+    }
 }
 
 void IDE::newProject()
@@ -301,6 +341,7 @@ QTextDocument* IDE::addDocument(const QString& path, QTextDocument *doc, CodeEdi
     d->editors.insert(ce);
     d->large = false;
     documents.insert(path,d);
+    fsWatch.addPath(path);
     return &d->td;
 }
 
@@ -319,6 +360,8 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
             }
             d->td.setModified(false);
             documents.insert(path,d);
+            if (!d->large)
+                fsWatch.addPath(path);
             return qMakePair(&d->td,d->large);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
@@ -348,6 +391,7 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
             for (; ed != it.value()->editors.end(); ++ed) {
                 (*ed)->loadedLargeFile();
             }
+            fsWatch.addPath(path);
         } else {
             QMessageBox::warning(parent, "MiniZinc IDE",
                                  "Could not open file "+path,
@@ -374,6 +418,7 @@ void IDE::removeEditor(const QString& path, CodeEditor* ce)
         if (editors.empty()) {
             delete it.value();
             documents.remove(path);
+            fsWatch.removePath(path);
         }
     }
 }
@@ -386,7 +431,9 @@ void IDE::renameFile(const QString& oldPath, const QString& newPath)
     } else {
         Doc* doc = it.value();
         documents.remove(oldPath);
+        fsWatch.removePath(oldPath);
         documents.insert(newPath, doc);
+        fsWatch.addPath(newPath);
     }
 }
 
@@ -427,6 +474,7 @@ IDE* IDE::instance(void) {
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -439,6 +487,7 @@ MainWindow::MainWindow(const QString& project) :
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
+    curHtmlWindow(NULL),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -555,8 +604,8 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
     ui->outputConsole->setFont(editorFont);
-    resize(settings.value("size", QSize(400, 400)).toSize());
-    move(settings.value("pos", QPoint(200, 200)).toPoint());
+    resize(settings.value("size", QSize(800, 600)).toSize());
+    move(settings.value("pos", QPoint(100, 100)).toPoint());
     if (settings.value("toolbarHidden", false).toBool()) {
         on_actionHide_tool_bar_triggered();
     }
@@ -1217,7 +1266,8 @@ void MainWindow::checkArgsFinished(int exitcode)
 {
     if (processWasStopped)
         return;
-    QString additionalArgs;
+    QString additionalCmdlineParams;
+    QString additionalDataFile;
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
@@ -1229,19 +1279,22 @@ void MainWindow::checkArgsFinished(int exitcode)
             undefinedArgs << undefined.cap(1);
             pos += undefined.matchedLength();
         }
-        if (undefinedArgs.size() > 0 && undefinedArgs.size() <= 10) {
-            QStringList params = paramDialog->getParams(undefinedArgs);
-            if (params.size()==0) {
-                procFinished(0,false);
-                return;
-            }
-            for (int i=0; i<undefinedArgs.size(); i++) {
-                if (params[i].isEmpty()) {
-                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                    procFinished(0);
+        if (undefinedArgs.size() > 0) {
+            QStringList params;
+            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFile);
+            if (additionalDataFile.isEmpty()) {
+                if (params.size()==0) {
+                    procFinished(0,false);
                     return;
                 }
-                additionalArgs += undefinedArgs[i]+"="+params[i]+"; ";
+                for (int i=0; i<undefinedArgs.size(); i++) {
+                    if (params[i].isEmpty()) {
+                        QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                        procFinished(0);
+                        return;
+                    }
+                    additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                }
             }
         }
     }
@@ -1259,8 +1312,11 @@ void MainWindow::checkArgsFinished(int exitcode)
             this, SLOT(procError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true);
-    if (!additionalArgs.isEmpty()) {
-        args << "-D" << additionalArgs;
+    if (!additionalCmdlineParams.isEmpty()) {
+        args << "-D" << additionalCmdlineParams;
+    }
+    if (!additionalDataFile.isEmpty()) {
+        args << "-d" << additionalDataFile;
     }
 
     tmpDir = new QTemporaryDir;
@@ -1279,8 +1335,13 @@ void MainWindow::checkArgsFinished(int exitcode)
             QFileInfo fi(project.currentDataFile());
             compiling += fi.fileName();
         }
-        if (!additionalArgs.isEmpty()) {
-            compiling += ", additional arguments " + additionalArgs;
+        if (!additionalDataFile.isEmpty()) {
+            compiling += ", with additional data ";
+            QFileInfo fi(additionalDataFile);
+            compiling += fi.fileName();
+        }
+        if (!additionalCmdlineParams.isEmpty()) {
+            compiling += ", additional arguments " + additionalCmdlineParams;
         }
         addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
         process->start(mzn2fzn_executable,args,getMznDistribPath());
@@ -1403,14 +1464,63 @@ void MainWindow::readOutput()
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
-            addOutput(l,false);
+            if (inJSONHandler) {
+                l = l.trimmed();
+                if (l.startsWith("%%%mzn-json-time")) {
+                    JSONOutput[curJSONHandler].insert(2, "[");
+                    JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
+                } else
+                    if (l.startsWith("%%%mzn-json-end")) {
+                    curJSONHandler++;
+                    inJSONHandler = false;
+                } else {
+                    JSONOutput[curJSONHandler].append(l);
+                }
+            } else {
+                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
+                if (pattern.exactMatch(l.trimmed())) {
+                    inJSONHandler = true;
+                    QStringList sl;
+                    sl.append(pattern.capturedTexts()[2]);
+                    if (pattern.capturedTexts()[1].isEmpty()) {
+                        sl.append("top");
+                    } else {
+                        sl.append(pattern.capturedTexts()[1]);
+                    }
+                    JSONOutput.append(sl);
+                } else {
+                    if (curJSONHandler > 0 && l.trimmed() == "----------") {
+                        openJSONViewer();
+                        JSONOutput.clear();
+                        curJSONHandler = 0;
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
+                    } else if (curHtmlWindow && l.trimmed() == "==========") {
+                        finishJSONViewer();
+                        if (hadNonJSONOutput)
+                            addOutput(l,false);
+                    } else {
+                        addOutput(l,false);
+                        hadNonJSONOutput = true;
+                    }
+                }
+            }
         }
     }
 
     if (process != NULL) {
         process->setReadChannel(QProcess::StandardError);
-        while (process->canReadLine()) {
-            QString l = process->readLine();
+        for (;;) {
+            QString l;
+            if (process->canReadLine()) {
+                l = process->readLine();
+            } else if (process->state()==QProcess::NotRunning) {
+                if (process->atEnd())
+                    break;
+                l = process->readAll()+"\n";
+            } else {
+                break;
+            }
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
@@ -1427,10 +1537,66 @@ void MainWindow::readOutput()
 
     if (outputProcess != NULL) {
         outputProcess->setReadChannel(QProcess::StandardError);
-        while (outputProcess->canReadLine()) {
-            QString l = outputProcess->readLine();
+        for (;;) {
+            QString l;
+            if (outputProcess->canReadLine()) {
+                l = outputProcess->readLine();
+            } else if (outputProcess->state()==QProcess::NotRunning) {
+                if (outputProcess->atEnd())
+                    break;
+                l = outputProcess->readAll()+"\n";
+            } else {
+                break;
+            }
             addOutput(l,false);
         }
+    }
+}
+
+void MainWindow::openJSONViewer(void)
+{
+    if (curHtmlWindow==NULL) {
+        QVector<VisWindowSpec> specs;
+        for (int i=0; i<JSONOutput.size(); i++) {
+            QString url = JSONOutput[i].first();
+            Qt::DockWidgetArea area = Qt::TopDockWidgetArea;
+            if (JSONOutput[i][1]=="top") {
+                area = Qt::TopDockWidgetArea;
+            } else if (JSONOutput[i][1]=="bottom") {
+                area = Qt::BottomDockWidgetArea;
+            }
+            url.remove(QRegExp("[\\n\\t\\r]"));
+            specs.append(VisWindowSpec(url,area));
+        }
+        curHtmlWindow = new HTMLWindow(specs, this);
+        connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+        curHtmlWindow->show();
+    }
+    for (int i=0; i<JSONOutput.size(); i++) {
+        JSONOutput[i].pop_front();
+        JSONOutput[i].pop_front();
+        curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+    }
+}
+
+void MainWindow::finishJSONViewer(void)
+{
+    if (curHtmlWindow) {
+        curHtmlWindow->finish(elapsedTime.elapsed());
+    }
+}
+
+void MainWindow::closeHTMLWindow(void)
+{
+    on_actionStop_triggered();
+    delete curHtmlWindow;
+    curHtmlWindow = NULL;
+}
+
+void MainWindow::selectJSONSolution(HTMLPage* source, int n)
+{
+    if (curHtmlWindow!=NULL) {
+        curHtmlWindow->selectSolution(source,n);
     }
 }
 
@@ -1456,6 +1622,9 @@ void MainWindow::procFinished(int, bool showTime) {
         outputProcess->closeWriteChannel();
         outputProcess->waitForFinished();
         outputProcess = NULL;
+        finishJSONViewer();
+        inJSONHandler = false;
+        JSONOutput.clear();
     }
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
@@ -1503,6 +1672,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                                  QMessageBox::Ok);
 
         } else {
+            IDE::instance()->fsWatch.removePath(filepath);
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
                 QTextStream out(&file);
@@ -1530,6 +1700,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             } else {
                 QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
             }
+            IDE::instance()->fsWatch.addPath(filepath);
         }
     }
 }
@@ -1692,6 +1863,15 @@ void MainWindow::runCompiledFzn(int exitcode)
         } else {
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
+                inJSONHandler = false;
+                curJSONHandler = 0;
+                JSONOutput.clear();
+                if (curHtmlWindow) {
+                    disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+                    curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+                    curHtmlWindow = NULL;
+                }
+                hadNonJSONOutput = false;
                 outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));

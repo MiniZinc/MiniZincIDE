@@ -27,11 +27,14 @@ class ParamDialog : public QDialog
 public:
     explicit ParamDialog(QWidget *parent = 0);
     ~ParamDialog();
-    QStringList getParams(QStringList params);
+    void getParams(QStringList params, const QStringList& dataFiles, QStringList& values, QString& dataFile);
 private:
     Ui::ParamDialog *ui;
     QStringList previousParams;
     QStringList previousValues;
+    QString previousDataFile;
+private slots:
+    void dataFileChanged(int);
 };
 
 #endif // PARAMDIALOG_H

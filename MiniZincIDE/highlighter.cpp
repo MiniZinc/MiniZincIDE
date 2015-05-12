@@ -26,8 +26,7 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
     format.setFontWeight(QFont::Bold);
 
     quoteFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegExp("\".*\"");
-    rule.pattern.setMinimal(true);
+    rule.pattern = QRegExp("\"([^\"\\\\]|\\\\.)*\"");
     rule.format = quoteFormat;
     rules.append(rule);
 
