@@ -624,9 +624,11 @@ void MainWindow::init(const QString& projectFile)
     bool hadg12mip = false;
 //    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
 //    bool hadgecode = false;
+    Solver gecodemod("Gecode with profiling", "fzn-gecode-mod", "-Ggecode", "", true, false);
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
+        solvers.append(gecodemod);
         solvers.append(g12fd);
         solvers.append(g12lazyfd);
         solvers.append(g12mip);

@@ -103,6 +103,7 @@ SOURCES += \
     ../StandaloneGist/readingQueue.cpp \
     ../StandaloneGist/treecomparison.cpp \
     ../StandaloneGist/pixelview.cpp \
+    ../StandaloneGist/message.pb.cc \
 
 
 HEADERS  += \
@@ -137,11 +138,12 @@ HEADERS  += \
     ../StandaloneGist/treebuilder.hh \
     ../StandaloneGist/readingQueue.hh \
     ../StandaloneGist/treecomparison.hh \
-    ../StandaloneGist/pixelview.hh
+    ../StandaloneGist/pixelview.hh \
+    ../StandaloneGist/message.pb.h \
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/release/ -lzmq
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/debug/ -lzmq
-else:unix: LIBS += -L$$PWD/../../../../../../usr/local/lib/ -lzmq -ldl
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/release/ -lzmq -L/usr/local/lib -lprotobuf
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../../usr/local/lib/debug/ -lzmq -L/usr/local/lib -lprotobuf
+else:unix: LIBS += -L$$PWD/../../../../../../usr/local/lib/ -lzmq -ldl -L/usr/local/lib -lprotobuf
 
 INCLUDEPATH += $$PWD/../../../../../../../../usr/local/include
 DEPENDPATH += $$PWD/../../../../../../../../usr/local/include
