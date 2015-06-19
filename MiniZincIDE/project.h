@@ -21,11 +21,32 @@ namespace Ui {
     class MainWindow;
 }
 
+class CourseraItem {
+public:
+    QString id;
+    QString model;
+    QString data;
+    int timeout;
+    QString name;
+    CourseraItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
+        : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0) {}
+    CourseraItem(QString id0, QString model0, QString name0)
+        : id(id0), model(model0), timeout(-1), name(name0) {}
+};
+
+class CourseraProject {
+public:
+    QString name;
+    QString course;
+    QList<CourseraItem> submissions;
+};
+
 class Project : public QStandardItemModel
 {
     Q_OBJECT
 public:
     Project(Ui::MainWindow *ui0);
+    ~Project(void);
     void setRoot(QTreeView* treeView, const QString& fileName);
     void addFile(QTreeView* treeView, const QString& fileName);
     void removeFile(const QString& fileName);
@@ -58,6 +79,7 @@ public:
     QString seed(void) const;
     int timeLimit(void) const;
     bool solverVerbose(void) const;
+    CourseraProject& coursera(void) { return *_courseraProject; }
 public slots:
     void currentDataFileIndex(int i, bool init=false);
     void haveExtraArgs(bool b, bool init=false);
@@ -110,6 +132,7 @@ protected:
     QString _seed;
     int _timeLimit;
     bool _solverVerbose;
+    CourseraProject* _courseraProject;
 
     void checkModified(void);
 };

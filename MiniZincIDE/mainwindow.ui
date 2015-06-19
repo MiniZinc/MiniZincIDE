@@ -84,8 +84,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>601</width>
-             <height>594</height>
+             <width>572</width>
+             <height>593</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -463,7 +463,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -542,6 +542,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionSubmit_to_Coursera"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
@@ -662,6 +663,7 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
+   <addaction name="actionSubmit_to_Coursera"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -1160,6 +1162,15 @@
   <action name="actionAdd_to_project">
    <property name="text">
     <string>Add files to project...</string>
+   </property>
+  </action>
+  <action name="actionSubmit_to_Coursera">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/coursera.png</normaloff>:/icons/images/coursera.png</iconset>
+   </property>
+   <property name="text">
+    <string>Submit to Coursera</string>
    </property>
   </action>
  </widget>

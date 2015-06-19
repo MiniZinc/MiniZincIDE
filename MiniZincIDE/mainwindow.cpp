@@ -13,7 +13,6 @@
 #include <QtWidgets>
 #include <QApplication>
 #include <QSet>
-#include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <csignal>
@@ -28,6 +27,7 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
+#include "courserasubmission.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -142,8 +142,7 @@ void IDE::checkUpdate(void) {
     settings.beginGroup("ide");
     if (settings.value("checkforupdates",false).toBool()) {
         if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
-            QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-            connect(manager, SIGNAL(finished(QNetworkReply*)),
+            connect(networkManager, SIGNAL(finished(QNetworkReply*)),
                     this, SLOT(versionCheckFinished(QNetworkReply*)));
             QString url_s = "http://www.minizinc.org/ide/version-info.php";
             if (settings.value("sendstats",false).toBool()) {
@@ -157,7 +156,7 @@ void IDE::checkUpdate(void) {
             QNetworkRequest request(url);
             request.setRawHeader("User-Agent",
                                  (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
-            manager->get(request);
+            networkManager->get(request);
         }
         QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
     }
@@ -170,6 +169,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
     setApplicationName("MiniZinc IDE");
+
+    networkManager = new QNetworkAccessManager(this);
 
     QSettings settings;
     settings.sync();
@@ -593,6 +594,8 @@ void MainWindow::init(const QString& projectFile)
     tb->setTabButton(0, QTabBar::RightSide, 0);
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
+
+    ui->actionSubmit_to_Coursera->setVisible(false);
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
@@ -2619,6 +2622,12 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
             ui->conf_data_file->setCurrentIndex(ui->conf_data_file->count()-2);
         }
     }
+}
+
+void MainWindow::on_actionSubmit_to_Coursera_triggered()
+{
+    CourseraSubmission cs(project.coursera());
+    cs.exec();
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *ev)

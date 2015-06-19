@@ -26,6 +26,7 @@
 #include <QMap>
 #include <QSet>
 #include <QFileSystemWatcher>
+#include <QNetworkAccessManager>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -74,6 +75,8 @@ public:
 
     MainWindow* lastDefaultProject;
     Help* helpWindow;
+
+    QNetworkAccessManager* networkManager;
 
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
@@ -237,6 +240,8 @@ private slots:
     void on_actionNewModel_file_triggered();
 
     void on_actionNewData_file_triggered();
+
+    void on_actionSubmit_to_Coursera_triggered();
 
     void fileRenamed(const QString&, const QString&);
 

@@ -16,8 +16,10 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
+#include <QMessageBox>
+#include "courserasubmission.h"
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -33,6 +35,10 @@ Project::Project(Ui::MainWindow *ui0) : ui(ui0)
     other->setFont(font);
     invisibleRootItem()->appendRow(other);
     _isModified = false;
+}
+
+Project::~Project() {
+    delete _courseraProject;
 }
 
 void Project::setRoot(QTreeView* treeView, const QString &fileName)
@@ -76,6 +82,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
     }
     QStandardItem* curItem;
     bool isMiniZinc = true;
+    bool isCoursera = false;
     if (fi.suffix()=="mzn") {
         curItem = mzn;
     } else if (fi.suffix()=="dzn") {
@@ -85,7 +92,46 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
     } else {
         curItem = other;
         isMiniZinc = false;
+        isCoursera = fi.completeBaseName()=="_metadata";
     }
+
+    if (isCoursera) {
+        if (_courseraProject) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                "Cannot add second Coursera options file",
+                                QMessageBox::Ok);
+            return;
+        }
+        QFile metadata(absFileName);
+        if (!metadata.open(QIODevice::ReadOnly)) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                 "Cannot open Coursera options file",
+                                 QMessageBox::Ok);
+            return;
+        }
+        QTextStream in(&metadata);
+        _courseraProject = new CourseraProject;
+        _courseraProject->course = in.readLine();
+        _courseraProject->name = in.readLine();
+        QString nSolutions_s = in.readLine();
+        int nSolutions = nSolutions_s.toInt();
+        for (int i=0; i<nSolutions; i++) {
+            QString line = in.readLine();
+            QStringList tokens = line.split(", ");
+            CourseraItem item(tokens[0],tokens[1],tokens[2],tokens[3],tokens[4]);
+            _courseraProject->submissions.append(item);
+        }
+        nSolutions_s = in.readLine();
+        nSolutions = nSolutions_s.toInt();
+        for (int i=0; i<nSolutions; i++) {
+            QString line = in.readLine();
+            QStringList tokens = line.split(", ");
+            CourseraItem item(tokens[0],tokens[1],tokens[2]);
+            _courseraProject->submissions.append(item);
+        }
+        ui->actionSubmit_to_Coursera->setVisible(true);
+    }
+
     setModified(true, true);
     QStandardItem* prevItem = curItem;
     treeView->expand(curItem->index());
