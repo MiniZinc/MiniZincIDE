@@ -42,6 +42,7 @@ class MainWindow;
 class FindDialog;
 class MainWindow;
 class QNetworkReply;
+class QTextStream;
 
 class IDEStatistics {
 public:
@@ -77,6 +78,7 @@ public:
     Help* helpWindow;
 
     QNetworkAccessManager* networkManager;
+    QNetworkReply* versionCheckReply;
 
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
@@ -98,7 +100,7 @@ public:
 protected:
     bool event(QEvent *);
 protected slots:
-    void versionCheckFinished(QNetworkReply*);
+    void versionCheckFinished(void);
     void newProject(void);
     void openFile(void);
     void fileModified(const QString&);
@@ -118,6 +120,10 @@ public:
 
 private:
     void init(const QString& project);
+
+signals:
+    /// emitted when compilation and running of a model has finished
+    void finished();
 
 public slots:
 
@@ -263,9 +269,13 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
+    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
+public:
+    bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
+    QString curFilePath;
     HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
@@ -311,6 +321,7 @@ private:
     QAction* fakeStopAction;
     QAction* fakeCompileAction;
     QAction* minimizeAction;
+    QTextStream* outputBuffer;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile);
     QStringList parseConf(bool compileOnly);
@@ -331,6 +342,7 @@ public:
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
     void selectJSONSolution(HTMLPage* source, int n);
+    const Project& getProject(void) { return project; }
 };
 
 #endif // MAINWINDOW_H

@@ -142,8 +142,6 @@ void IDE::checkUpdate(void) {
     settings.beginGroup("ide");
     if (settings.value("checkforupdates",false).toBool()) {
         if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
-            connect(networkManager, SIGNAL(finished(QNetworkReply*)),
-                    this, SLOT(versionCheckFinished(QNetworkReply*)));
             QString url_s = "http://www.minizinc.org/ide/version-info.php";
             if (settings.value("sendstats",false).toBool()) {
                 url_s += "?version="+applicationVersion();
@@ -156,7 +154,8 @@ void IDE::checkUpdate(void) {
             QNetworkRequest request(url);
             request.setRawHeader("User-Agent",
                                  (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
-            networkManager->get(request);
+            versionCheckReply = networkManager->get(request);
+            connect(versionCheckReply, SIGNAL(finished()), this, SLOT(versionCheckFinished()));
         }
         QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
     }
@@ -439,9 +438,9 @@ void IDE::renameFile(const QString& oldPath, const QString& newPath)
 }
 
 void
-IDE::versionCheckFinished(QNetworkReply *reply) {
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
-        QString currentVersion = reply->readAll();
+IDE::versionCheckFinished(void) {
+    if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
+        QString currentVersion = versionCheckReply->readAll();
         if (currentVersion > applicationVersion()) {
             int button = QMessageBox::information(NULL,"Update available",
                                      "Version "+currentVersion+" of the MiniZinc IDE is now available. "
@@ -480,7 +479,8 @@ MainWindow::MainWindow(const QString& project) :
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
-    project(ui)
+    project(ui),
+    outputBuffer(NULL)
 {
     init(project);
 }
@@ -493,7 +493,8 @@ MainWindow::MainWindow(const QStringList& files) :
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
-    project(ui)
+    project(ui),
+    outputBuffer(NULL)
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
@@ -1301,57 +1302,7 @@ void MainWindow::checkArgsFinished(int exitcode)
             }
         }
     }
-    process = new MznProcess(this);
-    processName = mzn2fzn_executable;
-    processWasStopped = false;
-    runSolns2Out = true;
-    process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
-    connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-    if (compileOnly)
-        connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
-    else
-        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
-    connect(process, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(procError(QProcess::ProcessError)));
-
-    QStringList args = parseConf(true);
-    if (!additionalCmdlineParams.isEmpty()) {
-        args << "-D" << additionalCmdlineParams;
-    }
-    if (!additionalDataFile.isEmpty()) {
-        args << "-d" << additionalDataFile;
-    }
-
-    tmpDir = new QTemporaryDir;
-    if (!tmpDir->isValid()) {
-        QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
-        procFinished(0);
-    } else {
-        QFileInfo fi(curEditor->filepath);
-        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-        args << "-o" << currentFznTarget;
-        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-        args << curEditor->filepath;
-        QString compiling = curEditor->filename;
-        if (project.currentDataFile()!="None") {
-            compiling += " with data ";
-            QFileInfo fi(project.currentDataFile());
-            compiling += fi.fileName();
-        }
-        if (!additionalDataFile.isEmpty()) {
-            compiling += ", with additional data ";
-            QFileInfo fi(additionalDataFile);
-            compiling += fi.fileName();
-        }
-        if (!additionalCmdlineParams.isEmpty()) {
-            compiling += ", additional arguments " + additionalCmdlineParams;
-        }
-        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
-        process->start(mzn2fzn_executable,args,getMznDistribPath());
-        time = 0;
-        timer->start(500);
-        elapsedTime.start();
-    }
+    compileAndRun(curEditor->filepath, additionalCmdlineParams, additionalDataFile);
 }
 
 void MainWindow::checkArgs(QString filepath)
@@ -1503,6 +1454,8 @@ void MainWindow::readOutput()
                         if (hadNonJSONOutput)
                             addOutput(l,false);
                     } else {
+                        if (outputBuffer)
+                            (*outputBuffer) << l;
                         addOutput(l,false);
                         hadNonJSONOutput = true;
                     }
@@ -1589,6 +1542,96 @@ void MainWindow::finishJSONViewer(void)
     }
 }
 
+void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile)
+{
+    process = new MznProcess(this);
+    processName = mzn2fzn_executable;
+    curFilePath = modelPath;
+    processWasStopped = false;
+    runSolns2Out = true;
+    process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
+    connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+    if (compileOnly)
+        connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
+    else
+        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+    connect(process, SIGNAL(error(QProcess::ProcessError)),
+            this, SLOT(procError(QProcess::ProcessError)));
+
+    QStringList args = parseConf(true);
+    if (!additionalCmdlineParams.isEmpty()) {
+        args << "-D" << additionalCmdlineParams;
+    }
+    if (!additionalDataFile.isEmpty()) {
+        args << "-d" << additionalDataFile;
+    }
+
+    tmpDir = new QTemporaryDir;
+    if (!tmpDir->isValid()) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        procFinished(0);
+    } else {
+        QFileInfo fi(modelPath);
+        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+        args << "-o" << currentFznTarget;
+        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        args << modelPath;
+        QString compiling = fi.fileName();
+        if (project.currentDataFile()!="None") {
+            compiling += " with data ";
+            QFileInfo fi(project.currentDataFile());
+            compiling += fi.fileName();
+        }
+        if (!additionalDataFile.isEmpty()) {
+            compiling += ", with additional data ";
+            QFileInfo fi(additionalDataFile);
+            compiling += fi.fileName();
+        }
+        if (!additionalCmdlineParams.isEmpty()) {
+            compiling += ", additional arguments " + additionalCmdlineParams;
+        }
+        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
+        process->start(mzn2fzn_executable,args,getMznDistribPath());
+        time = 0;
+        timer->start(500);
+        elapsedTime.start();
+    }
+}
+
+bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
+{
+    bool foundModel = false;
+    bool foundData = false;
+    QString modelFilePath;
+    QString dataFilePath;
+
+    QString dataFileRelative = dataFile;
+    if (dataFileRelative.startsWith("."))
+        dataFileRelative.remove(0,1);
+
+    const QStringList& files = project.files();
+    for (int i=0; i<files.size(); i++) {
+        QFileInfo fi(files[i]);
+        if (fi.fileName() == modelFile) {
+            foundModel = true;
+            modelFilePath = fi.absoluteFilePath();
+        } else if (fi.absoluteFilePath().endsWith(dataFileRelative)) {
+            foundData = true;
+            dataFilePath = fi.absoluteFilePath();
+        }
+    }
+
+    if (!foundModel || !foundData) {
+        return false;
+    }
+
+    outputBuffer = &outstream;
+    compileOnly = false;
+    project.timeLimit(timeout, true);
+    compileAndRun(modelFilePath,"",dataFilePath);
+    return true;
+}
+
 void MainWindow::closeHTMLWindow(void)
 {
     on_actionStop_triggered();
@@ -1634,6 +1677,8 @@ void MainWindow::procFinished(int, bool showTime) {
     }
     delete tmpDir;
     tmpDir = NULL;
+    outputBuffer = NULL;
+    emit(finished());
 }
 
 void MainWindow::procError(QProcess::ProcessError e) {
@@ -1875,7 +1920,7 @@ void MainWindow::runCompiledFzn(int exitcode)
                     curHtmlWindow = NULL;
                 }
                 hadNonJSONOutput = false;
-                outputProcess->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+                outputProcess->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
@@ -1887,7 +1932,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             process = new MznProcess(this);
             processName = s.executable;
             processWasStopped = false;
-            process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
+            process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
             if (runSolns2Out) {
                 connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
             } else {
@@ -1904,7 +1949,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             }
 
             elapsedTime.start();
-            addOutput("<div style='color:blue;'>Running "+curEditor->filename+"</div><br>");
+            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div><br>");
             QString executable = s.executable;
             if (project.solverVerbose()) {
                 addOutput("<div style='color:blue;'>Command line:</div><br>");
@@ -2626,7 +2671,7 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
 
 void MainWindow::on_actionSubmit_to_Coursera_triggered()
 {
-    CourseraSubmission cs(project.coursera());
+    CourseraSubmission cs(this, project.coursera());
     cs.exec();
 }
 

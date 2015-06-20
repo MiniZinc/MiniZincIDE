@@ -38,7 +38,8 @@ class CourseraProject {
 public:
     QString name;
     QString course;
-    QList<CourseraItem> submissions;
+    QList<CourseraItem> problems;
+    QList<CourseraItem> models;
 };
 
 class Project : public QStandardItemModel

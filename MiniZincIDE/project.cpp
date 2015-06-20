@@ -119,7 +119,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
             QString line = in.readLine();
             QStringList tokens = line.split(", ");
             CourseraItem item(tokens[0],tokens[1],tokens[2],tokens[3],tokens[4]);
-            _courseraProject->submissions.append(item);
+            _courseraProject->problems.append(item);
         }
         nSolutions_s = in.readLine();
         nSolutions = nSolutions_s.toInt();
@@ -127,7 +127,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
             QString line = in.readLine();
             QStringList tokens = line.split(", ");
             CourseraItem item(tokens[0],tokens[1],tokens[2]);
-            _courseraProject->submissions.append(item);
+            _courseraProject->models.append(item);
         }
         ui->actionSubmit_to_Coursera->setVisible(true);
     }
