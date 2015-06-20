@@ -158,6 +158,15 @@ void CourseraSubmission::rcv_challenge()
     reply->deleteLater();
     QString challenge = reply->readAll();
     QStringList fields = challenge.split("|");
+
+    if (fields.size() < 7) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Error: cannot connect to Coursera.\n"+challenge);
+        _cur_phase = S_NONE;
+        enableUI();
+        return;
+    }
+
     _login = fields[2];
     QString ch = fields[4];
     _state = fields[6];
