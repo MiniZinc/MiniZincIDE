@@ -105,6 +105,7 @@ void CourseraSubmission::cancelOperation()
     }
     ui->textBrowser->insertPlainText("Cancelled.\n");
     _cur_phase = S_NONE;
+    enableUI();
 }
 
 void CourseraSubmission::reject()
@@ -264,10 +265,12 @@ void CourseraSubmission::rcv_solution_reply()
             QMessageBox::warning(this, "MiniZinc IDE",
                                  "Login failed! Message: "+message);
             _current_model = -2;
+            _cur_phase = S_NONE;
             return;
         }
         if (_current_model == -2) {
             QMessageBox::information(this, "MiniZinc IDE", "Login successful!");
+            _cur_phase = S_NONE;
             return;
         }
     }
