@@ -229,6 +229,12 @@ void Project::removeFile(const QString &fileName)
         cur = cur->parent();
         cur->removeRow(row);
     }
+    QFileInfo fi(fileName);
+    if (fi.fileName()=="_metadata") {
+        delete _courseraProject;
+        _courseraProject = NULL;
+        ui->actionSubmit_to_Coursera->setVisible(false);
+    }
 }
 
 void Project::setEditable(const QModelIndex &index)
