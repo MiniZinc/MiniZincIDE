@@ -21,7 +21,7 @@ public:
     ~CourseraSubmission();
 
 protected:
-
+    enum State { S_NONE, S_WAIT_CHALLENGE, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
     int _current_model;
     QString _submission;
     QString _source;
@@ -38,6 +38,13 @@ protected:
     QNetworkReply* reply;
 
     QByteArray challenge_response(QString passwd, QString challenge);
+
+    void disableUI(void);
+    void enableUI(void);
+    void cancelOperation(void);
+
+public slots:
+    void reject();
 
 private slots:
     void on_checkLoginButton_clicked();

@@ -128,6 +128,7 @@ signals:
 public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
+    void on_actionStop_triggered();
 
 private slots:
 
@@ -158,8 +159,6 @@ private slots:
     void on_actionQuit_triggered();
 
     void statusTimerEvent();
-
-    void on_actionStop_triggered();
 
     void on_actionCompile_triggered();
 

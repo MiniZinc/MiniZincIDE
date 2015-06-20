@@ -35,7 +35,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="loginGroup">
      <property name="title">
       <string>Coursera login information</string>
      </property>
@@ -134,7 +134,7 @@
    <item>
     <widget class="QPushButton" name="runButton">
      <property name="text">
-      <string>Run and submit!</string>
+      <string>Run and submit</string>
      </property>
      <property name="autoDefault">
       <bool>false</bool>
@@ -161,7 +161,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="outputGroup">
      <property name="title">
       <string>Submission output</string>
      </property>

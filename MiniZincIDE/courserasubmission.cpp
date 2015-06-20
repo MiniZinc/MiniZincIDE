@@ -13,7 +13,7 @@
 #include <QCryptographicHash>
 
 CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
-    QDialog(mw0), project(cp), mw(mw0),
+    QDialog(mw0), _cur_phase(S_NONE), project(cp), mw(mw0),
     ui(new Ui::CourseraSubmission)
 {
     ui->setupUi(this);
@@ -71,6 +71,48 @@ QByteArray CourseraSubmission::challenge_response(QString passwd, QString challe
     return hash.toHex();
 }
 
+void CourseraSubmission::disableUI()
+{
+    ui->loginGroup->setEnabled(false);
+    ui->modelBox->setEnabled(false);
+    ui->problemBox->setEnabled(false);
+    ui->runButton->setText("Cancel");
+}
+
+void CourseraSubmission::enableUI()
+{
+    ui->loginGroup->setEnabled(true);
+    ui->modelBox->setEnabled(true);
+    ui->problemBox->setEnabled(true);
+    ui->runButton->setText("Run and submit");
+}
+
+void CourseraSubmission::cancelOperation()
+{
+    switch (_cur_phase) {
+    case S_NONE:
+        return;
+    case S_WAIT_CHALLENGE:
+        disconnect(reply, SIGNAL(finished()), this, SLOT(rcv_challenge()));
+        break;
+    case S_WAIT_SOLVE:
+        disconnect(mw, SIGNAL(finished()), this, SLOT(solver_finished()));
+        mw->on_actionStop_triggered();
+        break;
+    case S_WAIT_SUBMIT:
+        disconnect(reply, SIGNAL(finished()), this, SLOT(rcv_solution_reply()));
+        break;
+    }
+    ui->textBrowser->insertPlainText("Cancelled.\n");
+    _cur_phase = S_NONE;
+}
+
+void CourseraSubmission::reject()
+{
+    cancelOperation();
+    QDialog::reject();
+}
+
 void CourseraSubmission::on_checkLoginButton_clicked()
 {
     _current_model = -2;
@@ -103,6 +145,7 @@ void CourseraSubmission::get_challenge()
     request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
+    _cur_phase = S_WAIT_CHALLENGE;
     reply = IDE::instance()->networkManager->get(request);
     connect(reply, SIGNAL(finished()), this, SLOT(rcv_challenge()));
 
@@ -111,6 +154,7 @@ void CourseraSubmission::get_challenge()
 void CourseraSubmission::rcv_challenge()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcv_challenge()));
+
     reply->deleteLater();
     QString challenge = reply->readAll();
     QStringList fields = challenge.split("|");
@@ -166,6 +210,7 @@ void CourseraSubmission::rcv_challenge()
             _submission.clear();
             connect(mw, SIGNAL(finished()), this, SLOT(solver_finished()));
             ui->textBrowser->insertPlainText("Running "+item.name+"\n");
+            _cur_phase = S_WAIT_SOLVE;
             mw->runWithOutput(item.model, item.data, item.timeout, _output_stream);
             return;
         } else {
@@ -193,7 +238,7 @@ void CourseraSubmission::submit_solution()
     QNetworkRequest request;
     request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
+    _cur_phase = S_WAIT_SUBMIT;
     reply = IDE::instance()->networkManager->post(request,q.toString().toLocal8Bit());
     connect(reply, SIGNAL(finished()), this, SLOT(rcv_solution_reply()));
 }
@@ -255,6 +300,8 @@ void CourseraSubmission::goto_next()
         }
         if (_current_model >= n_models+n_problems) {
             ui->textBrowser->insertPlainText("Done.\n");
+            _cur_phase = S_NONE;
+            enableUI();
             return;
         }
     } while (!done);
@@ -263,8 +310,13 @@ void CourseraSubmission::goto_next()
 
 void CourseraSubmission::on_runButton_clicked()
 {
-    _current_model = -1; /// TODO: change back to -1
-    goto_next();
+    if (_cur_phase==S_NONE) {
+        _current_model = -1;
+        disableUI();
+        goto_next();
+    } else {
+        cancelOperation();
+    }
 }
 
 void CourseraSubmission::on_storePassword_toggled(bool checked)
