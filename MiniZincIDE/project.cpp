@@ -92,7 +92,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
     } else {
         curItem = other;
         isMiniZinc = false;
-        isCoursera = fi.completeBaseName()=="_metadata";
+        isCoursera = fi.completeBaseName()=="_coursera";
     }
 
     if (isCoursera) {
@@ -260,7 +260,7 @@ void Project::removeFile(const QString &fileName)
         cur->removeRow(row);
     }
     QFileInfo fi(fileName);
-    if (fi.fileName()=="_metadata") {
+    if (fi.fileName()=="_coursera") {
         delete _courseraProject;
         _courseraProject = NULL;
         ui->actionSubmit_to_Coursera->setVisible(false);

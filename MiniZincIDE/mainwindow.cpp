@@ -911,7 +911,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             }
         }
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,ui->tabWidget,this);
-        if (ce->filename == "_metadata")
+        if (ce->filename == "_coursera")
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
