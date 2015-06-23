@@ -313,7 +313,9 @@ void CourseraSubmission::goto_next()
         if (_current_model >= n_models+n_problems) {
             ui->textBrowser->insertPlainText("Done.\n");
             _cur_phase = S_NONE;
-            enableUI();
+            ui->runButton->setText("Done.");
+            ui->runButton->setEnabled(false);
+            ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
             return;
         }
     } while (!done);
