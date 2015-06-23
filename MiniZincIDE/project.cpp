@@ -120,6 +120,11 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
             delete cp;
             goto coursera_done;
         }
+        cp->checkpwdSid= in.readLine();
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
         cp->name = in.readLine();
         QString nSolutions_s = in.readLine();
         int nSolutions = nSolutions_s.toInt();

@@ -178,7 +178,7 @@ void CourseraSubmission::rcv_challenge()
         // Check login information
         _submission = "0";
         _source = "";
-        _sid = "6vp6Er9J-dev";
+        _sid = project.checkpwdSid;
         if (_current_model == -1)
             ui->textBrowser->insertPlainText("Checking login\n");
         submit_solution();
