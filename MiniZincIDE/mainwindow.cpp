@@ -1198,7 +1198,7 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compileOnly)
+QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
 {
     QStringList ret;
     if (compileOnly && !project.mzn2fznOptimize())
@@ -1211,7 +1211,7 @@ QStringList MainWindow::parseConf(bool compileOnly)
     if (compileOnly && project.haveExtraMzn2FznArgs() &&
         !project.extraMzn2FznArgs().isEmpty())
         ret << ""+project.extraMzn2FznArgs();
-    if (compileOnly && project.currentDataFile()!="None")
+    if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
     if (!compileOnly && project.printAll())
         ret << "-a";
@@ -1326,7 +1326,7 @@ void MainWindow::checkArgs(QString filepath)
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true);
+    QStringList args = parseConf(true, true);
     args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
@@ -1561,7 +1561,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true);
+    QStringList args = parseConf(true, additionalDataFile.isEmpty());
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
@@ -1876,7 +1876,7 @@ void MainWindow::runCompiledFzn(int exitcode)
         return;
     if (exitcode==0) {
         readOutput();
-        QStringList args = parseConf(false);
+        QStringList args = parseConf(false,true);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);

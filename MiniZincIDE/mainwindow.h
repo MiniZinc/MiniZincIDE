@@ -323,7 +323,7 @@ private:
     QTextStream* outputBuffer;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile);
-    QStringList parseConf(bool compileOnly);
+    QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
