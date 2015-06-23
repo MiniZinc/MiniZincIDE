@@ -22,5 +22,6 @@
         <file>images/folder.png</file>
         <file>images/package-x-generic.png</file>
         <file>images/coursera.png</file>
+        <file>images/coursera@2x.png</file>
     </qresource>
 </RCC>
