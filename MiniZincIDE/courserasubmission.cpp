@@ -221,6 +221,7 @@ void CourseraSubmission::rcv_challenge()
             connect(mw, SIGNAL(finished()), this, SLOT(solver_finished()));
             ui->textBrowser->insertPlainText("Running "+item.name+"\n");
             _cur_phase = S_WAIT_SOLVE;
+            mw->addOutput("<div style='color:orange;'>Running Coursera submission "+item.name+"</div><br>\n");
             mw->runWithOutput(item.model, item.data, item.timeout, _output_stream);
             return;
         } else {
