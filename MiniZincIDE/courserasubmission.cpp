@@ -283,15 +283,14 @@ void CourseraSubmission::solver_finished()
     disconnect(mw, SIGNAL(finished()), this, SLOT(solver_finished()));
 
     QStringList solutions = _submission.split("----------");
-    if (solutions.size() < 2) {
-        ui->textBrowser->insertPlainText("== no solution found\n");
-        goto_next();
-    } else {
-        _submission = solutions[solutions.size()-2];
-        _submission += "----------\nunknown time, MiniZinc IDE submission";
-        ui->textBrowser->insertPlainText("Submitting solution\n");
-        submit_solution();
+    if (solutions.size() >= 2) {
+        _submission = solutions[solutions.size()-2]+"----------"+solutions[solutions.size()-1];
     }
+    if (_submission[_submission.size()-1] != '\n')
+        _submission += "\n";
+    _submission += "unknown time\nMiniZinc IDE submission";
+    ui->textBrowser->insertPlainText("Submitting solution\n");
+    submit_solution();
 }
 
 void CourseraSubmission::goto_next()
