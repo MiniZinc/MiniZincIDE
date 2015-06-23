@@ -2442,9 +2442,10 @@ void MainWindow::loadProject(const QString& filepath)
     qint32 p_i;
     bool p_b;
 
+    int dataFileIndex;
+
     in >> p_s; // Used to be additional include path
-    in >> p_i;
-    project.currentDataFileIndex(p_i, true);
+    in >> dataFileIndex;
     in >> p_b;
     project.haveExtraArgs(p_b, true);
     in >> p_s;
@@ -2502,6 +2503,8 @@ void MainWindow::loadProject(const QString& filepath)
     for (int i=0; i<openFiles.size(); i++) {
         openFile(basePath+openFiles[i],false);
     }
+    setupDznMenu();
+    project.currentDataFileIndex(dataFileIndex, true);
 
     project.setModified(false, true);
 
