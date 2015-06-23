@@ -110,27 +110,57 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
             return;
         }
         QTextStream in(&metadata);
-        _courseraProject = new CourseraProject;
-        _courseraProject->course = in.readLine();
-        _courseraProject->name = in.readLine();
+        CourseraProject* cp = new CourseraProject;
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        cp->course = in.readLine();
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        cp->name = in.readLine();
         QString nSolutions_s = in.readLine();
         int nSolutions = nSolutions_s.toInt();
         for (int i=0; i<nSolutions; i++) {
+            if (in.status() != QTextStream::Ok) {
+                delete cp;
+                goto coursera_done;
+            }
             QString line = in.readLine();
             QStringList tokens = line.split(", ");
+            if (tokens.size() < 5) {
+                delete cp;
+                goto coursera_done;
+            }
             CourseraItem item(tokens[0],tokens[1],tokens[2],tokens[3],tokens[4]);
-            _courseraProject->problems.append(item);
+            cp->problems.append(item);
+        }
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
         }
         nSolutions_s = in.readLine();
         nSolutions = nSolutions_s.toInt();
         for (int i=0; i<nSolutions; i++) {
+            if (in.status() != QTextStream::Ok) {
+                delete cp;
+                goto coursera_done;
+            }
             QString line = in.readLine();
             QStringList tokens = line.split(", ");
+            if (tokens.size() < 3) {
+                delete cp;
+                goto coursera_done;
+            }
             CourseraItem item(tokens[0],tokens[1],tokens[2]);
-            _courseraProject->models.append(item);
+            cp->models.append(item);
         }
+        _courseraProject = cp;
         ui->actionSubmit_to_Coursera->setVisible(true);
     }
+coursera_done:
 
     setModified(true, true);
     QStandardItem* prevItem = curItem;
@@ -620,4 +650,12 @@ void Project::checkModified()
         return;
     }
     setModified(false);
+}
+
+void Project::courseraError()
+{
+    QMessageBox::warning(NULL,"MiniZinc IDE",
+                        "Error reading Coursera options file",
+                        QMessageBox::Ok);
+
 }

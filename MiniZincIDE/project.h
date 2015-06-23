@@ -136,6 +136,7 @@ protected:
     CourseraProject* _courseraProject;
 
     void checkModified(void);
+    void courseraError(void);
 };
 
 #endif // PROJECT_H
