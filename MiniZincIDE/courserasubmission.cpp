@@ -25,7 +25,7 @@ CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
     for (int i=0; i<project.models.size(); i++) {
         const CourseraItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
-        cb->setChecked(true);
+        cb->setChecked(false);
         modelLayout->addWidget(cb);
     }
     for (int i=0; i<project.problems.size(); i++) {
