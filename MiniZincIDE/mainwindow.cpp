@@ -902,7 +902,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         large = d.second;
     }
     if (doc || !fileContents.isEmpty() || isNewFile) {
-        if (ui->tabWidget->count()==2) {
+        if (!isNewFile && ui->tabWidget->count()==2) {
             CodeEditor* ce =
                     static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
                                                  ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
