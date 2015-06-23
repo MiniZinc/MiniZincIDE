@@ -287,7 +287,7 @@ void CourseraSubmission::solver_finished()
     if (solutions.size() >= 2) {
         _submission = solutions[solutions.size()-2]+"----------"+solutions[solutions.size()-1];
     }
-    if (_submission[_submission.size()-1] != '\n')
+    if (_submission.size()==0 || _submission[_submission.size()-1] != '\n')
         _submission += "\n";
     _submission += "unknown time\nMiniZinc IDE submission";
     ui->textBrowser->insertPlainText("Submitting solution\n");
