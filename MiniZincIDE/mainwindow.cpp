@@ -2268,6 +2268,9 @@ void MainWindow::openProject(const QString& fileName)
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
             if (isEmptyProject()) {
+                if (ui->tabWidget->count()==2) {
+                    tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
+                }
                 loadProject(fileName);
             } else {
                 MainWindow* mw = new MainWindow(fileName);
