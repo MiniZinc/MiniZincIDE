@@ -1792,13 +1792,8 @@ void MainWindow::on_actionSave_as_triggered()
 
 void MainWindow::on_actionQuit_triggered()
 {
-#ifdef Q_OS_MAC
-    int lastWindow = 1;
-#else
-    int lastWindow = 0;
-#endif
     qApp->closeAllWindows();
-    if (IDE::instance()->mainWindows.size() <= lastWindow) {
+    if (IDE::instance()->mainWindows.size()==0) {
         IDE::instance()->quit();
     }
 }
