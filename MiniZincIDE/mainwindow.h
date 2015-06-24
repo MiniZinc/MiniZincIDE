@@ -27,6 +27,7 @@
 #include <QSet>
 #include <QFileSystemWatcher>
 #include <QNetworkAccessManager>
+#include <QSortFilterProxyModel>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -307,6 +308,7 @@ private:
     bool compileOnly;
     QString mzn2fzn_executable;
     Project project;
+    QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
     QAction* projectOpen;
     QAction* projectRemove;

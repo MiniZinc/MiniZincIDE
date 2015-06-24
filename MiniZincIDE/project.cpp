@@ -12,12 +12,13 @@
 
 #include "project.h"
 #include "ui_mainwindow.h"
+#include "courserasubmission.h"
 
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
 #include <QMessageBox>
-#include "courserasubmission.h"
+#include <QSortFilterProxyModel>
 
 Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
 {
@@ -41,7 +42,7 @@ Project::~Project() {
     delete _courseraProject;
 }
 
-void Project::setRoot(QTreeView* treeView, const QString &fileName)
+void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
 {
     if (fileName == projectRoot)
         return;
@@ -58,7 +59,7 @@ void Project::setRoot(QTreeView* treeView, const QString &fileName)
     projectRoot = fileName;
     _files.clear();
     for (QStringList::iterator it = allFiles.begin(); it != allFiles.end(); ++it) {
-        addFile(treeView, *it);
+        addFile(treeView, sort, *it);
     }
 }
 
@@ -67,22 +68,26 @@ QVariant Project::data(const QModelIndex &index, int role) const
     if (role==Qt::UserRole) {
         QStandardItem* item = itemFromIndex(index);
         if (item->parent()==NULL || item->parent()==invisibleRootItem()) {
-            if (item==projectFile)
+            if (item==projectFile) {
                 return "00 - project";
-            if (item==mzn)
+            }
+            if (item==mzn) {
                 return "01 - mzn";
-            if (item==dzn)
+            }
+            if (item==dzn) {
                 return "02 - dzn";
-            if (item==other)
+            }
+            if (item==other) {
                 return "03 - other";
+            }
         }
-        return QStandardItemModel::data(index,role);
+        return QStandardItemModel::data(index,Qt::DisplayRole);
     } else {
         return QStandardItemModel::data(index,role);
     }
 }
 
-void Project::addFile(QTreeView* treeView, const QString &fileName)
+void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
 {
     if (_files.contains(fileName))
         return;
@@ -189,13 +194,13 @@ coursera_done:
 
     setModified(true, true);
     QStandardItem* prevItem = curItem;
-    treeView->expand(curItem->index());
+    treeView->expand(sort->mapFromSource(curItem->index()));
     curItem = curItem->child(0);
     int i=0;
     while (curItem != NULL) {
         if (curItem->text() == path.first()) {
             path.pop_front();
-            treeView->expand(curItem->index());
+            treeView->expand(sort->mapFromSource(curItem->index()));
             prevItem = curItem;
             curItem = curItem->child(0);
             i = 0;
@@ -215,7 +220,7 @@ coursera_done:
                 newItem->setIcon(QIcon(":/images/mznicon.png"));
             }
         }
-        treeView->expand(newItem->index());
+        treeView->expand(sort->mapFromSource(newItem->index()));
         prevItem = newItem;
     }
 }

@@ -21,6 +21,8 @@ namespace Ui {
     class MainWindow;
 }
 
+class QSortFilterProxyModel;
+
 class CourseraItem {
 public:
     QString id;
@@ -49,9 +51,9 @@ class Project : public QStandardItemModel
 public:
     Project(Ui::MainWindow *ui0);
     ~Project(void);
-    void setRoot(QTreeView* treeView, const QString& fileName);
+    void setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
     QVariant data(const QModelIndex &index, int role) const;
-    void addFile(QTreeView* treeView, const QString& fileName);
+    void addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
     void removeFile(const QString& fileName);
     QList<QString> files(void) const { return _files.keys(); }
     QString fileAtIndex(const QModelIndex& index);

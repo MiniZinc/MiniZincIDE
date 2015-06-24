@@ -16,7 +16,6 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <csignal>
-#include <QSortFilterProxyModel>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -690,12 +689,12 @@ void MainWindow::init(const QString& projectFile)
 
     connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
 
-    QSortFilterProxyModel* filter = new QSortFilterProxyModel(this);
-    filter->setDynamicSortFilter(true);
-    filter->setSourceModel(&project);
-    filter->setSortRole(Qt::UserRole);
-    ui->projectView->setModel(filter);
-//    ui->projectView->sortByColumn(0, Qt::AscendingOrder);
+    projectSort = new QSortFilterProxyModel(this);
+    projectSort->setDynamicSortFilter(true);
+    projectSort->setSourceModel(&project);
+    projectSort->setSortRole(Qt::UserRole);
+    ui->projectView->setModel(projectSort);
+    ui->projectView->sortByColumn(0, Qt::AscendingOrder);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
@@ -779,7 +778,7 @@ void MainWindow::addFileToProject(bool dznOnly)
 
     for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
         setLastPath(QFileInfo(*it).absolutePath()+fileDialogSuffix);
-        project.addFile(ui->projectView, *it);
+        project.addFile(ui->projectView, projectSort, *it);
     }
     setupDznMenu();
 }
@@ -821,8 +820,9 @@ void MainWindow::onActionProjectRunWith_triggered()
     on_actionRun_triggered();
 }
 
-void MainWindow::activateFileInProject(const QModelIndex &index)
+void MainWindow::activateFileInProject(const QModelIndex &proxyIndex)
 {
+    QModelIndex index = projectSort->mapToSource(proxyIndex);
     if (project.isProjectFile(index)) {
         ui->tabWidget->setCurrentWidget(ui->configuration);
     } else {
@@ -928,7 +928,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             curEditor->document()->setModified(true);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
-            project.addFile(ui->projectView, absPath);
+            project.addFile(ui->projectView, projectSort, absPath);
             IDE::instance()->registerEditor(absPath,curEditor);
         }
         setupDznMenu();
@@ -1745,7 +1745,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                         IDE::instance()->removeEditor(ce->filepath,ce);
                     }
                     project.removeFile(ce->filepath);
-                    project.addFile(ui->projectView, filepath);
+                    project.addFile(ui->projectView, projectSort, filepath);
                     ce->filepath = filepath;
                     setupDznMenu();
                 }
@@ -2353,7 +2353,7 @@ void MainWindow::saveProject(const QString& f)
             if (projectPath != filepath) {
                 IDE::instance()->projects.remove(projectPath);
                 IDE::instance()->projects.insert(filepath,this);
-                project.setRoot(ui->projectView, filepath);
+                project.setRoot(ui->projectView, projectSort, filepath);
                 projectPath = filepath;
             }
             updateRecentProjects(projectPath);
@@ -2434,7 +2434,7 @@ void MainWindow::loadProject(const QString& filepath)
 
     projectPath = filepath;
     updateRecentProjects(projectPath);
-    project.setRoot(ui->projectView, projectPath);
+    project.setRoot(ui->projectView, projectSort, projectPath);
     QString basePath;
     if (version==103) {
         basePath = QFileInfo(filepath).absolutePath()+"/";
@@ -2498,7 +2498,7 @@ void MainWindow::loadProject(const QString& filepath)
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
-            project.addFile(ui->projectView, basePath+projectFilesRelPath[i]);
+            project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
         } else {
             QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
         }
