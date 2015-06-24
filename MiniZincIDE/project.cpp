@@ -62,6 +62,26 @@ void Project::setRoot(QTreeView* treeView, const QString &fileName)
     }
 }
 
+QVariant Project::data(const QModelIndex &index, int role) const
+{
+    if (role==Qt::UserRole) {
+        QStandardItem* item = itemFromIndex(index);
+        if (item->parent()==NULL || item->parent()==invisibleRootItem()) {
+            if (item==projectFile)
+                return "00 - project";
+            if (item==mzn)
+                return "01 - mzn";
+            if (item==dzn)
+                return "02 - dzn";
+            if (item==other)
+                return "03 - other";
+        }
+        return QStandardItemModel::data(index,role);
+    } else {
+        return QStandardItemModel::data(index,role);
+    }
+}
+
 void Project::addFile(QTreeView* treeView, const QString &fileName)
 {
     if (_files.contains(fileName))

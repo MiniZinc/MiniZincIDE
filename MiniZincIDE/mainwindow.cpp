@@ -16,6 +16,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <csignal>
+#include <QSortFilterProxyModel>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -689,7 +690,12 @@ void MainWindow::init(const QString& projectFile)
 
     connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
 
-    ui->projectView->setModel(&project);
+    QSortFilterProxyModel* filter = new QSortFilterProxyModel(this);
+    filter->setDynamicSortFilter(true);
+    filter->setSourceModel(&project);
+    filter->setSortRole(Qt::UserRole);
+    ui->projectView->setModel(filter);
+//    ui->projectView->sortByColumn(0, Qt::AscendingOrder);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
