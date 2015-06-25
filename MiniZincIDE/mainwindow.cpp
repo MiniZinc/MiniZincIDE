@@ -2174,12 +2174,16 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
 
 void MainWindow::on_actionFind_triggered()
 {
+    findDialog->raise();
     findDialog->show();
+    findDialog->activateWindow();
 }
 
 void MainWindow::on_actionReplace_triggered()
 {
+    findDialog->raise();
     findDialog->show();
+    findDialog->activateWindow();
 }
 
 void MainWindow::on_actionSelect_font_triggered()
