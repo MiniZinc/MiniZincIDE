@@ -14,6 +14,10 @@ TEMPLATE = app
 VERSION = 0.9.7
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
+bundled {
+    DEFINES += MINIZINC_IDE_BUNDLED
+}
+
 macx {
     ICON = mznide.icns
     QMAKE_INFO_PLIST = mznide.plist

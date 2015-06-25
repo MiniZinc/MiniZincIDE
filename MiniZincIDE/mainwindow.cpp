@@ -167,7 +167,11 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
+#ifdef MINIZINC_IDE_BUNDLED
     setApplicationName("MiniZinc IDE");
+#else
+    setApplicationName("MiniZinc IDE (bundled)");
+#endif
 
     networkManager = new QNetworkAccessManager(this);
 
@@ -626,15 +630,22 @@ void MainWindow::init(const QString& projectFile)
     bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
     bool hadg12mip = false;
-//    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
-//    bool hadgecode = false;
+#ifdef MINIZINC_IDE_BUNDLED
+    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
+    bool hadgecode = false;
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true);
+    bool hadgecodegist = false;
+#endif
 
     int nsolvers = settings.beginReadArray("solvers");
     if (nsolvers==0) {
+#ifdef MINIZINC_IDE_BUNDLED
+        solvers.append(gecode);
+        solvers.append(gecodeGist);
+#endif
         solvers.append(g12fd);
         solvers.append(g12lazyfd);
         solvers.append(g12mip);
-//        solvers.append(gecode);
     } else {
         IDE::instance()->stats.solvers.clear();
         for (int i=0; i<nsolvers; i++) {
@@ -657,10 +668,16 @@ void MainWindow::init(const QString& projectFile)
                     solver = g12mip;
                     hadg12mip = true;
                 }
-//                else if (solver.name=="Gecode (bundled)") {
-//                    solver = gecode;
-//                    hadgecode = true;
-//                }
+#ifdef MINIZINC_IDE_BUNDLED
+                else if (solver.name=="Gecode (bundled)") {
+                    solver = gecode;
+                    hadgecode = true;
+                }
+                else if (solver.name=="Gecode (Gist, bundled)") {
+                    solver = gecodeGist;
+                    hadgecodegist = true;
+                }
+#endif
             } else {
                 IDE::instance()->stats.solvers.append(solver.name);
             }
@@ -672,8 +689,12 @@ void MainWindow::init(const QString& projectFile)
             solvers.append(g12lazyfd);
         if (!hadg12mip)
             solvers.append(g12mip);
-//        if (!hadgecode)
-//            solvers.append(gecode);
+#ifdef MINIZINC_IDE_BUNDLED
+        if (!hadgecodegist)
+            solvers.push_front(gecodeGist);
+        if (!hadgecode)
+            solvers.push_front(gecode);
+#endif
     }
     settings.endArray();
     settings.beginGroup("minizinc");
