@@ -41,22 +41,24 @@
      <height>281</height>
     </rect>
    </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="lineWidth">
+    <number>0</number>
+   </property>
    <property name="html">
     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.Helvetica Neue DeskInterface'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:30px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;http://www.minizinc.org&quot;&gt;&lt;img src=&quot;mznlogo.png&quot; width=&quot;128&quot; height=&quot;108&quot; /&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt; &lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:30px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;http://www.minizinc.org&quot;&gt;&lt;img src=&quot;:/images/mznlogo.png&quot; width=&quot;128&quot; height=&quot;108&quot; /&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt; &lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:14px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; font-size:large; font-weight:600;&quot;&gt;The MiniZinc IDE&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Version $VERSION&lt;br /&gt;Author: Guido Tack&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Copyright Monash University and NICTA 2013, 2014, 2015 &lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Version $VERSION&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Author: Guido Tack&lt;br /&gt;Copyright Monash University and NICTA 2013, 2014, 2015 &lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;This program is provided under the terms of the &lt;/span&gt;&lt;a href=&quot;http://www.minizinc.org/2.0/LICENSE.txt&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; text-decoration: underline; color:#0000ff;&quot;&gt;Mozilla Public License Version 2.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;. It uses the Qt toolkit, available from &lt;/span&gt;&lt;a href=&quot;http://qt-project.org&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; text-decoration: underline; color:#0000ff;&quot;&gt;qt-project.org&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="source">
-    <url>
-     <string>file:///Users/tack/MiniZinc/MiniZincIDE/MiniZincIDE/images/about.html</string>
-    </url>
    </property>
    <property name="openExternalLinks">
     <bool>true</bool>

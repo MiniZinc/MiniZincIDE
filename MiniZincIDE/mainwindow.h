@@ -26,6 +26,8 @@
 #include <QMap>
 #include <QSet>
 #include <QFileSystemWatcher>
+#include <QNetworkAccessManager>
+#include <QSortFilterProxyModel>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -41,6 +43,7 @@ class MainWindow;
 class FindDialog;
 class MainWindow;
 class QNetworkReply;
+class QTextStream;
 
 class IDEStatistics {
 public:
@@ -75,6 +78,9 @@ public:
     MainWindow* lastDefaultProject;
     Help* helpWindow;
 
+    QNetworkAccessManager* networkManager;
+    QNetworkReply* versionCheckReply;
+
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
 #endif
@@ -95,7 +101,7 @@ public:
 protected:
     bool event(QEvent *);
 protected slots:
-    void versionCheckFinished(QNetworkReply*);
+    void versionCheckFinished(void);
     void newProject(void);
     void openFile(void);
     void fileModified(const QString&);
@@ -116,9 +122,14 @@ public:
 private:
     void init(const QString& project);
 
+signals:
+    /// emitted when compilation and running of a model has finished
+    void finished();
+
 public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false);
+    void on_actionStop_triggered();
 
 private slots:
 
@@ -149,8 +160,6 @@ private slots:
     void on_actionQuit_triggered();
 
     void statusTimerEvent();
-
-    void on_actionStop_triggered();
 
     void on_actionCompile_triggered();
 
@@ -238,6 +247,8 @@ private slots:
 
     void on_actionNewData_file_triggered();
 
+    void on_actionSubmit_to_Coursera_triggered();
+
     void fileRenamed(const QString&, const QString&);
 
     void on_conf_timeLimit_valueChanged(int arg1);
@@ -258,9 +269,13 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
+    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
+public:
+    bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
+    QString curFilePath;
     HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
@@ -293,6 +308,7 @@ private:
     bool compileOnly;
     QString mzn2fzn_executable;
     Project project;
+    QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
     QAction* projectOpen;
     QAction* projectRemove;
@@ -306,9 +322,10 @@ private:
     QAction* fakeStopAction;
     QAction* fakeCompileAction;
     QAction* minimizeAction;
+    QTextStream* outputBuffer;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile);
-    QStringList parseConf(bool compileOnly);
+    QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
@@ -326,6 +343,7 @@ public:
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
     void selectJSONSolution(HTMLPage* source, int n);
+    const Project& getProject(void) { return project; }
 };
 
 #endif // MAINWINDOW_H
