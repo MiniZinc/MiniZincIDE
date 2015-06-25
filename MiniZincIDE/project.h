@@ -85,6 +85,7 @@ public:
     int timeLimit(void) const;
     bool solverVerbose(void) const;
     CourseraProject& coursera(void) { return *_courseraProject; }
+    bool isUndefined(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
     void haveExtraArgs(bool b, bool init=false);

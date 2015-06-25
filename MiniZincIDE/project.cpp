@@ -421,6 +421,11 @@ bool Project::solverVerbose(void) const
     return ui->conf_solver_verbose->isChecked();
 }
 
+bool Project::isUndefined() const
+{
+    return projectRoot.isEmpty();
+}
+
 void Project::currentDataFileIndex(int i, bool init)
 {
     if (init) {

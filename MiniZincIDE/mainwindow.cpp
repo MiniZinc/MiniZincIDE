@@ -994,10 +994,10 @@ void MainWindow::tabCloseRequest(int tab)
     setupDznMenu();
     if (!ce->filepath.isEmpty())
         IDE::instance()->removeEditor(ce->filepath,ce);
-    delete ce;
-    if (ui->tabWidget->count()==0) {
-        on_actionNewModel_file_triggered();
+    if (ui->tabWidget->count()==1 && isEmptyProject()) {
+        close();
     }
+    delete ce;
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
@@ -2252,7 +2252,7 @@ void MainWindow::on_actionNew_project_triggered()
 bool MainWindow::isEmptyProject(void)
 {
     if (ui->tabWidget->count() == 1) {
-        return !project.isModified();
+        return project.isUndefined();
     }
     if (ui->tabWidget->count() != 2)
         return false;
@@ -2269,10 +2269,13 @@ void MainWindow::openProject(const QString& fileName)
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
             if (isEmptyProject()) {
-                if (ui->tabWidget->count()==2) {
-                    tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
-                }
+                int closeTab = ui->tabWidget->count()==2 ? (ui->tabWidget->widget(0)==ui->configuration ? 1 : 0) : -1;
                 loadProject(fileName);
+                if (closeTab > 0 && ui->tabWidget->count()>1) {
+                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(closeTab));
+                    if (ce->filepath == "")
+                        tabCloseRequest(closeTab);
+                }
             } else {
                 MainWindow* mw = new MainWindow(fileName);
                 QPoint p = pos();
