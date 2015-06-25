@@ -1178,6 +1178,9 @@
    <property name="text">
     <string>Submit to Coursera</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
   </action>
  </widget>
  <customwidgets>
