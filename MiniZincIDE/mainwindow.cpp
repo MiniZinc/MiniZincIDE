@@ -200,6 +200,39 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     lastDefaultProject = NULL;
     helpWindow = new Help();
 
+    { // Load cheat sheet
+        QString fileContents;
+        QFile file(":/cheat_sheet.mzn");
+        if (file.open(QFile::ReadOnly)) {
+            fileContents = file.readAll();
+        } else {
+            qDebug() << "internal error: cannot open cheat sheet.";
+        }
+
+        QSettings settings;
+        settings.beginGroup("MainWindow");
+
+        QFont defaultFont("Courier New");
+        defaultFont.setStyleHint(QFont::Monospace);
+        defaultFont.setPointSize(13);
+        QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+        bool darkMode = settings.value("darkMode", false).value<bool>();
+        settings.endGroup();
+
+        cheatSheet = new QMainWindow;
+        cheatSheet->setWindowTitle("MiniZinc Cheat Sheet");
+        CodeEditor* ce = new CodeEditor(NULL,":/cheat_sheet.mzn",false,false,editorFont,darkMode,NULL,NULL);
+        ce->document()->setPlainText(fileContents);
+        QTextCursor cursor = ce->textCursor();
+        cursor.movePosition(QTextCursor::Start);
+        ce->setTextCursor(cursor);
+
+        ce->setReadOnly(true);
+        cheatSheet->setCentralWidget(ce);
+        cheatSheet->resize(800, 600);
+    }
+
+
     connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
 
 #ifdef Q_OS_MAC
@@ -611,6 +644,8 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setStyleHint(QFont::Monospace);
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+    darkMode = settings.value("darkMode", false).value<bool>();
+    ui->actionDark_mode->setChecked(darkMode);
     ui->outputConsole->setFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
@@ -896,7 +931,7 @@ void MainWindow::on_actionNewData_file_triggered()
     createEditor(".dzn",false,true);
 }
 
-void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile) {
+void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
@@ -929,16 +964,17 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         large = d.second;
     }
     if (doc || !fileContents.isEmpty() || isNewFile) {
+        int closeTab = -1;
         if (!isNewFile && ui->tabWidget->count()==2) {
             CodeEditor* ce =
                     static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
                                                  ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
             if (ce->filepath == "" && !ce->document()->isModified()) {
-                tabCloseRequest(ui->tabWidget->widget(0)==ui->configuration ? 1 : 0);
+                closeTab = ui->tabWidget->widget(0)==ui->configuration ? 1 : 0;
             }
         }
-        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,ui->tabWidget,this);
-        if (ce->filename == "_coursera")
+        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
+        if (readOnly || ce->filename == "_coursera")
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         ui->tabWidget->setCurrentIndex(tab);
@@ -952,6 +988,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             project.addFile(ui->projectView, projectSort, absPath);
             IDE::instance()->registerEditor(absPath,curEditor);
         }
+        if (closeTab >= 0)
+            tabCloseRequest(closeTab);
         setupDznMenu();
     }
 }
@@ -1015,10 +1053,10 @@ void MainWindow::tabCloseRequest(int tab)
     setupDznMenu();
     if (!ce->filepath.isEmpty())
         IDE::instance()->removeEditor(ce->filepath,ce);
+    delete ce;
     if (ui->tabWidget->count()==1 && isEmptyProject()) {
         close();
     }
-    delete ce;
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
@@ -1078,6 +1116,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     QSettings settings;
     settings.beginGroup("MainWindow");
     settings.setValue("editorFont", editorFont);
+    settings.setValue("darkMode", darkMode);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
@@ -2732,4 +2771,27 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
     } else {
         return QMainWindow::eventFilter(obj,ev);
     }
+}
+
+void MainWindow::on_actionCheat_Sheet_triggered()
+{
+    IDE::instance()->cheatSheet->show();
+    IDE::instance()->cheatSheet->raise();
+    IDE::instance()->cheatSheet->activateWindow();
+}
+
+void MainWindow::on_actionDark_mode_toggled(bool enable)
+{
+    darkMode = enable;
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("darkMode",darkMode);
+    settings.endGroup();
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            ce->setDarkMode(darkMode);
+        }
+    }
+    static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
 }

@@ -15,17 +15,12 @@
 #include "highlighter.h"
 
 
-Highlighter::Highlighter(QFont& font, QTextDocument *parent)
+Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
     Rule rule;
 
-    QTextCharFormat format;
-
-    format.setForeground(Qt::darkGreen);
-    format.setFontWeight(QFont::Bold);
-
-    quoteFormat.setForeground(Qt::darkGreen);
+    quoteFormat.setForeground(Qt::darkRed);
     rule.pattern = QRegExp("\"([^\"\\\\]|\\\\.)*\"");
     rule.format = quoteFormat;
     rules.append(rule);
@@ -52,6 +47,9 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
              << "\\bthen\\b" << "\\btuple\\b" << "\\btype\\b"
              << "\\bunion\\b" << "\\bvar\\b" << "\\bvariant_record\\b"
              << "\\bwhere\\b" << "\\bxor\\b";
+    QTextCharFormat format;
+
+    format.setFontWeight(QFont::Bold);
     for (int i=0; i<patterns.size(); i++) {
         rule.pattern = QRegExp(patterns[i]);
         rule.format = format;
@@ -69,6 +67,8 @@ Highlighter::Highlighter(QFont& font, QTextDocument *parent)
 
     commentStartExp = QRegExp("/\\*");
     commentEndExp = QRegExp("\\*/");
+
+    setDarkMode(dm);
 
 }
 
@@ -192,4 +192,26 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
     QMimeData* mimeData = te.md();
     QApplication::clipboard()->setMimeData(mimeData);
     delete tempDocument;
+}
+
+void Highlighter::setDarkMode(bool enable)
+{
+    darkMode = enable;
+    if (darkMode) {
+        rules[0].format.setForeground(QColor(143,157,106));
+        commentFormat.setForeground(QColor(90,90,90));
+        rules[1].format.setForeground(QColor(90,90,90));
+        for (int i=2; i<rules.size()-1; i++) {
+            rules[i].format.setForeground(QColor(218,208,133));
+        }
+        rules[rules.size()-1].format.setForeground(QColor(155,112,63));
+    } else {
+        rules[0].format.setForeground(Qt::darkRed);
+        rules[1].format.setForeground(Qt::red);
+        commentFormat.setForeground(Qt::red);
+        for (int i=2; i<rules.size()-1; i++) {
+            rules[i].format.setForeground(Qt::darkGreen);
+        }
+        rules[rules.size()-1].format.setForeground(Qt::blue);
+    }
 }

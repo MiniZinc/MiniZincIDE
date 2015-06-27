@@ -555,6 +555,7 @@
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
+    <addaction name="actionDark_mode"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
     <addaction name="actionSplit"/>
@@ -573,6 +574,7 @@
     </property>
     <addaction name="actionAbout_MiniZinc_IDE"/>
     <addaction name="actionHelp"/>
+    <addaction name="actionCheat_Sheet"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -1180,6 +1182,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+U</string>
+   </property>
+  </action>
+  <action name="actionCheat_Sheet">
+   <property name="text">
+    <string>Cheat Sheet...</string>
+   </property>
+  </action>
+  <action name="actionDark_mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dark mode</string>
    </property>
   </action>
  </widget>

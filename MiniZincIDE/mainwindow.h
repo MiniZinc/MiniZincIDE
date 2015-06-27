@@ -77,6 +77,7 @@ public:
 
     MainWindow* lastDefaultProject;
     Help* helpWindow;
+    QMainWindow* cheatSheet;
 
     QNetworkAccessManager* networkManager;
     QNetworkReply* versionCheckReply;
@@ -262,6 +263,10 @@ private slots:
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(void);
+    void on_actionCheat_Sheet_triggered();
+
+    void on_actionDark_mode_toggled(bool arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -291,6 +296,7 @@ private:
     QElapsedTimer elapsedTime;
     QLabel* statusLabel;
     QFont editorFont;
+    bool darkMode;
     QVector<Solver> solvers;
     QString defaultSolver;
     QString mznDistribPath;
@@ -324,7 +330,7 @@ private:
     QAction* minimizeAction;
     QTextStream* outputBuffer;
 
-    void createEditor(const QString& path, bool openAsModified, bool isNewFile);
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
     QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);

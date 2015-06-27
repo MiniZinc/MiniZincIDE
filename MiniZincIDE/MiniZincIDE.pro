@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    courserasubmission.cpp
+    courserasubmission.cpp \
+    libraryhelp.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -64,7 +65,8 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    courserasubmission.h
+    courserasubmission.h \
+    libraryhelp.h
 
 FORMS    += \
     mainwindow.ui \
@@ -76,7 +78,8 @@ FORMS    += \
     paramdialog.ui \
     checkupdatedialog.ui \
     htmlwindow.ui \
-    courserasubmission.ui
+    courserasubmission.ui \
+    libraryhelp.ui
 
 RESOURCES += \
     minizincide.qrc

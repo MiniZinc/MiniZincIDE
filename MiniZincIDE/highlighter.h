@@ -33,9 +33,10 @@ class Highlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    Highlighter(QFont& font, QTextDocument *parent = 0);
+    Highlighter(QFont& font, bool darkMode, QTextDocument *parent = 0);
     void setEditorFont(QFont& font);
     void copyHighlightedToClipboard(QTextCursor selectionCursor);
+    void setDarkMode(bool);
 protected:
     void highlightBlock(const QString &text);
 
@@ -51,6 +52,8 @@ private:
     QTextCharFormat commentFormat;
     QRegExp commentStartExp;
     QRegExp commentEndExp;
+    bool darkMode;
+
 };
 
 #endif // HIGHLIGHTER_H

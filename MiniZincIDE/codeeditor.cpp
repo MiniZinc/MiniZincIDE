@@ -30,7 +30,9 @@ CodeEditor::initUI(QFont& font)
 
     setLineNumbersWidth(0);
     cursorChange();
-    highlighter = new Highlighter(font,document());
+
+    highlighter = new Highlighter(font,darkMode,document());
+    setDarkMode(darkMode);
 
     QTextCursor cursor(textCursor());
     cursor.movePosition(QTextCursor::Start);
@@ -40,8 +42,8 @@ CodeEditor::initUI(QFont& font)
 }
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                       QFont& font, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t)
+                       QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
+    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -90,14 +92,28 @@ void CodeEditor::setDocument(QTextDocument *document)
     }
 }
 
+void CodeEditor::setDarkMode(bool enable)
+{
+    darkMode = enable;
+    highlighter->setDarkMode(enable);
+    highlighter->rehighlight();
+    if (darkMode) {
+        setStyleSheet("QPlainTextEdit{color: #ffffff; background-color: #181818;}");
+    } else {
+        setStyleSheet("QPlainTextEdit{color: #000000; background-color: #ffffff;}");
+    }
+}
+
 void CodeEditor::docChanged(bool c)
 {
-    int t = tabs->indexOf(this);
-    QString title = tabs->tabText(t);
-    title = title.mid(0, title.lastIndexOf(" *"));
-    if (c)
-        title += " *";
-    tabs->setTabText(t,title);
+    int t = tabs == NULL ? -1 : tabs->indexOf(this);
+    if (t != -1) {
+        QString title = tabs->tabText(t);
+        title = title.mid(0, title.lastIndexOf(" *"));
+        if (c)
+            title += " *";
+        tabs->setTabText(t,title);
+    }
 }
 
 void CodeEditor::keyPressEvent(QKeyEvent *e)
