@@ -1697,6 +1697,7 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     outputBuffer = &outstream;
     compileOnly = false;
     project.timeLimit(timeout, true);
+    on_actionSplit_triggered();
     compileAndRun(modelFilePath,"",dataFilePath);
     return true;
 }
