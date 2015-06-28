@@ -1101,12 +1101,14 @@ void MainWindow::closeEvent(QCloseEvent* e) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
             ce->setDocument(NULL);
+            ce->filepath = "";
             if (ce->filepath != "")
                 IDE::instance()->removeEditor(ce->filepath,ce);
         }
     }
     if (!projectPath.isEmpty())
         IDE::instance()->projects.remove(projectPath);
+    projectPath = "";
 
     IDE::instance()->mainWindows.remove(this);
 
