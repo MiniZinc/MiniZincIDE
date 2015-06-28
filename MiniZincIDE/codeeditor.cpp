@@ -302,6 +302,13 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
 void CodeEditor::paintLineNumbers(QPaintEvent *event)
 {
     QPainter painter(lineNumbers);
+    QFont lineNoFont = font();
+    QFontMetrics fm(lineNoFont);
+    int origFontHeight = fm.height();
+    lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
+    QFontMetrics fm2(lineNoFont);
+    int heightDiff = (origFontHeight-fm2.height());
+    painter.setFont(lineNoFont);
     painter.fillRect(event->rect(), QColor(Qt::lightGray).lighter(120));
 
     QTextBlock block = firstVisibleBlock();
@@ -318,8 +325,8 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
                 painter.setPen(Qt::black);
             else
                 painter.setPen(Qt::gray);
-            int textTop = top+fontMetrics().leading();
-            painter.drawText(0, textTop, lineNumbers->width(), fontMetrics().height(),
+            int textTop = top+fontMetrics().leading()+heightDiff;
+            painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
                              Qt::AlignRight, number);
         }
 
