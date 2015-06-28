@@ -1054,9 +1054,6 @@ void MainWindow::tabCloseRequest(int tab)
     if (!ce->filepath.isEmpty())
         IDE::instance()->removeEditor(ce->filepath,ce);
     delete ce;
-    if (ui->tabWidget->count()==1 && isEmptyProject()) {
-        close();
-    }
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
