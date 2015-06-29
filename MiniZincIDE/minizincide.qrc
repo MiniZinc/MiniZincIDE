@@ -3,6 +3,7 @@
         <file>images/mznlogo.png</file>
         <file>images/about.html</file>
         <file>images/mznicon.png</file>
+        <file>cheat_sheet.mzn</file>
     </qresource>
     <qresource prefix="/icons">
         <file>images/document-new.png</file>
@@ -21,5 +22,7 @@
         <file>images/edit-cut.png</file>
         <file>images/folder.png</file>
         <file>images/package-x-generic.png</file>
+        <file>images/coursera.png</file>
+        <file>images/coursera@2x.png</file>
     </qresource>
 </RCC>

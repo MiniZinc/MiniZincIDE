@@ -84,8 +84,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>601</width>
-             <height>594</height>
+             <width>572</width>
+             <height>593</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -463,7 +463,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -542,6 +542,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionSubmit_to_Coursera"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
@@ -554,6 +555,7 @@
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
+    <addaction name="actionDark_mode"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
     <addaction name="actionSplit"/>
@@ -572,6 +574,7 @@
     </property>
     <addaction name="actionAbout_MiniZinc_IDE"/>
     <addaction name="actionHelp"/>
+    <addaction name="actionCheat_Sheet"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -662,6 +665,7 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
+   <addaction name="actionSubmit_to_Coursera"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -708,12 +712,18 @@
        <property name="uniformRowHeights">
         <bool>true</bool>
        </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
        <property name="animated">
         <bool>true</bool>
        </property>
        <property name="headerHidden">
         <bool>true</bool>
        </property>
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
       </widget>
      </item>
     </layout>
@@ -1160,6 +1170,31 @@
   <action name="actionAdd_to_project">
    <property name="text">
     <string>Add files to project...</string>
+   </property>
+  </action>
+  <action name="actionSubmit_to_Coursera">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/coursera.png</normaloff>:/icons/images/coursera.png</iconset>
+   </property>
+   <property name="text">
+    <string>Submit to Coursera</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
+  </action>
+  <action name="actionCheat_Sheet">
+   <property name="text">
+    <string>Cheat Sheet...</string>
+   </property>
+  </action>
+  <action name="actionDark_mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dark mode</string>
    </property>
   </action>
  </widget>

@@ -11,8 +11,12 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 0.9.7
+VERSION = 0.9.8
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
+
+bundled {
+    DEFINES += MINIZINC_IDE_BUNDLED
+}
 
 macx {
     ICON = mznide.icns
@@ -41,7 +45,8 @@ SOURCES += main.cpp\
     checkupdatedialog.cpp \
     project.cpp \
     htmlwindow.cpp \
-    htmlpage.cpp
+    htmlpage.cpp \
+    courserasubmission.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -58,7 +63,8 @@ HEADERS  += mainwindow.h \
     project.h \
     rtfexporter.h \
     htmlwindow.h \
-    htmlpage.h
+    htmlpage.h \
+    courserasubmission.h
 
 FORMS    += \
     mainwindow.ui \
@@ -69,7 +75,8 @@ FORMS    += \
     finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
-    htmlwindow.ui
+    htmlwindow.ui \
+    courserasubmission.ui
 
 RESOURCES += \
     minizincide.qrc

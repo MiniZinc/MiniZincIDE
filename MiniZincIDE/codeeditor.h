@@ -23,13 +23,14 @@ class CodeEditor : public QPlainTextEdit
     Q_OBJECT
 public:
     explicit CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                        QFont& font, QTabWidget* tabs, QWidget *parent);
+                        QFont& font, bool darkMode, QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
     QString filepath;
     QString filename;
     void setEditorFont(QFont& font);
     void setDocument(QTextDocument *document);
+    void setDarkMode(bool);
 protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);
@@ -46,6 +47,7 @@ private:
     QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
+    bool darkMode;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
 signals:

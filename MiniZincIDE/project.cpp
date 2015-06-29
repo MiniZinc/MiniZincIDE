@@ -12,12 +12,15 @@
 
 #include "project.h"
 #include "ui_mainwindow.h"
+#include "courserasubmission.h"
 
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
+#include <QMessageBox>
+#include <QSortFilterProxyModel>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -35,7 +38,11 @@ Project::Project(Ui::MainWindow *ui0) : ui(ui0)
     _isModified = false;
 }
 
-void Project::setRoot(QTreeView* treeView, const QString &fileName)
+Project::~Project() {
+    delete _courseraProject;
+}
+
+void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
 {
     if (fileName == projectRoot)
         return;
@@ -52,11 +59,35 @@ void Project::setRoot(QTreeView* treeView, const QString &fileName)
     projectRoot = fileName;
     _files.clear();
     for (QStringList::iterator it = allFiles.begin(); it != allFiles.end(); ++it) {
-        addFile(treeView, *it);
+        addFile(treeView, sort, *it);
     }
 }
 
-void Project::addFile(QTreeView* treeView, const QString &fileName)
+QVariant Project::data(const QModelIndex &index, int role) const
+{
+    if (role==Qt::UserRole) {
+        QStandardItem* item = itemFromIndex(index);
+        if (item->parent()==NULL || item->parent()==invisibleRootItem()) {
+            if (item==projectFile) {
+                return "00 - project";
+            }
+            if (item==mzn) {
+                return "01 - mzn";
+            }
+            if (item==dzn) {
+                return "02 - dzn";
+            }
+            if (item==other) {
+                return "03 - other";
+            }
+        }
+        return QStandardItemModel::data(index,Qt::DisplayRole);
+    } else {
+        return QStandardItemModel::data(index,role);
+    }
+}
+
+void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
 {
     if (_files.contains(fileName))
         return;
@@ -76,6 +107,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
     }
     QStandardItem* curItem;
     bool isMiniZinc = true;
+    bool isCoursera = false;
     if (fi.suffix()=="mzn") {
         curItem = mzn;
     } else if (fi.suffix()=="dzn") {
@@ -85,16 +117,90 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
     } else {
         curItem = other;
         isMiniZinc = false;
+        isCoursera = fi.completeBaseName()=="_coursera";
     }
+
+    if (isCoursera) {
+        if (_courseraProject) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                "Cannot add second Coursera options file",
+                                QMessageBox::Ok);
+            return;
+        }
+        QFile metadata(absFileName);
+        if (!metadata.open(QIODevice::ReadOnly)) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                 "Cannot open Coursera options file",
+                                 QMessageBox::Ok);
+            return;
+        }
+        QTextStream in(&metadata);
+        CourseraProject* cp = new CourseraProject;
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        cp->course = in.readLine();
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        cp->checkpwdSid= in.readLine();
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        cp->name = in.readLine();
+        QString nSolutions_s = in.readLine();
+        int nSolutions = nSolutions_s.toInt();
+        for (int i=0; i<nSolutions; i++) {
+            if (in.status() != QTextStream::Ok) {
+                delete cp;
+                goto coursera_done;
+            }
+            QString line = in.readLine();
+            QStringList tokens = line.split(", ");
+            if (tokens.size() < 5) {
+                delete cp;
+                goto coursera_done;
+            }
+            CourseraItem item(tokens[0],tokens[1],tokens[2],tokens[3],tokens[4]);
+            cp->problems.append(item);
+        }
+        if (in.status() != QTextStream::Ok) {
+            delete cp;
+            goto coursera_done;
+        }
+        nSolutions_s = in.readLine();
+        nSolutions = nSolutions_s.toInt();
+        for (int i=0; i<nSolutions; i++) {
+            if (in.status() != QTextStream::Ok) {
+                delete cp;
+                goto coursera_done;
+            }
+            QString line = in.readLine();
+            QStringList tokens = line.split(", ");
+            if (tokens.size() < 3) {
+                delete cp;
+                goto coursera_done;
+            }
+            CourseraItem item(tokens[0],tokens[1],tokens[2]);
+            cp->models.append(item);
+        }
+        _courseraProject = cp;
+        ui->actionSubmit_to_Coursera->setVisible(true);
+    }
+coursera_done:
+
     setModified(true, true);
     QStandardItem* prevItem = curItem;
-    treeView->expand(curItem->index());
+    treeView->expand(sort->mapFromSource(curItem->index()));
     curItem = curItem->child(0);
     int i=0;
     while (curItem != NULL) {
         if (curItem->text() == path.first()) {
             path.pop_front();
-            treeView->expand(curItem->index());
+            treeView->expand(sort->mapFromSource(curItem->index()));
             prevItem = curItem;
             curItem = curItem->child(0);
             i = 0;
@@ -114,7 +220,7 @@ void Project::addFile(QTreeView* treeView, const QString &fileName)
                 newItem->setIcon(QIcon(":/images/mznicon.png"));
             }
         }
-        treeView->expand(newItem->index());
+        treeView->expand(sort->mapFromSource(newItem->index()));
         prevItem = newItem;
     }
 }
@@ -182,6 +288,12 @@ void Project::removeFile(const QString &fileName)
         int row = cur->row();
         cur = cur->parent();
         cur->removeRow(row);
+    }
+    QFileInfo fi(fileName);
+    if (fi.fileName()=="_coursera") {
+        delete _courseraProject;
+        _courseraProject = NULL;
+        ui->actionSubmit_to_Coursera->setVisible(false);
     }
 }
 
@@ -307,6 +419,11 @@ int Project::timeLimit(void) const
 bool Project::solverVerbose(void) const
 {
     return ui->conf_solver_verbose->isChecked();
+}
+
+bool Project::isUndefined() const
+{
+    return projectRoot.isEmpty();
 }
 
 void Project::currentDataFileIndex(int i, bool init)
@@ -568,4 +685,12 @@ void Project::checkModified()
         return;
     }
     setModified(false);
+}
+
+void Project::courseraError()
+{
+    QMessageBox::warning(NULL,"MiniZinc IDE",
+                        "Error reading Coursera options file",
+                        QMessageBox::Ok);
+
 }
