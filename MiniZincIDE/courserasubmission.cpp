@@ -250,12 +250,12 @@ void CourseraSubmission::submit_solution()
 {
     QUrl url("https://class.coursera.org/" + project.course + "/assignment/submit");
     QUrlQuery q;
-    q.addQueryItem("email_address", _login);
-    q.addQueryItem("assignment_part_sid", _sid);
-    q.addQueryItem("submission",_submission.toUtf8().toBase64());
-    q.addQueryItem("submission_aux",_source.toUtf8().toBase64());
-    q.addQueryItem("challenge_response", _ch_resp);
-    q.addQueryItem("state",_state);
+    q.addQueryItem("email_address", QUrl::toPercentEncoding(_login));
+    q.addQueryItem("assignment_part_sid", QUrl::toPercentEncoding(_sid));
+    q.addQueryItem("submission", QUrl::toPercentEncoding(_submission.toUtf8().toBase64()));
+    q.addQueryItem("submission_aux",QUrl::toPercentEncoding(_source.toUtf8().toBase64()));
+    q.addQueryItem("challenge_response", QUrl::toPercentEncoding(_ch_resp));
+    q.addQueryItem("state",QUrl::toPercentEncoding(_state));
 
     QNetworkRequest request;
     request.setUrl(url);
