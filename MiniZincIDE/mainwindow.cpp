@@ -100,7 +100,7 @@ bool IDE::event(QEvent *e)
         if (file.endsWith(".mzp")) {
             PMap::iterator it = projects.find(file);
             if (it==projects.end()) {
-                MainWindow* mw = static_cast<MainWindow*>(activeWindow());
+                MainWindow* mw = qobject_cast<MainWindow*>(activeWindow());
                 if (mw==NULL) {
                     mw = new MainWindow(file);
                     mw->show();
@@ -112,7 +112,7 @@ bool IDE::event(QEvent *e)
                 it.value()->activateWindow();
             }
         } else {
-            MainWindow* curw = static_cast<MainWindow*>(activeWindow());
+            MainWindow* curw = qobject_cast<MainWindow*>(activeWindow());
             if (curw != NULL && (curw->isEmptyProject() || curw==lastDefaultProject)) {
                 curw->openFile(file);
                 lastDefaultProject = curw;
