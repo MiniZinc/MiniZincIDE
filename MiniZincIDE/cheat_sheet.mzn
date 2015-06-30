@@ -51,23 +51,41 @@ var opt 1..10: ox;    % declare optional int variable (can be 1..10 or
                       % absent)
 
 /*********************
-* Common expressions *
+* Basic Constraints  *
 *********************/
-
+constraint x = y;
 constraint x < y;
+constraint x <= y;
+constraint x > y;
+constraint x >= y;
+constraint x != y;    % not equals
+   
+/**********************
+* Logical Connectives *
+**********************/
+                                   % conditionals
+int: d = if i > 10 then a elseif i > 0 then b else c endif;
+constraint if x < y then y < z else y > z endif
+   
 constraint x < y \/ y != z;        % logical "or"
 constraint x < y /\ y != z;        % logical "and"
 constraint x < y -> y != z;        % logical implication
 constraint not (x < y /\ y > z);   % logical negation
 
+/******************
+* Set Constraints *
+******************/
+   
 constraint s subset t;             % non-strict subset relation
 constraint s intersect t subset w; % intersection
 constraint s union t subset w;     % union
 
+/***************************
+* Predicates and Functions *
+***************************/
+   
 constraint all_different(x);       % predicate call
-
-                                   % conditionals
-int: c = if i > 10 then a elseif i > 0 then b else c endif;
+constraint mydiv(x,y) = 2;         % function call
 
 /********************************
 * Comprehensions and generators *
