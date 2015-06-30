@@ -799,7 +799,7 @@ void MainWindow::init(const QString& projectFile)
 
 void MainWindow::onProjectCustomContextMenu(const QPoint & point)
 {
-    projectSelectedIndex = ui->projectView->indexAt(point);
+    projectSelectedIndex = projectSort->mapToSource(ui->projectView->indexAt(point));
     QString file = project.fileAtIndex(projectSelectedIndex);
     if (!file.isEmpty()) {
         projectSelectedFile = file;
