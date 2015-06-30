@@ -35,6 +35,7 @@
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
+#include "courserasubmission.h"
 
 namespace Ui {
 class MainWindow;
@@ -267,6 +268,8 @@ private slots:
 
     void on_actionDark_mode_toggled(bool arg1);
 
+    void courseraFinished(int);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -329,6 +332,7 @@ private:
     QAction* fakeCompileAction;
     QAction* minimizeAction;
     QTextStream* outputBuffer;
+    CourseraSubmission* courseraSubmission;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
     QStringList parseConf(bool compileOnly, bool useDataFile);

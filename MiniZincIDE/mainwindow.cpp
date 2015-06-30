@@ -2750,8 +2750,15 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
 
 void MainWindow::on_actionSubmit_to_Coursera_triggered()
 {
-    CourseraSubmission cs(this, project.coursera());
-    cs.exec();
+    courseraSubmission = new CourseraSubmission(this, project.coursera());
+    connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
+    setEnabled(false);
+    courseraSubmission->show();
+}
+
+void MainWindow::courseraFinished(int) {
+    courseraSubmission->deleteLater();
+    setEnabled(true);
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *ev)

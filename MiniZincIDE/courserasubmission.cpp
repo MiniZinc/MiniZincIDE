@@ -13,7 +13,7 @@
 #include <QCryptographicHash>
 
 CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
-    QDialog(mw0), _cur_phase(S_NONE), project(cp), mw(mw0),
+    QDialog(NULL), _cur_phase(S_NONE), project(cp), mw(mw0),
     ui(new Ui::CourseraSubmission)
 {
     ui->setupUi(this);
