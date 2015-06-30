@@ -76,7 +76,7 @@ void CourseraSubmission::disableUI()
     ui->loginGroup->setEnabled(false);
     ui->modelBox->setEnabled(false);
     ui->problemBox->setEnabled(false);
-    ui->runButton->setText("Cancel");
+    ui->runButton->setText("Abort");
 }
 
 void CourseraSubmission::enableUI()
@@ -103,13 +103,20 @@ void CourseraSubmission::cancelOperation()
         disconnect(reply, SIGNAL(finished()), this, SLOT(rcv_solution_reply()));
         break;
     }
-    ui->textBrowser->insertPlainText("Cancelled.\n");
+    ui->textBrowser->insertPlainText("Aborted.\n");
     _cur_phase = S_NONE;
     enableUI();
 }
 
 void CourseraSubmission::reject()
 {
+    if (_cur_phase != S_NONE &&
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Do you want to close this window and abort the Coursera submission?",
+                                 QMessageBox::Close| QMessageBox::Cancel,
+                                 QMessageBox::Cancel) == QMessageBox::Cancel) {
+        return;
+    }
     cancelOperation();
     QDialog::reject();
 }
