@@ -222,7 +222,11 @@ void CourseraSubmission::rcv_challenge()
             ui->textBrowser->insertPlainText("Running "+item.name+"\n");
             _cur_phase = S_WAIT_SOLVE;
             mw->addOutput("<div style='color:orange;'>Running Coursera submission "+item.name+"</div><br>\n");
-            mw->runWithOutput(item.model, item.data, item.timeout, _output_stream);
+            if (!mw->runWithOutput(item.model, item.data, item.timeout, _output_stream)) {
+                ui->textBrowser->insertPlainText("Error: could not run "+item.name+"\n");
+                ui->textBrowser->insertPlainText("Skipping.\n");
+                goto_next();
+            }
             return;
         } else {
             // Submit model source code

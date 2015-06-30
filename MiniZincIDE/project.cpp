@@ -164,7 +164,8 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                 delete cp;
                 goto coursera_done;
             }
-            CourseraItem item(tokens[0],tokens[1],tokens[2],tokens[3],tokens[4]);
+            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
+                              tokens[3].trimmed(),tokens[4].trimmed());
             cp->problems.append(item);
         }
         if (in.status() != QTextStream::Ok) {
@@ -184,7 +185,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                 delete cp;
                 goto coursera_done;
             }
-            CourseraItem item(tokens[0],tokens[1],tokens[2]);
+            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
             cp->models.append(item);
         }
         _courseraProject = cp;
