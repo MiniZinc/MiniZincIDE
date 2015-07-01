@@ -13,10 +13,13 @@
 #include <QCryptographicHash>
 
 CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
-    QDialog(mw0), _cur_phase(S_NONE), project(cp), mw(mw0),
+    QDialog(NULL), _cur_phase(S_NONE), project(cp), mw(mw0),
     ui(new Ui::CourseraSubmission)
 {
     ui->setupUi(this);
+
+    ui->selectedSolver->setText(mw->getProject().currentSolver());
+
     QVBoxLayout* modelLayout = new QVBoxLayout;
     ui->modelBox->setLayout(modelLayout);
     QVBoxLayout* problemLayout = new QVBoxLayout;
@@ -76,7 +79,7 @@ void CourseraSubmission::disableUI()
     ui->loginGroup->setEnabled(false);
     ui->modelBox->setEnabled(false);
     ui->problemBox->setEnabled(false);
-    ui->runButton->setText("Cancel");
+    ui->runButton->setText("Abort");
 }
 
 void CourseraSubmission::enableUI()
@@ -103,13 +106,20 @@ void CourseraSubmission::cancelOperation()
         disconnect(reply, SIGNAL(finished()), this, SLOT(rcv_solution_reply()));
         break;
     }
-    ui->textBrowser->insertPlainText("Cancelled.\n");
+    ui->textBrowser->insertPlainText("Aborted.\n");
     _cur_phase = S_NONE;
     enableUI();
 }
 
 void CourseraSubmission::reject()
 {
+    if (_cur_phase != S_NONE &&
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Do you want to close this window and abort the Coursera submission?",
+                                 QMessageBox::Close| QMessageBox::Cancel,
+                                 QMessageBox::Cancel) == QMessageBox::Cancel) {
+        return;
+    }
     cancelOperation();
     QDialog::reject();
 }
@@ -222,7 +232,11 @@ void CourseraSubmission::rcv_challenge()
             ui->textBrowser->insertPlainText("Running "+item.name+"\n");
             _cur_phase = S_WAIT_SOLVE;
             mw->addOutput("<div style='color:orange;'>Running Coursera submission "+item.name+"</div><br>\n");
-            mw->runWithOutput(item.model, item.data, item.timeout, _output_stream);
+            if (!mw->runWithOutput(item.model, item.data, item.timeout, _output_stream)) {
+                ui->textBrowser->insertPlainText("Error: could not run "+item.name+"\n");
+                ui->textBrowser->insertPlainText("Skipping.\n");
+                goto_next();
+            }
             return;
         } else {
             // Submit model source code
@@ -239,12 +253,12 @@ void CourseraSubmission::submit_solution()
 {
     QUrl url("https://class.coursera.org/" + project.course + "/assignment/submit");
     QUrlQuery q;
-    q.addQueryItem("email_address", _login);
-    q.addQueryItem("assignment_part_sid", _sid);
-    q.addQueryItem("submission",_submission.toUtf8().toBase64());
-    q.addQueryItem("submission_aux",_source.toUtf8().toBase64());
-    q.addQueryItem("challenge_response", _ch_resp);
-    q.addQueryItem("state",_state);
+    q.addQueryItem("email_address", QUrl::toPercentEncoding(_login));
+    q.addQueryItem("assignment_part_sid", QUrl::toPercentEncoding(_sid));
+    q.addQueryItem("submission", QUrl::toPercentEncoding(_submission.toUtf8().toBase64()));
+    q.addQueryItem("submission_aux",QUrl::toPercentEncoding(_source.toUtf8().toBase64()));
+    q.addQueryItem("challenge_response", QUrl::toPercentEncoding(_ch_resp));
+    q.addQueryItem("state",QUrl::toPercentEncoding(_state));
 
     QNetworkRequest request;
     request.setUrl(url);
