@@ -1452,10 +1452,11 @@ void MainWindow::on_actionRun_triggered()
 
 QString MainWindow::setElapsedTime()
 {
-    int hours = elapsedTime.elapsed() / 3600000;
-    int minutes = (elapsedTime.elapsed() % 3600000) / 60000;
-    int seconds = (elapsedTime.elapsed() % 60000) / 1000;
-    int msec = (elapsedTime.elapsed() % 1000);
+    qint64 elapsed_t = elapsedTime.elapsed();
+    int hours =  elapsed_t / 3600000;
+    int minutes = (elapsed_t % 3600000) / 60000;
+    int seconds = (elapsed_t % 60000) / 1000;
+    int msec = (elapsed_t % 1000);
     QString elapsed;
     if (hours > 0)
         elapsed += QString().number(hours)+"h ";
@@ -1465,7 +1466,20 @@ QString MainWindow::setElapsedTime()
         elapsed += QString().number(seconds)+"s";
     if (hours==0 && minutes==0)
         elapsed += " "+QString().number(msec)+"msec";
-    statusLabel->setText(elapsed);
+
+    QString timeLimit;
+    if (project.timeLimit() > 0) {
+        timeLimit += " / ";
+        int tl_hours = project.timeLimit() / 3600;
+        int tl_minutes = (project.timeLimit() % 3600) / 60;
+        int tl_seconds = project.timeLimit() % 60;
+        if (tl_hours > 0)
+            timeLimit += QString().number(tl_hours)+"h ";
+        if (tl_hours > 0 || tl_minutes > 0)
+            timeLimit += QString().number(tl_minutes)+"m ";
+        timeLimit += QString().number(tl_seconds)+"s";
+    }
+    statusLabel->setText(elapsed+timeLimit);
     return elapsed;
 }
 
