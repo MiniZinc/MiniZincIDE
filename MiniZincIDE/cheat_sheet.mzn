@@ -65,7 +65,7 @@ constraint x != y;    % not equals
 **********************/
                                    % conditionals
 int: d = if i > 10 then a elseif i > 0 then b else c endif;
-constraint if x < y then y < z else y > z endif
+constraint if x < y then y < z else y > z endif;
    
 constraint x < y \/ y != z;        % logical "or"
 constraint x < y /\ y != z;        % logical "and"
@@ -117,7 +117,7 @@ array[int,int] of float: x =
 solve maximize sum(x);        % optimization
 solve minimize sum(x);
 
-solve ::int_search([x,y,z], input_order, indomain_min, complete);
+solve ::int_search([x,y,z], input_order, indomain_min, complete) satisfy;
                       % search annotation
                       % variable selection (examples):
                       %   input_order, first_fail, max_regret, smallest
@@ -127,8 +127,20 @@ solve ::int_search([x,y,z], input_order, indomain_min, complete);
                       % similar for bool_search, set_search, float_search
 
 solve ::seq_search([int_search(x, first_fail, indomain, complete),
-                    int_search(y, input_order, indomain_min, complete)]);
+                    int_search(y, input_order, indomain_min, complete)])
+      satisfy;
                       % first search x, then y
+
+
+
+/*********************
+* Strings and output *
+**********************/
+
+                      % concatenation using ++
+                      % join arrays using string ", "
+                      % convert expression into string using show
+string: s = "a" ++ join(", ",[show(x[i]) | i in 1..3]);
 
 /****************************************
 * User-defined predicates and functions *
