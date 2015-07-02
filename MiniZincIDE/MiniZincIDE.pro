@@ -20,10 +20,16 @@ bundled {
 
 macx {
     ICON = mznide.icns
-    QMAKE_INFO_PLIST = mznide.plist
     OBJECTIVE_SOURCES += rtfexporter.mm
     QT += macextras
     LIBS += -framework Cocoa
+}
+
+macx:bundled {
+    QMAKE_INFO_PLIST = mznide-bundled.plist
+}
+macx:!bundled {
+    QMAKE_INFO_PLIST = mznide.plist
 }
 
 RC_ICONS = mznide.ico
