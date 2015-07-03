@@ -15,7 +15,13 @@
   </property>
   <property name="windowIcon">
    <iconset resource="minizincide.qrc">
-    <normaloff>:/images/mznicon.png</normaloff>:/images/mznicon.png</iconset>
+    <normaloff>:/mznide.ico</normaloff>:/mznide.ico</iconset>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>256</width>
+    <height>256</height>
+   </size>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>true</bool>
