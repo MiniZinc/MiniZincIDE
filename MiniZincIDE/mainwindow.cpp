@@ -212,8 +212,15 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         QSettings settings;
         settings.beginGroup("MainWindow");
 
-        QFont defaultFont("Courier New");
-        defaultFont.setStyleHint(QFont::Monospace);
+        QFont defaultFont;
+        defaultFont.setFamily("Menlo");
+        if (!defaultFont.exactMatch()) {
+            defaultFont.setFamily("Consolas");
+        }
+        if (!defaultFont.exactMatch()) {
+            defaultFont.setFamily("Courier New");
+        }
+        defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
         QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
         bool darkMode = settings.value("darkMode", false).value<bool>();
@@ -640,8 +647,15 @@ void MainWindow::init(const QString& projectFile)
     QSettings settings;
     settings.beginGroup("MainWindow");
 
-    QFont defaultFont("Courier New");
-    defaultFont.setStyleHint(QFont::Monospace);
+    QFont defaultFont;
+    defaultFont.setFamily("Menlo");
+    if (!defaultFont.exactMatch()) {
+        defaultFont.setFamily("Consolas");
+    }
+    if (!defaultFont.exactMatch()) {
+        defaultFont.setFamily("Courier New");
+    }
+    defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
     darkMode = settings.value("darkMode", false).value<bool>();
