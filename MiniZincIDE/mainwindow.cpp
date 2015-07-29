@@ -1189,10 +1189,10 @@ void MainWindow::tabChange(int tab) {
             }
             if (curEditor->filepath.isEmpty()) {
                 setWindowFilePath(curEditor->filename);
-                setWindowTitle(curEditor->filename+p);
+                setWindowTitle(curEditor->filename+p+"[*]");
             } else {
                 setWindowFilePath(curEditor->filepath);
-                setWindowTitle(curEditor->filename+p);
+                setWindowTitle(curEditor->filename+p+"[*]");
             }
             ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
@@ -1247,7 +1247,7 @@ void MainWindow::tabChange(int tab) {
                 QFileInfo fi(projectPath);
                 p = "Project: "+fi.baseName();
             }
-            setWindowTitle(p);
+            setWindowTitle(p+"[*]");
         }
     }
 }
