@@ -2144,15 +2144,21 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
     AboutDialog(IDE::instance()->applicationVersion()).exec();
 }
 
-void MainWindow::errorClicked(const QUrl & url)
+void MainWindow::errorClicked(const QUrl & anUrl)
 {
+    QUrl url = anUrl;
+    QString query = url.query();
+    url.setQuery("");
+    url.setScheme("file");
+    QFileInfo urlinfo(url.toLocalFile());
     IDE::instance()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            if (ce->filepath == url.path()) {
+            QFileInfo ceinfo(ce->filepath);
+            if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
                 QRegExp re_line("line=([0-9]+)");
-                if (re_line.indexIn(url.query()) != -1) {
+                if (re_line.indexIn(query) != -1) {
                     bool ok;
                     int line = re_line.cap(1).toInt(&ok);
                     if (ok) {
