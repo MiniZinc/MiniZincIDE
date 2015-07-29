@@ -87,7 +87,7 @@ void CodeEditor::setDocument(QTextDocument *document)
     QPlainTextEdit::setDocument(document);
     if (document) {
         QFont f= font();
-        highlighter = new Highlighter(f,document);
+        highlighter = new Highlighter(f,darkMode,document);
         connect(document, SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     }
 }
