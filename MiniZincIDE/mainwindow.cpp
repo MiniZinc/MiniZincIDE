@@ -212,8 +212,15 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         QSettings settings;
         settings.beginGroup("MainWindow");
 
-        QFont defaultFont("Courier New");
-        defaultFont.setStyleHint(QFont::Monospace);
+        QFont defaultFont;
+        defaultFont.setFamily("Menlo");
+        if (!defaultFont.exactMatch()) {
+            defaultFont.setFamily("Consolas");
+        }
+        if (!defaultFont.exactMatch()) {
+            defaultFont.setFamily("Courier New");
+        }
+        defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
         QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
         bool darkMode = settings.value("darkMode", false).value<bool>();
@@ -640,8 +647,15 @@ void MainWindow::init(const QString& projectFile)
     QSettings settings;
     settings.beginGroup("MainWindow");
 
-    QFont defaultFont("Courier New");
-    defaultFont.setStyleHint(QFont::Monospace);
+    QFont defaultFont;
+    defaultFont.setFamily("Menlo");
+    if (!defaultFont.exactMatch()) {
+        defaultFont.setFamily("Consolas");
+    }
+    if (!defaultFont.exactMatch()) {
+        defaultFont.setFamily("Courier New");
+    }
+    defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
     editorFont = settings.value("editorFont", defaultFont).value<QFont>();
     darkMode = settings.value("darkMode", false).value<bool>();
@@ -1189,10 +1203,10 @@ void MainWindow::tabChange(int tab) {
             }
             if (curEditor->filepath.isEmpty()) {
                 setWindowFilePath(curEditor->filename);
-                setWindowTitle(curEditor->filename+p);
+                setWindowTitle(curEditor->filename+p+"[*]");
             } else {
                 setWindowFilePath(curEditor->filepath);
-                setWindowTitle(curEditor->filename+p);
+                setWindowTitle(curEditor->filename+p+"[*]");
             }
             ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
@@ -1247,7 +1261,7 @@ void MainWindow::tabChange(int tab) {
                 QFileInfo fi(projectPath);
                 p = "Project: "+fi.baseName();
             }
-            setWindowTitle(p);
+            setWindowTitle(p+"[*]");
         }
     }
 }
@@ -2144,15 +2158,21 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
     AboutDialog(IDE::instance()->applicationVersion()).exec();
 }
 
-void MainWindow::errorClicked(const QUrl & url)
+void MainWindow::errorClicked(const QUrl & anUrl)
 {
+    QUrl url = anUrl;
+    QString query = url.query();
+    url.setQuery("");
+    url.setScheme("file");
+    QFileInfo urlinfo(url.toLocalFile());
     IDE::instance()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            if (ce->filepath == url.path()) {
+            QFileInfo ceinfo(ce->filepath);
+            if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
                 QRegExp re_line("line=([0-9]+)");
-                if (re_line.indexIn(url.query()) != -1) {
+                if (re_line.indexIn(query) != -1) {
                     bool ok;
                     int line = re_line.cap(1).toInt(&ok);
                     if (ok) {
