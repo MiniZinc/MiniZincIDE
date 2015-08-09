@@ -2271,6 +2271,8 @@ void MainWindow::on_actionSelect_font_triggered()
 
 void MainWindow::on_actionGo_to_line_triggered()
 {
+    if (curEditor==NULL)
+        return;
     GoToLineDialog gtl;
     if (gtl.exec()==QDialog::Accepted) {
         bool ok;
@@ -2658,6 +2660,8 @@ void MainWindow::on_actionSave_all_triggered()
 
 void MainWindow::on_action_Un_comment_triggered()
 {
+    if (curEditor==NULL)
+        return;
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
     QTextBlock endblock = curEditor->document()->findBlock(cursor.position());
