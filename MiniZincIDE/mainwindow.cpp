@@ -682,7 +682,11 @@ void MainWindow::init(const QString& projectFile)
 #ifdef MINIZINC_IDE_BUNDLED
     Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
     bool hadgecode = false;
+#ifdef Q_OS_WIN
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true);
+#else
     Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true);
+#endif
     bool hadgecodegist = false;
 #endif
 
