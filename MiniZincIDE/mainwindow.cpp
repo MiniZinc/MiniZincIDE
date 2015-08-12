@@ -46,6 +46,11 @@
 #endif
 #endif
 
+#ifdef USE_MINI_DUMP
+#include "mdump.h"
+MiniDumper g_MiniDumper("MiniZinc IDE","0.9.9","0");
+#endif
+
 IDEStatistics::IDEStatistics(void)
     : errorsShown(0), errorsClicked(0), modelsRun(0) {}
 

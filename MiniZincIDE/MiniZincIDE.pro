@@ -32,6 +32,10 @@ macx:!bundled {
     QMAKE_INFO_PLIST = mznide.plist
 }
 
+win:{
+    DEFINES += USE_MINI_DUMP=1
+}
+
 RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
@@ -52,7 +56,8 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    courserasubmission.cpp
+    courserasubmission.cpp \
+    mdump.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -70,7 +75,8 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    courserasubmission.h
+    courserasubmission.h \
+    mdump.h
 
 FORMS    += \
     mainwindow.ui \
