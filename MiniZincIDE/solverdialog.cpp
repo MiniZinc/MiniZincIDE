@@ -107,15 +107,29 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 
 void SolverDialog::on_updateButton_clicked()
 {
+    if (ui->name->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this,"MiniZinc IDE","You need to specify a name for the new solver.",QMessageBox::Ok);
+        return;
+    }
+    if (ui->executable->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this,"MiniZinc IDE","You need to specify an executable for the new solver.",QMessageBox::Ok);
+        return;
+    }
     int index = ui->solvers_combo->currentIndex();
     if (index==solvers.size()) {
+        for (int i=0; i<solvers.size(); i++) {
+            if (ui->name->text().trimmed()==solvers[i].name) {
+                QMessageBox::warning(this,"MiniZinc IDE","A solver with that name already exists.",QMessageBox::Ok);
+                return;
+            }
+        }
         Solver s;
         solvers.append(s);
     }
     solvers[index].backend = ui->backend->text();
-    solvers[index].executable = ui->executable->text();
+    solvers[index].executable = ui->executable->text().trimmed();
     solvers[index].mznlib = ui->mznpath->text();
-    solvers[index].name = ui->name->text();
+    solvers[index].name = ui->name->text().trimmed();
     solvers[index].builtin = false;
     solvers[index].detach = ui->detach->isChecked();
     if (index==solvers.size()-1) {

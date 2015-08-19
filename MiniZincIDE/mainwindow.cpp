@@ -2214,8 +2214,9 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    ui->conf_solver->addItem("Add new solver...",solvers.size());
     int idx = ui->conf_solver->findText(curSelection);
-    if (idx!=-1)
+    if (!addNew && idx!=-1)
         ui->conf_solver->setCurrentIndex(idx);
     else
         ui->conf_solver->setCurrentText(defaultSolver);
