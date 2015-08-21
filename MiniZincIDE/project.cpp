@@ -321,6 +321,7 @@ void Project::setModified(bool flag, bool files)
                 currentSolver(currentSolver(),true);
                 n_solutions(n_solutions(),true);
                 printAll(printAll(),true);
+                defaultBehaviour(defaultBehaviour(),true);
                 printStats(printStats(),true);
                 haveSolverFlags(haveSolverFlags(),true);
                 solverFlags(solverFlags(),true);
@@ -388,6 +389,10 @@ int Project::n_solutions(void) const
 bool Project::printAll(void) const
 {
     return ui->conf_printall->isChecked();
+}
+bool Project::defaultBehaviour(void) const
+{
+    return ui->defaultBehaviourButton->isChecked();
 }
 bool Project::printStats(void) const
 {
@@ -527,6 +532,16 @@ void Project::printAll(bool b, bool init)
     }
 }
 
+void Project::defaultBehaviour(bool b, bool init)
+{
+    if (init) {
+        _defaultBehaviour = b;
+        ui->defaultBehaviourButton->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
 void Project::printStats(bool b, bool init)
 {
     if (init) {
@@ -650,6 +665,10 @@ void Project::checkModified()
         return;
     }
     if (printAll() != _printAll) {
+        setModified(true);
+        return;
+    }
+    if (defaultBehaviour() != _defaultBehaviour) {
         setModified(true);
         return;
     }

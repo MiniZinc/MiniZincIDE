@@ -949,6 +949,12 @@ void MainWindow::on_actionNewData_file_triggered()
     createEditor(".dzn",false,true);
 }
 
+void MainWindow::on_defaultBehaviourButton_toggled(bool checked)
+{
+    ui->defaultBehaviourFrame->setEnabled(checked);
+    ui->userBehaviourFrame->setEnabled(!checked);
+}
+
 void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly) {
     QTextDocument* doc = NULL;
     bool large = false;
@@ -1296,8 +1302,18 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         ret << ""+project.extraMzn2FznArgs();
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (!compileOnly && project.printAll())
-        ret << "-a";
+    if (!compileOnly && project.defaultBehaviour()) {
+        QFile fznFile(currentFznTarget);
+        if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            fznFile.seek(fznFile.size()-strlen("satisfy;\n"));
+            QString line = fznFile.readLine();
+            if (!line.contains("satisfy;"))
+                ret << "-a";
+        }
+    } else {
+        if (!compileOnly && project.printAll())
+            ret << "-a";
+    }
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
@@ -1309,7 +1325,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (!compileOnly && project.n_solutions() != 1)
+    if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
         ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
@@ -2509,6 +2525,7 @@ void MainWindow::saveProject(const QString& f)
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
+            out << project.defaultBehaviour();
             project.setModified(false, true);
 
         } else {
@@ -2602,6 +2619,12 @@ void MainWindow::loadProject(const QString& filepath)
         in >> projectFilesRelPath;
     } else {
         projectFilesRelPath = openFiles;
+    }
+    if (version==103 && !in.atEnd()) {
+        in >> p_b;
+        project.defaultBehaviour(p_b, true);
+    } else {
+        project.defaultBehaviour(project.n_solutions() == 1 && !project.printAll());
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
