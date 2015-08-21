@@ -70,7 +70,9 @@ private slots:
 
     void on_send_stats_stateChanged(int arg1);
 
-    void on_mznDistribPath_editingFinished();
+    void on_mznDistribPath_returnPressed();
+
+    void on_check_solver_clicked();
 
 private:
     Ui::SolverDialog *ui;

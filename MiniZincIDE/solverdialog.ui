@@ -211,6 +211,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="check_solver">
+       <property name="text">
+        <string>Check</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

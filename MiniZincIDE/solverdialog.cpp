@@ -159,7 +159,7 @@ void SolverDialog::on_mznpath_select_clicked()
     fd.setOption(QFileDialog::ShowDirsOnly, true);
     if (fd.exec()) {
         ui->mznDistribPath->setText(fd.selectedFiles().first());
-        on_mznDistribPath_editingFinished();
+        on_mznDistribPath_returnPressed();
     }
 }
 
@@ -241,7 +241,7 @@ void SolverDialog::editingFinished(bool showError)
     }
 }
 
-void SolverDialog::on_mznDistribPath_editingFinished()
+void SolverDialog::on_mznDistribPath_returnPressed()
 {
     editingFinished(true);
 }
@@ -266,4 +266,9 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 #else
     setenv("PATH", curPath.toStdString().c_str(), 1);
 #endif
+}
+
+void SolverDialog::on_check_solver_clicked()
+{
+    editingFinished(true);
 }
