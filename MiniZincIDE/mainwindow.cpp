@@ -1917,6 +1917,7 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_actionStop_triggered()
 {
+    ui->actionStop->setEnabled(false);
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
@@ -1929,14 +1930,16 @@ void MainWindow::on_actionStop_triggered()
 #else
         ::kill(process->pid(), SIGINT);
 #endif
-        if (!process->waitForFinished(100)) {
-            process->kill();
-            process->waitForFinished();
-            delete process;
-            process = NULL;
-            addOutput("<div style='color:blue;'>Stopped.</div><br>");
-            procFinished(0);
+        if (!process->waitForFinished(500)) {
+            if (process->state() != QProcess::NotRunning) {
+                process->kill();
+                process->waitForFinished();
+            }
         }
+        delete process;
+        process = NULL;
+        addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        procFinished(0);
     }
 }
 
