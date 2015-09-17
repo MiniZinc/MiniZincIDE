@@ -1298,8 +1298,11 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         !project.extraArgs().isEmpty())
         ret << "-D" << project.extraArgs();
     if (compileOnly && project.haveExtraMzn2FznArgs() &&
-        !project.extraMzn2FznArgs().isEmpty())
-        ret << ""+project.extraMzn2FznArgs();
+        !project.extraMzn2FznArgs().isEmpty()) {
+        QStringList compilerArgs =
+                project.extraMzn2FznArgs().split(" ", QString::SkipEmptyParts);
+        ret << compilerArgs;
+    }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
     if (!compileOnly && project.defaultBehaviour()) {
