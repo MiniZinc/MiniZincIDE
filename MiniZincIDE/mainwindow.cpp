@@ -1473,6 +1473,7 @@ void MainWindow::on_actionRun_triggered()
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+        ui->tabWidget->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(false);
         on_actionSplit_triggered();
         IDE::instance()->stats.modelsRun++;
@@ -1780,6 +1781,7 @@ void MainWindow::procFinished(int, bool showTime) {
     fakeStopAction->setEnabled(true);
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
+    ui->tabWidget->setEnabled(true);
     ui->actionSubmit_to_Coursera->setEnabled(true);
     timer->stop();
     QString elapsedTime = setElapsedTime();
@@ -2131,6 +2133,7 @@ void MainWindow::on_actionCompile_triggered()
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+        ui->tabWidget->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(false);
 
         compileOnly = true;
