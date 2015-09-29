@@ -682,7 +682,11 @@ void MainWindow::init(const QString& projectFile)
 #ifdef MINIZINC_IDE_BUNDLED
     Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
     bool hadgecode = false;
+#ifdef Q_OS_WIN
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true);
+#else
     Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true);
+#endif
     bool hadgecodegist = false;
 #endif
 
@@ -943,6 +947,12 @@ void MainWindow::on_actionNewModel_file_triggered()
 void MainWindow::on_actionNewData_file_triggered()
 {
     createEditor(".dzn",false,true);
+}
+
+void MainWindow::on_defaultBehaviourButton_toggled(bool checked)
+{
+    ui->defaultBehaviourFrame->setEnabled(checked);
+    ui->userBehaviourFrame->setEnabled(!checked);
 }
 
 void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly) {
@@ -1288,12 +1298,25 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         !project.extraArgs().isEmpty())
         ret << "-D" << project.extraArgs();
     if (compileOnly && project.haveExtraMzn2FznArgs() &&
-        !project.extraMzn2FznArgs().isEmpty())
-        ret << ""+project.extraMzn2FznArgs();
+        !project.extraMzn2FznArgs().isEmpty()) {
+        QStringList compilerArgs =
+                project.extraMzn2FznArgs().split(" ", QString::SkipEmptyParts);
+        ret << compilerArgs;
+    }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (!compileOnly && project.printAll())
-        ret << "-a";
+    if (!compileOnly && project.defaultBehaviour()) {
+        QFile fznFile(currentFznTarget);
+        if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            fznFile.seek(fznFile.size()-strlen("satisfy;\n"));
+            QString line = fznFile.readLine();
+            if (!line.contains("satisfy;"))
+                ret << "-a";
+        }
+    } else {
+        if (!compileOnly && project.printAll())
+            ret << "-a";
+    }
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
@@ -1305,7 +1328,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (!compileOnly && project.n_solutions() != 1)
+    if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
         ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
@@ -1450,6 +1473,7 @@ void MainWindow::on_actionRun_triggered()
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+        ui->tabWidget->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(false);
         on_actionSplit_triggered();
         IDE::instance()->stats.modelsRun++;
@@ -1757,6 +1781,7 @@ void MainWindow::procFinished(int, bool showTime) {
     fakeStopAction->setEnabled(true);
     ui->actionStop->setEnabled(false);
     ui->configuration->setEnabled(true);
+    ui->tabWidget->setEnabled(true);
     ui->actionSubmit_to_Coursera->setEnabled(true);
     timer->stop();
     QString elapsedTime = setElapsedTime();
@@ -1894,6 +1919,7 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_actionStop_triggered()
 {
+    ui->actionStop->setEnabled(false);
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
@@ -1906,14 +1932,16 @@ void MainWindow::on_actionStop_triggered()
 #else
         ::kill(process->pid(), SIGINT);
 #endif
-        if (!process->waitForFinished(100)) {
-            process->kill();
-            process->waitForFinished();
-            delete process;
-            process = NULL;
-            addOutput("<div style='color:blue;'>Stopped.</div><br>");
-            procFinished(0);
+        if (!process->waitForFinished(500)) {
+            if (process->state() != QProcess::NotRunning) {
+                process->kill();
+                process->waitForFinished();
+            }
         }
+        delete process;
+        process = NULL;
+        addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        procFinished(0);
     }
 }
 
@@ -2105,6 +2133,7 @@ void MainWindow::on_actionCompile_triggered()
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->configuration->setEnabled(false);
+        ui->tabWidget->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(false);
 
         compileOnly = true;
@@ -2210,8 +2239,9 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
+    ui->conf_solver->addItem("Add new solver...",solvers.size());
     int idx = ui->conf_solver->findText(curSelection);
-    if (idx!=-1)
+    if (!addNew && idx!=-1)
         ui->conf_solver->setCurrentIndex(idx);
     else
         ui->conf_solver->setCurrentText(defaultSolver);
@@ -2271,6 +2301,8 @@ void MainWindow::on_actionSelect_font_triggered()
 
 void MainWindow::on_actionGo_to_line_triggered()
 {
+    if (curEditor==NULL)
+        return;
     GoToLineDialog gtl;
     if (gtl.exec()==QDialog::Accepted) {
         bool ok;
@@ -2502,6 +2534,7 @@ void MainWindow::saveProject(const QString& f)
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
             out << projectFilesRelPath;
+            out << project.defaultBehaviour();
             project.setModified(false, true);
 
         } else {
@@ -2596,6 +2629,12 @@ void MainWindow::loadProject(const QString& filepath)
     } else {
         projectFilesRelPath = openFiles;
     }
+    if (version==103 && !in.atEnd()) {
+        in >> p_b;
+        project.defaultBehaviour(p_b, true);
+    } else {
+        project.defaultBehaviour(project.n_solutions() == 1 && !project.printAll());
+    }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
@@ -2658,6 +2697,8 @@ void MainWindow::on_actionSave_all_triggered()
 
 void MainWindow::on_action_Un_comment_triggered()
 {
+    if (curEditor==NULL)
+        return;
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
     QTextBlock endblock = curEditor->document()->findBlock(cursor.position());

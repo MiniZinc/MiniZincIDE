@@ -76,6 +76,7 @@ public:
     QString currentSolver(void) const;
     int n_solutions(void) const;
     bool printAll(void) const;
+    bool defaultBehaviour(void) const;
     bool printStats(void) const;
     bool haveSolverFlags(void) const;
     QString solverFlags(void) const;
@@ -97,6 +98,7 @@ public slots:
     void currentSolver(const QString& s, bool init=false);
     void n_solutions(int n, bool init=false);
     void printAll(bool b, bool init=false);
+    void defaultBehaviour(bool b, bool init=false);
     void printStats(bool b, bool init=false);
     void haveSolverFlags(bool b, bool init=false);
     void solverFlags(const QString& s, bool init=false);
@@ -130,6 +132,7 @@ protected:
     QString _currentSolver;
     int _n_solutions;
     bool _printAll;
+    bool _defaultBehaviour;
     bool _printStats;
     bool _haveSolverFlags;
     QString _solverFlags;

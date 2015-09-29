@@ -1,3 +1,19 @@
+2015-09-29
+  v0.9.10
+  - Disable all editing while the solver is running (avoids race conditions).
+  - Fix behaviour of stop button: avoid race condition when pressing it twice,
+    and signal that process has stopped when the initial SIGINT was successful.
+  - Split up extra mzn2fzn command line arguments so they get passed correctly.
+  - Changed behaviour of MiniZinc path input (now doesn't check for presence
+    of mzn2fzn every time the cursor leaves the input box).
+  - Add configuration option to use "default behaviour" when running models,
+    which is to output all intermediate solutions for optimisation problems,
+    and stop after one solution for satisfaction problems.
+  - Fix "Add solver" dialog (sometimes the option to add solvers would
+    disappear from the drop-down menu).
+  - On Windows, configure Gecode/Gist to run the correct batch file.
+  - Fix a crash when activating the (un)comment or go to line actions while
+    on the configuration tab.
 2015-07-30
   v0.9.9
   - Fix for clicking on error messages on Windows

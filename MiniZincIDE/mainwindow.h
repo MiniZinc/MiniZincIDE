@@ -270,6 +270,8 @@ private slots:
 
     void courseraFinished(int);
 
+    void on_defaultBehaviourButton_toggled(bool checked);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

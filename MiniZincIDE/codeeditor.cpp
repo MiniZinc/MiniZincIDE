@@ -84,12 +84,19 @@ void CodeEditor::setDocument(QTextDocument *document)
         delete highlighter;
         highlighter = NULL;
     }
+    disconnect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    disconnect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
+    disconnect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     QPlainTextEdit::setDocument(document);
     if (document) {
         QFont f= font();
         highlighter = new Highlighter(f,darkMode,document);
-        connect(document, SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     }
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
+    connect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
 }
 
 void CodeEditor::setDarkMode(bool enable)
