@@ -74,6 +74,9 @@ public:
     QStringList recentFiles;
     QStringList recentProjects;
 
+    QSet<QString> modifiedFiles;
+    QTimer modifiedTimer;
+
     IDEStatistics stats;
 
     MainWindow* lastDefaultProject;
@@ -107,6 +110,8 @@ protected slots:
     void newProject(void);
     void openFile(void);
     void fileModified(const QString&);
+    void fileModifiedTimeout(void);
+    void handleFocusChange(QWidget*,QWidget*);
 public slots:
     void checkUpdate(void);
     void help(void);

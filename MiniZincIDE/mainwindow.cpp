@@ -241,6 +241,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
 
     connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
+    connect(this, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(handleFocusChange(QWidget*,QWidget*)));
+    connect(&modifiedTimer, SIGNAL(timeout()), this, SLOT(fileModifiedTimeout()));
 
 #ifdef Q_OS_MAC
     MainWindow* mw = new MainWindow(QString());
@@ -281,41 +283,61 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     checkUpdate();
 }
 
-void IDE::fileModified(const QString &f)
+void IDE::handleFocusChange(QWidget *old, QWidget *newW)
 {
-    DMap::iterator it = documents.find(f);
-    if (it != documents.end()) {
-        QFileInfo fi(f);
-        QMessageBox msg;
+    if (old==NULL && newW!=NULL && !modifiedFiles.empty()) {
+        fileModifiedTimeout();
+    }
+}
 
-        if (!fi.exists()) {
-            msg.setText("The file "+fi.fileName()+" has been removed or renamed outside MiniZinc IDE.");
-            msg.setStandardButtons(QMessageBox::Ok);
-        } else {
-            msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
-            if (it.value()->td.isModified()) {
-                msg.setInformativeText("Do you want to reload the file and discard your changes?");
+void IDE::fileModifiedTimeout(void)
+{
+    QSet<QString> modCopy = modifiedFiles;
+    modifiedFiles.clear();
+    for (QSet<QString>::iterator s_it = modCopy.begin(); s_it != modCopy.end(); ++s_it) {
+        DMap::iterator it = documents.find(*s_it);
+        if (it != documents.end()) {
+            QFileInfo fi(*s_it);
+            QMessageBox msg;
+
+            if (!fi.exists()) {
+                msg.setText("The file "+fi.fileName()+" has been removed or renamed outside MiniZinc IDE.");
+                msg.setStandardButtons(QMessageBox::Ok);
             } else {
-                msg.setInformativeText("Do you want to reload the file?");
-            }
-            QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
-            msg.addButton("Reload", QMessageBox::AcceptRole);
-            msg.exec();
-            if (msg.clickedButton()==cancelButton) {
-                it.value()->td.setModified(true);
-            } else {
-                QFile file(f);
-                if (file.open(QFile::ReadOnly | QFile::Text)) {
-                    it.value()->td.setPlainText(file.readAll());
-                    it.value()->td.setModified(false);
+                msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
+                if (it.value()->td.isModified()) {
+                    msg.setInformativeText("Do you want to reload the file and discard your changes?");
                 } else {
-                    QMessageBox::warning(NULL, "MiniZinc IDE",
-                                         "Could not reload file "+f,
-                                         QMessageBox::Ok);
+                    msg.setInformativeText("Do you want to reload the file?");
+                }
+                QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
+                msg.addButton("Reload", QMessageBox::AcceptRole);
+                msg.exec();
+                if (msg.clickedButton()==cancelButton) {
                     it.value()->td.setModified(true);
+                } else {
+                    QFile file(*s_it);
+                    if (file.open(QFile::ReadOnly | QFile::Text)) {
+                        it.value()->td.setPlainText(file.readAll());
+                        it.value()->td.setModified(false);
+                    } else {
+                        QMessageBox::warning(NULL, "MiniZinc IDE",
+                                             "Could not reload file "+*s_it,
+                                             QMessageBox::Ok);
+                        it.value()->td.setModified(true);
+                    }
                 }
             }
         }
+    }
+}
+
+void IDE::fileModified(const QString &f)
+{
+    modifiedFiles.insert(f);
+    if (activeWindow()!=NULL) {
+        modifiedTimer.setSingleShot(true);
+        modifiedTimer.start(3000);
     }
 }
 

@@ -14,6 +14,7 @@
   - On Windows, configure Gecode/Gist to run the correct batch file.
   - Fix a crash when activating the (un)comment or go to line actions while
     on the configuration tab.
+  - Avoid opening multiple "File modified" dialogs for the same file.
 2015-07-30
   v0.9.9
   - Fix for clicking on error messages on Windows
