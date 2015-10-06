@@ -1,5 +1,6 @@
-2015-09-29
-  v0.9.10
+2015-10-06
+  v2.0.7
+  - Changed version number scheme to coincide with MiniZinc version.
   - Disable all editing while the solver is running (avoids race conditions).
   - Fix behaviour of stop button: avoid race condition when pressing it twice,
     and signal that process has stopped when the initial SIGINT was successful.
