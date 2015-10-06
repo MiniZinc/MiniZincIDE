@@ -1330,10 +1330,13 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     if (!compileOnly && project.defaultBehaviour()) {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            fznFile.seek(fznFile.size()-strlen("satisfy;\n"));
-            QString line = fznFile.readLine();
-            if (!line.contains("satisfy;"))
-                ret << "-a";
+            int seekSize = strlen("satisfy;\n\n");
+            if (fznFile.size() >= seekSize) {
+                fznFile.seek(fznFile.size()-seekSize);
+                QString line = fznFile.readLine();
+                if (!line.contains("satisfy;"))
+                    ret << "-a";
+            }
         }
     } else {
         if (!compileOnly && project.printAll())
