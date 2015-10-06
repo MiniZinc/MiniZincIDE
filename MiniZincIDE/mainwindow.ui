@@ -90,8 +90,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>599</width>
-             <height>772</height>
+             <width>593</width>
+             <height>774</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -270,7 +270,7 @@
                        </size>
                       </property>
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimisation problems: print all solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimization problems: print all solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="textFormat">
                        <enum>Qt::RichText</enum>
@@ -300,7 +300,7 @@
                  <item>
                   <widget class="QRadioButton" name="userBehaviourButton">
                    <property name="text">
-                    <string>User-defined behaviour</string>
+                    <string>User-defined behavior</string>
                    </property>
                    <attribute name="buttonGroup">
                     <string notr="true">buttonGroup</string>
@@ -348,7 +348,7 @@
                       <item>
                        <widget class="QLabel" name="label_6">
                         <property name="text">
-                         <string>(not relevant for optimisation problems)</string>
+                         <string>(not relevant for optimization problems)</string>
                         </property>
                        </widget>
                       </item>
