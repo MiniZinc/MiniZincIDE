@@ -340,6 +340,7 @@ private:
     QAction* minimizeAction;
     QTextStream* outputBuffer;
     CourseraSubmission* courseraSubmission;
+    bool processRunning;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
     QStringList parseConf(bool compileOnly, bool useDataFile);
@@ -355,6 +356,7 @@ private:
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
+    void updateUiProcessRunning(bool pr);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
