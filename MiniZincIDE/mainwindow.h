@@ -103,6 +103,7 @@ public:
     static IDE* instance(void);
     QString getLastPath(void);
     void setLastPath(const QString& path);
+    void setEditorFont(QFont font);
 protected:
     bool event(QEvent *);
 protected slots:

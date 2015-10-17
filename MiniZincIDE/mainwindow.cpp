@@ -360,6 +360,18 @@ void IDE::setLastPath(const QString& path) {
     settings.endGroup();
 }
 
+void IDE::setEditorFont(QFont font)
+{
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("editorFont", font);
+    settings.endGroup();
+    for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
+         it != IDE::instance()->mainWindows.end(); ++it) {
+        (*it)->setEditorFont(font);
+    }
+}
+
 void IDE::openFile()
 {
     QString fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
@@ -695,7 +707,7 @@ void MainWindow::init(const QString& projectFile)
     }
     settings.endGroup();
 
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
     bool hadg12fd = false;
@@ -2195,19 +2207,19 @@ void MainWindow::setEditorFont(QFont font)
 void MainWindow::on_actionBigger_font_triggered()
 {
     editorFont.setPointSize(editorFont.pointSize()+1);
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionSmaller_font_triggered()
 {
     editorFont.setPointSize(std::max(5, editorFont.pointSize()-1));
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionDefault_font_size_triggered()
 {
     editorFont.setPointSize(13);
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
@@ -2323,7 +2335,7 @@ void MainWindow::on_actionSelect_font_triggered()
     QFont newFont = QFontDialog::getFont(&ok,editorFont,this);
     if (ok) {
         editorFont = newFont;
-        setEditorFont(editorFont);
+        IDE::instance()->setEditorFont(editorFont);
     }
 }
 
