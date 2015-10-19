@@ -360,6 +360,18 @@ void IDE::setLastPath(const QString& path) {
     settings.endGroup();
 }
 
+void IDE::setEditorFont(QFont font)
+{
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("editorFont", font);
+    settings.endGroup();
+    for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
+         it != IDE::instance()->mainWindows.end(); ++it) {
+        (*it)->setEditorFont(font);
+    }
+}
+
 void IDE::openFile()
 {
     QString fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
@@ -546,7 +558,8 @@ MainWindow::MainWindow(const QString& project) :
     tmpDir(NULL),
     saveBeforeRunning(false),
     project(ui),
-    outputBuffer(NULL)
+    outputBuffer(NULL),
+    processRunning(false)
 {
     init(project);
 }
@@ -560,7 +573,8 @@ MainWindow::MainWindow(const QStringList& files) :
     tmpDir(NULL),
     saveBeforeRunning(false),
     project(ui),
-    outputBuffer(NULL)
+    outputBuffer(NULL),
+    processRunning(false)
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
@@ -693,7 +707,7 @@ void MainWindow::init(const QString& projectFile)
     }
     settings.endGroup();
 
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
     bool hadg12fd = false;
@@ -877,6 +891,35 @@ void MainWindow::addFileToProject(bool dznOnly)
         project.addFile(ui->projectView, projectSort, *it);
     }
     setupDznMenu();
+}
+
+void MainWindow::updateUiProcessRunning(bool pr)
+{
+    processRunning = pr;
+
+    if (processRunning) {
+        fakeRunAction->setEnabled(true);
+        ui->actionRun->setEnabled(false);
+        fakeCompileAction->setEnabled(true);
+        ui->actionCompile->setEnabled(false);
+        fakeStopAction->setEnabled(false);
+        ui->actionStop->setEnabled(true);
+        ui->actionSubmit_to_Coursera->setEnabled(false);
+    } else {
+        bool isMzn = false;
+        bool isFzn = false;
+        if (curEditor) {
+            isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
+            isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+        }
+        fakeRunAction->setEnabled(! (isMzn || isFzn));
+        ui->actionRun->setEnabled(isMzn || isFzn);
+        fakeCompileAction->setEnabled(!isMzn);
+        ui->actionCompile->setEnabled(isMzn);
+        fakeStopAction->setEnabled(true);
+        ui->actionStop->setEnabled(false);
+        ui->actionSubmit_to_Coursera->setEnabled(true);
+    }
 }
 
 void MainWindow::onActionProjectOpen_triggered()
@@ -1245,12 +1288,7 @@ void MainWindow::tabChange(int tab) {
             ui->actionSelect_All->setEnabled(true);
             ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
             ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
-            bool isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
-            bool isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
-            fakeRunAction->setEnabled(! (isMzn || isFzn));
-            ui->actionRun->setEnabled(isMzn || isFzn);
-            fakeCompileAction->setEnabled(!isMzn);
-            ui->actionCompile->setEnabled(isMzn);
+            updateUiProcessRunning(processRunning);
 
             findDialog->setEditor(curEditor);
             ui->actionFind->setEnabled(true);
@@ -1491,15 +1529,7 @@ void MainWindow::on_actionRun_triggered()
         }
         if (curEditor->document()->isModified())
             return;
-        fakeRunAction->setEnabled(true);
-        ui->actionRun->setEnabled(false);
-        fakeCompileAction->setEnabled(true);
-        ui->actionCompile->setEnabled(false);
-        fakeStopAction->setEnabled(false);
-        ui->actionStop->setEnabled(true);
-        ui->configuration->setEnabled(false);
-        ui->tabWidget->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        updateUiProcessRunning(true);
         on_actionSplit_triggered();
         IDE::instance()->stats.modelsRun++;
         if (curEditor->filepath.endsWith(".fzn")) {
@@ -1773,6 +1803,7 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     outputBuffer = &outstream;
     compileOnly = false;
     project.timeLimit(timeout, true);
+    updateUiProcessRunning(true);
     on_actionSplit_triggered();
     compileAndRun(modelFilePath,"",dataFilePath);
     return true;
@@ -1799,15 +1830,7 @@ void MainWindow::pipeOutput()
 
 void MainWindow::procFinished(int, bool showTime) {
     readOutput();
-    fakeRunAction->setEnabled(false);
-    ui->actionRun->setEnabled(true);
-    fakeCompileAction->setEnabled(false);
-    ui->actionCompile->setEnabled(true);
-    fakeStopAction->setEnabled(true);
-    ui->actionStop->setEnabled(false);
-    ui->configuration->setEnabled(true);
-    ui->tabWidget->setEnabled(true);
-    ui->actionSubmit_to_Coursera->setEnabled(true);
+    updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
@@ -2151,15 +2174,7 @@ void MainWindow::on_actionCompile_triggered()
         }
         if (curEditor->document()->isModified())
             return;
-        fakeRunAction->setEnabled(true);
-        ui->actionRun->setEnabled(false);
-        fakeCompileAction->setEnabled(true);
-        ui->actionCompile->setEnabled(false);
-        fakeStopAction->setEnabled(false);
-        ui->actionStop->setEnabled(true);
-        ui->configuration->setEnabled(false);
-        ui->tabWidget->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        updateUiProcessRunning(true);
 
         compileOnly = true;
         checkArgs(curEditor->filepath);
@@ -2192,19 +2207,19 @@ void MainWindow::setEditorFont(QFont font)
 void MainWindow::on_actionBigger_font_triggered()
 {
     editorFont.setPointSize(editorFont.pointSize()+1);
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionSmaller_font_triggered()
 {
     editorFont.setPointSize(std::max(5, editorFont.pointSize()-1));
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionDefault_font_size_triggered()
 {
     editorFont.setPointSize(13);
-    setEditorFont(editorFont);
+    IDE::instance()->setEditorFont(editorFont);
 }
 
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
@@ -2320,7 +2335,7 @@ void MainWindow::on_actionSelect_font_triggered()
     QFont newFont = QFontDialog::getFont(&ok,editorFont,this);
     if (ok) {
         editorFont = newFont;
-        setEditorFont(editorFont);
+        IDE::instance()->setEditorFont(editorFont);
     }
 }
 

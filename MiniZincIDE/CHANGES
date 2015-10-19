@@ -1,3 +1,8 @@
+?
+  v2.0.8
+  - Only disable the run and compile actions when a solving process is currently
+    running (keep editor and rest of the user interface enabled).
+  - Keep editor font setting synchronised across different IDE windows.
 2015-10-06
   v2.0.7
   - Changed version number scheme to coincide with MiniZinc version.
