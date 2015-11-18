@@ -519,7 +519,39 @@ void
 IDE::versionCheckFinished(void) {
     if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = versionCheckReply->readAll();
-        if (currentVersion > applicationVersion()) {
+
+        QRegExp versionRegExp("([1-9][0-9]+)\\.([0-9]+)\\.([0-9]+)");
+
+        int curVersionMajor = 0;
+        int curVersionMinor = 0;
+        int curVersionPatch = 0;
+        bool ok = true;
+        if (versionRegExp.indexIn(currentVersion) != -1) {
+            curVersionMajor = versionRegExp.cap(1).toInt(&ok);
+            if (ok)
+                curVersionMinor = versionRegExp.cap(2).toInt(&ok);
+            if (ok)
+                curVersionPatch = versionRegExp.cap(3).toInt(&ok);
+        }
+
+        int appVersionMajor = 0;
+        int appVersionMinor = 0;
+        int appVersionPatch = 0;
+        if (ok && versionRegExp.indexIn(applicationVersion()) != -1) {
+            appVersionMajor = versionRegExp.cap(1).toInt(&ok);
+            if (ok)
+                appVersionMinor = versionRegExp.cap(2).toInt(&ok);
+            if (ok)
+                appVersionPatch = versionRegExp.cap(3).toInt(&ok);
+        }
+
+        bool needUpdate = ok && (curVersionMajor > appVersionMajor ||
+                                 (curVersionMajor==appVersionMajor &&
+                                  (curVersionMinor > appVersionMinor ||
+                                   (curVersionMinor==appVersionMinor &&
+                                    curVersionPatch > appVersionPatch))));
+
+        if (needUpdate) {
             int button = QMessageBox::information(NULL,"Update available",
                                      "Version "+currentVersion+" of the MiniZinc IDE is now available. "
                                      "You are currently using version "+applicationVersion()+
