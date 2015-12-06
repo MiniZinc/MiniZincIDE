@@ -591,7 +591,6 @@
     <addaction name="actionNewModel_file"/>
     <addaction name="actionNewData_file"/>
     <addaction name="actionOpen"/>
-    <addaction name="actionAdd_to_project"/>
     <addaction name="menuRecent_Files"/>
     <addaction name="menuRecent_Projects"/>
     <addaction name="separator"/>
@@ -1266,11 +1265,6 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
-   </property>
-  </action>
-  <action name="actionAdd_to_project">
-   <property name="text">
-    <string>Add files to project...</string>
    </property>
   </action>
   <action name="actionSubmit_to_Coursera">

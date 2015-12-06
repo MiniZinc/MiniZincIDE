@@ -1,4 +1,9 @@
-?
+2015-12-07
+  v2.0.9
+  - Remove (unimplemented) menu item for adding files to a project.
+  - Fix version number comparison to work for multi-digit minor and patch
+    versions.
+2015-10-19
   v2.0.8
   - Only disable the run and compile actions when a solving process is currently
     running (keep editor and rest of the user interface enabled).
