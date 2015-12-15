@@ -1783,6 +1783,16 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "-o" << currentFznTarget;
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << modelPath;
+
+        //check if there are check files, add the check file into the args
+        if (ui->defaultBehaviourButton->isChecked() || (ui->userBehaviourButton->isChecked() && ui->conf_check->isChecked())) {
+            QString checkFilePath = fi.absolutePath()+"/"+fi.baseName()+".mzc";
+            QFile file(checkFilePath);
+            if(file.open(QFile::ReadOnly | QFile::Text)) {
+                args << checkFilePath;
+            }
+        }
+
         QString compiling = fi.fileName();
         if (project.currentDataFile()!="None") {
             compiling += " with data ";
