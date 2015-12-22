@@ -935,6 +935,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionRun->setEnabled(false);
         fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
+        ui->actionDiagnose->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->actionSubmit_to_Coursera->setEnabled(false);
@@ -949,6 +950,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionRun->setEnabled(isMzn || isFzn);
         fakeCompileAction->setEnabled(!isMzn);
         ui->actionCompile->setEnabled(isMzn);
+        ui->actionDiagnose->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(true);
@@ -1349,6 +1351,7 @@ void MainWindow::tabChange(int tab) {
             fakeCompileAction->setEnabled(true);
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
+            ui->actionDiagnose->setEnabled(false);
             ui->actionFind->setEnabled(false);
             ui->actionFind_next->setEnabled(false);
             ui->actionFind_previous->setEnabled(false);
@@ -2050,6 +2053,7 @@ void MainWindow::on_actionStop_triggered()
         addOutput("<div style='color:blue;'>Stopped.</div><br>");
         procFinished(0);
     }
+    diagnoseFinished();
 }
 
 void MainWindow::openCompiledFzn(int exitcode)
@@ -2094,7 +2098,10 @@ void MainWindow::openCompiledFzn(int exitcode)
                 break;
             }
         }
-        openFile(currentFznTarget, true);
+        if(!diagnose)
+          openFile(currentFznTarget, true);
+        else
+          diagnoseFinished();
     }
     procFinished(exitcode);
 }
@@ -2200,6 +2207,27 @@ void MainWindow::runCompiledFzn(int exitcode)
         tmpDir = NULL;
         procFinished(exitcode);
     }
+}
+
+void MainWindow::on_actionDiagnose_triggered() {
+    diagnose = true;
+    have_old_mzn2fzn_params = ui->conf_have_mzn2fzn_params->isChecked();
+    old_mzn2fzn_params = ui->conf_mzn2fzn_params->text();
+
+    QString newparams(old_mzn2fzn_params);
+    if(!newparams.contains("--diagnose"))
+      newparams.append("--diagnose");
+
+    ui->conf_have_mzn2fzn_params->setChecked(true);
+    ui->conf_mzn2fzn_params->setText(newparams);
+
+    ui->actionCompile->trigger();
+}
+
+void MainWindow::diagnoseFinished() {
+    diagnose = false;
+    ui->conf_have_mzn2fzn_params->setChecked(have_old_mzn2fzn_params);
+    ui->conf_mzn2fzn_params->setText(old_mzn2fzn_params);
 }
 
 void MainWindow::on_actionCompile_triggered()
