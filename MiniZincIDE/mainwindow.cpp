@@ -16,6 +16,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <csignal>
+#include <sstream>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -1617,6 +1618,28 @@ void MainWindow::statusTimerEvent()
     setElapsedTime();
 }
 
+QString parseConflict(QString l) {
+    QUrl url;
+    url.setQuery("conf="+l);
+    url.setScheme("conflict");
+
+    bool ok;
+    int pos = l.indexOf('(');
+    int commapos = l.indexOf(',');
+    QString nS = l.mid(pos+1, commapos-pos-1);
+    int n = nS.toInt(&ok);
+
+    pos = l.indexOf(',', commapos+1);
+    nS = l.mid(commapos+2, pos - commapos-2);
+    int s = nS.toInt(&ok);
+
+    std::stringstream ss;
+    ss << "<a style='color:red' href='" << url.toString().toStdString()
+       << "'>Conflict" << n << ":" << s << ":</a><br>";
+
+    return QString(ss.str().c_str());
+}
+
 void MainWindow::readOutput()
 {
     MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
@@ -1692,6 +1715,10 @@ void MainWindow::readOutput()
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
+            } else if (l.startsWith("Conflict(")) {
+                QString s = parseConflict(l);
+                IDE::instance()->stats.errorsShown++;
+                addOutput(s);
             } else {
                 addOutput(l,false);
             }
