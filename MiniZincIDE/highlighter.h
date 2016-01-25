@@ -37,6 +37,8 @@ public:
     void setEditorFont(QFont& font);
     void copyHighlightedToClipboard(QTextCursor selectionCursor);
     void setDarkMode(bool);
+    void addFixedBg(unsigned int sl, unsigned int sc, unsigned int el, unsigned ec, QColor colour);
+    void clearFixedBg();
 protected:
     void highlightBlock(const QString &text);
 
@@ -47,6 +49,15 @@ private:
         QTextCharFormat format;
     };
     QVector<Rule> rules;
+
+    struct FixedBg {
+      unsigned int sl;
+      unsigned int sc;
+      unsigned int el;
+      unsigned int ec;
+      QColor       colour;
+    };
+    QVector<FixedBg> fixedBg;
 
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;

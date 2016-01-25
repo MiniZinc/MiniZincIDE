@@ -14,7 +14,6 @@
 
 #include "highlighter.h"
 
-
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
@@ -81,8 +80,24 @@ void Highlighter::setEditorFont(QFont& font)
     }
 }
 
+void Highlighter::addFixedBg(unsigned int sl, unsigned int sc, unsigned
+                             int el, unsigned ec, QColor colour) {
+  FixedBg fb;
+  fb.sl     = sl;
+  fb.sc     = sc;
+  fb.el     = el;
+  fb.ec     = ec;
+  fb.colour = colour;
+  fixedBg.append(fb);
+}
+
+void Highlighter::clearFixedBg() {
+    fixedBg.clear();
+}
+
 void Highlighter::highlightBlock(const QString &text)
 {
+    QTextBlock block = currentBlock();
     for (int i=0; i<rules.size(); i++) {
         const Rule& rule = rules[i];
         QRegExp expression(rule.pattern);
@@ -94,6 +109,35 @@ void Highlighter::highlightBlock(const QString &text)
             }
             index = expression.indexIn(text, index + length);
         }
+    }
+
+    foreach (const FixedBg& fb, fixedBg) {
+      unsigned int blockNumber = block.blockNumber() + 1;
+      if(fb.sl <= blockNumber && fb.el >= blockNumber) {
+        int index = 0;
+        int length = block.length();
+        int endpos = index + length;
+
+        if(fb.sl == blockNumber) {
+          index = fb.sc - 1;
+          if(fb.sl == fb.el) {
+            length = fb.ec - index;
+          }
+        } else if(fb.el == blockNumber) {
+          length = fb.ec;
+        }
+
+        foreach(const QTextLayout::FormatRange& fr, block.textFormats()) {
+          if(index >= fr.start && index <= fr.start + length) {
+            int local_index = fr.start < index ? index : fr.start;
+            int fr_endpos = fr.start + fr.length;
+            int local_len = (fr_endpos < endpos ? fr_endpos : endpos) - local_index;
+            QTextCharFormat fmt = fr.format;
+            fmt.setBackground(fb.colour);
+            setFormat(local_index, local_len, fmt);
+          }
+        }
+      }
     }
 
     BracketData* bd = new BracketData;

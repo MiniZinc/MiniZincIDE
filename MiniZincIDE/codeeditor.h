@@ -31,6 +31,7 @@ public:
     void setEditorFont(QFont& font);
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
+    Highlighter* getHighlighter();
 protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);

@@ -1627,18 +1627,19 @@ QString parseConflict(QString l) {
     url.setScheme("conflict");
 
     bool ok;
-    int pos = l.indexOf('(');
-    int commapos = l.indexOf(',');
-    QString nS = l.mid(pos+1, commapos-pos-1);
+    int start = l.indexOf('(')+1;
+    int first_comma = l.indexOf(',');
+    int second_comma = l.indexOf(',', first_comma+1);
+
+    QString nS = l.mid(start, first_comma - start);
     int n = nS.toInt(&ok);
 
-    pos = l.indexOf(',', commapos+1);
-    nS = l.mid(commapos+2, pos - commapos-2);
+    nS = l.mid(first_comma+1, second_comma - first_comma - 1);
     int s = nS.toInt(&ok);
 
     std::stringstream ss;
-    ss << "<a style='color:red' href='" << url.toString().toStdString()
-       << "'>Conflict" << n << ":" << s << ":</a><br>";
+    ss << "<a style=\"color:red\" href=\"" << url.toString().toStdString()
+       << "\">Conflict:" << n << ":" << s << ":</a><br>";
 
     return QString(ss.str().c_str());
 }
@@ -2357,23 +2358,10 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          QTextCursor cursor = ce->textCursor();
-          int oldpos = cursor.position();
-
-          QTextBlock sb = ce->document()->findBlockByNumber(0);
-          QTextBlock eb = ce->document()->findBlockByNumber(ce->document()->blockCount()-1);
-          cursor.setPosition(sb.position(), QTextCursor::MoveAnchor);
-          cursor.setPosition(eb.position() + eb.length() -1, QTextCursor::KeepAnchor);
-
-          QTextCharFormat fmt = cursor.charFormat();
-          fmt.setBackground(Qt::white);
-          cursor.setCharFormat(fmt);
-
-          cursor.setPosition(oldpos);
+          ce->getHighlighter()->clearFixedBg();
         }
       }
 
-      QColor colour(Qt::red);
       for(int c = 0; c<conflictSet.size(); c++) {
         QString& Q = conflictSet[c];
         // Build list of blocks to be highlighted
@@ -2434,13 +2422,9 @@ void MainWindow::errorClicked(const QUrl & anUrl)
           }
         }
 
-        //int m = conflictSet.size();
-        //int red = (255 * c) / m;
-        //int green = (255 * (m - (c+1))) / m;
         int b = Qt::red;
         int t = Qt::yellow;
-
-        colour = static_cast<Qt::GlobalColor>((c % (t-b)) + b);
+        QColor colour = static_cast<Qt::GlobalColor>((c % (t-b)) + b);
 
         int strans = 20;
         int trans = strans;
@@ -2456,28 +2440,14 @@ void MainWindow::errorClicked(const QUrl & anUrl)
           int el = elements[3].toInt(&ok);
           int ec = elements[4].toInt(&ok);
           if (elements[0].size() > 0 && ok) {
-            QTextBlock sblock = ce->document()->findBlockByNumber(sl-1);
-            QTextBlock eblock = ce->document()->findBlockByNumber(el-1);
-            if (sblock.isValid() && eblock.isValid()) {
+            colour.setAlpha(trans);
 
-              QTextCursor cursor = ce->textCursor(); //(edit->document());
-              cursor.setPosition(sblock.position() + sc -1, QTextCursor::MoveAnchor);
-              cursor.setPosition(eblock.position() + ec, QTextCursor::KeepAnchor);
+            ce->getHighlighter()->addFixedBg(sl,sc,el,ec,colour);
+            ce->getHighlighter()->rehighlight();
 
-              QTextCharFormat fmt = cursor.charFormat();
-              colour.setAlpha(trans);
-              fmt.setBackground(colour);
-
-              trans += tstep;
-              if(trans > 100)
-                trans = strans;
-              cursor.setCharFormat(fmt);
-
-              cursor.setPosition(eblock.position() + ec);
-              ce->setFocus();
-              ce->setTextCursor(cursor);
-              ce->centerCursor();
-            }
+            trans += tstep;
+            if(trans > 100)
+              trans = strans;
           }
         }
       }

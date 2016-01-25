@@ -111,6 +111,10 @@ void CodeEditor::setDarkMode(bool enable)
     }
 }
 
+Highlighter* CodeEditor::getHighlighter() {
+    return highlighter;
+}
+
 void CodeEditor::docChanged(bool c)
 {
     int t = tabs == NULL ? -1 : tabs->indexOf(this);
