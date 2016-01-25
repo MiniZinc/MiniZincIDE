@@ -859,6 +859,7 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->conf_have_mzn2fzn_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraMzn2FznArgs(bool)));
     connect(ui->conf_mzn2fzn_params, SIGNAL(textEdited(QString)), &project, SLOT(extraMzn2FznArgs(QString)));
     connect(ui->conf_verbose, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznVerbose(bool)));
+    connect(ui->autoclear_output, SIGNAL(toggled(bool)), &project, SLOT(autoClearOutput(bool)));
     connect(ui->conf_optimize, SIGNAL(toggled(bool)), &project, SLOT(mzn2fznOptimize(bool)));
     connect(ui->conf_solver, SIGNAL(currentIndexChanged(QString)), &project, SLOT(currentSolver(QString)));
     connect(ui->conf_nsol, SIGNAL(valueChanged(int)), &project, SLOT(n_solutions(int)));
@@ -1561,6 +1562,9 @@ void MainWindow::on_actionRun_triggered()
         }
         if (curEditor->document()->isModified())
             return;
+        if (project.autoClearOutput()) {
+            on_actionClear_output_triggered();
+        }
         updateUiProcessRunning(true);
         on_actionSplit_triggered();
         IDE::instance()->stats.modelsRun++;
@@ -2565,7 +2569,7 @@ void MainWindow::saveProject(const QString& f)
             tabChange(ui->tabWidget->currentIndex());
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
-            out << (quint32)103;
+            out << (quint32)104;
             out.setVersion(QDataStream::Qt_5_0);
             QStringList openFiles;
             QDir projectDir = QFileInfo(filepath).absoluteDir();
@@ -2584,6 +2588,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.extraArgs();
             out << project.haveExtraMzn2FznArgs();
             out << project.extraMzn2FznArgs();
+            out << project.autoClearOutput();
             out << project.mzn2fznVerbose();
             out << project.mzn2fznOptimize();
             out << project.currentSolver();
@@ -2630,7 +2635,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
     quint32 version;
     in >> version;
-    if (version != 101 && version != 102 && version != 103) {
+    if (version != 101 && version != 102 && version != 103 && version != 104) {
         QMessageBox::warning(this, "MiniZinc IDE",
                              "Could not open project file (version mismatch)");
         close();
@@ -2642,7 +2647,7 @@ void MainWindow::loadProject(const QString& filepath)
     updateRecentProjects(projectPath);
     project.setRoot(ui->projectView, projectSort, projectPath);
     QString basePath;
-    if (version==103) {
+    if (version==103 || version==104) {
         basePath = QFileInfo(filepath).absolutePath()+"/";
     }
 
@@ -2664,6 +2669,12 @@ void MainWindow::loadProject(const QString& filepath)
     project.haveExtraMzn2FznArgs(p_b, true);
     in >> p_s;
     project.extraMzn2FznArgs(p_s, true);
+    if (version==104) {
+        in >> p_b;
+        project.autoClearOutput(p_b, true);
+    } else {
+        project.autoClearOutput(false, true);
+    }
     in >> p_b;
     project.mzn2fznVerbose(p_b, true);
     in >> p_b;
@@ -2689,19 +2700,19 @@ void MainWindow::loadProject(const QString& filepath)
     in >> p_b; // used to be whether time limit is checked
     in >> p_i;
     project.timeLimit(p_i, true);
-    if (version==102 || version==103) {
+    if (version==102 || version==103 || version==104) {
         in >> p_b;
         project.solverVerbose(p_b, true);
         in >> p_i;
         ui->tabWidget->setCurrentIndex(p_i);
     }
     QStringList projectFilesRelPath;
-    if (version==103) {
+    if (version==103 || version==104) {
         in >> projectFilesRelPath;
     } else {
         projectFilesRelPath = openFiles;
     }
-    if (version==103 && !in.atEnd()) {
+    if ( (version==103 || version==104) && !in.atEnd()) {
         in >> p_b;
         project.defaultBehaviour(p_b, true);
     } else {
