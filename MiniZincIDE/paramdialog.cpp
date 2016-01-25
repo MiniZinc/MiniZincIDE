@@ -66,6 +66,7 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
                 values << le[i]->text();
             previousParams = params;
             previousValues = values;
+            previousDataFile = "";
         }
     }
     delete ui->frame;
