@@ -1650,7 +1650,91 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
-                    if (curJSONHandler > 0 && l.trimmed() == "----------") {
+                    if (l.trimmed().startsWith("%%%mzn_check:")) {
+                        QString filename = l.trimmed().split(":")[1];
+                        const QStringList& files = project.files();
+                        for(int i = 0; i < files.size(); i++) {
+                            QFileInfo f(files[i]);
+                            if (filename == f.fileName()) {
+                                checkFileTwo = f.absoluteFilePath();
+                                break;
+                            }
+                        }
+                        checkStageTwo = true;
+                    }
+                    else if (checkStageTwo && l.trimmed().startsWith("%%%mzn_check_end")) {
+                        checkStageTwo = false;
+                        QTemporaryDir* checkTmpDir = new QTemporaryDir;
+                        QString fileName = QFileInfo(checkFileTwo).baseName();
+                        QString checkInputFile = checkTmpDir->path()+"/"+fileName+".dzn";
+                        QFile file(checkInputFile);
+                        if (file.open(QFile::WriteOnly | QFile::Text)) {
+                            QTextStream out(&file);
+                            out << checkInputData;
+                            file.flush();
+                            file.close();
+                        }
+                        checkInputData.clear();
+
+                        MznProcess* checkProcessOne = new MznProcess(this);
+                        checkProcessOne->setWorkingDirectory(QFileInfo(checkFileTwo).absolutePath());
+                        QStringList args;
+                        args << "-d" << checkInputFile;
+                        args << "-Ggecode";
+                        args << "-o" << checkTmpDir->path()+"/"+fileName+".fzn";
+                        args << "--output-ozn-to-file" << checkTmpDir->path()+"/"+fileName+".ozn";
+                        args << checkFileTwo;
+                        checkProcessOne->start("mzn2fzn", args, getMznDistribPath());
+                        bool f1 = checkProcessOne->waitForFinished();
+                        args.clear();
+                        QByteArray checkOutput;
+                        QByteArray checkError;
+                        checkError = checkProcessOne->readAllStandardError();
+                        delete checkProcessOne;
+
+                        if (f1) {
+                            MznProcess* checkProcessTwo = new MznProcess(this);
+                            checkProcessTwo->setWorkingDirectory(QFileInfo(checkFileTwo).absolutePath());
+                            args << checkTmpDir->path()+"/"+fileName+".fzn";
+                            checkProcessTwo->start("fzn-gecode", args, getMznDistribPath());
+                            bool f2 = checkProcessTwo->waitForFinished();
+                            args.clear();
+                            checkOutput = checkProcessTwo->readAllStandardOutput();
+                            checkError = checkProcessTwo->readAllStandardError();
+                            delete checkProcessTwo;
+
+                            if (f2) {
+                                MznProcess* checkProcessThree = new MznProcess(this);
+                                checkProcessThree->setWorkingDirectory(QFileInfo(checkFileTwo).absolutePath());
+                                args << checkTmpDir->path()+"/"+fileName+".ozn";
+                                checkProcessThree->start("solns2out", args, getMznDistribPath());
+                                checkProcessThree->write(checkOutput);
+                                checkProcessThree->closeWriteChannel();
+                                bool f3 = checkProcessThree->waitForFinished();
+                                args.clear();
+                                checkOutput = checkProcessThree->readAllStandardOutput();
+                                checkError = checkProcessThree->readAllStandardError();
+                                delete checkProcessThree;
+                                if (f3) {
+                                    addOutput(checkOutput,false);
+                                }
+                                else {
+                                    addOutput(checkError,false);
+                                }
+                            }
+                            else {
+                                addOutput(checkError,false);
+                            }
+                        }
+                        else {
+                            addOutput(checkError,false);
+                        }
+                        delete checkTmpDir;
+                    }
+                    else if (checkStageTwo) {
+                        checkInputData += l.trimmed();
+                    }
+                    else if (curJSONHandler > 0 && l.trimmed() == "----------") {
                         openJSONViewer();
                         JSONOutput.clear();
                         curJSONHandler = 0;
@@ -1756,6 +1840,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     curFilePath = modelPath;
     processWasStopped = false;
     runSolns2Out = true;
+    checkStageTwo = false;
+
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     if (compileOnly)
@@ -1784,12 +1870,14 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << modelPath;
 
-        //check if there are check files, add the check file into the args
         if (ui->defaultBehaviourButton->isChecked() || (ui->userBehaviourButton->isChecked() && ui->conf_check->isChecked())) {
-            QString checkFilePath = fi.absolutePath()+"/"+fi.baseName()+".mzc";
-            QFile file(checkFilePath);
-            if(file.open(QFile::ReadOnly | QFile::Text)) {
-                args << checkFilePath;
+            const QStringList& files = project.files();
+            for(int i = 0; i < files.size(); i++) {
+                QFileInfo f(files[i]);
+                if(f.baseName() == fi.baseName() && f.suffix() == "mzc"){
+                    args << files[i];
+                    break;
+                }
             }
         }
 
@@ -1888,6 +1976,7 @@ void MainWindow::procFinished(int, bool showTime) {
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
+    checkStageTwo = false;
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;

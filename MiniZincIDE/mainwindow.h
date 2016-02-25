@@ -343,6 +343,10 @@ private:
     CourseraSubmission* courseraSubmission;
     bool processRunning;
 
+    bool checkStageTwo;
+    QString checkFileTwo;
+    QString checkInputData;
+
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
     QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
