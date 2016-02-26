@@ -89,9 +89,9 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
+             <y>-181</y>
              <width>593</width>
-             <height>774</height>
+             <height>797</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -385,6 +385,13 @@
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_5">
                <item>
+                <widget class="QCheckBox" name="autoclear_output">
+                 <property name="text">
+                  <string>Clear output window before each run</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QLabel" name="label_7">
                  <property name="text">
                   <string>Translation options:</string>
@@ -546,6 +553,7 @@
               <zorder>label_7</zorder>
               <zorder>conf_verbose</zorder>
               <zorder>conf_optimize</zorder>
+              <zorder>autoclear_output</zorder>
              </widget>
             </item>
            </layout>

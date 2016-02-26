@@ -71,6 +71,7 @@ public:
     QString extraArgs(void) const;
     bool haveExtraMzn2FznArgs(void) const;
     QString extraMzn2FznArgs(void) const;
+    bool autoClearOutput(void) const;
     bool mzn2fznVerbose(void) const;
     bool mzn2fznOptimize(void) const;
     QString currentSolver(void) const;
@@ -93,6 +94,7 @@ public slots:
     void extraArgs(const QString& a, bool init=false);
     void haveExtraMzn2FznArgs(bool b, bool init=false);
     void extraMzn2FznArgs(const QString& a, bool init=false);
+    void autoClearOutput(bool b, bool init=false);
     void mzn2fznVerbose(bool b, bool init=false);
     void mzn2fznOptimize(bool b, bool init=false);
     void currentSolver(const QString& s, bool init=false);
@@ -127,6 +129,7 @@ protected:
     QString _extraArgs;
     bool _haveExtraMzn2FznArgs;
     QString _extraMzn2FznArgs;
+    bool _autoclear_output;
     bool _mzn2fzn_verbose;
     bool _mzn2fzn_optimize;
     QString _currentSolver;

@@ -370,6 +370,10 @@ QString Project::extraMzn2FznArgs(void) const
 {
     return ui->conf_mzn2fzn_params->text();
 }
+bool Project::autoClearOutput(void) const
+{
+    return ui->autoclear_output->isChecked();
+}
 bool Project::mzn2fznVerbose(void) const
 {
     return ui->conf_verbose->isChecked();
@@ -477,6 +481,16 @@ void Project::extraMzn2FznArgs(const QString& a, bool init)
     if (init) {
         _extraMzn2FznArgs = a;
         ui->conf_mzn2fzn_params->setText(a);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::autoClearOutput(bool b, bool init)
+{
+    if (init) {
+        _autoclear_output= b;
+        ui->autoclear_output->setChecked(b);
     } else {
         checkModified();
     }

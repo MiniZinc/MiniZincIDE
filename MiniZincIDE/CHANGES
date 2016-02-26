@@ -1,3 +1,9 @@
+2016-02-26
+  v2.0.12
+  - Fix link to MiniZinc issue tracker.
+  - Add configuration option to clear solver output for each run.
+  - Remember whether previous run used data file or manual data input.
+  - Updated to include MiniZinc 2.0.12
 2016-01-15
   v2.0.11
   - Updated to include MiniZinc 2.0.11
