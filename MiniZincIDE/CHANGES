@@ -1,3 +1,8 @@
+2016-03-26
+  v2.0.13
+  - Flush output more consistently when process finished, hopefully
+    fixing problem where solutions were missing from output.
+  - Updated to include MiniZinc 2.0.13
 2016-02-26
   v2.0.12
   - Fix link to MiniZinc issue tracker.
