@@ -1865,6 +1865,8 @@ void MainWindow::pipeOutput()
 }
 
 void MainWindow::procFinished(int, bool showTime) {
+    if (outputProcess)
+        pipeOutput();
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
