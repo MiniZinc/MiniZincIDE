@@ -1875,7 +1875,9 @@ void MainWindow::procFinished(int, bool showTime) {
     process = NULL;
     if (outputProcess) {
         outputProcess->closeWriteChannel();
+        outputProcess->waitForBytesWritten();
         outputProcess->waitForFinished();
+        readOutput();
         outputProcess = NULL;
         finishJSONViewer();
         inJSONHandler = false;
