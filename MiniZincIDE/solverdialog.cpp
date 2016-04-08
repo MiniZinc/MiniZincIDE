@@ -260,7 +260,7 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 #else
     setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
-    QProcess::start(program,arguments);
+    QProcess::start(program,arguments, QIODevice::Unbuffered | QIODevice::ReadWrite);
 #ifdef Q_OS_WIN
     _putenv_s("PATH", curPath.toStdString().c_str());
 #else

@@ -1898,6 +1898,8 @@ void MainWindow::pipeOutput()
 }
 
 void MainWindow::procFinished(int, bool showTime) {
+    if (outputProcess)
+        pipeOutput();
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
@@ -1906,7 +1908,9 @@ void MainWindow::procFinished(int, bool showTime) {
     process = NULL;
     if (outputProcess) {
         outputProcess->closeWriteChannel();
+        outputProcess->waitForBytesWritten();
         outputProcess->waitForFinished();
+        readOutput();
         outputProcess = NULL;
         finishJSONViewer();
         inJSONHandler = false;
