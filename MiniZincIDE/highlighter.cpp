@@ -11,6 +11,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <QDebug>
+#include <qtooltip.h>
+#include <iostream>
 
 #include "highlighter.h"
 
@@ -81,19 +83,19 @@ void Highlighter::setEditorFont(QFont& font)
 }
 
 void Highlighter::addFixedBg(unsigned int sl, unsigned int sc, unsigned
-                             int el, unsigned ec, QColor colour) {
+                             int el, unsigned ec, QColor colour, QString tip) {
   FixedBg fb;
   fb.sl     = sl;
   fb.sc     = sc;
   fb.el     = el;
   fb.ec     = ec;
-  fb.colour = colour;
-  fixedBg.append(fb);
+  fixedBg.insert(fb, QPair<QColor, QString>(colour, tip));
 }
 
 void Highlighter::clearFixedBg() {
     fixedBg.clear();
 }
+#include <iostream>
 
 void Highlighter::highlightBlock(const QString &text)
 {
@@ -104,14 +106,20 @@ void Highlighter::highlightBlock(const QString &text)
         int index = expression.indexIn(text);
         while (index >= 0) {
             int length = expression.matchedLength();
-            if (format(index)!=quoteFormat && format(index)!=commentFormat) {
+            if (format(index)!=quoteFormat && format(index)!=commentFormat)
                 setFormat(index, length, rule.format);
-            }
             index = expression.indexIn(text, index + length);
         }
     }
 
-    foreach (const FixedBg& fb, fixedBg) {
+    for(QMap<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
+        it != fixedBg.end();
+        ++it) {
+      const FixedBg& fb = it.key();
+      QPair<QColor, QString> val = it.value();
+      QColor colour = val.first;
+      QString tip = val.second;
+
       unsigned int blockNumber = block.blockNumber() + 1;
       if(fb.sl <= blockNumber && fb.el >= blockNumber) {
         int index = 0;
@@ -133,7 +141,8 @@ void Highlighter::highlightBlock(const QString &text)
             int fr_endpos = fr.start + fr.length;
             int local_len = (fr_endpos < endpos ? fr_endpos : endpos) - local_index;
             QTextCharFormat fmt = fr.format;
-            fmt.setBackground(fb.colour);
+            fmt.setBackground(colour);
+            fmt.setToolTip(tip);
             setFormat(local_index, local_len, fmt);
           }
         }

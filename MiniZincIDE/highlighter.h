@@ -28,6 +28,17 @@ public:
     QVector<Bracket> brackets;
 };
 
+class FixedBg {
+public:
+  unsigned int sl;
+  unsigned int sc;
+  unsigned int el;
+  unsigned int ec;
+};
+inline bool operator<(const FixedBg& A, const FixedBg& B) {
+  return A.sl < B.sl || A.sc < B.sc || A.el < B.el || A.ec < B.ec;
+}
+
 class Highlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
@@ -37,7 +48,7 @@ public:
     void setEditorFont(QFont& font);
     void copyHighlightedToClipboard(QTextCursor selectionCursor);
     void setDarkMode(bool);
-    void addFixedBg(unsigned int sl, unsigned int sc, unsigned int el, unsigned ec, QColor colour);
+    void addFixedBg(unsigned int sl, unsigned int sc, unsigned int el, unsigned ec, QColor colour, QString tip);
     void clearFixedBg();
 protected:
     void highlightBlock(const QString &text);
@@ -50,14 +61,7 @@ private:
     };
     QVector<Rule> rules;
 
-    struct FixedBg {
-      unsigned int sl;
-      unsigned int sc;
-      unsigned int el;
-      unsigned int ec;
-      QColor       colour;
-    };
-    QVector<FixedBg> fixedBg;
+    QMap<FixedBg, QPair<QColor, QString> > fixedBg;
 
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;

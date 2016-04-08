@@ -327,8 +327,6 @@ private:
     ParamDialog* paramDialog;
     bool compileOnly;
     bool diagnose;
-    bool have_old_mzn2fzn_params;
-    QString old_mzn2fzn_params;
     QString mzn2fzn_executable;
     Project project;
     QSortFilterProxyModel* projectSort;

@@ -29,6 +29,9 @@
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
 #include "courserasubmission.h"
+#include "highlighter.h"
+
+#include <iostream>
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -1430,6 +1433,8 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
         ret << "-n" << QString::number(project.n_solutions());
+    if(diagnose)
+        ret << "--diagnose";
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
@@ -1630,22 +1635,19 @@ QString parseConflict(QString l) {
     url.setQuery("conf="+l);
     url.setScheme("conflict");
 
-    bool ok;
+    bool ok = false;
     int start = l.indexOf('(')+1;
     int first_comma = l.indexOf(',');
-    int second_comma = l.indexOf(',', first_comma+1);
 
     QString nS = l.mid(start, first_comma - start);
-    int n = nS.toInt(&ok);
-
-    nS = l.mid(first_comma+1, second_comma - first_comma - 1);
     int s = nS.toInt(&ok);
 
     std::stringstream ss;
-    ss << "<a style=\"color:red\" href=\"" << url.toString().toStdString()
-       << "\">Conflict:" << n << ":" << s << ":</a><br>";
+    ss << "<a style=\"color:red\" href=\"" << url.toString().toStdString() << "\""
+       << " title=\"" << url.toString().toStdString() << "\""
+       << ">Conflict:" << ":" << s << ":</a><br>";
 
-    return QString(ss.str().c_str());
+    return QString(ok ? ss.str().c_str() : "");
 }
 
 void MainWindow::readOutput()
@@ -1916,6 +1918,7 @@ void MainWindow::procFinished(int, bool showTime) {
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
+    diagnoseFinished();
     emit(finished());
 }
 
@@ -2216,23 +2219,11 @@ void MainWindow::runCompiledFzn(int exitcode)
 
 void MainWindow::on_actionDiagnose_triggered() {
     diagnose = true;
-    have_old_mzn2fzn_params = ui->conf_have_mzn2fzn_params->isChecked();
-    old_mzn2fzn_params = ui->conf_mzn2fzn_params->text();
-
-    QString newparams(old_mzn2fzn_params);
-    if(!newparams.contains("--diagnose"))
-      newparams.append("--diagnose");
-
-    ui->conf_have_mzn2fzn_params->setChecked(true);
-    ui->conf_mzn2fzn_params->setText(newparams);
-
     ui->actionCompile->trigger();
 }
 
 void MainWindow::diagnoseFinished() {
     diagnose = false;
-    ui->conf_have_mzn2fzn_params->setChecked(have_old_mzn2fzn_params);
-    ui->conf_mzn2fzn_params->setText(old_mzn2fzn_params);
 }
 
 void MainWindow::on_actionCompile_triggered()
@@ -2362,7 +2353,9 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          ce->getHighlighter()->clearFixedBg();
+          Highlighter* hl = ce->getHighlighter();
+          hl->clearFixedBg();
+          hl->rehighlight();
         }
       }
 
@@ -2434,7 +2427,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
         int trans = strans;
         int tstep = (100-strans) / locs.size();
 
-        for(int p = locs.size()-1; p >= 0; p--) {
+        for(int p = 0; p < locs.size(); p++) {
           QStringList& elements = locs[p];
           CodeEditor* ce = ces[p];
 
@@ -2446,8 +2439,11 @@ void MainWindow::errorClicked(const QUrl & anUrl)
           if (elements[0].size() > 0 && ok) {
             colour.setAlpha(trans);
 
-            ce->getHighlighter()->addFixedBg(sl,sc,el,ec,colour);
-            ce->getHighlighter()->rehighlight();
+            Highlighter* hl = ce->getHighlighter();
+            hl->addFixedBg(sl,sc,el,ec,colour,Q);
+            hl->rehighlight();
+
+            ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
 
             trans += tstep;
             if(trans > 100)
@@ -2551,6 +2547,10 @@ void MainWindow::on_actionGo_to_line_triggered()
                 cursor.setPosition(block.position());
                 curEditor->setTextCursor(cursor);
             }
+        } else {
+            QStringList lines = gtl.getText().split("\n");
+            foreach(QString line, lines)
+              addOutput(parseConflict(line));
         }
     }
 }
