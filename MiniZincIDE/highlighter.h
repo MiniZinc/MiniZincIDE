@@ -28,13 +28,13 @@ public:
     QVector<Bracket> brackets;
 };
 
-class FixedBg {
-public:
+struct FixedBg {
   unsigned int sl;
   unsigned int sc;
   unsigned int el;
   unsigned int ec;
 };
+typedef QMap<FixedBg, QPair<QColor, QString> > BgMap;
 inline bool operator<(const FixedBg& A, const FixedBg& B) {
   return A.sl < B.sl || A.sc < B.sc || A.el < B.el || A.ec < B.ec;
 }
@@ -61,7 +61,7 @@ private:
     };
     QVector<Rule> rules;
 
-    QMap<FixedBg, QPair<QColor, QString> > fixedBg;
+    BgMap fixedBg;
 
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;

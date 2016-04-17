@@ -12,7 +12,6 @@
 
 #include <QDebug>
 #include <qtooltip.h>
-#include <iostream>
 
 #include "highlighter.h"
 
@@ -82,20 +81,34 @@ void Highlighter::setEditorFont(QFont& font)
     }
 }
 
-void Highlighter::addFixedBg(unsigned int sl, unsigned int sc, unsigned
-                             int el, unsigned ec, QColor colour, QString tip) {
-  FixedBg fb;
-  fb.sl     = sl;
-  fb.sc     = sc;
-  fb.el     = el;
-  fb.ec     = ec;
-  fixedBg.insert(fb, QPair<QColor, QString>(colour, tip));
+bool fg_contains(const FixedBg& a, const FixedBg& b) {
+  return (a.sl < b.sl || (a.sl == b.sl && a.sc <= b.sc))
+      && (a.el > b.el || (a.el == b.el && a.ec >= b.ec));
+}
+
+void Highlighter::addFixedBg(
+    unsigned int sl, unsigned int sc, unsigned int el, unsigned ec,
+    QColor colour, QString tip) {
+
+  FixedBg ifb {sl, sc, el, ec};
+
+  for(BgMap::iterator it = fixedBg.begin();
+      it != fixedBg.end();) {
+    const FixedBg& fb = it.key();
+
+    if (fg_contains(fb, ifb)) {
+      it = fixedBg.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  fixedBg.insert(ifb, QPair<QColor, QString>(colour, tip));
+
 }
 
 void Highlighter::clearFixedBg() {
     fixedBg.clear();
 }
-#include <iostream>
 
 void Highlighter::highlightBlock(const QString &text)
 {
@@ -113,8 +126,7 @@ void Highlighter::highlightBlock(const QString &text)
     }
 
     for(QMap<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
-        it != fixedBg.end();
-        ++it) {
+        it != fixedBg.end(); ++it) {
       const FixedBg& fb = it.key();
       QPair<QColor, QString> val = it.value();
       QColor colour = val.first;
@@ -136,7 +148,7 @@ void Highlighter::highlightBlock(const QString &text)
         }
 
         foreach(const QTextLayout::FormatRange& fr, block.textFormats()) {
-          if(index >= fr.start && index <= fr.start + length) {
+          //if(index >= fr.start && index <= fr.start + length) {
             int local_index = fr.start < index ? index : fr.start;
             int fr_endpos = fr.start + fr.length;
             int local_len = (fr_endpos < endpos ? fr_endpos : endpos) - local_index;
@@ -144,7 +156,7 @@ void Highlighter::highlightBlock(const QString &text)
             fmt.setBackground(colour);
             fmt.setToolTip(tip);
             setFormat(local_index, local_len, fmt);
-          }
+          //}
         }
       }
     }

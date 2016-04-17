@@ -1059,7 +1059,7 @@ void MainWindow::on_defaultBehaviourButton_toggled(bool checked)
     ui->userBehaviourFrame->setEnabled(!checked);
 }
 
-void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly) {
+void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly, bool focus) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
@@ -1105,8 +1105,10 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         if (readOnly || ce->filename == "_coursera")
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
-        ui->tabWidget->setCurrentIndex(tab);
-        curEditor->setFocus();
+        if (focus) {
+            ui->tabWidget->setCurrentIndex(tab);
+            curEditor->setFocus();
+        }
         if (openAsModified) {
             curEditor->filepath = "";
             curEditor->document()->setPlainText(fileContents);
@@ -1132,7 +1134,7 @@ QString MainWindow::getLastPath(void)
     return IDE::instance()->getLastPath();
 }
 
-void MainWindow::openFile(const QString &path, bool openAsModified)
+void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
 {
     QString fileName = path;
 
@@ -1147,7 +1149,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
         if (fileName.endsWith(".mzp")) {
             openProject(fileName);
         } else {
-            createEditor(fileName, openAsModified, false);
+            createEditor(fileName, openAsModified, false, false, focus);
         }
     }
 
@@ -2411,7 +2413,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
             }
           }
           if (notOpen && filename.size() > 0) {
-            openFile(url.toLocalFile(), false);
+            openFile(url.toLocalFile(), false, false);
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
             QFileInfo ceinfo(ce->filepath);
 
