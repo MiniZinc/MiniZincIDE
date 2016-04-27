@@ -652,6 +652,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionRun_with_test_cases"/>
     <addaction name="actionSubmit_to_Coursera"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
@@ -1300,6 +1301,11 @@
    </property>
    <property name="text">
     <string>Dark mode</string>
+   </property>
+  </action>
+  <action name="actionRun_with_test_cases">
+   <property name="text">
+    <string>Run with test cases</string>
    </property>
   </action>
  </widget>

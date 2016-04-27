@@ -278,6 +278,12 @@ private slots:
 
     void on_defaultBehaviourButton_toggled(bool checked);
 
+    void on_actionRun_with_test_cases_triggered();
+
+    void nextTestCase();
+
+    void nextTestCaseFinished();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -346,6 +352,13 @@ private:
     bool checkStageTwo;
     QString checkFileTwo;
     QString checkInputData;
+
+    int runMode;
+    int currentTestCase;
+    QStringList testCase;
+    QStringList testResult;
+    int testPass;
+    int testTimeout;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
     QStringList parseConf(bool compileOnly, bool useDataFile);

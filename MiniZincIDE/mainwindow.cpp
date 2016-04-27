@@ -1397,20 +1397,22 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (!compileOnly && project.defaultBehaviour()) {
-        QFile fznFile(currentFznTarget);
-        if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            int seekSize = strlen("satisfy;\n\n");
-            if (fznFile.size() >= seekSize) {
-                fznFile.seek(fznFile.size()-seekSize);
-                QString line = fznFile.readLine();
-                if (!line.contains("satisfy;"))
-                    ret << "-a";
+    if (runMode != 3) {
+        if (!compileOnly && project.defaultBehaviour()) {
+            QFile fznFile(currentFznTarget);
+            if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                int seekSize = strlen("satisfy;\n\n");
+                if (fznFile.size() >= seekSize) {
+                    fznFile.seek(fznFile.size()-seekSize);
+                    QString line = fznFile.readLine();
+                    if (!line.contains("satisfy;"))
+                        ret << "-a";
+                }
             }
+        } else {
+            if (!compileOnly && project.printAll())
+                ret << "-a";
         }
-    } else {
-        if (!compileOnly && project.printAll())
-            ret << "-a";
     }
     if (!compileOnly && project.printStats())
         ret << "-s";
@@ -1532,6 +1534,7 @@ void MainWindow::checkArgs(QString filepath)
 
 void MainWindow::on_actionRun_triggered()
 {
+    runMode = 1;
     if (mzn2fzn_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
@@ -1650,7 +1653,27 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
-                    if (l.trimmed().startsWith("%%%mzn_check:")) {
+                    if (runMode == 3) {
+                        if (l.trimmed().contains("=====UNSATISFIABLE=====")) {
+                            if (QFileInfo(testCase.last()).baseName().startsWith("nonsol_")) {
+                                testResult << "pass";
+                                testPass += 1;
+                            }
+                            else {
+                                testResult << "fail";
+                            }
+                        }
+                        else if (l.trimmed().contains("----------")) {
+                            if (QFileInfo(testCase.last()).baseName().startsWith("sol_")) {
+                                testResult << "pass";
+                                testPass += 1;
+                            }
+                            else {
+                                testResult << "fail";
+                            }
+                        }
+                    }
+                    else if (l.trimmed().startsWith("%%%mzn_check:")) {
                         QString filename = l.trimmed().split(":")[1];
                         const QStringList& files = project.files();
                         for(int i = 0; i < files.size(); i++) {
@@ -1755,7 +1778,7 @@ void MainWindow::readOutput()
         }
     }
 
-    if (process != NULL) {
+    if (process != NULL && runMode != 3) {
         process->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -1782,7 +1805,7 @@ void MainWindow::readOutput()
         }
     }
 
-    if (outputProcess != NULL) {
+    if (outputProcess != NULL && runMode != 3) {
         outputProcess->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -1870,32 +1893,36 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << modelPath;
 
-        if (ui->defaultBehaviourButton->isChecked() || (ui->userBehaviourButton->isChecked() && ui->conf_check->isChecked())) {
-            const QStringList& files = project.files();
-            for(int i = 0; i < files.size(); i++) {
-                QFileInfo f(files[i]);
-                if(f.baseName() == fi.baseName() && f.suffix() == "mzc"){
-                    args << files[i];
-                    break;
+        if (runMode == 1) {
+            if (ui->defaultBehaviourButton->isChecked() || (ui->userBehaviourButton->isChecked() && ui->conf_check->isChecked())) {
+                const QStringList& files = project.files();
+                for(int i = 0; i < files.size(); i++) {
+                    QFileInfo f(files[i]);
+                    if(f.baseName() == fi.baseName() && f.suffix() == "mzc"){
+                        args << files[i];
+                        break;
+                    }
                 }
             }
         }
 
-        QString compiling = fi.fileName();
-        if (project.currentDataFile()!="None") {
-            compiling += " with data ";
-            QFileInfo fi(project.currentDataFile());
-            compiling += fi.fileName();
+        if (runMode != 3) {
+            QString compiling = fi.fileName();
+            if (project.currentDataFile()!="None") {
+                compiling += " with data ";
+                QFileInfo fi(project.currentDataFile());
+                compiling += fi.fileName();
+            }
+            if (!additionalDataFile.isEmpty()) {
+                compiling += ", with additional data ";
+                QFileInfo fi(additionalDataFile);
+                compiling += fi.fileName();
+            }
+            if (!additionalCmdlineParams.isEmpty()) {
+                compiling += ", additional arguments " + additionalCmdlineParams;
+            }
+            addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
         }
-        if (!additionalDataFile.isEmpty()) {
-            compiling += ", with additional data ";
-            QFileInfo fi(additionalDataFile);
-            compiling += fi.fileName();
-        }
-        if (!additionalCmdlineParams.isEmpty()) {
-            compiling += ", additional arguments " + additionalCmdlineParams;
-        }
-        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
         process->start(mzn2fzn_executable,args,getMznDistribPath());
         time = 0;
         timer->start(500);
@@ -1905,6 +1932,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 
 bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
 {
+    runMode = 2;
     bool foundModel = false;
     bool foundData = false;
     QString modelFilePath;
@@ -1973,7 +2001,7 @@ void MainWindow::procFinished(int, bool showTime) {
         inJSONHandler = false;
         JSONOutput.clear();
     }
-    if (showTime) {
+    if (showTime && runMode != 3) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
     checkStageTwo = false;
@@ -2119,7 +2147,9 @@ void MainWindow::on_actionStop_triggered()
         }
         delete process;
         process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        if (runMode != 3) {
+            addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        }
         procFinished(0);
     }
 }
@@ -2249,21 +2279,23 @@ void MainWindow::runCompiledFzn(int exitcode)
             }
 
             elapsedTime.start();
-            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div><br>");
-            QString executable = s.executable;
-            if (project.solverVerbose()) {
-                addOutput("<div style='color:blue;'>Command line:</div><br>");
-                QString cmdline = executable;
-                QRegExp white("\\s");
-                for (int i=0; i<args.size(); i++) {
-                    if (white.indexIn(args[i]) != -1)
-                        cmdline += " \""+args[i]+"\"";
-                    else
-                        cmdline += " "+args[i];
+            if (runMode != 3) {
+                addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div><br>");
+                QString executable = s.executable;
+                if (project.solverVerbose()) {
+                    addOutput("<div style='color:blue;'>Command line:</div><br>");
+                    QString cmdline = executable;
+                    QRegExp white("\\s");
+                    for (int i=0; i<args.size(); i++) {
+                        if (white.indexIn(args[i]) != -1)
+                            cmdline += " \""+args[i]+"\"";
+                        else
+                            cmdline += " "+args[i];
+                    }
+                    addOutput("<div>"+cmdline+"</div><br>");
                 }
-                addOutput("<div>"+cmdline+"</div><br>");
             }
-            process->start(executable,args,getMznDistribPath());
+            process->start(s.executable,args,getMznDistribPath());
             time = 0;
             timer->start(500);
         }
@@ -2366,11 +2398,13 @@ void MainWindow::errorClicked(const QUrl & anUrl)
     url.setScheme("file");
     QFileInfo urlinfo(url.toLocalFile());
     IDE::instance()->stats.errorsClicked++;
+    bool fileFound = false;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
             CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
             QFileInfo ceinfo(ce->filepath);
             if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+                fileFound = true;
                 QRegExp re_line("line=([0-9]+)");
                 if (re_line.indexIn(query) != -1) {
                     bool ok;
@@ -2389,6 +2423,9 @@ void MainWindow::errorClicked(const QUrl & anUrl)
                 }
             }
         }
+    }
+    if (fileFound == false && runMode == 3) {
+        openFile(urlinfo.filePath());
     }
 }
 
@@ -3047,4 +3084,99 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         }
     }
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
+}
+
+void MainWindow::nextTestCase()
+{
+    if (testTimeout > 10) {
+        currentTestCase = project.files().length();
+    }
+    bool done = false;
+    do {
+        currentTestCase += 1;
+        if (currentTestCase < project.files().length()) {
+            QFileInfo f(project.files()[currentTestCase]);
+            if ((f.baseName().startsWith("sol_") || f.baseName().startsWith("nonsol_")) && f.suffix() == "dzn") {
+                testCase << f.filePath();
+                done = true;
+            }
+        }
+        else {
+            if (testTimeout > 10) {
+                addOutput("<div style='color:red;'>too many timeouts on test cases<div><br>");
+            }
+            addOutput("pass "+QString::number(testPass)+"/"+QString::number(testCase.length())+" test cases<br>");
+            for (int i=0; i<testCase.length();i++) {
+                if (testResult[i] != "pass") {
+                    QFileInfo f(testCase[i]);
+                    QUrl url = QUrl::fromLocalFile(testCase[i]);
+                    url.setQuery("line=1");
+                    url.setScheme("err");
+                    addOutput("<a href='"+url.toString()+"'>"+f.fileName()+"</a> "+testResult[i]+"<br>");
+                }
+            }
+            return;
+        }
+    } while (!done);
+    connect(this, SIGNAL(finished()),this, SLOT(nextTestCaseFinished()));
+    compileOnly = false;
+    project.timeLimit(1,true);
+    updateUiProcessRunning(true);
+    on_actionSplit_triggered();
+    compileAndRun(curEditor->filepath, "", project.files()[currentTestCase]);
+}
+
+void MainWindow::nextTestCaseFinished()
+{
+    disconnect(this, SIGNAL(finished()), this, SLOT(nextTestCaseFinished()));
+    if (processWasStopped) {
+        testResult << "timeout";
+        testTimeout += 1;
+    }
+    else if (testResult.length() < testCase.length()) {
+        testResult << "error";
+    }
+    nextTestCase();
+}
+
+void MainWindow::on_actionRun_with_test_cases_triggered()
+{
+    runMode = 3;
+    if (mzn2fzn_executable=="") {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+        return;
+    }
+    if (curEditor && curEditor->filepath!="") {
+        if (curEditor->document()->isModified()) {
+            if (!saveBeforeRunning) {
+                QMessageBox msgBox;
+                msgBox.setText("The model has been modified. You have to save it before running.");
+                msgBox.setInformativeText("Do you want to save it now and then run?");
+                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+                msgBox.addButton(QMessageBox::Cancel);
+                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+                msgBox.setDefaultButton(QMessageBox::Save);
+                msgBox.exec();
+                if (msgBox.clickedButton()==alwaysButton) {
+                    saveBeforeRunning = true;
+                }
+                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                    return;
+                }
+            }
+            on_actionSave_triggered();
+        }
+        if (curEditor->document()->isModified())
+            return;
+        addOutput("<div style='color:blue;'>Running "+curEditor->filepath+" with test cases</div><br>");
+        currentTestCase = -1;
+        testCase.clear();
+        testResult.clear();
+        testPass = 0;
+        testTimeout = 0;
+        nextTestCase();
+    }
 }
