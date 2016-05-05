@@ -1398,7 +1398,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (runMode != 3) {
+    if (runMode != RM_TESTCASE) {
         if (!compileOnly && project.defaultBehaviour()) {
             QFile fznFile(currentFznTarget);
             if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -1535,7 +1535,7 @@ void MainWindow::checkArgs(QString filepath)
 
 void MainWindow::on_actionRun_triggered()
 {
-    runMode = 1;
+    runMode = RM_NORMAL;
     if (mzn2fzn_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
@@ -1657,7 +1657,7 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
-                    if (runMode == 3) {
+                    if (runMode == RM_TESTCASE) {
                         if (l.trimmed().contains("=====UNSATISFIABLE=====")) {
                             if (QFileInfo(testCase.last()).baseName().startsWith("nonsol_")) {
                                 testResult << "pass";
@@ -1782,7 +1782,7 @@ void MainWindow::readOutput()
         }
     }
 
-    if (process != NULL && runMode != 3) {
+    if (process != NULL && runMode != RM_TESTCASE) {
         process->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -1809,7 +1809,7 @@ void MainWindow::readOutput()
         }
     }
 
-    if (outputProcess != NULL && runMode != 3) {
+    if (outputProcess != NULL && runMode != RM_TESTCASE) {
         outputProcess->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -1897,7 +1897,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
         args << modelPath;
 
-        if (runMode == 1) {
+        if (runMode == RM_NORMAL) {
             if (ui->defaultBehaviourButton->isChecked() || (ui->userBehaviourButton->isChecked() && ui->conf_check->isChecked())) {
                 const QStringList& files = project.files();
                 for(int i = 0; i < files.size(); i++) {
@@ -1910,7 +1910,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             }
         }
 
-        if (runMode != 3) {
+        if (runMode != RM_TESTCASE) {
             QString compiling = fi.fileName();
             if (project.currentDataFile()!="None") {
                 compiling += " with data ";
@@ -1936,7 +1936,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 
 bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
 {
-    runMode = 2;
+    runMode = RM_COURSERA;
     bool foundModel = false;
     bool foundData = false;
     QString modelFilePath;
@@ -2009,7 +2009,7 @@ void MainWindow::procFinished(int, bool showTime) {
         inJSONHandler = false;
         JSONOutput.clear();
     }
-    if (showTime && runMode != 3) {
+    if (showTime && runMode != RM_TESTCASE) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
     checkStageTwo = false;
@@ -2155,7 +2155,7 @@ void MainWindow::on_actionStop_triggered()
         }
         delete process;
         process = NULL;
-        if (runMode != 3) {
+        if (runMode != RM_TESTCASE) {
             addOutput("<div style='color:blue;'>Stopped.</div><br>");
         }
         procFinished(0);
@@ -2287,7 +2287,7 @@ void MainWindow::runCompiledFzn(int exitcode)
             }
 
             elapsedTime.start();
-            if (runMode != 3) {
+            if (runMode != RM_TESTCASE) {
                 addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div><br>");
                 QString executable = s.executable;
                 if (project.solverVerbose()) {
@@ -2432,7 +2432,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
             }
         }
     }
-    if (fileFound == false && runMode == 3) {
+    if (fileFound == false && runMode == RM_TESTCASE) {
         openFile(urlinfo.filePath());
     }
 }
@@ -3156,7 +3156,7 @@ void MainWindow::nextTestCaseFinished()
 
 void MainWindow::on_actionRun_with_test_cases_triggered()
 {
-    runMode = 3;
+    runMode = RM_TESTCASE;
     if (mzn2fzn_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);

@@ -353,7 +353,7 @@ private:
     QString checkFileTwo;
     QString checkInputData;
 
-    int runMode;
+    enum { RM_NORMAL, RM_COURSERA, RM_TESTCASE } runMode;
     int currentTestCase;
     QStringList testCase;
     QStringList testResult;
