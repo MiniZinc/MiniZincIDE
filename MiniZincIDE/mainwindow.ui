@@ -320,6 +320,16 @@
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_7">
                     <item>
+                     <widget class="QCheckBox" name="conf_check">
+                      <property name="text">
+                       <string>Use check file if available</string>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QCheckBox" name="conf_printall">
                       <property name="text">
                        <string>Print all solutions</string>
@@ -650,6 +660,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionRun_with_test_cases"/>
     <addaction name="actionSubmit_to_Coursera"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
@@ -1298,6 +1309,11 @@
    </property>
    <property name="text">
     <string>Dark mode</string>
+   </property>
+  </action>
+  <action name="actionRun_with_test_cases">
+   <property name="text">
+    <string>Run with test cases</string>
    </property>
   </action>
  </widget>
