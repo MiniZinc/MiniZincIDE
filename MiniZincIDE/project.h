@@ -39,8 +39,7 @@ public:
 class CourseraProject {
 public:
     QString name;
-    QString checkpwdSid;
-    QString course;
+    QString assignmentKey;
     QList<CourseraItem> problems;
     QList<CourseraItem> models;
 };

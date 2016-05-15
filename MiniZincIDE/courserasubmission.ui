@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>521</width>
-    <height>585</height>
+    <height>652</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -48,7 +48,7 @@
         <item>
          <widget class="QLabel" name="label_3">
           <property name="text">
-           <string>Submission login:</string>
+           <string>Coursera login email:</string>
           </property>
          </widget>
         </item>
@@ -65,7 +65,7 @@
         <item>
          <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Submission password:</string>
+           <string>Assignment token:</string>
           </property>
          </widget>
         </item>
@@ -87,7 +87,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Note that this is your assignment submission password, not your Coursera login and password.</string>
+         <string>Note that this is your assignment submission token, not your Coursera password.</string>
         </property>
         <property name="textFormat">
          <enum>Qt::RichText</enum>
@@ -105,7 +105,7 @@
         <item>
          <widget class="QCheckBox" name="storePassword">
           <property name="text">
-           <string>Remember password</string>
+           <string>Remember login details</string>
           </property>
          </widget>
         </item>
@@ -121,13 +121,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="checkLoginButton">
-          <property name="text">
-           <string>Check login</string>
-          </property>
-         </widget>
         </item>
        </layout>
       </item>

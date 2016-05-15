@@ -140,12 +140,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             delete cp;
             goto coursera_done;
         }
-        cp->course = in.readLine();
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        cp->checkpwdSid= in.readLine();
+        cp->assignmentKey = in.readLine();
         if (in.status() != QTextStream::Ok) {
             delete cp;
             goto coursera_done;
