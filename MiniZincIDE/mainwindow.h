@@ -271,6 +271,7 @@ private slots:
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(void);
     void on_actionCheat_Sheet_triggered();
+    void on_actionCheck_triggered();
 
     void on_actionDark_mode_toggled(bool arg1);
 
@@ -303,6 +304,7 @@ private:
     QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
+    QTimer* checkTimer;
     int time;
     QElapsedTimer elapsedTime;
     QLabel* statusLabel;

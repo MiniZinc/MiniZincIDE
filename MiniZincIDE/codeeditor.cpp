@@ -14,6 +14,14 @@
 #include "codeeditor.h"
 #include "mainwindow.h"
 
+#include <minizinc/model.hh>
+#include <minizinc/parser.hh>
+#include <minizinc/ast.hh>
+#include <minizinc/astexception.hh>
+#include <minizinc/typecheck.hh>
+#include <minizinc/astiterator.hh>
+#include <minizinc/prettyprinter.hh>
+
 void
 CodeEditor::initUI(QFont& font)
 {
@@ -27,6 +35,7 @@ CodeEditor::initUI(QFont& font)
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    connect(document(), SIGNAL(contentsChanged()), this, SLOT(contentsChanged()));
 
     setLineNumbersWidth(0);
     cursorChange();
@@ -43,7 +52,7 @@ CodeEditor::initUI(QFont& font)
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                        QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t), darkMode(darkMode0)
+    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t), darkMode(darkMode0), modifiedSinceLastCheck(true)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -62,6 +71,14 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
         connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
         loadContentsButton = pb;
     }
+    completer = new QCompleter(this);
+    completer->setModel(&completionModel);
+    completer->setCaseSensitivity(Qt::CaseSensitive);
+    completer->setModelSorting(QCompleter::CaseSensitivelySortedModel);
+    completer->setWrapAround(false);
+    completer->setWidget(this);
+    completer->setCompletionMode(QCompleter::PopupCompletion);
+    QObject::connect(completer, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
     setAcceptDrops(false);
     installEventFilter(this);
 }
@@ -69,6 +86,16 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
 void CodeEditor::loadContents()
 {
     static_cast<IDE*>(qApp)->loadLargeFile(filepath,this);
+}
+
+void CodeEditor::insertCompletion(const QString &completion)
+{
+    QTextCursor tc = textCursor();
+    int extra = completion.length() - completer->completionPrefix().length();
+    tc.movePosition(QTextCursor::Left);
+    tc.movePosition(QTextCursor::EndOfWord);
+    tc.insertText(completion.right(extra));
+    setTextCursor(tc);
 }
 
 void CodeEditor::loadedLargeFile()
@@ -123,15 +150,59 @@ void CodeEditor::docChanged(bool c)
     }
 }
 
+void CodeEditor::contentsChanged()
+{
+    modifiedSinceLastCheck = true;
+}
+
 void CodeEditor::keyPressEvent(QKeyEvent *e)
 {
+    if (completer->popup()->isVisible()) {
+        switch (e->key()) {
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+        case Qt::Key_Escape:
+        case Qt::Key_Tab:
+        case Qt::Key_Backtab:
+            e->ignore();
+            return; // let the completer do default behavior
+        default:
+            break;
+        }
+    }
     if (e->key() == Qt::Key_Tab) {
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
-    } else {
-        QPlainTextEdit::keyPressEvent(e);
+        return;
     }
+
+    bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
+    if (!isShortcut) // do not process the shortcut when we have a completer
+        QPlainTextEdit::keyPressEvent(e);
+    const bool ctrlOrShift = e->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
+    if (ctrlOrShift && e->text().isEmpty())
+        return;
+    static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
+    bool hasModifier = (e->modifiers() != Qt::NoModifier) && !ctrlOrShift;
+
+    QTextCursor tc = textCursor();
+    tc.select(QTextCursor::WordUnderCursor);
+    QString completionPrefix = tc.selectedText();
+    if (!isShortcut && (hasModifier || e->text().isEmpty()|| completionPrefix.length() < 3
+                        || eow.contains(e->text().right(1)))) {
+        completer->popup()->hide();
+        return;
+    }
+    if (completionPrefix != completer->completionPrefix()) {
+        completer->setCompletionPrefix(completionPrefix);
+        completer->popup()->setCurrentIndex(completer->completionModel()->index(0, 0));
+    }
+    QRect cr = cursorRect();
+    cr.setWidth(completer->popup()->sizeHintForColumn(0)
+                + completer->popup()->verticalScrollBar()->sizeHint().width());
+    completer->complete(cr); // popup it up!
+
 }
 
 int CodeEditor::lineNumbersWidth()
@@ -183,7 +254,14 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
 
 void CodeEditor::cursorChange()
 {
+    QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
+
     QList<QTextEdit::ExtraSelection> extraSelections;
+    foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
+        if (sel.format.underlineColor()==Qt::red) {
+            extraSelections.append(sel);
+        }
+    }
 
     BracketData* bd = static_cast<BracketData*>(textCursor().block().userData());
 
@@ -328,10 +406,13 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            if (blockNumber == curLine)
+            if (errorLines.contains(blockNumber)) {
+                painter.setPen(Qt::red);
+            } else if (blockNumber == curLine) {
                 painter.setPen(Qt::black);
-            else
+            } else {
                 painter.setPen(Qt::gray);
+            }
             int textTop = top+fontMetrics().leading()+heightDiff;
             painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
                              Qt::AlignRight, number);
@@ -363,6 +444,38 @@ bool CodeEditor::eventFilter(QObject *, QEvent *ev)
             cut();
             return true;
         }
+    } else if (ev->type() == QEvent::ToolTip) {
+        QHelpEvent* helpEvent = static_cast<QHelpEvent*>(ev);
+        QPoint evPos = helpEvent->pos();
+        evPos = QPoint(evPos.x()-lineNumbersWidth(),evPos.y());
+        if (evPos.x() >= 0) {
+            QTextCursor cursor = cursorForPosition(evPos);
+            cursor.movePosition(QTextCursor::PreviousCharacter);
+            bool foundError = false;
+            foreach (CodeEditorError cee, errors) {
+                if (cursor.position() >= cee.startPos && cursor.position() <= cee.endPos) {
+                    QToolTip::showText(helpEvent->globalPos(), cee.msg);
+                    foundError = true;
+                    break;
+                }
+            }
+            if (!foundError) {
+                cursor.select(QTextCursor::WordUnderCursor);
+                QString loc(filename+":");
+                loc += QString().number(cursor.block().blockNumber()+1);
+                loc += ".";
+                loc += QString().number(cursor.selectionStart()-cursor.block().position()+1);
+                QHash<QString,QString>::iterator idMapIt = idMap.find(loc);
+                if (idMapIt != idMap.end()) {
+                    QToolTip::showText(helpEvent->globalPos(), idMapIt.value());
+                } else {
+                    QToolTip::hideText();
+                }
+            }
+        } else {
+            QToolTip::hideText();
+        }
+        return true;
     }
     return false;
 }
@@ -377,4 +490,154 @@ void CodeEditor::cut()
 {
     highlighter->copyHighlightedToClipboard(textCursor());
     textCursor().removeSelectedText();
+}
+
+class CollectIds : public MiniZinc::EVisitor {
+public:
+    QHash<QString,QString>& ids;
+    QSet<QString> functionIds;
+    MiniZinc::EnvI& env;
+    CollectIds(QHash<QString,QString>& ids0, MiniZinc::EnvI& env0)
+        : ids(ids0), env(env0) {}
+    void vId(const MiniZinc::Id& id) {
+        QString loc = QString::fromStdString(id.loc().filename.str()+":");
+        loc += QString().number(id.loc().first_line)+"."+QString().number(id.loc().first_column);
+        std::ostringstream oss;
+        oss << *id.decl();
+        ids.insert(loc,QString::fromStdString(oss.str()));
+    }
+    void vCall(const MiniZinc::Call& call) {
+        QString loc = QString::fromStdString(call.loc().filename.str()+":");
+        loc += QString().number(call.loc().first_line)+"."+QString().number(call.loc().first_column);
+        if (call.decl()) {
+            std::ostringstream oss;
+            oss << *call.decl();
+            ids.insert(loc,QString::fromStdString(oss.str()));
+        } else {
+            ids.insert(loc,QString::fromStdString(call.id().str()+" is "+call.type().toString(env)));
+        }
+    }
+
+};
+
+class IterCollectIds : public MiniZinc::ItemVisitor {
+public:
+    CollectIds& cids;
+    IterCollectIds(CollectIds& cids0) : cids(cids0) {}
+
+    /// Visit variable declaration
+    void vVarDeclI(MiniZinc::VarDeclI* i) {
+        MiniZinc::bottomUp<CollectIds>(cids,i->e()->id());
+        MiniZinc::bottomUp<CollectIds>(cids,i->e());
+    }
+    /// Visit assign item
+    void vAssignI(MiniZinc::AssignI* ai) { MiniZinc::bottomUp<CollectIds>(cids, ai->e()); }
+    /// Visit constraint item
+    void vConstraintI(MiniZinc::ConstraintI* ci) { MiniZinc::bottomUp<CollectIds>(cids, ci->e()); }
+    /// Visit solve item
+    void vSolveI(MiniZinc::SolveI* si) {
+        for (MiniZinc::ExpressionSetIter it = si->ann().begin(); it != si->ann().end(); ++it) {
+            MiniZinc::bottomUp<CollectIds>(cids, *it);
+        }
+        MiniZinc::bottomUp<CollectIds>(cids, si->e());
+    }
+    /// Visit output item
+    void vOutputI(MiniZinc::OutputI* oi) { MiniZinc::bottomUp<CollectIds>(cids, oi->e()); }
+    /// Visit function item
+    void vFunctionI(MiniZinc::FunctionI* fi) {
+        cids.functionIds.insert(fi->id().c_str());
+        MiniZinc::bottomUp<CollectIds>(cids, fi->e());
+    }
+};
+
+void CodeEditor::checkFile()
+{
+    if (!modifiedSinceLastCheck) {
+        return;
+    }
+    modifiedSinceLastCheck = false;
+
+    QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
+
+    QList<QTextEdit::ExtraSelection> extraSelections;
+    foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
+        if (sel.format.underlineColor()!=Qt::red) {
+            extraSelections.append(sel);
+        }
+    }
+
+    if (filename.endsWith(".mzn")) {
+        MiniZinc::Model* m;
+        std::vector<std::pair<MiniZinc::Location,std::string> > mznErrors;
+        try {
+            std::string input = document()->toPlainText().toStdString();
+            std::stringstream errstream;
+            std::vector<std::string> includePaths;
+            includePaths.push_back("/Users/tack/Programming/libmzn/share/minizinc/std/");
+            std::vector<MiniZinc::SyntaxError> se;
+            m = MiniZinc::parseFromString(input,filename.toStdString(),includePaths,false,false,false,errstream,se);
+            if (se.size() != 0) {
+                for (unsigned int i=0; i<se.size(); i++) {
+                    mznErrors.push_back(std::make_pair(se[i].loc(),se[i].msg()));
+                }
+            } else {
+                MiniZinc::Env env(m);
+                std::vector<MiniZinc::TypeError> typeErrors;
+                MiniZinc::typecheck(env, m, typeErrors, true);
+                for (unsigned int i=0; i<typeErrors.size(); i++) {
+                    mznErrors.push_back(std::make_pair(typeErrors[i].loc(), typeErrors[i].msg()));
+                }
+                idMap.clear();
+                CollectIds cids(idMap,env.envi());
+                IterCollectIds ici(cids);
+                MiniZinc::iterItems<IterCollectIds>(ici,m);
+                QStringList completionList;
+                completionList << "annotation" << "array" << "bool" << "case" << "constraint" << "default"
+                               << "diff" << "else" << "elseif" << "endif" << "enum" << "float"
+                               << "function" << "include" << "intersect" << "maximize" << "minimize"
+                               << "output" << "predicate" << "satisfy" << "solve" << "string"
+                               << "subset" << "superset" << "symdiff" << "test" << "then"
+                               << "tuple" << "type" << "union" << "variant_record" << "where";
+                foreach (QString fnid, cids.functionIds) {
+                    completionList << fnid;
+                }
+                completionList.sort();
+                completionModel.setStringList(completionList);
+            }
+        } catch (MiniZinc::LocationException& e) {
+             mznErrors.push_back(std::make_pair(e.loc(),e.msg()));
+        }
+        delete m;
+        errors.clear();
+        errorLines.clear();
+        for (unsigned int i=0; i<mznErrors.size(); i++) {
+            if (mznErrors[i].first.filename != filename.toStdString())
+                continue;
+            QTextEdit::ExtraSelection sel;
+            QTextCharFormat format = sel.format;
+            format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+            format.setUnderlineColor(Qt::red);
+            MiniZinc::Location& loc = mznErrors[i].first;
+            QTextBlock block = document()->findBlockByNumber(loc.first_line-1);
+            QTextBlock endblock = document()->findBlockByNumber(loc.last_line-1);
+            if (block.isValid() && endblock.isValid()) {
+                QTextCursor cursor = textCursor();
+                cursor.setPosition(block.position());
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, loc.first_column-1);
+                int startPos = cursor.position();
+                cursor.setPosition(endblock.position(), QTextCursor::KeepAnchor);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, loc.last_column);
+                int endPos = cursor.position();
+                sel.cursor = cursor;
+                sel.format = format;
+                extraSelections.append(sel);
+                CodeEditorError cee(startPos,endPos,QString::fromStdString(mznErrors[i].second));
+                errors.append(cee);
+                for (int i=loc.first_line; i<=loc.last_line; i++) {
+                    errorLines.insert(i-1);
+                }
+            }
+        }
+    }
+    setExtraSelections(extraSelections);
 }

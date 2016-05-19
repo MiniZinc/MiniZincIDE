@@ -89,7 +89,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-181</y>
+             <y>0</y>
              <width>593</width>
              <height>797</height>
             </rect>
@@ -1298,6 +1298,11 @@
    </property>
    <property name="text">
     <string>Dark mode</string>
+   </property>
+  </action>
+  <action name="actionCheck">
+   <property name="text">
+    <string>Check</string>
    </property>
   </action>
  </widget>

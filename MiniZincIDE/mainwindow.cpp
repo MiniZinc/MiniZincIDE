@@ -699,6 +699,9 @@ void MainWindow::init(const QString& projectFile)
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
+    checkTimer = new QTimer(this);
+    connect(checkTimer, SIGNAL(timeout()), this, SLOT(on_actionCheck_triggered()));
+    checkTimer->start(1000);
     statusLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
     ui->statusbar->showMessage("Ready.");
@@ -2947,6 +2950,13 @@ void MainWindow::on_actionCheat_Sheet_triggered()
     IDE::instance()->cheatSheet->show();
     IDE::instance()->cheatSheet->raise();
     IDE::instance()->cheatSheet->activateWindow();
+}
+
+void MainWindow::on_actionCheck_triggered()
+{
+    if (curEditor) {
+        curEditor->checkFile();
+    }
 }
 
 void MainWindow::on_actionDark_mode_toggled(bool enable)

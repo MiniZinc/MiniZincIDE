@@ -18,6 +18,8 @@ bundled {
     DEFINES += MINIZINC_IDE_BUNDLED
 }
 
+CONFIG += c++11
+
 macx {
     ICON = mznide.icns
     OBJECTIVE_SOURCES += rtfexporter.mm
@@ -35,6 +37,10 @@ macx:!bundled {
 RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
+
+LIBS += -L/Users/tack/Programming/libmzn-install/lib -lminizinc
+
+INCLUDEPATH += /Users/tack/Programming/libmzn-install/include
 
 SOURCES += main.cpp\
         mainwindow.cpp \
