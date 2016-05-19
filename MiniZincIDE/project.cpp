@@ -261,7 +261,7 @@ Qt::ItemFlags Project::flags(const QModelIndex& index) const
 QStringList Project::dataFiles(void) const
 {
     QStringList ret;
-    for (QMap<QString,QModelIndex>::const_iterator it = _files.begin(); it != _files.end(); ++it) {
+    for (QMap<QString,QPersistentModelIndex>::const_iterator it = _files.begin(); it != _files.end(); ++it) {
         if (it.key().endsWith(".dzn"))
             ret << it.key();
     }

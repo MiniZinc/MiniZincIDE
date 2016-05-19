@@ -116,7 +116,7 @@ protected:
     bool _isModified;
     bool _filesModified;
     QString projectRoot;
-    QMap<QString, QModelIndex> _files;
+    QMap<QString, QPersistentModelIndex> _files;
     QStandardItem* projectFile;
     QStandardItem* mzn;
     QStandardItem* dzn;

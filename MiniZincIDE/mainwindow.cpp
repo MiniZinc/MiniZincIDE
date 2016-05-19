@@ -978,6 +978,7 @@ void MainWindow::onActionProjectRemove_triggered()
         }
     }
     project.removeFile(projectSelectedFile);
+    setupDznMenu();
 }
 
 void MainWindow::onActionProjectRename_triggered()
