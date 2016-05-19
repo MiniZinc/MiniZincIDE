@@ -248,14 +248,10 @@ QString Project::fileAtIndex(const QModelIndex &index)
 
 Qt::ItemFlags Project::flags(const QModelIndex& index) const
 {
-    if (index==editable) {
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
-    } else {
-        QStandardItem* item = itemFromIndex(index);
-        if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
-            return Qt::ItemIsSelectable;
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
-    }
+    QStandardItem* item = itemFromIndex(index);
+    if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
+        return Qt::ItemIsSelectable;
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
 }
 
 QStringList Project::dataFiles(void) const
@@ -293,11 +289,6 @@ void Project::removeFile(const QString &fileName)
     }
 }
 
-void Project::setEditable(const QModelIndex &index)
-{
-    editable = index;
-}
-
 void Project::setModified(bool flag, bool files)
 {
     if (!projectRoot.isEmpty()) {
@@ -332,7 +323,6 @@ void Project::setModified(bool flag, bool files)
 
 bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-    editable = QModelIndex();
     QString oldName = itemFromIndex(index)->text();
     if (oldName==value.toString())
         return false;

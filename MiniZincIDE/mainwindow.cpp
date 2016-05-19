@@ -837,6 +837,7 @@ void MainWindow::init(const QString& projectFile)
     projectSort->setSortRole(Qt::UserRole);
     ui->projectView->setModel(projectSort);
     ui->projectView->sortByColumn(0, Qt::AscendingOrder);
+    ui->projectView->setEditTriggers(QAbstractItemView::EditKeyPressed);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
@@ -983,8 +984,7 @@ void MainWindow::onActionProjectRemove_triggered()
 
 void MainWindow::onActionProjectRename_triggered()
 {
-    project.setEditable(projectSelectedIndex);
-    ui->projectView->edit(projectSelectedIndex);
+    ui->projectView->edit(ui->projectView->currentIndex());
 }
 
 void MainWindow::onActionProjectRunWith_triggered()

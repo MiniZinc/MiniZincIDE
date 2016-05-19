@@ -58,7 +58,6 @@ public:
     QString fileAtIndex(const QModelIndex& index);
     virtual Qt::ItemFlags flags(const QModelIndex& index) const;
     QStringList dataFiles(void) const;
-    void setEditable(const QModelIndex& index);
     virtual bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole );
     bool isProjectFile(const QModelIndex& index) { return projectFile->index()==index; }
     bool isModified() const { return _isModified; }
@@ -121,7 +120,6 @@ protected:
     QStandardItem* mzn;
     QStandardItem* dzn;
     QStandardItem* other;
-    QModelIndex editable;
 
     int _currentDatafileIndex;
     bool _haveExtraArgs;
