@@ -915,7 +915,8 @@ void MainWindow::addFileToProject(bool dznOnly)
     QStringList fileNames;
     if (dznOnly) {
         QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
-        fileNames.append(fileName);
+        if (!fileName.isNull())
+            fileNames.append(fileName);
     } else {
         fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
     }
@@ -1443,7 +1444,10 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->addItem(dataFiles[i]);
     }
     ui->conf_data_file->addItem("Add data file to project...");
-    ui->conf_data_file->setCurrentText(curText);
+    if (curText != "Add data file to project...")
+        ui->conf_data_file->setCurrentText(curText);
+    else
+        ui->conf_data_file->setCurrentIndex(0);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)

@@ -427,7 +427,8 @@ void Project::currentDataFileIndex(int i, bool init)
         _currentDatafileIndex = i;
         ui->conf_data_file->setCurrentIndex(i);
     } else {
-        checkModified();
+        if (i < ui->conf_data_file->count()-1)
+            checkModified();
     }
 }
 
