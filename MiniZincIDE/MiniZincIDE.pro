@@ -4,9 +4,17 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webkitwidgets
+QT       += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): {
+  greaterThan(QT_MINOR_VERSION, 5): {
+    QT += webenginewidgets
+    DEFINES += MINIZINC_IDE_HAVE_WEBENGINE
+  }
+  !greaterThan(QT_MINOR_VERSION, 5): {
+    QT += webkitwidgets
+  }
+}
 
 TARGET = MiniZincIDE
 TEMPLATE = app

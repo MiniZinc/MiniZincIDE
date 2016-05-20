@@ -18,7 +18,11 @@
 #include <QProcess>
 #include <QTimer>
 #include <QLabel>
+#ifdef MINIZINC_IDE_HAVE_WEBENGINE
+#include <QWebEngineView>
+#else
 #include <QWebView>
+#endif
 #include <QSet>
 #include <QTemporaryDir>
 #include <QElapsedTimer>

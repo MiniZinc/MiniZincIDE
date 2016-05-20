@@ -2,7 +2,12 @@
 #define HTMLWINDOW_H
 
 #include <QMainWindow>
+
+#ifdef MINIZINC_IDE_HAVE_WEBENGINE
+#include <QWebEngineView>
+#else
 #include <QWebView>
+#endif
 #include "htmlpage.h"
 
 namespace Ui {
@@ -34,7 +39,12 @@ public:
 private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;
-    QVector<QPair<QWebView*,QString> > loadQueue;
+#ifdef MINIZINC_IDE_HAVE_WEBENGINE
+    typedef QWebEngineView MznIdeWebView;
+#else
+    typedef QWebView MznIdeWebView;
+#endif
+    QVector<QPair<MznIdeWebView*,QString> > loadQueue;
 protected:
     void closeEvent(QCloseEvent *);
 private slots:
