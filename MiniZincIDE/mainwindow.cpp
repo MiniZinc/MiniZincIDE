@@ -840,6 +840,7 @@ void MainWindow::init(const QString& projectFile)
     projectSort->setSortRole(Qt::UserRole);
     ui->projectView->setModel(projectSort);
     ui->projectView->sortByColumn(0, Qt::AscendingOrder);
+    ui->projectView->setEditTriggers(QAbstractItemView::EditKeyPressed);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
@@ -917,7 +918,8 @@ void MainWindow::addFileToProject(bool dznOnly)
     QStringList fileNames;
     if (dznOnly) {
         QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
-        fileNames.append(fileName);
+        if (!fileName.isNull())
+            fileNames.append(fileName);
     } else {
         fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
     }
@@ -981,12 +983,12 @@ void MainWindow::onActionProjectRemove_triggered()
         }
     }
     project.removeFile(projectSelectedFile);
+    setupDznMenu();
 }
 
 void MainWindow::onActionProjectRename_triggered()
 {
-    project.setEditable(projectSelectedIndex);
-    ui->projectView->edit(projectSelectedIndex);
+    ui->projectView->edit(ui->projectView->currentIndex());
 }
 
 void MainWindow::onActionProjectRunWith_triggered()
@@ -1445,7 +1447,10 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->addItem(dataFiles[i]);
     }
     ui->conf_data_file->addItem("Add data file to project...");
-    ui->conf_data_file->setCurrentText(curText);
+    if (curText != "Add data file to project...")
+        ui->conf_data_file->setCurrentText(curText);
+    else
+        ui->conf_data_file->setCurrentIndex(0);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)

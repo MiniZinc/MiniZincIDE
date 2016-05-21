@@ -248,20 +248,16 @@ QString Project::fileAtIndex(const QModelIndex &index)
 
 Qt::ItemFlags Project::flags(const QModelIndex& index) const
 {
-    if (index==editable) {
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
-    } else {
-        QStandardItem* item = itemFromIndex(index);
-        if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
-            return Qt::ItemIsSelectable;
-        return Qt::ItemIsSelectable | Qt::ItemIsEnabled;
-    }
+    QStandardItem* item = itemFromIndex(index);
+    if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
+        return Qt::ItemIsSelectable;
+    return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
 }
 
 QStringList Project::dataFiles(void) const
 {
     QStringList ret;
-    for (QMap<QString,QModelIndex>::const_iterator it = _files.begin(); it != _files.end(); ++it) {
+    for (QMap<QString,QPersistentModelIndex>::const_iterator it = _files.begin(); it != _files.end(); ++it) {
         if (it.key().endsWith(".dzn"))
             ret << it.key();
     }
@@ -291,11 +287,6 @@ void Project::removeFile(const QString &fileName)
         _courseraProject = NULL;
         ui->actionSubmit_to_Coursera->setVisible(false);
     }
-}
-
-void Project::setEditable(const QModelIndex &index)
-{
-    editable = index;
 }
 
 void Project::setModified(bool flag, bool files)
@@ -332,7 +323,6 @@ void Project::setModified(bool flag, bool files)
 
 bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-    editable = QModelIndex();
     QString oldName = itemFromIndex(index)->text();
     if (oldName==value.toString())
         return false;
@@ -437,7 +427,8 @@ void Project::currentDataFileIndex(int i, bool init)
         _currentDatafileIndex = i;
         ui->conf_data_file->setCurrentIndex(i);
     } else {
-        checkModified();
+        if (i < ui->conf_data_file->count()-1)
+            checkModified();
     }
 }
 
