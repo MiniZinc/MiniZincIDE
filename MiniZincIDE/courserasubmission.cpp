@@ -92,6 +92,9 @@ void CourseraSubmission::cancelOperation()
     switch (_cur_phase) {
     case S_NONE:
         return;
+    case S_WAIT_PWD:
+        disconnect(mw, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+        break;
     case S_WAIT_SOLVE:
         disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
         mw->on_actionStop_triggered();
@@ -248,6 +251,7 @@ void CourseraSubmission::solverFinished()
 void CourseraSubmission::on_runButton_clicked()
 {
     if (_cur_phase==S_NONE) {
+        ui->textBrowser->clear();
         QString email = ui->login->text();
         if (email.isEmpty()) {
             QMessageBox::warning(this, "MiniZinc IDE",
@@ -259,6 +263,40 @@ void CourseraSubmission::on_runButton_clicked()
                                  "Enter an assignment key!");
             return;
         }
+
+        // Send empty request to check password
+        QUrl url("https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1");
+        QNetworkRequest request;
+        request.setUrl(url);
+        request.setRawHeader(QByteArray("Cache-Control"),QByteArray("no-cache"));
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QJsonObject checkPwdSubmission;
+        checkPwdSubmission["assignmentKey"] = project.assignmentKey;
+        checkPwdSubmission["secret"] = ui->password->text();
+        checkPwdSubmission["submitterEmail"] = ui->login->text();
+        QJsonObject emptyParts;
+        checkPwdSubmission["parts"] = emptyParts;
+
+        QJsonDocument doc(checkPwdSubmission);
+
+        _cur_phase = S_WAIT_PWD;
+        disableUI();
+        reply = IDE::instance()->networkManager->post(request,doc.toJson());
+        connect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+        ui->textBrowser->insertPlainText("Checking login and assignment token...\n");
+    } else {
+        cancelOperation();
+    }
+}
+
+void CourseraSubmission::rcvLoginCheckResponse()
+{
+    disconnect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+    reply->deleteLater();
+
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+    if (doc.object().contains("message") && doc.object()["message"].toString().endsWith("but found: Set()")) {
+        ui->textBrowser->insertPlainText("Done.\n");
         _current_model = -1;
         for (int i=0; i<project.problems.size(); i++) {
             _parts[project.problems[i].id] = QJsonObject();
@@ -266,10 +304,19 @@ void CourseraSubmission::on_runButton_clicked()
         for (int i=0; i<project.models.size(); i++) {
             _parts[project.models[i].id] = QJsonObject();
         }
-        disableUI();
         solveNext();
     } else {
-        cancelOperation();
+        if (doc.object().contains("message")) {
+            ui->textBrowser->insertPlainText("== "+doc.object()["message"].toString()+"\n");
+        }
+        if (doc.object().contains("details")) {
+            QJsonObject details = doc.object()["details"].toObject();
+            if (details.contains("learnerMessage")) {
+                ui->textBrowser->insertPlainText(">> "+details["learnerMessage"].toString()+"\n");
+            }
+        }
+        _cur_phase = S_NONE;
+        enableUI();
     }
 }
 

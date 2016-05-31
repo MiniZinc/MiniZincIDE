@@ -22,7 +22,7 @@ public:
     ~CourseraSubmission();
 
 protected:
-    enum State { S_NONE, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
+    enum State { S_NONE, S_WAIT_PWD, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
     int _current_model;
 
     QTextStream _output_stream;
@@ -50,6 +50,7 @@ private slots:
     void solverFinished();
 
     void on_runButton_clicked();
+    void rcvLoginCheckResponse();
 
     void on_storePassword_toggled(bool checked);
 private:
