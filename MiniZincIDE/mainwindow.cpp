@@ -1870,7 +1870,7 @@ void MainWindow::pipeOutput()
 }
 
 void MainWindow::procFinished(int, bool showTime) {
-    if (outputProcess)
+    if (process && outputProcess)
         pipeOutput();
     readOutput();
     updateUiProcessRunning(false);
@@ -1901,7 +1901,7 @@ void MainWindow::procError(QProcess::ProcessError e) {
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
-        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
     }
     procFinished(0);
 }
@@ -1910,7 +1910,7 @@ void MainWindow::outputProcError(QProcess::ProcessError e) {
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
-        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc solution processor.");
     }
     procFinished(0);
 }
@@ -2014,8 +2014,10 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
+        pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
+        disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
         processWasStopped = true;
 
 #ifdef Q_OS_WIN
