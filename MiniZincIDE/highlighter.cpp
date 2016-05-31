@@ -14,8 +14,6 @@
 
 #include "highlighter.h"
 
-#include <minizinc/model.hh>
-
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {

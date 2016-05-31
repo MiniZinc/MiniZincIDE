@@ -38,9 +38,11 @@ RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
 
-LIBS += -L/Users/tack/Programming/libmzn-install/lib -lminizinc
-
-INCLUDEPATH += /Users/tack/Programming/libmzn-install/include
+exists($$OUT_PWD/../libminizinc) {
+  LIBS += -L$$OUT_PWD/../libminizinc -lminizinc
+  INCLUDEPATH += ../libminizinc_src/include ../libminizinc_src/lib/cached ../libminizinc
+  DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
+}
 
 SOURCES += main.cpp\
         mainwindow.cpp \

@@ -1,0 +1,4 @@
+[submodule "libminizinc_src"]
+	path = libminizinc_src
+	url = http://github.com/MiniZinc/libminizinc
+	branch = develop

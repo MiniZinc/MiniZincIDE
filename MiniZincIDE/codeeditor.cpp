@@ -14,6 +14,8 @@
 #include "codeeditor.h"
 #include "mainwindow.h"
 
+#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
+
 #include <minizinc/model.hh>
 #include <minizinc/parser.hh>
 #include <minizinc/ast.hh>
@@ -21,6 +23,8 @@
 #include <minizinc/typecheck.hh>
 #include <minizinc/astiterator.hh>
 #include <minizinc/prettyprinter.hh>
+
+#endif
 
 void
 CodeEditor::initUI(QFont& font)
@@ -72,6 +76,15 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
         loadContentsButton = pb;
     }
     completer = new QCompleter(this);
+    QStringList completionList;
+    completionList << "annotation" << "array" << "bool" << "case" << "constraint" << "default"
+                   << "diff" << "else" << "elseif" << "endif" << "enum" << "float"
+                   << "function" << "include" << "intersect" << "maximize" << "minimize"
+                   << "output" << "predicate" << "satisfy" << "solve" << "string"
+                   << "subset" << "superset" << "symdiff" << "test" << "then"
+                   << "tuple" << "type" << "union" << "variant_record" << "where";
+    completionList.sort();
+    completionModel.setStringList(completionList);
     completer->setModel(&completionModel);
     completer->setCaseSensitivity(Qt::CaseSensitive);
     completer->setModelSorting(QCompleter::CaseSensitivelySortedModel);
@@ -492,6 +505,8 @@ void CodeEditor::cut()
     textCursor().removeSelectedText();
 }
 
+#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
+
 class CollectIds : public MiniZinc::EVisitor {
 public:
     QHash<QString,QString>& ids;
@@ -514,7 +529,7 @@ public:
             oss << *call.decl();
             ids.insert(loc,QString::fromStdString(oss.str()));
         } else {
-            ids.insert(loc,QString::fromStdString(call.id().str()+" is "+call.type().toString(env)));
+            ids.insert(loc,QString::fromStdString(call.id().str()+" is "+call.type().toString()));
         }
     }
 
@@ -550,8 +565,11 @@ public:
     }
 };
 
+#endif
+
 void CodeEditor::checkFile()
 {
+#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
     if (!modifiedSinceLastCheck) {
         return;
     }
@@ -606,6 +624,8 @@ void CodeEditor::checkFile()
             }
         } catch (MiniZinc::LocationException& e) {
              mznErrors.push_back(std::make_pair(e.loc(),e.msg()));
+        } catch (std::exception& e) {
+          qDebug() << "unhandled exception" << e.what();
         }
         delete m;
         errors.clear();
@@ -640,4 +660,5 @@ void CodeEditor::checkFile()
         }
     }
     setExtraSelections(extraSelections);
+#endif
 }
