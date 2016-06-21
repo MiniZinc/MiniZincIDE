@@ -94,3 +94,6 @@ FORMS    += \
 
 RESOURCES += \
     minizincide.qrc
+
+target.path = /bin
+INSTALLS += target
