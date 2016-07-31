@@ -129,6 +129,15 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
+    } else if (e->key() == Qt::Key_Return) {
+        e->accept();
+        QTextCursor cursor(textCursor());
+        QString curLine = cursor.block().text();
+        QRegExp leadingWhitespace("^(\\s*)");
+        cursor.insertText("\n");
+        if (leadingWhitespace.indexIn(curLine) != -1) {
+            cursor.insertText(leadingWhitespace.cap(1));
+        }
     } else {
         QPlainTextEdit::keyPressEvent(e);
     }
