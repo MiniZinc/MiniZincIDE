@@ -1,0 +1,3 @@
+[submodule "cp-profiler"]
+	path = cp-profiler
+	url = https://github.com/cp-profiler/cp-profiler.git

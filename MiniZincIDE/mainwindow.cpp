@@ -280,6 +280,10 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     delete mw;
 #endif
 
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+    profiler = new ProfilerConductor;
+#endif
+
     checkUpdate();
 }
 
@@ -709,6 +713,13 @@ void MainWindow::init(const QString& projectFile)
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
     ui->actionSubmit_to_Coursera->setVisible(false);
+
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+    ui->actionShow_profiler->setVisible(true);
+#else
+    ui->actionShow_profiler->setVisible(false);
+#endif
+
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
@@ -2923,6 +2934,13 @@ void MainWindow::on_actionSubmit_to_Coursera_triggered()
     connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
     setEnabled(false);
     courseraSubmission->show();
+}
+
+void MainWindow::on_actionShow_profiler_triggered()
+{
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+    IDE::instance()->profiler->show();
+#endif
 }
 
 void MainWindow::courseraFinished(int) {

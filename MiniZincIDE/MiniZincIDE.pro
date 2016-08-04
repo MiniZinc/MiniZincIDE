@@ -95,5 +95,19 @@ FORMS    += \
 RESOURCES += \
     minizincide.qrc
 
+cpprofiler {
+  CONFIG += c++11
+  
+  DEFINES += MINIZINC_IDE_HAVE_PROFILER
+  
+  QT += printsupport
+  
+  CONFIG += own_protobuf
+    
+  include(../cp-profiler/cp-profiler.pri)
+  
+  INCLUDEPATH += ../cp-profiler
+}
+
 target.path = /bin
 INSTALLS += target

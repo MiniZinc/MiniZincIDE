@@ -89,7 +89,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-181</y>
+             <y>0</y>
              <width>593</width>
              <height>797</height>
             </rect>
@@ -650,6 +650,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionShow_profiler"/>
     <addaction name="actionSubmit_to_Coursera"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
@@ -1298,6 +1299,11 @@
    </property>
    <property name="text">
     <string>Dark mode</string>
+   </property>
+  </action>
+  <action name="actionShow_profiler">
+   <property name="text">
+    <string>Show profiler</string>
    </property>
   </action>
  </widget>

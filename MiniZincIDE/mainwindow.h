@@ -41,6 +41,10 @@
 #include "htmlwindow.h"
 #include "courserasubmission.h"
 
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+#include "profiler-conductor.hh"
+#endif
+
 namespace Ui {
 class MainWindow;
 }
@@ -95,6 +99,10 @@ public:
 #endif
 
     QFileSystemWatcher fsWatch;
+
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+    ProfilerConductor* profiler;
+#endif
 
     bool hasFile(const QString& path);
     QPair<QTextDocument*,bool> loadFile(const QString& path, QWidget* parent);
@@ -260,6 +268,8 @@ private slots:
     void on_actionNewData_file_triggered();
 
     void on_actionSubmit_to_Coursera_triggered();
+
+    void on_actionShow_profiler_triggered();
 
     void fileRenamed(const QString&, const QString&);
 
