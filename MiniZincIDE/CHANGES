@@ -1,3 +1,4 @@
+  - Fix crash when stopping compilation.
 2016-08-30
   v2.0.97
   - Update to include MiniZinc 2.0.97 beta release.

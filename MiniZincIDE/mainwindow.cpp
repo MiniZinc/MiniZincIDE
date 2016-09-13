@@ -2014,7 +2014,8 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
-        pipeOutput();
+        if (outputProcess)
+            pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
         disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
