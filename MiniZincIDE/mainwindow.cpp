@@ -1629,7 +1629,6 @@ void MainWindow::statusTimerEvent()
 void MainWindow::readOutput()
 {
     MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
-
     if (readProc != NULL) {
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
@@ -1869,25 +1868,39 @@ void MainWindow::pipeOutput()
     outputProcess->write(process->readAllStandardOutput());
 }
 
-void MainWindow::procFinished(int, bool showTime) {
-    if (process && outputProcess)
-        pipeOutput();
+void MainWindow::outputProcFinished(int, bool showTime) {
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
-    if (outputProcess) {
-        outputProcess->closeWriteChannel();
-        outputProcess->waitForBytesWritten();
-        outputProcess->waitForFinished();
-        readOutput();
-        outputProcess = NULL;
-        finishJSONViewer();
-        inJSONHandler = false;
-        JSONOutput.clear();
+    outputProcess = NULL;
+    finishJSONViewer();
+    inJSONHandler = false;
+    JSONOutput.clear();
+    if (showTime) {
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
+    delete tmpDir;
+    tmpDir = NULL;
+    outputBuffer = NULL;
+    emit(finished());
+}
+
+void MainWindow::procFinished(int, bool showTime) {
+    if (outputProcess) {
+        connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
+        if (process)
+            pipeOutput();
+        outputProcess->closeWriteChannel();
+        return;
+    }
+    updateUiProcessRunning(false);
+    timer->stop();
+    QString elapsedTime = setElapsedTime();
+    ui->statusbar->showMessage("Ready.");
+    process = NULL;
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
