@@ -520,7 +520,7 @@ IDE::versionCheckFinished(void) {
     if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = versionCheckReply->readAll();
 
-        QRegExp versionRegExp("([1-9][0-9]+)\\.([0-9]+)\\.([0-9]+)");
+        QRegExp versionRegExp("([1-9][0-9]*)\\.([0-9]+)\\.([0-9]+)");
 
         int curVersionMajor = 0;
         int curVersionMinor = 0;
