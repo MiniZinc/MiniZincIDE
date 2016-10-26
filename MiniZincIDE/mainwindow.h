@@ -18,7 +18,11 @@
 #include <QProcess>
 #include <QTimer>
 #include <QLabel>
+#ifdef MINIZINC_IDE_HAVE_WEBENGINE
+#include <QWebEngineView>
+#else
 #include <QWebView>
+#endif
 #include <QSet>
 #include <QTemporaryDir>
 #include <QElapsedTimer>
@@ -160,6 +164,8 @@ private slots:
     void pipeOutput();
 
     void procFinished(int, bool showTime=true);
+
+    void outputProcFinished(int, bool showTime=true);
 
     void procError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);

@@ -88,6 +88,8 @@ void CodeEditor::setDocument(QTextDocument *document)
     disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
     disconnect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     disconnect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    QList<QTextEdit::ExtraSelection> noSelections;
+    setExtraSelections(noSelections);
     QPlainTextEdit::setDocument(document);
     if (document) {
         QFont f= font();
@@ -133,6 +135,15 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
+    } else if (e->key() == Qt::Key_Return) {
+        e->accept();
+        QTextCursor cursor(textCursor());
+        QString curLine = cursor.block().text();
+        QRegExp leadingWhitespace("^(\\s*)");
+        cursor.insertText("\n");
+        if (leadingWhitespace.indexIn(curLine) != -1) {
+            cursor.insertText(leadingWhitespace.cap(1));
+        }
     } else {
         QPlainTextEdit::keyPressEvent(e);
     }

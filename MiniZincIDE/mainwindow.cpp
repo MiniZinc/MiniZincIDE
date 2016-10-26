@@ -524,7 +524,7 @@ IDE::versionCheckFinished(void) {
     if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = versionCheckReply->readAll();
 
-        QRegExp versionRegExp("([1-9][0-9]+)\\.([0-9]+)\\.([0-9]+)");
+        QRegExp versionRegExp("([1-9][0-9]*)\\.([0-9]+)\\.([0-9]+)");
 
         int curVersionMajor = 0;
         int curVersionMinor = 0;
@@ -841,6 +841,7 @@ void MainWindow::init(const QString& projectFile)
     projectSort->setSortRole(Qt::UserRole);
     ui->projectView->setModel(projectSort);
     ui->projectView->sortByColumn(0, Qt::AscendingOrder);
+    ui->projectView->setEditTriggers(QAbstractItemView::EditKeyPressed);
     ui->projectExplorerDockWidget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
@@ -918,7 +919,8 @@ void MainWindow::addFileToProject(bool dznOnly)
     QStringList fileNames;
     if (dznOnly) {
         QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
-        fileNames.append(fileName);
+        if (!fileName.isNull())
+            fileNames.append(fileName);
     } else {
         fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
     }
@@ -984,12 +986,12 @@ void MainWindow::onActionProjectRemove_triggered()
         }
     }
     project.removeFile(projectSelectedFile);
+    setupDznMenu();
 }
 
 void MainWindow::onActionProjectRename_triggered()
 {
-    project.setEditable(projectSelectedIndex);
-    ui->projectView->edit(projectSelectedIndex);
+    ui->projectView->edit(ui->projectView->currentIndex());
 }
 
 void MainWindow::onActionProjectRunWith_triggered()
@@ -1453,7 +1455,10 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->addItem(dataFiles[i]);
     }
     ui->conf_data_file->addItem("Add data file to project...");
-    ui->conf_data_file->setCurrentText(curText);
+    if (curText != "Add data file to project...")
+        ui->conf_data_file->setCurrentText(curText);
+    else
+        ui->conf_data_file->setCurrentIndex(0);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
@@ -1679,7 +1684,6 @@ QString parseConflict(QString l) {
 void MainWindow::readOutput()
 {
     MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
-
     if (readProc != NULL) {
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
@@ -1923,25 +1927,39 @@ void MainWindow::pipeOutput()
     outputProcess->write(process->readAllStandardOutput());
 }
 
-void MainWindow::procFinished(int, bool showTime) {
-    if (outputProcess)
-        pipeOutput();
+void MainWindow::outputProcFinished(int, bool showTime) {
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
-    if (outputProcess) {
-        outputProcess->closeWriteChannel();
-        outputProcess->waitForBytesWritten();
-        outputProcess->waitForFinished();
-        readOutput();
-        outputProcess = NULL;
-        finishJSONViewer();
-        inJSONHandler = false;
-        JSONOutput.clear();
+    outputProcess = NULL;
+    finishJSONViewer();
+    inJSONHandler = false;
+    JSONOutput.clear();
+    if (showTime) {
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
+    delete tmpDir;
+    tmpDir = NULL;
+    outputBuffer = NULL;
+    emit(finished());
+}
+
+void MainWindow::procFinished(int, bool showTime) {
+    if (outputProcess) {
+        connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
+        if (process)
+            pipeOutput();
+        outputProcess->closeWriteChannel();
+        return;
+    }
+    updateUiProcessRunning(false);
+    timer->stop();
+    QString elapsedTime = setElapsedTime();
+    ui->statusbar->showMessage("Ready.");
+    process = NULL;
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
@@ -1956,7 +1974,7 @@ void MainWindow::procError(QProcess::ProcessError e) {
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
-        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
     }
     procFinished(0);
 }
@@ -1965,7 +1983,7 @@ void MainWindow::outputProcError(QProcess::ProcessError e) {
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
-        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter.");
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc solution processor.");
     }
     procFinished(0);
 }
@@ -2069,8 +2087,11 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
+        if (outputProcess)
+            pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
+        disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
         processWasStopped = true;
 
 #ifdef Q_OS_WIN

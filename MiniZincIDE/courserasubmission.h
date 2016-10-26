@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTextStream>
+#include <QJsonObject>
 #include "project.h"
 
 class QNetworkReply;
@@ -21,45 +22,37 @@ public:
     ~CourseraSubmission();
 
 protected:
-    enum State { S_NONE, S_WAIT_CHALLENGE, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
+    enum State { S_NONE, S_WAIT_PWD, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
     int _current_model;
-    QString _submission;
-    QString _source;
 
     QTextStream _output_stream;
+    QString _output_string;
 
-    QString _login;
-    QString _sid;
-    QString _ch_resp;
-    QString _state;
+    QJsonObject _submission;
+    QJsonObject _parts;
 
     CourseraProject& project;
     MainWindow* mw;
     QNetworkReply* reply;
 
-    QByteArray challenge_response(QString passwd, QString challenge);
-
     void disableUI(void);
     void enableUI(void);
     void cancelOperation(void);
+    void solveNext(void);
 
 public slots:
     void reject();
 
 private slots:
-    void on_checkLoginButton_clicked();
 
-    void get_challenge();
-    void rcv_challenge();
-    void submit_solution();
-    void rcv_solution_reply();
-    void solver_finished();
-    void goto_next();
+    void submitToCoursera();
+    void rcvSubmissionResponse();
+    void solverFinished();
 
     void on_runButton_clicked();
+    void rcvLoginCheckResponse();
 
     void on_storePassword_toggled(bool checked);
-
 private:
     Ui::CourseraSubmission *ui;
 };

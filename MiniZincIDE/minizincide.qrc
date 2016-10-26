@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>images/mznlogo.png</file>
         <file>images/about.html</file>
         <file>images/mznicon.png</file>
         <file>cheat_sheet.mzn</file>
