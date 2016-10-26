@@ -1644,11 +1644,35 @@ QString parseConflict(QString l) {
     QString nS = l.mid(start, first_comma - start);
     int s = nS.toInt(&ok);
 
+    QRegExp assignment(" .+=.+( |;|\\))");
+    assignment.setMinimal(true);
+
     std::stringstream ss;
     ss << "<a style=\"color:red\" href=\"" << url.toString().toStdString() << "\""
        << " title=\"" << url.toString().toStdString() << "\""
-       << ">Conflict:" << ":" << s << ":</a><br>";
+       << ">Conflict:" << s << ":";
 
+    int offset = assignment.indexIn(l);
+    while(offset != -1) {
+      QRegExp e("(;|\\s|\\)|\")");
+      e.setMinimal(true);
+
+      int end = e.indexIn(l, offset+1);
+      ss << l.mid(offset, end - offset).toStdString();
+      std::cerr << offset << " " << end << " " << l.mid(offset, end - offset).toStdString() << std::endl;
+
+      int next_mzn_path = l.indexOf("mzn_path", offset);
+      offset = assignment.indexIn(l, offset + 1);
+
+      if (offset != -1) {
+          if (next_mzn_path != -1 && next_mzn_path < offset)
+              ss << ";";
+          else
+              ss << ",";
+      }
+    }
+
+    ss << "</a><br>";
     return QString(ok ? ss.str().c_str() : "");
 }
 
