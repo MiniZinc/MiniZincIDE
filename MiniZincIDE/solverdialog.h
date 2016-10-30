@@ -68,8 +68,6 @@ private slots:
 
     void on_check_updates_stateChanged(int arg1);
 
-    void on_send_stats_stateChanged(int arg1);
-
     void on_mznDistribPath_returnPressed();
 
     void on_check_solver_clicked();

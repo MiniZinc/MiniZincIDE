@@ -55,9 +55,7 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     ui->solver_default->setEnabled(0!=defaultSolver);
     QSettings settings;
     settings.beginGroup("ide");
-    ui->check_updates->setChecked(settings.value("checkforupdates",false).toBool());
-    ui->send_stats->setChecked(settings.value("sendstats",false).toBool());
-    ui->send_stats->setEnabled(ui->check_updates->isChecked());
+    ui->check_updates->setChecked(settings.value("checkforupdates21",false).toBool());
     settings.endGroup();
     if (openAsAddNew)
         ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
@@ -185,16 +183,7 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
 {
     QSettings settings;
     settings.beginGroup("ide");
-    settings.setValue("checkforupdates", checkstate==Qt::Checked);
-    settings.endGroup();
-    ui->send_stats->setEnabled(checkstate==Qt::Checked);
-}
-
-void SolverDialog::on_send_stats_stateChanged(int checkstate)
-{
-    QSettings settings;
-    settings.beginGroup("ide");
-    settings.setValue("sendstats", checkstate==Qt::Checked);
+    settings.setValue("checkforupdates21", checkstate==Qt::Checked);
     settings.endGroup();
 }
 

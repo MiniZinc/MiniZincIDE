@@ -249,14 +249,7 @@
    <item>
     <widget class="QCheckBox" name="check_updates">
      <property name="text">
-      <string>Check for updates to the IDE on startup once a day</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="send_stats">
-     <property name="text">
-      <string>Send anonymous statistics to help us improve the IDE</string>
+      <string>Check for updates to MiniZinc on startup once a day</string>
      </property>
     </widget>
    </item>

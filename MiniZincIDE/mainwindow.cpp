@@ -140,20 +140,25 @@ void IDE::checkUpdate(void) {
     settings.sync();
 
     settings.beginGroup("ide");
-    if (settings.value("checkforupdates",false).toBool()) {
-        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
-            QString url_s = "http://www.minizinc.org/ide/version-info.php";
-            if (settings.value("sendstats",false).toBool()) {
-                url_s += "?version="+applicationVersion();
-                url_s += "&os=";
-                url_s += MZNOS;
-                url_s += "&uid="+settings.value("uuid","unknown").toString();
-                url_s += "&stats="+stats.toJson();
-            }
-            QUrl url(url_s);
-            QNetworkRequest request(url);
-            request.setRawHeader("User-Agent",
-                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
+    if (settings.value("checkforupdates21",false).toBool()) {
+        QDate lastCheck = QDate::fromString(settings.value("lastCheck21",
+                                                           QDate::currentDate().addDays(-2).toString()).toString());
+        if (lastCheck < QDate::currentDate()) {
+            // Prepare Google Analytics event
+            QUrlQuery gaQuery;
+            gaQuery.addQueryItem("v","1"); // version 1 of the protocol
+            gaQuery.addQueryItem("tid","UA-63390311-1"); // the MiniZinc ID
+            gaQuery.addQueryItem("cid",settings.value("uuid","unknown").toString()); // identifier for this installation
+            gaQuery.addQueryItem("aip","1"); // anonymize IP address
+            gaQuery.addQueryItem("t","event"); // feedback type
+            gaQuery.addQueryItem("ec","check"); // event type
+            gaQuery.addQueryItem("ea","checkUpdate"); // event action
+            gaQuery.addQueryItem("el",applicationVersion()); // event label (IDE version)
+            QNetworkRequest gaRequest(QUrl("http://www.google-analytics.com/collect"));
+            networkManager->post(gaRequest, gaQuery.toString().toLocal8Bit());
+
+            // Check if an update is available
+            QNetworkRequest request(QUrl("http://www.minizinc.org/version-info.php"));
             versionCheckReply = networkManager->get(request);
             connect(versionCheckReply, SIGNAL(finished()), this, SLOT(versionCheckFinished()));
         }
@@ -167,7 +172,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
-#ifdef MINIZINC_IDE_BUNDLED
+#ifndef MINIZINC_IDE_BUNDLED
     setApplicationName("MiniZinc IDE");
 #else
     setApplicationName("MiniZinc IDE (bundled)");
@@ -177,17 +182,16 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     QSettings settings;
     settings.sync();
-
     settings.beginGroup("ide");
-    if (settings.value("lastCheck",QDate()).toDate().isNull()) {
+    if (settings.value("lastCheck21",QString()).toString().isEmpty()) {
         settings.setValue("uuid", QUuid::createUuid().toString());
 
         CheckUpdateDialog cud;
         int result = cud.exec();
 
-        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
-        settings.setValue("checkforupdates",result==QDialog::Accepted);
-        settings.setValue("sendstats",cud.sendStats());
+        settings.setValue("lastCheck21",QDate::currentDate().addDays(-2).toString());
+        settings.setValue("checkforupdates21",result==QDialog::Accepted);
+        settings.sync();
     }
     settings.endGroup();
     settings.beginGroup("Recent");
@@ -404,6 +408,8 @@ IDE::~IDE(void) {
     settings.setValue("files",recentFiles);
     settings.setValue("projects",recentProjects);
     settings.endGroup();
+    settings.beginGroup("ide");
+    settings.endGroup();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -553,17 +559,17 @@ IDE::versionCheckFinished(void) {
 
         if (needUpdate) {
             int button = QMessageBox::information(NULL,"Update available",
-                                     "Version "+currentVersion+" of the MiniZinc IDE is now available. "
+                                     "Version "+currentVersion+" of MiniZinc is now available. "
                                      "You are currently using version "+applicationVersion()+
-                                     ".\nDo you want to open the MiniZinc IDE download page?",
+                                     ".\nDo you want to open the MiniZinc web site?",
                                      QMessageBox::Cancel|QMessageBox::Ok,QMessageBox::Ok);
             if (button==QMessageBox::Ok) {
-                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/ide/"));
+                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/"));
             }
         }
         QSettings settings;
         settings.beginGroup("ide");
-        settings.setValue("lastCheck",QDate::currentDate());
+        settings.setValue("lastCheck21",QDate::currentDate().toString());
         settings.endGroup();
         stats.resetCounts();
     }
@@ -2326,7 +2332,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
 {
     QSettings settings;
     settings.beginGroup("ide");
-    bool checkUpdates = settings.value("checkforupdates",false).toBool();
+    bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
     SolverDialog sd(solvers,defaultSolver,addNew,mznDistribPath);
@@ -2348,8 +2354,8 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         ui->conf_solver->setCurrentText(defaultSolver);
 
     settings.beginGroup("ide");
-    if (!checkUpdates && settings.value("checkforupdates",false).toBool()) {
-        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+    if (!checkUpdates && settings.value("checkforupdates21",false).toBool()) {
+        settings.setValue("lastCheck21",QDate::currentDate().addDays(-2).toString());
         IDE::instance()->checkUpdate();
     }
     settings.endGroup();
