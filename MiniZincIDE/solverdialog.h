@@ -27,8 +27,9 @@ struct Solver {
     QString backend;
     bool builtin;
     bool detach;
-    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt) :
-        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt) {}
+    bool needs_mzn2fzn;
+    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt, bool mzn) :
+        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt), needs_mzn2fzn(mzn) {}
     Solver(void) {}
 };
 

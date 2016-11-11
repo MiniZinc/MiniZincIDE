@@ -747,19 +747,19 @@ void MainWindow::init(const QString& projectFile)
 
     IDE::instance()->setEditorFont(editorFont);
 
-    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
+    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true);
     bool hadg12fd = false;
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true);
     bool hadg12lazyfd = false;
-    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
+    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true);
     bool hadg12mip = false;
 #ifdef MINIZINC_IDE_BUNDLED
-    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
+    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true);
     bool hadgecode = false;
 #ifdef Q_OS_WIN
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true);
 #else
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
 #endif
     bool hadgecodegist = false;
 #endif
@@ -784,6 +784,7 @@ void MainWindow::init(const QString& projectFile)
             solver.backend = settings.value("backend").toString();
             solver.builtin = settings.value("builtin").toBool();
             solver.detach = settings.value("detach",false).toBool();
+            solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
             if (solver.builtin) {
                 if (solver.name=="G12 fd") {
                     solver = g12fd;
@@ -1767,15 +1768,30 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 {
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
+
+    bool standalone = false;
+    if (!compileOnly) {
+        // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        if (!s.needs_mzn2fzn) {
+            standalone = true;
+            processName = s.executable;
+        }
+    }
+
     curFilePath = modelPath;
     processWasStopped = false;
     runSolns2Out = true;
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-    if (compileOnly)
+    connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+    if (compileOnly) {
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
-    else
+    } else if (standalone) {
+        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+    } else {
         connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+    }
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
@@ -1787,17 +1803,24 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "-d" << additionalDataFile;
     }
 
+    if (standalone) {
+        QStringList runArgs = parseConf(false,true);
+        args << runArgs;
+    }
+
     tmpDir = new QTemporaryDir;
     if (!tmpDir->isValid()) {
         QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
         procFinished(0);
     } else {
         QFileInfo fi(modelPath);
-        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-        args << "-o" << currentFznTarget;
-        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        if (!standalone) {
+            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+            args << "-o" << currentFznTarget;
+            args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        }
         args << modelPath;
-        QString compiling = fi.fileName();
+        QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
         if (project.currentDataFile()!="None") {
             compiling += " with data ";
             QFileInfo fi(project.currentDataFile());
@@ -1811,8 +1834,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
-        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
-        process->start(mzn2fzn_executable,args,getMznDistribPath());
+        addOutput("<div style='color:blue;'>"+compiling+"</div><br>");
+        process->start(processName,args,getMznDistribPath());
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -2114,7 +2137,7 @@ void MainWindow::runCompiledFzn(int exitcode)
     if (exitcode==0) {
         readOutput();
         QStringList args = parseConf(false,true);
-        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);
 
@@ -2377,6 +2400,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("backend",solvers[i].backend);
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
+        settings.setValue("needs_mzn2fzn",solvers[i].needs_mzn2fzn);
     }
     IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();
