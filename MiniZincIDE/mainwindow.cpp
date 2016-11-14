@@ -762,6 +762,12 @@ void MainWindow::init(const QString& projectFile)
     Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
 #endif
     bool hadgecodegist = false;
+    Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
+    bool hadchuffed = false;
+    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,false);
+    bool hadcbc = false;
+    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,false);
+    bool hadgurobi = false;
 #endif
 
     int nsolvers = settings.beginReadArray("solvers");
@@ -805,6 +811,18 @@ void MainWindow::init(const QString& projectFile)
                     solver = gecodeGist;
                     hadgecodegist = true;
                 }
+                else if (solver.name=="COIN-OR CBC (bundled)") {
+                    solver = cbc;
+                    hadcbc= true;
+                }
+                else if (solver.name=="Gurobi (bundled)") {
+                    solver = gurobi;
+                    hadgurobi= true;
+                }
+                else if (solver.name=="Chuffed (bundled)") {
+                    solver = chuffed ;
+                    hadchuffed = true;
+                }
 #endif
             } else {
                 IDE::instance()->stats.solvers.append(solver.name);
@@ -818,6 +836,12 @@ void MainWindow::init(const QString& projectFile)
         if (!hadg12mip)
             solvers.append(g12mip);
 #ifdef MINIZINC_IDE_BUNDLED
+        if (!hadgurobi)
+            solvers.push_front(gurobi);
+        if (!hadcbc)
+            solvers.push_front(cbc);
+        if (!hadchuffed)
+            solvers.push_back(chuffed);
         if (!hadgecodegist)
             solvers.push_front(gecodeGist);
         if (!hadgecode)
