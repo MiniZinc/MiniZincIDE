@@ -764,9 +764,9 @@ void MainWindow::init(const QString& projectFile)
     bool hadgecodegist = false;
     Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
     bool hadchuffed = false;
-    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,false);
+    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
     bool hadcbc = false;
-    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,false);
+    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
     bool hadgurobi = false;
 #endif
 
