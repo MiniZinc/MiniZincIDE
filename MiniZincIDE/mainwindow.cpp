@@ -140,20 +140,25 @@ void IDE::checkUpdate(void) {
     settings.sync();
 
     settings.beginGroup("ide");
-    if (settings.value("checkforupdates",false).toBool()) {
-        if (settings.value("lastCheck",QDate::currentDate().addDays(-2)) < QDate::currentDate()) {
-            QString url_s = "http://www.minizinc.org/ide/version-info.php";
-            if (settings.value("sendstats",false).toBool()) {
-                url_s += "?version="+applicationVersion();
-                url_s += "&os=";
-                url_s += MZNOS;
-                url_s += "&uid="+settings.value("uuid","unknown").toString();
-                url_s += "&stats="+stats.toJson();
-            }
-            QUrl url(url_s);
-            QNetworkRequest request(url);
-            request.setRawHeader("User-Agent",
-                                 (QString("Mozilla 5.0 (MiniZinc IDE ")+applicationVersion()+")").toStdString().c_str());
+    if (settings.value("checkforupdates21",false).toBool()) {
+        QDate lastCheck = QDate::fromString(settings.value("lastCheck21",
+                                                           QDate::currentDate().addDays(-2).toString()).toString());
+        if (lastCheck < QDate::currentDate()) {
+            // Prepare Google Analytics event
+            QUrlQuery gaQuery;
+            gaQuery.addQueryItem("v","1"); // version 1 of the protocol
+            gaQuery.addQueryItem("tid","UA-63390311-1"); // the MiniZinc ID
+            gaQuery.addQueryItem("cid",settings.value("uuid","unknown").toString()); // identifier for this installation
+            gaQuery.addQueryItem("aip","1"); // anonymize IP address
+            gaQuery.addQueryItem("t","event"); // feedback type
+            gaQuery.addQueryItem("ec","check"); // event type
+            gaQuery.addQueryItem("ea","checkUpdate"); // event action
+            gaQuery.addQueryItem("el",applicationVersion()); // event label (IDE version)
+            QNetworkRequest gaRequest(QUrl("http://www.google-analytics.com/collect"));
+            networkManager->post(gaRequest, gaQuery.toString().toLocal8Bit());
+
+            // Check if an update is available
+            QNetworkRequest request(QUrl("http://www.minizinc.org/version-info.php"));
             versionCheckReply = networkManager->get(request);
             connect(versionCheckReply, SIGNAL(finished()), this, SLOT(versionCheckFinished()));
         }
@@ -167,7 +172,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
-#ifdef MINIZINC_IDE_BUNDLED
+#ifndef MINIZINC_IDE_BUNDLED
     setApplicationName("MiniZinc IDE");
 #else
     setApplicationName("MiniZinc IDE (bundled)");
@@ -177,17 +182,16 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     QSettings settings;
     settings.sync();
-
     settings.beginGroup("ide");
-    if (settings.value("lastCheck",QDate()).toDate().isNull()) {
+    if (settings.value("lastCheck21",QString()).toString().isEmpty()) {
         settings.setValue("uuid", QUuid::createUuid().toString());
 
         CheckUpdateDialog cud;
         int result = cud.exec();
 
-        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
-        settings.setValue("checkforupdates",result==QDialog::Accepted);
-        settings.setValue("sendstats",cud.sendStats());
+        settings.setValue("lastCheck21",QDate::currentDate().addDays(-2).toString());
+        settings.setValue("checkforupdates21",result==QDialog::Accepted);
+        settings.sync();
     }
     settings.endGroup();
     settings.beginGroup("Recent");
@@ -404,6 +408,8 @@ IDE::~IDE(void) {
     settings.setValue("files",recentFiles);
     settings.setValue("projects",recentProjects);
     settings.endGroup();
+    settings.beginGroup("ide");
+    settings.endGroup();
 }
 
 bool IDE::hasFile(const QString& path)
@@ -520,7 +526,7 @@ IDE::versionCheckFinished(void) {
     if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = versionCheckReply->readAll();
 
-        QRegExp versionRegExp("([1-9][0-9]+)\\.([0-9]+)\\.([0-9]+)");
+        QRegExp versionRegExp("([1-9][0-9]*)\\.([0-9]+)\\.([0-9]+)");
 
         int curVersionMajor = 0;
         int curVersionMinor = 0;
@@ -553,17 +559,17 @@ IDE::versionCheckFinished(void) {
 
         if (needUpdate) {
             int button = QMessageBox::information(NULL,"Update available",
-                                     "Version "+currentVersion+" of the MiniZinc IDE is now available. "
+                                     "Version "+currentVersion+" of MiniZinc is now available. "
                                      "You are currently using version "+applicationVersion()+
-                                     ".\nDo you want to open the MiniZinc IDE download page?",
+                                     ".\nDo you want to open the MiniZinc web site?",
                                      QMessageBox::Cancel|QMessageBox::Ok,QMessageBox::Ok);
             if (button==QMessageBox::Ok) {
-                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/ide/"));
+                QDesktopServices::openUrl(QUrl("http://www.minizinc.org/"));
             }
         }
         QSettings settings;
         settings.beginGroup("ide");
-        settings.setValue("lastCheck",QDate::currentDate());
+        settings.setValue("lastCheck21",QDate::currentDate().toString());
         settings.endGroup();
         stats.resetCounts();
     }
@@ -741,21 +747,27 @@ void MainWindow::init(const QString& projectFile)
 
     IDE::instance()->setEditorFont(editorFont);
 
-    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false);
+    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true);
     bool hadg12fd = false;
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true);
     bool hadg12lazyfd = false;
-    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false);
+    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true);
     bool hadg12mip = false;
 #ifdef MINIZINC_IDE_BUNDLED
-    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false);
+    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true);
     bool hadgecode = false;
 #ifdef Q_OS_WIN
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true);
 #else
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
 #endif
     bool hadgecodegist = false;
+    Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
+    bool hadchuffed = false;
+    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
+    bool hadcbc = false;
+    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
+    bool hadgurobi = false;
 #endif
 
     int nsolvers = settings.beginReadArray("solvers");
@@ -778,6 +790,7 @@ void MainWindow::init(const QString& projectFile)
             solver.backend = settings.value("backend").toString();
             solver.builtin = settings.value("builtin").toBool();
             solver.detach = settings.value("detach",false).toBool();
+            solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
             if (solver.builtin) {
                 if (solver.name=="G12 fd") {
                     solver = g12fd;
@@ -798,6 +811,18 @@ void MainWindow::init(const QString& projectFile)
                     solver = gecodeGist;
                     hadgecodegist = true;
                 }
+                else if (solver.name=="COIN-OR CBC (bundled)") {
+                    solver = cbc;
+                    hadcbc= true;
+                }
+                else if (solver.name=="Gurobi (bundled)") {
+                    solver = gurobi;
+                    hadgurobi= true;
+                }
+                else if (solver.name=="Chuffed (bundled)") {
+                    solver = chuffed ;
+                    hadchuffed = true;
+                }
 #endif
             } else {
                 IDE::instance()->stats.solvers.append(solver.name);
@@ -811,6 +836,12 @@ void MainWindow::init(const QString& projectFile)
         if (!hadg12mip)
             solvers.append(g12mip);
 #ifdef MINIZINC_IDE_BUNDLED
+        if (!hadgurobi)
+            solvers.push_front(gurobi);
+        if (!hadcbc)
+            solvers.push_front(cbc);
+        if (!hadchuffed)
+            solvers.push_back(chuffed);
         if (!hadgecodegist)
             solvers.push_front(gecodeGist);
         if (!hadgecode)
@@ -1629,7 +1660,6 @@ void MainWindow::statusTimerEvent()
 void MainWindow::readOutput()
 {
     MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
-
     if (readProc != NULL) {
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
@@ -1762,15 +1792,30 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 {
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
+
+    bool standalone = false;
+    if (!compileOnly) {
+        // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        if (!s.needs_mzn2fzn) {
+            standalone = true;
+            processName = s.executable;
+        }
+    }
+
     curFilePath = modelPath;
     processWasStopped = false;
     runSolns2Out = true;
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
-    if (compileOnly)
+    connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
+    if (compileOnly) {
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
-    else
+    } else if (standalone) {
+        connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+    } else {
         connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+    }
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
@@ -1782,17 +1827,24 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << "-d" << additionalDataFile;
     }
 
+    if (standalone) {
+        QStringList runArgs = parseConf(false,true);
+        args << runArgs;
+    }
+
     tmpDir = new QTemporaryDir;
     if (!tmpDir->isValid()) {
         QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
         procFinished(0);
     } else {
         QFileInfo fi(modelPath);
-        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-        args << "-o" << currentFznTarget;
-        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        if (!standalone) {
+            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+            args << "-o" << currentFznTarget;
+            args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        }
         args << modelPath;
-        QString compiling = fi.fileName();
+        QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
         if (project.currentDataFile()!="None") {
             compiling += " with data ";
             QFileInfo fi(project.currentDataFile());
@@ -1806,8 +1858,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
-        addOutput("<div style='color:blue;'>Compiling "+compiling+"</div><br>");
-        process->start(mzn2fzn_executable,args,getMznDistribPath());
+        addOutput("<div style='color:blue;'>"+compiling+"</div><br>");
+        process->start(processName,args,getMznDistribPath());
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -1869,25 +1921,39 @@ void MainWindow::pipeOutput()
     outputProcess->write(process->readAllStandardOutput());
 }
 
-void MainWindow::procFinished(int, bool showTime) {
-    if (process && outputProcess)
-        pipeOutput();
+void MainWindow::outputProcFinished(int, bool showTime) {
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
-    if (outputProcess) {
-        outputProcess->closeWriteChannel();
-        outputProcess->waitForBytesWritten();
-        outputProcess->waitForFinished();
-        readOutput();
-        outputProcess = NULL;
-        finishJSONViewer();
-        inJSONHandler = false;
-        JSONOutput.clear();
+    outputProcess = NULL;
+    finishJSONViewer();
+    inJSONHandler = false;
+    JSONOutput.clear();
+    if (showTime) {
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
+    delete tmpDir;
+    tmpDir = NULL;
+    outputBuffer = NULL;
+    emit(finished());
+}
+
+void MainWindow::procFinished(int, bool showTime) {
+    if (outputProcess) {
+        connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
+        if (process)
+            pipeOutput();
+        outputProcess->closeWriteChannel();
+        return;
+    }
+    updateUiProcessRunning(false);
+    timer->stop();
+    QString elapsedTime = setElapsedTime();
+    ui->statusbar->showMessage("Ready.");
+    process = NULL;
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
     }
@@ -2014,7 +2080,8 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
-        pipeOutput();
+        if (outputProcess)
+            pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, SLOT(procError(QProcess::ProcessError)));
         disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
@@ -2094,7 +2161,7 @@ void MainWindow::runCompiledFzn(int exitcode)
     if (exitcode==0) {
         readOutput();
         QStringList args = parseConf(false,true);
-        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);
 
@@ -2312,7 +2379,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
 {
     QSettings settings;
     settings.beginGroup("ide");
-    bool checkUpdates = settings.value("checkforupdates",false).toBool();
+    bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
     SolverDialog sd(solvers,defaultSolver,addNew,mznDistribPath);
@@ -2334,8 +2401,8 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         ui->conf_solver->setCurrentText(defaultSolver);
 
     settings.beginGroup("ide");
-    if (!checkUpdates && settings.value("checkforupdates",false).toBool()) {
-        settings.setValue("lastCheck",QDate::currentDate().addDays(-2));
+    if (!checkUpdates && settings.value("checkforupdates21",false).toBool()) {
+        settings.setValue("lastCheck21",QDate::currentDate().addDays(-2).toString());
         IDE::instance()->checkUpdate();
     }
     settings.endGroup();
@@ -2357,6 +2424,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("backend",solvers[i].backend);
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
+        settings.setValue("needs_mzn2fzn",solvers[i].needs_mzn2fzn);
     }
     IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();

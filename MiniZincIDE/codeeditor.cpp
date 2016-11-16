@@ -88,6 +88,8 @@ void CodeEditor::setDocument(QTextDocument *document)
     disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
     disconnect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     disconnect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    QList<QTextEdit::ExtraSelection> noSelections;
+    setExtraSelections(noSelections);
     QPlainTextEdit::setDocument(document);
     if (document) {
         QFont f= font();

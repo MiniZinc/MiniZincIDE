@@ -1,3 +1,15 @@
+2016-11-16
+  v2.1.0
+  - Add new bundled solvers: Chuffed, CBC, Gurobi
+  - Change update check to use Google Analytics (opt-in)
+  - Fix a crash in the syntax highlighter when changing documents (e.g when
+    saving a previously unsaved file).
+  - Fix buffering problems on Windows (could lead to solver output not being
+    shown).
+  - Fix a crash when stopping a long-running compilation.
+2016-08-30
+  v2.0.97
+  - Update to include MiniZinc 2.0.97 beta release.
 2016-07-31
   v2.0.14
   - Implement new Coursera submission system.
