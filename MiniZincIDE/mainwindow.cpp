@@ -748,105 +748,46 @@ void MainWindow::init(const QString& projectFile)
     IDE::instance()->setEditorFont(editorFont);
 
     Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true);
-    bool hadg12fd = false;
     Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true);
-    bool hadg12lazyfd = false;
     Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true);
-    bool hadg12mip = false;
 #ifdef MINIZINC_IDE_BUNDLED
     Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true);
-    bool hadgecode = false;
 #ifdef Q_OS_WIN
     Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true);
 #else
     Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
 #endif
-    bool hadgecodegist = false;
     Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
-    bool hadchuffed = false;
     Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
-    bool hadcbc = false;
     Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
-    bool hadgurobi = false;
 #endif
 
     int nsolvers = settings.beginReadArray("solvers");
-    if (nsolvers==0) {
 #ifdef MINIZINC_IDE_BUNDLED
-        solvers.append(gecode);
-        solvers.append(gecodeGist);
+    solvers.append(gecode);
+    solvers.append(gecodeGist);
+    solvers.append(chuffed);
+    solvers.append(cbc);
+    solvers.append(gurobi);
 #endif
-        solvers.append(g12fd);
-        solvers.append(g12lazyfd);
-        solvers.append(g12mip);
-    } else {
-        IDE::instance()->stats.solvers.clear();
-        for (int i=0; i<nsolvers; i++) {
-            settings.setArrayIndex(i);
-            Solver solver;
-            solver.name = settings.value("name").toString();
-            solver.executable = settings.value("executable").toString();
-            solver.mznlib = settings.value("mznlib").toString();
-            solver.backend = settings.value("backend").toString();
-            solver.builtin = settings.value("builtin").toBool();
-            solver.detach = settings.value("detach",false).toBool();
-            solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
-            if (solver.builtin) {
-                if (solver.name=="G12 fd") {
-                    solver = g12fd;
-                    hadg12fd = true;
-                } else if (solver.name=="G12 lazyfd") {
-                    solver = g12lazyfd;
-                    hadg12lazyfd = true;
-                } else if (solver.name=="G12 MIP") {
-                    solver = g12mip;
-                    hadg12mip = true;
-                }
-#ifdef MINIZINC_IDE_BUNDLED
-                else if (solver.name=="Gecode (bundled)") {
-                    solver = gecode;
-                    hadgecode = true;
-                }
-                else if (solver.name=="Gecode (Gist, bundled)") {
-                    solver = gecodeGist;
-                    hadgecodegist = true;
-                }
-                else if (solver.name=="COIN-OR CBC (bundled)") {
-                    solver = cbc;
-                    hadcbc= true;
-                }
-                else if (solver.name=="Gurobi (bundled)") {
-                    solver = gurobi;
-                    hadgurobi= true;
-                }
-                else if (solver.name=="Chuffed (bundled)") {
-                    solver = chuffed ;
-                    hadchuffed = true;
-                }
-#endif
-            } else {
-                IDE::instance()->stats.solvers.append(solver.name);
-            }
-            solvers.append(solver);
-        }
-        if (!hadg12fd)
-            solvers.append(g12fd);
-        if (!hadg12lazyfd)
-            solvers.append(g12lazyfd);
-        if (!hadg12mip)
-            solvers.append(g12mip);
-#ifdef MINIZINC_IDE_BUNDLED
-        if (!hadgurobi)
-            solvers.push_front(gurobi);
-        if (!hadcbc)
-            solvers.push_front(cbc);
-        if (!hadchuffed)
-            solvers.push_back(chuffed);
-        if (!hadgecodegist)
-            solvers.push_front(gecodeGist);
-        if (!hadgecode)
-            solvers.push_front(gecode);
-#endif
+    solvers.append(g12fd);
+    solvers.append(g12lazyfd);
+    solvers.append(g12mip);
+    IDE::instance()->stats.solvers.clear();
+    for (int i=0; i<nsolvers; i++) {
+        settings.setArrayIndex(i);
+        if (settings.value("builtin").toBool())
+            continue;
+        Solver solver;
+        solver.name = settings.value("name").toString();
+        solver.executable = settings.value("executable").toString();
+        solver.mznlib = settings.value("mznlib").toString();
+        solver.backend = settings.value("backend").toString();
+        solver.builtin = settings.value("builtin").toBool();
+        solver.detach = settings.value("detach",false).toBool();
+        solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
+        IDE::instance()->stats.solvers.append(solver.name);
+        solvers.append(solver);
     }
     settings.endArray();
     settings.beginGroup("minizinc");
