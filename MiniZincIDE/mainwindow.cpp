@@ -1361,6 +1361,8 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         ret << "--no-optimize";
     if (compileOnly && project.mzn2fznVerbose())
         ret << "-v";
+    if (compileOnly && project.mzn2fznPrintStats())
+        ret << "-s";
     if (compileOnly && project.haveExtraArgs() &&
         !project.extraArgs().isEmpty())
         ret << "-D" << project.extraArgs();
@@ -2589,7 +2591,7 @@ void MainWindow::saveProject(const QString& f)
             tabChange(ui->tabWidget->currentIndex());
             QDataStream out(&file);
             out << (quint32)0xD539EA12;
-            out << (quint32)104;
+            out << (quint32)105;
             out.setVersion(QDataStream::Qt_5_0);
             QStringList openFiles;
             QDir projectDir = QFileInfo(filepath).absoluteDir();
@@ -2610,6 +2612,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.extraMzn2FznArgs();
             out << project.autoClearOutput();
             out << project.mzn2fznVerbose();
+            out << project.mzn2fznPrintStats();
             out << project.mzn2fznOptimize();
             out << project.currentSolver();
             out << (qint32)project.n_solutions();
@@ -2655,7 +2658,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
     quint32 version;
     in >> version;
-    if (version != 101 && version != 102 && version != 103 && version != 104) {
+    if (version != 101 && version != 102 && version != 103 && version != 104 && version != 105) {
         QMessageBox::warning(this, "MiniZinc IDE",
                              "Could not open project file (version mismatch)");
         close();
@@ -2697,6 +2700,10 @@ void MainWindow::loadProject(const QString& filepath)
     }
     in >> p_b;
     project.mzn2fznVerbose(p_b, true);
+    if (version==105) {
+        in >> p_b;
+        project.mzn2fznPrintStats(p_b, true);
+    }
     in >> p_b;
     project.mzn2fznOptimize(p_b, true);
     in >> p_s;
