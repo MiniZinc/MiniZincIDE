@@ -1,3 +1,7 @@
+2016-12-14
+  v2.1.1
+  - Add option to print mzn2fzn statistics to project configuration.
+  - Update to MiniZinc 2.1.1.
 2016-11-16
   v2.1.0
   - Add new bundled solvers: Chuffed, CBC, Gurobi

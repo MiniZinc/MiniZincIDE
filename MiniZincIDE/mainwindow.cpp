@@ -1361,6 +1361,8 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         ret << "--no-optimize";
     if (compileOnly && project.mzn2fznVerbose())
         ret << "-v";
+    if (compileOnly && project.mzn2fznPrintStats())
+        ret << "-s";
     if (compileOnly && project.haveExtraArgs() &&
         !project.extraArgs().isEmpty())
         ret << "-D" << project.extraArgs();
@@ -2632,6 +2634,7 @@ void MainWindow::saveProject(const QString& f)
             }
             out << projectFilesRelPath;
             out << project.defaultBehaviour();
+            out << project.mzn2fznPrintStats();
             project.setModified(false, true);
 
         } else {
@@ -2737,6 +2740,10 @@ void MainWindow::loadProject(const QString& filepath)
         project.defaultBehaviour(p_b, true);
     } else {
         project.defaultBehaviour(project.n_solutions() == 1 && !project.printAll());
+    }
+    if (version==104 && !in.atEnd()) {
+        in >> p_b;
+        project.mzn2fznPrintStats(p_b, true);
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
