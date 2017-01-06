@@ -14,7 +14,6 @@ class CheckUpdateDialog : public QDialog
 public:
     explicit CheckUpdateDialog(QWidget *parent = 0);
     ~CheckUpdateDialog();
-    bool sendStats(void) const;
 private:
     Ui::CheckUpdateDialog *ui;
 };

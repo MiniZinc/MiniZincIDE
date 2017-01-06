@@ -303,6 +303,7 @@ void Project::setModified(bool flag, bool files)
                 haveExtraArgs(haveExtraArgs(),true);
                 extraArgs(extraArgs(),true);
                 mzn2fznVerbose(mzn2fznVerbose(),true);
+                mzn2fznPrintStats(mzn2fznPrintStats(),true);
                 mzn2fznOptimize(mzn2fznOptimize(),true);
                 currentSolver(currentSolver(),true);
                 n_solutions(n_solutions(),true);
@@ -362,6 +363,11 @@ bool Project::autoClearOutput(void) const
 bool Project::mzn2fznVerbose(void) const
 {
     return ui->conf_verbose->isChecked();
+}
+
+bool Project::mzn2fznPrintStats() const
+{
+    return ui->conf_flatten_stats->isChecked();
 }
 bool Project::mzn2fznOptimize(void) const
 {
@@ -487,6 +493,16 @@ void Project::mzn2fznVerbose(bool b, bool init)
     if (init) {
         _mzn2fzn_verbose= b;
         ui->conf_verbose->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
+void Project::mzn2fznPrintStats(bool b, bool init)
+{
+    if (init) {
+        _mzn2fzn_printStats = b;
+        ui->conf_flatten_stats->setChecked(b);
     } else {
         checkModified();
     }
@@ -649,6 +665,10 @@ void Project::checkModified()
         return;
     }
     if (mzn2fznVerbose() != _mzn2fzn_verbose) {
+        setModified(true);
+        return;
+    }
+    if (mzn2fznPrintStats() != _mzn2fzn_printStats) {
         setModified(true);
         return;
     }
