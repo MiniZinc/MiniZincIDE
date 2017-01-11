@@ -55,9 +55,7 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
     ui->solver_default->setEnabled(0!=defaultSolver);
     QSettings settings;
     settings.beginGroup("ide");
-    ui->check_updates->setChecked(settings.value("checkforupdates",false).toBool());
-    ui->send_stats->setChecked(settings.value("sendstats",false).toBool());
-    ui->send_stats->setEnabled(ui->check_updates->isChecked());
+    ui->check_updates->setChecked(settings.value("checkforupdates21",false).toBool());
     settings.endGroup();
     if (openAsAddNew)
         ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
@@ -85,6 +83,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->name->setText(solvers[index].name);
         ui->executable->setText(solvers[index].executable);
         ui->detach->setChecked(solvers[index].detach);
+        ui->needs_mzn2fzn->setChecked(solvers[index].needs_mzn2fzn);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->backend->setText(solvers[index].backend);
         ui->solver_default->setChecked(index==defaultSolver);
@@ -97,6 +96,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->name->setText("");
         ui->executable->setText("");
         ui->detach->setChecked(false);
+        ui->needs_mzn2fzn->setChecked(true);
         ui->mznpath->setText("");
         ui->backend->setText("");
         ui->solverFrame->setEnabled(true);
@@ -132,6 +132,7 @@ void SolverDialog::on_updateButton_clicked()
     solvers[index].name = ui->name->text().trimmed();
     solvers[index].builtin = false;
     solvers[index].detach = ui->detach->isChecked();
+    solvers[index].needs_mzn2fzn = ui->needs_mzn2fzn->isChecked();
     if (index==solvers.size()-1) {
         ui->solvers_combo->insertItem(index,ui->name->text(),index);
     }
@@ -185,16 +186,7 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
 {
     QSettings settings;
     settings.beginGroup("ide");
-    settings.setValue("checkforupdates", checkstate==Qt::Checked);
-    settings.endGroup();
-    ui->send_stats->setEnabled(checkstate==Qt::Checked);
-}
-
-void SolverDialog::on_send_stats_stateChanged(int checkstate)
-{
-    QSettings settings;
-    settings.beginGroup("ide");
-    settings.setValue("sendstats", checkstate==Qt::Checked);
+    settings.setValue("checkforupdates21", checkstate==Qt::Checked);
     settings.endGroup();
 }
 

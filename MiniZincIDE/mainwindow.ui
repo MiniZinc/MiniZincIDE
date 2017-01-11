@@ -92,6 +92,9 @@
              <y>0</y>
              <width>593</width>
              <height>797</height>
+             <y>-225</y>
+             <width>595</width>
+             <height>818</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -406,6 +409,13 @@
                 </widget>
                </item>
                <item>
+                <widget class="QCheckBox" name="conf_flatten_stats">
+                 <property name="text">
+                  <string>Statistics for flattening</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="conf_optimize">
                  <property name="text">
                   <string>Produce optimized FlatZinc (disable if flattening takes too long)</string>
@@ -554,6 +564,7 @@
               <zorder>conf_verbose</zorder>
               <zorder>conf_optimize</zorder>
               <zorder>autoclear_output</zorder>
+              <zorder>conf_flatten_stats</zorder>
              </widget>
             </item>
            </layout>

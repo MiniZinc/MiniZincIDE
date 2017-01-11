@@ -14,7 +14,3 @@ CheckUpdateDialog::~CheckUpdateDialog()
 {
     delete ui;
 }
-
-bool CheckUpdateDialog::sendStats(void) const {
-    return ui->checkBox->isChecked();
-}

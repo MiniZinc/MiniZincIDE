@@ -173,6 +173,8 @@ private slots:
 
     void procFinished(int, bool showTime=true);
 
+    void outputProcFinished(int, bool showTime=true);
+
     void procError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);
 

@@ -1,3 +1,36 @@
+2016-12-20
+  v2.1.2
+  - Update to MiniZinc 2.1.2.
+2016-12-14
+  v2.1.1
+  - Add option to print mzn2fzn statistics to project configuration.
+  - Update to MiniZinc 2.1.1.
+2016-11-16
+  v2.1.0
+  - Add new bundled solvers: Chuffed, CBC, Gurobi
+  - Change update check to use Google Analytics (opt-in)
+  - Fix a crash in the syntax highlighter when changing documents (e.g when
+    saving a previously unsaved file).
+  - Fix buffering problems on Windows (could lead to solver output not being
+    shown).
+  - Fix a crash when stopping a long-running compilation.
+2016-08-30
+  v2.0.97
+  - Update to include MiniZinc 2.0.97 beta release.
+2016-07-31
+  v2.0.14
+  - Implement new Coursera submission system.
+  - Reload list of data files after removing a file through the project view,
+    and use persistent indices to fix file removal. Fixes #11.
+  - Fix renaming of files through the project explorer. Renaming should now
+    work using the usual platform editing key, and using the context menu
+    option. Fixes #12.
+  - Don't add empty file name to list of data files when user cancels file
+    dialog. Fixes #13.
+  - Add same leading white space as on current line when pressing return
+    (maintain indenting).
+  - Add support for new Qt WebEngine framework (since Qt WebKit is not available
+    in Qt 5.6).
 2016-03-26
   v2.0.13
   - Flush output more consistently when process finished, hopefully
