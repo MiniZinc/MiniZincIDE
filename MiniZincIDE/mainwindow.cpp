@@ -46,6 +46,12 @@
 #endif
 #endif
 
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+#include <unordered_map>
+#include <sstream>
+#include <fstream>
+#endif
+
 IDEStatistics::IDEStatistics(void)
     : errorsShown(0), errorsClicked(0), modelsRun(0) {}
 
@@ -286,9 +292,17 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
     profiler = new ProfilerConductor;
+    connect(profiler, SIGNAL(showNodeInfo(std::string)),
+            this, SLOT(showNodeInfo(std::string)));
 #endif
 
     checkUpdate();
+}
+
+#include <iostream>
+
+void IDE::showNodeInfo(std::string extra_info) {
+    (*mainWindows.begin())->addOutput(QString::fromStdString(extra_info), true);
 }
 
 void IDE::handleFocusChange(QWidget *old, QWidget *newW)
