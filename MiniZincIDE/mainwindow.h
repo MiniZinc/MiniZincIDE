@@ -329,6 +329,7 @@ private:
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
+    QString currentPathsTarget;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;

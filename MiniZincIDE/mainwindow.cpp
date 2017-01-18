@@ -1796,8 +1796,15 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
             args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+            if(project.mzn2fznSavePaths()) {
+              currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
+              args << "--output-paths-to-file" << currentPathsTarget;
+            } else {
+              currentPathsTarget = "";
+            }
         }
         args << modelPath;
+
         QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
         if (project.currentDataFile()!="None") {
             compiling += " with data ";

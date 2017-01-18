@@ -365,6 +365,11 @@ bool Project::mzn2fznVerbose(void) const
     return ui->conf_verbose->isChecked();
 }
 
+bool Project::mzn2fznSavePaths() const
+{
+    return ui->conf_save_paths->isChecked();
+}
+
 bool Project::mzn2fznPrintStats() const
 {
     return ui->conf_flatten_stats->isChecked();

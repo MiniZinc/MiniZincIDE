@@ -72,6 +72,7 @@ public:
     bool autoClearOutput(void) const;
     bool mzn2fznVerbose(void) const;
     bool mzn2fznPrintStats(void) const;
+    bool mzn2fznSavePaths() const;
     bool mzn2fznOptimize(void) const;
     QString currentSolver(void) const;
     int n_solutions(void) const;
