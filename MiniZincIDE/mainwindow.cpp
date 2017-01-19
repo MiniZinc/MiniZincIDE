@@ -1633,7 +1633,7 @@ QString parseConflict(QString l) {
 
       int end = e.indexIn(l, offset+1);
       ss << l.mid(offset, end - offset).toStdString();
-      std::cerr << offset << " " << end << " " << l.mid(offset, end - offset).toStdString() << std::endl;
+      //std::cerr << offset << " " << end << " " << l.mid(offset, end - offset).toStdString() << std::endl;
 
       int next_mzn_path = l.indexOf("mzn_path", offset);
       offset = assignment.indexIn(l, offset + 1);
@@ -2338,6 +2338,96 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
     AboutDialog(IDE::instance()->applicationVersion()).exec();
 }
 
+QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) {
+  QVector<CodeEditor*> ces;
+  ces.resize(locs.size());
+  // Open each file in the path
+  for (int p = 0; p < locs.size(); p++) {
+    QStringList& elements = locs[p];
+
+    QString filename = elements[0];
+    QUrl url = QUrl::fromLocalFile(filename);
+    QFileInfo urlinfo(url.toLocalFile());
+
+    bool notOpen = true;
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+      if (ui->tabWidget->widget(i) != ui->configuration) {
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        QFileInfo ceinfo(ce->filepath);
+
+        if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+          ces[p] = ce;
+          if(p == locs.size()-1) {
+            ui->tabWidget->setCurrentIndex(i);
+          }
+          notOpen = false;
+          break;
+        }
+      }
+    }
+    if (notOpen && filename.size() > 0) {
+      openFile(url.toLocalFile(), false, false);
+      CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
+      QFileInfo ceinfo(ce->filepath);
+
+      if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+        ces[p] = ce;
+      } else {
+        throw -1;
+      }
+    }
+  }
+  return ces;
+}
+
+QVector<QStringList> getBlocksFromPath(QString& path) {
+  QVector<QStringList> locs;
+  QStringList blocks = path.split(';');
+  foreach(QString block, blocks) {
+    QStringList elements = block.split(':');
+    if(elements.size() >= 5) {
+      elements.erase(elements.begin()+5, elements.end());
+      locs.append(elements);
+    }
+  }
+  return locs;
+}
+
+void MainWindow::highlightPath(QString& path, int index) {
+  // Build list of blocks to be highlighted
+  QVector<QStringList> locs = getBlocksFromPath(path);
+  QVector<CodeEditor*> ces = collectCodeEditors(locs);
+
+  int b = Qt::red;
+  int t = Qt::yellow;
+  QColor colour = static_cast<Qt::GlobalColor>((index % (t-b)) + b);
+
+  int strans = 20;
+  int trans = strans;
+  int tstep = (100-strans) / locs.size();
+
+  for(int p = 0; p < locs.size(); p++) {
+    QStringList& elements = locs[p];
+    CodeEditor* ce = ces[p];
+
+    bool ok;
+    int sl = elements[1].toInt(&ok);
+    int sc = elements[2].toInt(&ok);
+    int el = elements[3].toInt(&ok);
+    int ec = elements[4].toInt(&ok);
+    if (elements[0].size() > 0 && ok) {
+      colour.setAlpha(trans);
+      trans = trans > 100 ? trans+tstep : strans;
+
+      Highlighter* hl = ce->getHighlighter();
+      hl->addFixedBg(sl,sc,el,ec,colour,path);
+      hl->rehighlight();
+
+      ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
+    }
+  }
+}
+
 void MainWindow::errorClicked(const QUrl & anUrl)
 {
     QUrl url = anUrl;
@@ -2372,12 +2462,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
         }
       }
     } else if(url.scheme() == "conflict") {
-      QString query = url.query();
-      QString mpre = "mzn_path(\"";
-
-      QStringList conflictSet = query.split(mpre);
-      conflictSet.pop_front();
-
+      // Reset the highlighters
       for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -2387,97 +2472,13 @@ void MainWindow::errorClicked(const QUrl & anUrl)
         }
       }
 
+      QString query = url.query();
+      QStringList conflictSet = query.split("mzn_path(\"");
+      conflictSet.pop_front();
+
       for(int c = 0; c<conflictSet.size(); c++) {
         QString& Q = conflictSet[c];
-        // Build list of blocks to be highlighted
-        QVector<QStringList> locs;
-        int pos = -1;
-        do {
-          pos += 1;
-          QStringList elements;
-          int nextPos = Q.indexOf(':', pos);
-          if(nextPos != -1) {
-            for(unsigned int i=0; i<5 && pos != -1; i++) {
-              elements.append(Q.mid(pos, nextPos-pos));
-              pos = nextPos+1;
-              nextPos = Q.indexOf(':', pos);
-            }
-
-            locs.append(elements);
-          }
-          pos = Q.indexOf(';', pos);
-        } while (pos != -1);
-
-        QVector<CodeEditor*> ces;
-        ces.resize(locs.size());
-        // Open each file in the path
-        for (int p = 0; p < locs.size(); p++) {
-          QStringList& elements = locs[p];
-
-          QString filename = elements[0];
-          QUrl url = QUrl::fromLocalFile(filename);
-          QFileInfo urlinfo(url.toLocalFile());
-
-          bool notOpen = true;
-          for (int i=0; i<ui->tabWidget->count(); i++) {
-            if (ui->tabWidget->widget(i) != ui->configuration) {
-              CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-              QFileInfo ceinfo(ce->filepath);
-
-              if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-                ces[p] = ce;
-                if(p == locs.size()-1) {
-                  ui->tabWidget->setCurrentIndex(i);
-                }
-                notOpen = false;
-                break;
-              }
-            }
-          }
-          if (notOpen && filename.size() > 0) {
-            openFile(url.toLocalFile(), false, false);
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
-            QFileInfo ceinfo(ce->filepath);
-
-            if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-              ces[p] = ce;
-            } else {
-              throw -1;
-            }
-          }
-        }
-
-        int b = Qt::red;
-        int t = Qt::yellow;
-        QColor colour = static_cast<Qt::GlobalColor>((c % (t-b)) + b);
-
-        int strans = 20;
-        int trans = strans;
-        int tstep = (100-strans) / locs.size();
-
-        for(int p = 0; p < locs.size(); p++) {
-          QStringList& elements = locs[p];
-          CodeEditor* ce = ces[p];
-
-          bool ok;
-          int sl = elements[1].toInt(&ok);
-          int sc = elements[2].toInt(&ok);
-          int el = elements[3].toInt(&ok);
-          int ec = elements[4].toInt(&ok);
-          if (elements[0].size() > 0 && ok) {
-            colour.setAlpha(trans);
-
-            Highlighter* hl = ce->getHighlighter();
-            hl->addFixedBg(sl,sc,el,ec,colour,Q);
-            hl->rehighlight();
-
-            ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
-
-            trans += tstep;
-            if(trans > 100)
-              trans = strans;
-          }
-        }
+        highlightPath(Q, c);
       }
     }
 }

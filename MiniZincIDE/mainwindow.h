@@ -364,6 +364,8 @@ private:
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
     void updateUiProcessRunning(bool pr);
+    void highlightPath(QString& path, int index);
+    QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
