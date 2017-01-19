@@ -177,9 +177,6 @@ private slots:
 
     void on_actionCompile_triggered();
 
-    void on_actionDiagnose_triggered();
-    void diagnoseFinished();
-
     void openCompiledFzn(int);
 
     void runCompiledFzn(int);
@@ -332,7 +329,6 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
-    bool diagnose;
     QString mzn2fzn_executable;
     Project project;
     QSortFilterProxyModel* projectSort;

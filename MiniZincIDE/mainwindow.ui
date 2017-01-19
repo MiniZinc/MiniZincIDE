@@ -781,7 +781,6 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
-   <addaction name="actionDiagnose"/>
    <addaction name="actionSubmit_to_Coursera"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
@@ -1307,18 +1306,6 @@
    </property>
    <property name="text">
     <string>Dark mode</string>
-   </property>
-  </action>
-  <action name="actionDiagnose">
-   <property name="icon">
-    <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/media-playback-start.png</normaloff>:/icons/images/media-playback-start.png</iconset>
-   </property>
-   <property name="text">
-    <string>Diagnose</string>
-   </property>
-   <property name="toolTip">
-    <string>Diagnose Faults</string>
    </property>
   </action>
  </widget>

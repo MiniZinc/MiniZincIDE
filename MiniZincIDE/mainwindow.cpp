@@ -913,7 +913,6 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionRun->setEnabled(false);
         fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
-        ui->actionDiagnose->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
         ui->actionSubmit_to_Coursera->setEnabled(false);
@@ -928,7 +927,6 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionRun->setEnabled(isMzn || isFzn);
         fakeCompileAction->setEnabled(!isMzn);
         ui->actionCompile->setEnabled(isMzn);
-        ui->actionDiagnose->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
         ui->actionSubmit_to_Coursera->setEnabled(true);
@@ -1331,7 +1329,6 @@ void MainWindow::tabChange(int tab) {
             fakeCompileAction->setEnabled(true);
             ui->actionRun->setEnabled(false);
             ui->actionCompile->setEnabled(false);
-            ui->actionDiagnose->setEnabled(false);
             ui->actionFind->setEnabled(false);
             ui->actionFind_next->setEnabled(false);
             ui->actionFind_previous->setEnabled(false);
@@ -1411,8 +1408,6 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
         ret << "-n" << QString::number(project.n_solutions());
-    if(diagnose)
-        ret << "--diagnose";
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
@@ -1962,7 +1957,6 @@ void MainWindow::procFinished(int, bool showTime) {
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
-    diagnoseFinished();
     emit(finished());
 }
 
@@ -2108,7 +2102,6 @@ void MainWindow::on_actionStop_triggered()
         addOutput("<div style='color:blue;'>Stopped.</div><br>");
         procFinished(0);
     }
-    diagnoseFinished();
 }
 
 void MainWindow::openCompiledFzn(int exitcode)
@@ -2153,10 +2146,7 @@ void MainWindow::openCompiledFzn(int exitcode)
                 break;
             }
         }
-        if(!diagnose)
-          openFile(currentFznTarget, true);
-        else
-          diagnoseFinished();
+        openFile(currentFznTarget, true);
     }
     procFinished(exitcode);
 }
@@ -2262,15 +2252,6 @@ void MainWindow::runCompiledFzn(int exitcode)
         tmpDir = NULL;
         procFinished(exitcode);
     }
-}
-
-void MainWindow::on_actionDiagnose_triggered() {
-    diagnose = true;
-    ui->actionCompile->trigger();
-}
-
-void MainWindow::diagnoseFinished() {
-    diagnose = false;
 }
 
 void MainWindow::on_actionCompile_triggered()
