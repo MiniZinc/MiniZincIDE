@@ -1445,9 +1445,9 @@ QString MainWindow::getMznDistribPath(void) const {
     return mznDistribPath;
 }
 
-void MainWindow::checkArgsFinished(int exitcode)
+void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus)
 {
-    if (processWasStopped)
+    if (processWasStopped || exitstatus==QProcess::CrashExit)
         return;
     QString additionalCmdlineParams;
     QString additionalDataFile;
@@ -1499,7 +1499,7 @@ void MainWindow::checkArgs(QString filepath)
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
-    connect(process, SIGNAL(finished(int)), this, SLOT(checkArgsFinished(int)));
+    connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
@@ -1507,6 +1507,7 @@ void MainWindow::checkArgs(QString filepath)
     args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
+    elapsedTime.start();
     process->start(mzn2fzn_executable,args,getMznDistribPath());
 }
 
@@ -1550,7 +1551,7 @@ void MainWindow::on_actionRun_triggered()
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
             runSolns2Out = false;
-            runCompiledFzn(0);
+            runCompiledFzn(0,QProcess::NormalExit);
         } else {
             compileOnly = false;
             checkArgs(curEditor->filepath);
@@ -1574,7 +1575,6 @@ QString MainWindow::setElapsedTime()
         elapsed += QString().number(seconds)+"s";
     if (hours==0 && minutes==0)
         elapsed += " "+QString().number(msec)+"msec";
-
     QString timeLimit;
     if (project.timeLimit() > 0) {
         timeLimit += " / ";
@@ -1757,7 +1757,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     } else if (standalone) {
         connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
     } else {
-        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+        connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(runCompiledFzn(int,QProcess::ExitStatus)));
     }
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
@@ -1802,10 +1802,10 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
         addOutput("<div style='color:blue;'>"+compiling+"</div><br>");
-        process->start(processName,args,getMznDistribPath());
         time = 0;
         timer->start(500);
         elapsedTime.start();
+        process->start(processName,args,getMznDistribPath());
     }
 }
 
@@ -1903,25 +1903,29 @@ void MainWindow::procFinished(int, bool showTime) {
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
+    compileErrors = "";
     emit(finished());
 }
 
 void MainWindow::procError(QProcess::ProcessError e) {
+    if (!compileErrors.isEmpty()) {
+        addOutput(compileErrors,false);
+    }
+    procFinished(1);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
     }
-    procFinished(0);
 }
 
 void MainWindow::outputProcError(QProcess::ProcessError e) {
+    procFinished(1);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc solution processor.");
     }
-    procFinished(0);
 }
 
 void MainWindow::saveFile(CodeEditor* ce, const QString& f)
@@ -2097,11 +2101,11 @@ void MainWindow::openCompiledFzn(int exitcode)
     procFinished(exitcode);
 }
 
-void MainWindow::runCompiledFzn(int exitcode)
+void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 {
     if (processWasStopped)
         return;
-    if (exitcode==0) {
+    if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
         QStringList args = parseConf(false,true);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
