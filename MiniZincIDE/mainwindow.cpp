@@ -1374,21 +1374,37 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (!compileOnly && project.defaultBehaviour()) {
+    bool isOptimisationProblem = true;
+    {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             int seekSize = strlen("satisfy;\n\n");
             if (fznFile.size() >= seekSize) {
                 fznFile.seek(fznFile.size()-seekSize);
                 QString line = fznFile.readLine();
-                if (!line.contains("satisfy;"))
-                    ret << "-a";
+                if (line.contains("satisfy;"))
+                    isOptimisationProblem = false;
             }
         }
-    } else {
-        if (!compileOnly && project.printAll())
-            ret << "-a";
     }
+
+    if (!compileOnly) {
+        if (project.defaultBehaviour()) {
+            if (isOptimisationProblem)
+                ret << "-a";
+        } else {
+            if (isOptimisationProblem) {
+                if (project.printAll())
+                    ret << "-a";
+            } else {
+                if (project.n_solutions() == 0)
+                    ret << "-a";
+                else if (project.n_solutions() > 1)
+                    ret << "-n" << QString::number(project.n_solutions());
+            }
+        }
+    }
+
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
@@ -1400,8 +1416,6 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
-        ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
