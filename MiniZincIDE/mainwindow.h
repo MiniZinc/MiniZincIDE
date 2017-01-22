@@ -168,6 +168,7 @@ private slots:
     void outputProcFinished(int, bool showTime=true);
 
     void procError(QProcess::ProcessError);
+    void checkArgsError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);
 
     void on_actionSave_triggered();

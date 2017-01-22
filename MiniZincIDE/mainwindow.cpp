@@ -1190,7 +1190,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
-                   this, SLOT(procError(QProcess::ProcessError)));
+                   this, 0);
         process->kill();
     }
     for (int i=0; i<ui->tabWidget->count(); i++) {
@@ -1515,7 +1515,7 @@ void MainWindow::checkArgs(QString filepath)
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
     connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
     connect(process, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(procError(QProcess::ProcessError)));
+            this, SLOT(checkArgsError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true, true);
     args << "--instance-check-only" << "--output-to-stdout";
@@ -1933,6 +1933,19 @@ void MainWindow::procError(QProcess::ProcessError e) {
     }
 }
 
+void MainWindow::checkArgsError(QProcess::ProcessError e) {
+    checkArgsOutput();
+    if (!compileErrors.isEmpty()) {
+        addOutput(compileErrors,false);
+    }
+    procFinished(1);
+    if (e==QProcess::FailedToStart) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
+    } else {
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
+    }
+}
+
 void MainWindow::outputProcError(QProcess::ProcessError e) {
     procFinished(1);
     if (e==QProcess::FailedToStart) {
@@ -2044,8 +2057,8 @@ void MainWindow::on_actionStop_triggered()
         if (outputProcess)
             pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
-                   this, SLOT(procError(QProcess::ProcessError)));
-        disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+                   this, 0);
+        disconnect(process, SIGNAL(finished(int)), this, 0);
         processWasStopped = true;
 
 #ifdef Q_OS_WIN
