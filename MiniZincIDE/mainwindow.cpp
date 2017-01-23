@@ -1606,10 +1606,10 @@ void MainWindow::statusTimerEvent()
     setElapsedTime();
 }
 
+/*
 QString parseConflict(QString l) {
     QUrl url;
-    url.setQuery("conf="+l);
-    url.setScheme("conflict");
+    url.setScheme("highlight");
 
     bool ok = false;
     int start = l.indexOf('(')+1;
@@ -1621,34 +1621,46 @@ QString parseConflict(QString l) {
     QRegExp assignment(" .+=.+( |;|\\))");
     assignment.setMinimal(true);
 
-    std::stringstream ss;
-    ss << "<a style=\"color:red\" href=\"" << url.toString().toStdString() << "\""
-       << " title=\"" << url.toString().toStdString() << "\""
-       << ">Conflict:" << s << ":";
+    QRegExp endReg("(;|\\s|\\)|\")");
+    endReg.setMinimal(true);
 
-    int offset = assignment.indexIn(l);
-    while(offset != -1) {
-      QRegExp e("(;|\\s|\\)|\")");
-      e.setMinimal(true);
+    // for each mzn_path("X")
+    QStringList conflictSet = l.split("mzn_path(\"");
+    conflictSet.pop_front();
 
-      int end = e.indexIn(l, offset+1);
-      ss << l.mid(offset, end - offset).toStdString();
-      //std::cerr << offset << " " << end << " " << l.mid(offset, end - offset).toStdString() << std::endl;
-
-      int next_mzn_path = l.indexOf("mzn_path", offset);
-      offset = assignment.indexIn(l, offset + 1);
-
-      if (offset != -1) {
-          if (next_mzn_path != -1 && next_mzn_path < offset)
-              ss << ";";
-          else
-              ss << ",";
+    QStringList assignmentList;
+    QStringList highlightURL;
+    for(int c = 0; c<conflictSet.size(); c++) {
+      QString& Q = conflictSet[c];
+      //   extract locs from X
+      QVector<QStringList> blocks = getBlocksFromPath(Q);
+      QStringList stringLocs;
+      foreach(QStringList loc, blocks) {
+        stringLocs << loc.join(":");
       }
+      highlightURL << stringLocs.join(";");
+
+      //   extract assignments from X
+      QStringList assignments;
+      int offset = assignment.indexIn(Q);
+      while(offset != -1) {
+        int end = endReg.indexIn(Q, offset+1);
+        assignments << Q.mid(offset, end - offset);
+        offset = assignment.indexIn(Q, offset + 1);
+      }
+      assignmentList << assignments.join(",");
     }
 
-    ss << "</a><br>";
-    return QString(ok ? ss.str().c_str() : "");
+    url.setQuery(highlightURL.join("&"));
+
+    QStringList output;
+    output << "<a style=\"color:red\" href=\"" << url.toString() << "\""
+       << " title=\"" << url.toString() << "\""
+       << ">Conflict:" << QString::number(s) << ":" << assignmentList.join(";")
+       << "</a><br>";
+    return ok ? output.join("") : "";
 }
+*/
 
 void MainWindow::readOutput()
 {
@@ -1724,10 +1736,6 @@ void MainWindow::readOutput()
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
-            } else if (l.startsWith("Conflict(")) {
-                QString s = parseConflict(l);
-                IDE::instance()->stats.errorsShown++;
-                addOutput(s);
             } else {
                 addOutput(l,false);
             }
@@ -2461,7 +2469,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
           }
         }
       }
-    } else if(url.scheme() == "conflict") {
+    } else if(url.scheme() == "highlight") {
       // Reset the highlighters
       for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
@@ -2473,8 +2481,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       }
 
       QString query = url.query();
-      QStringList conflictSet = query.split("mzn_path(\"");
-      conflictSet.pop_front();
+      QStringList conflictSet = query.split("&");
 
       for(int c = 0; c<conflictSet.size(); c++) {
         QString& Q = conflictSet[c];
@@ -2578,9 +2585,7 @@ void MainWindow::on_actionGo_to_line_triggered()
                 curEditor->setTextCursor(cursor);
             }
         } else {
-            QStringList lines = gtl.getText().split("\n");
-            foreach(QString line, lines)
-              addOutput(parseConflict(line));
+            addOutput(gtl.getText(), true);
         }
     }
 }
