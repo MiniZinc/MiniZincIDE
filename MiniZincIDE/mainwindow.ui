@@ -91,7 +91,7 @@
              <x>0</x>
              <y>0</y>
              <width>607</width>
-             <height>818</height>
+             <height>878</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -290,6 +290,13 @@
                       </property>
                      </widget>
                     </item>
+                    <item>
+                     <widget class="QLabel" name="label_12">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Compress solution output after 100 solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -354,6 +361,46 @@
                       </item>
                       <item>
                        <spacer name="horizontalSpacer_6">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>40</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_5">
+                      <item>
+                       <widget class="QLabel" name="label_11">
+                        <property name="text">
+                         <string>Compress solution output after this many solutions:</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSpinBox" name="conf_compressSolutionLimit">
+                        <property name="minimum">
+                         <number>100</number>
+                        </property>
+                        <property name="maximum">
+                         <number>2000</number>
+                        </property>
+                        <property name="singleStep">
+                         <number>100</number>
+                        </property>
+                        <property name="value">
+                         <number>100</number>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <spacer name="horizontalSpacer">
                         <property name="orientation">
                          <enum>Qt::Horizontal</enum>
                         </property>
