@@ -2358,31 +2358,36 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
     QFileInfo urlinfo(url.toLocalFile());
 
     bool notOpen = true;
-    for (int i=0; i<ui->tabWidget->count(); i++) {
-      if (ui->tabWidget->widget(i) != ui->configuration) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+    if (filename != "") {
+      for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          QFileInfo ceinfo(ce->filepath);
+
+          if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+            ces[p] = ce;
+            if(p == locs.size()-1) {
+              ui->tabWidget->setCurrentIndex(i);
+            }
+            notOpen = false;
+            break;
+          }
+        }
+      }
+      if (notOpen && filename.size() > 0) {
+        openFile(url.toLocalFile(), false, false);
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
         QFileInfo ceinfo(ce->filepath);
 
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
           ces[p] = ce;
-          if(p == locs.size()-1) {
-            ui->tabWidget->setCurrentIndex(i);
-          }
-          notOpen = false;
-          break;
+        } else {
+          throw -1;
         }
       }
-    }
-    if (notOpen && filename.size() > 0) {
-      openFile(url.toLocalFile(), false, false);
-      CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
-      QFileInfo ceinfo(ce->filepath);
-
-      if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-        ces[p] = ce;
-      } else {
-        throw -1;
-      }
+    } else {
+       CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->currentIndex()));
+       ces[p] = ce;
     }
   }
   return ces;
@@ -2404,7 +2409,9 @@ QVector<QStringList> getBlocksFromPath(QString& path) {
 void MainWindow::highlightPath(QString& path, int index) {
   // Build list of blocks to be highlighted
   QVector<QStringList> locs = getBlocksFromPath(path);
+  if(locs.size() == 0) return;
   QVector<CodeEditor*> ces = collectCodeEditors(locs);
+  if(ces.size() != locs.size()) return;
 
   int b = Qt::red;
   int t = Qt::yellow;
@@ -2423,7 +2430,7 @@ void MainWindow::highlightPath(QString& path, int index) {
     int sc = elements[2].toInt(&ok);
     int el = elements[3].toInt(&ok);
     int ec = elements[4].toInt(&ok);
-    if (elements[0].size() > 0 && ok) {
+    if (ok) {
       colour.setAlpha(trans);
       trans = trans > 100 ? trans+tstep : strans;
 
