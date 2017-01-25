@@ -89,8 +89,8 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-225</y>
-             <width>595</width>
+             <y>0</y>
+             <width>607</width>
              <height>818</height>
             </rect>
            </property>
@@ -270,7 +270,7 @@
                        </size>
                       </property>
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimization problems: print all solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimization problems: print all intermediate solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="textFormat">
                        <enum>Qt::RichText</enum>
@@ -286,7 +286,7 @@
                     <item>
                      <widget class="QLabel" name="label_10">
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Satisfaction problems: print first solution and stop&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Satisfaction problems: stop after first solution&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                      </widget>
                     </item>
@@ -322,7 +322,7 @@
                     <item>
                      <widget class="QCheckBox" name="conf_printall">
                       <property name="text">
-                       <string>Print all solutions</string>
+                       <string>Print intermediate solutions (for optimization problems)</string>
                       </property>
                      </widget>
                     </item>
@@ -331,7 +331,7 @@
                       <item>
                        <widget class="QLabel" name="label_3">
                         <property name="text">
-                         <string>Stop after this many solutions:</string>
+                         <string>Stop after this many solutions (0 means &quot;all&quot;):</string>
                         </property>
                        </widget>
                       </item>
@@ -348,7 +348,7 @@
                       <item>
                        <widget class="QLabel" name="label_6">
                         <property name="text">
-                         <string>(not relevant for optimization problems)</string>
+                         <string>(for satisfaction problems)</string>
                         </property>
                        </widget>
                       </item>

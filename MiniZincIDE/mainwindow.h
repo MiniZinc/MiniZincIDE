@@ -157,7 +157,7 @@ private slots:
 
     void checkArgs(QString filepath);
     void checkArgsOutput();
-    void checkArgsFinished(int exitcode);
+    void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
     void readOutput();
 
@@ -168,6 +168,7 @@ private slots:
     void outputProcFinished(int, bool showTime=true);
 
     void procError(QProcess::ProcessError);
+    void checkArgsError(QProcess::ProcessError);
     void outputProcError(QProcess::ProcessError);
 
     void on_actionSave_triggered();
@@ -179,7 +180,7 @@ private slots:
 
     void openCompiledFzn(int);
 
-    void runCompiledFzn(int);
+    void runCompiledFzn(int,QProcess::ExitStatus);
 
     void on_actionSave_as_triggered();
 
