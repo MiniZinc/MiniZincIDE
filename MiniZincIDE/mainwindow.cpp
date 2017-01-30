@@ -299,8 +299,6 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     checkUpdate();
 }
 
-#include <iostream>
-
 void IDE::showNodeInfo(std::string extra_info) {
     (*mainWindows.begin())->addOutput(QString::fromStdString(extra_info), true);
 }
@@ -2141,6 +2139,24 @@ void MainWindow::runCompiledFzn(int exitcode)
             args << s.backend.split(" ",QString::SkipEmptyParts);
 
         args << currentFznTarget;
+
+#ifdef MINIZINC_IDE_HAVE_PROFILER
+        // Populate the map
+        std::unordered_map<std::string, std::string> names;
+
+        if(currentPathsTarget != "") {
+          QFile pf(currentPathsTarget);
+          if(pf.open(QIODevice::ReadOnly)) {
+            QTextStream in(&pf);
+            while(!in.atEnd()) {
+              QString line = in.readLine();
+              QStringList s = line.split("\t");
+              names[s[0].toStdString()] = s[1].toStdString();
+            }
+          }
+        }
+        IDE::instance()->profiler->setCurrentNameMap(names);
+#endif
 
         if (s.detach) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div><br>");
