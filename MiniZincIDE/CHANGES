@@ -1,3 +1,13 @@
+2017-02-06
+  v2.1.3
+  - Update to MiniZinc 2.1.3.
+  - Avoid crashes and print error messages when mzn2fzn subprocess crashes.
+  - Changed meaning of "User-defined behavior" options, to have a clear
+    distinction between optimisation and satisfaction problems.
+  - Fix buffering of error output from mzn2fzn process (which would sometimes
+    not be printed to the output window).
+  - Suppress output after configurable number of solutions (to avoid
+    overloading the IDE output box).
 2016-12-20
   v2.1.2
   - Update to MiniZinc 2.1.2.
