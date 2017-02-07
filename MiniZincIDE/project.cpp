@@ -307,6 +307,7 @@ void Project::setModified(bool flag, bool files)
                 mzn2fznOptimize(mzn2fznOptimize(),true);
                 currentSolver(currentSolver(),true);
                 n_solutions(n_solutions(),true);
+                n_compress_solutions(n_compress_solutions(),true);
                 printAll(printAll(),true);
                 defaultBehaviour(defaultBehaviour(),true);
                 printStats(printStats(),true);
@@ -385,6 +386,10 @@ QString Project::currentSolver(void) const
 int Project::n_solutions(void) const
 {
     return ui->conf_nsol->value();
+}
+int Project::n_compress_solutions(void) const
+{
+    return ui->conf_compressSolutionLimit->value();
 }
 bool Project::printAll(void) const
 {
@@ -543,6 +548,16 @@ void Project::n_solutions(int n, bool init)
     }
 }
 
+void Project::n_compress_solutions(int n, bool init)
+{
+    if (init) {
+        _compressSolutionLimit = n;
+        ui->conf_compressSolutionLimit->setValue(n);
+    } else {
+        checkModified();
+    }
+}
+
 void Project::printAll(bool b, bool init)
 {
     if (init) {
@@ -686,6 +701,10 @@ void Project::checkModified()
         return;
     }
     if (n_solutions() != _n_solutions) {
+        setModified(true);
+        return;
+    }
+    if (n_compress_solutions() != _compressSolutionLimit) {
         setModified(true);
         return;
     }

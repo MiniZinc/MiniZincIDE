@@ -1213,7 +1213,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
-                   this, SLOT(procError(QProcess::ProcessError)));
+                   this, 0);
         process->kill();
     }
     for (int i=0; i<ui->tabWidget->count(); i++) {
@@ -1397,21 +1397,37 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     }
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
-    if (!compileOnly && project.defaultBehaviour()) {
+    bool isOptimisationProblem = true;
+    {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             int seekSize = strlen("satisfy;\n\n");
             if (fznFile.size() >= seekSize) {
                 fznFile.seek(fznFile.size()-seekSize);
                 QString line = fznFile.readLine();
-                if (!line.contains("satisfy;"))
-                    ret << "-a";
+                if (line.contains("satisfy;"))
+                    isOptimisationProblem = false;
             }
         }
-    } else {
-        if (!compileOnly && project.printAll())
-            ret << "-a";
     }
+
+    if (!compileOnly) {
+        if (project.defaultBehaviour()) {
+            if (isOptimisationProblem)
+                ret << "-a";
+        } else {
+            if (isOptimisationProblem) {
+                if (project.printAll())
+                    ret << "-a";
+            } else {
+                if (project.n_solutions() == 0)
+                    ret << "-a";
+                else if (project.n_solutions() > 1)
+                    ret << "-n" << QString::number(project.n_solutions());
+            }
+        }
+    }
+
     if (!compileOnly && project.printStats())
         ret << "-s";
     if (!compileOnly && project.n_threads() > 1)
@@ -1423,8 +1439,6 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (!compileOnly && !project.defaultBehaviour() && project.n_solutions() != 1)
-        ret << "-n" << QString::number(project.n_solutions());
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
@@ -1468,9 +1482,9 @@ QString MainWindow::getMznDistribPath(void) const {
     return mznDistribPath;
 }
 
-void MainWindow::checkArgsFinished(int exitcode)
+void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus)
 {
-    if (processWasStopped)
+    if (processWasStopped || exitstatus==QProcess::CrashExit)
         return;
     QString additionalCmdlineParams;
     QString additionalDataFile;
@@ -1522,14 +1536,15 @@ void MainWindow::checkArgs(QString filepath)
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
     connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
-    connect(process, SIGNAL(finished(int)), this, SLOT(checkArgsFinished(int)));
+    connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
     connect(process, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(procError(QProcess::ProcessError)));
+            this, SLOT(checkArgsError(QProcess::ProcessError)));
 
     QStringList args = parseConf(true, true);
     args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
+    elapsedTime.start();
     process->start(mzn2fzn_executable,args,getMznDistribPath());
 }
 
@@ -1573,7 +1588,7 @@ void MainWindow::on_actionRun_triggered()
         if (curEditor->filepath.endsWith(".fzn")) {
             currentFznTarget = curEditor->filepath;
             runSolns2Out = false;
-            runCompiledFzn(0);
+            runCompiledFzn(0,QProcess::NormalExit);
         } else {
             compileOnly = false;
             checkArgs(curEditor->filepath);
@@ -1597,7 +1612,6 @@ QString MainWindow::setElapsedTime()
         elapsed += QString().number(seconds)+"s";
     if (hours==0 && minutes==0)
         elapsed += " "+QString().number(msec)+"msec";
-
     QString timeLimit;
     if (project.timeLimit() > 0) {
         timeLimit += " / ";
@@ -1655,6 +1669,19 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
+                    if (l.trimmed() == "----------") {
+                        solutionCount++;
+                        if ( solutionCount > solutionLimit || !hiddenSolutions.isEmpty()) {
+                            if (hiddenSolutions.isEmpty()) {
+                                solutionCount = 0;
+                                if (!curJSONHandler || hadNonJSONOutput)
+                                    addOutput(l,false);
+                            }
+                            else
+                                hiddenSolutions.back() += l;
+                            hiddenSolutions.append("");
+                        }
+                    }
                     if (curJSONHandler > 0 && l.trimmed() == "----------") {
                         openJSONViewer();
                         JSONOutput.clear();
@@ -1668,7 +1695,26 @@ void MainWindow::readOutput()
                     } else {
                         if (outputBuffer)
                             (*outputBuffer) << l;
-                        addOutput(l,false);
+                        if (!hiddenSolutions.isEmpty()) {
+                            if (l.trimmed() != "----------") {
+                                hiddenSolutions.back() += l;
+                            }
+                            if (solutionCount == solutionLimit) {
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit)+" more solutions ]</div><br>");
+                                solutionCount = 0;
+                                solutionLimit *= 2;
+                            }
+                        } else {
+                            addOutput(l,false);
+                        }
+                        if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
+                            if (solutionCount!=solutionLimit && solutionCount > 1) {
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div><br>");
+                            }
+                            for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
+                                addOutput(hiddenSolutions[i], false);
+                            }
+                        }
                         hadNonJSONOutput = true;
                     }
                 }
@@ -1780,7 +1826,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     } else if (standalone) {
         connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
     } else {
-        connect(process, SIGNAL(finished(int)), this, SLOT(runCompiledFzn(int)));
+        connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(runCompiledFzn(int,QProcess::ExitStatus)));
     }
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
@@ -1832,10 +1878,10 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
         addOutput("<div style='color:blue;'>"+compiling+"</div><br>");
-        process->start(processName,args,getMznDistribPath());
         time = 0;
         timer->start(500);
         elapsedTime.start();
+        process->start(processName,args,getMznDistribPath());
     }
 }
 
@@ -1889,11 +1935,6 @@ void MainWindow::selectJSONSolution(HTMLPage* source, int n)
     }
 }
 
-void MainWindow::pipeOutput()
-{
-    outputProcess->write(process->readAllStandardOutput());
-}
-
 void MainWindow::outputProcFinished(int, bool showTime) {
     readOutput();
     updateUiProcessRunning(false);
@@ -1917,8 +1958,6 @@ void MainWindow::outputProcFinished(int, bool showTime) {
 void MainWindow::procFinished(int, bool showTime) {
     if (outputProcess) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
-        if (process)
-            pipeOutput();
         outputProcess->closeWriteChannel();
         return;
     }
@@ -1933,25 +1972,42 @@ void MainWindow::procFinished(int, bool showTime) {
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
+    compileErrors = "";
     emit(finished());
 }
 
 void MainWindow::procError(QProcess::ProcessError e) {
+    if (!compileErrors.isEmpty()) {
+        addOutput(compileErrors,false);
+    }
+    procFinished(1);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
     }
-    procFinished(0);
+}
+
+void MainWindow::checkArgsError(QProcess::ProcessError e) {
+    checkArgsOutput();
+    if (!compileErrors.isEmpty()) {
+        addOutput(compileErrors,false);
+    }
+    procFinished(1);
+    if (e==QProcess::FailedToStart) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
+    } else {
+        QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc interpreter `"+processName+"': error code "+QString().number(e));
+    }
 }
 
 void MainWindow::outputProcError(QProcess::ProcessError e) {
+    procFinished(1);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
         QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing the MiniZinc solution processor.");
     }
-    procFinished(0);
 }
 
 void MainWindow::saveFile(CodeEditor* ce, const QString& f)
@@ -2053,11 +2109,9 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
-        if (outputProcess)
-            pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
-                   this, SLOT(procError(QProcess::ProcessError)));
-        disconnect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
+                   this, 0);
+        disconnect(process, SIGNAL(finished(int)), this, 0);
         processWasStopped = true;
 
 #ifdef Q_OS_WIN
@@ -2127,11 +2181,11 @@ void MainWindow::openCompiledFzn(int exitcode)
     procFinished(exitcode);
 }
 
-void MainWindow::runCompiledFzn(int exitcode)
+void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 {
     if (processWasStopped)
         return;
-    if (exitcode==0) {
+    if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
         QStringList args = parseConf(false,true);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
@@ -2183,6 +2237,9 @@ void MainWindow::runCompiledFzn(int exitcode)
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
+            solutionCount = 0;
+            solutionLimit = project.defaultBehaviour() ? 100 : project.n_compress_solutions();
+            hiddenSolutions.clear();
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
                 inJSONHandler = false;
@@ -2199,16 +2256,13 @@ void MainWindow::runCompiledFzn(int exitcode)
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
                         this, SLOT(outputProcError(QProcess::ProcessError)));
-                QStringList outargs;
-                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
             process = new MznProcess(this);
             processName = s.executable;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
             if (runSolns2Out) {
-                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+                process->setStandardOutputProcess(outputProcess);
             } else {
                 connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
             }
@@ -2238,6 +2292,11 @@ void MainWindow::runCompiledFzn(int exitcode)
                 addOutput("<div>"+cmdline+"</div><br>");
             }
             process->start(executable,args,getMznDistribPath());
+            if (runSolns2Out) {
+                QStringList outargs;
+                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+                outputProcess->start("solns2out",outargs,getMznDistribPath());
+            }
             time = 0;
             timer->start(500);
         }
@@ -2683,6 +2742,7 @@ void MainWindow::saveProject(const QString& f)
             out << projectFilesRelPath;
             out << project.defaultBehaviour();
             out << project.mzn2fznPrintStats();
+            out << project.n_compress_solutions();
             project.setModified(false, true);
 
         } else {
@@ -2792,6 +2852,10 @@ void MainWindow::loadProject(const QString& filepath)
     if (version==104 && !in.atEnd()) {
         in >> p_b;
         project.mzn2fznPrintStats(p_b, true);
+    }
+    if (version==104 && !in.atEnd()) {
+        in >> p_i;
+        project.n_compress_solutions(p_i, true);
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
