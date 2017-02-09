@@ -75,6 +75,7 @@ public:
     bool mzn2fznOptimize(void) const;
     QString currentSolver(void) const;
     int n_solutions(void) const;
+    int n_compress_solutions(void) const;
     bool printAll(void) const;
     bool defaultBehaviour(void) const;
     bool printStats(void) const;
@@ -99,6 +100,7 @@ public slots:
     void mzn2fznOptimize(bool b, bool init=false);
     void currentSolver(const QString& s, bool init=false);
     void n_solutions(int n, bool init=false);
+    void n_compress_solutions(int n, bool init=false);
     void printAll(bool b, bool init=false);
     void defaultBehaviour(bool b, bool init=false);
     void printStats(bool b, bool init=false);
@@ -143,6 +145,7 @@ protected:
     bool _haveSeed;
     QString _seed;
     int _timeLimit;
+    int _compressSolutionLimit;
     bool _solverVerbose;
     CourseraProject* _courseraProject;
 

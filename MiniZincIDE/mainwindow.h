@@ -161,8 +161,6 @@ private slots:
 
     void readOutput();
 
-    void pipeOutput();
-
     void procFinished(int, bool showTime=true);
 
     void outputProcFinished(int, bool showTime=true);
@@ -304,6 +302,10 @@ private:
     QString processName;
     MznProcess* outputProcess;
     bool processWasStopped;
+    int solutionCount;
+    int solutionLimit;
+    QTimer solutionLimitTimer;
+    QVector<QString> hiddenSolutions;
     int curJSONHandler;
     bool inJSONHandler;
     bool hadNonJSONOutput;

@@ -1708,6 +1708,19 @@ void MainWindow::readOutput()
                     }
                     JSONOutput.append(sl);
                 } else {
+                    if (l.trimmed() == "----------") {
+                        solutionCount++;
+                        if ( solutionCount > solutionLimit || !hiddenSolutions.isEmpty()) {
+                            if (hiddenSolutions.isEmpty()) {
+                                solutionCount = 0;
+                                if (!curJSONHandler || hadNonJSONOutput)
+                                    addOutput(l,false);
+                            }
+                            else
+                                hiddenSolutions.back() += l;
+                            hiddenSolutions.append("");
+                        }
+                    }
                     if (curJSONHandler > 0 && l.trimmed() == "----------") {
                         openJSONViewer();
                         JSONOutput.clear();
@@ -1721,7 +1734,26 @@ void MainWindow::readOutput()
                     } else {
                         if (outputBuffer)
                             (*outputBuffer) << l;
-                        addOutput(l,false);
+                        if (!hiddenSolutions.isEmpty()) {
+                            if (l.trimmed() != "----------") {
+                                hiddenSolutions.back() += l;
+                            }
+                            if (solutionCount == solutionLimit) {
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit)+" more solutions ]</div><br>");
+                                solutionCount = 0;
+                                solutionLimit *= 2;
+                            }
+                        } else {
+                            addOutput(l,false);
+                        }
+                        if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
+                            if (solutionCount!=solutionLimit && solutionCount > 1) {
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div><br>");
+                            }
+                            for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
+                                addOutput(hiddenSolutions[i], false);
+                            }
+                        }
                         hadNonJSONOutput = true;
                     }
                 }
@@ -1935,11 +1967,6 @@ void MainWindow::selectJSONSolution(HTMLPage* source, int n)
     }
 }
 
-void MainWindow::pipeOutput()
-{
-    outputProcess->write(process->readAllStandardOutput());
-}
-
 void MainWindow::outputProcFinished(int, bool showTime) {
     readOutput();
     updateUiProcessRunning(false);
@@ -1963,8 +1990,6 @@ void MainWindow::outputProcFinished(int, bool showTime) {
 void MainWindow::procFinished(int, bool showTime) {
     if (outputProcess) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
-        if (process)
-            pipeOutput();
         outputProcess->closeWriteChannel();
         return;
     }
@@ -2116,8 +2141,6 @@ void MainWindow::on_actionStop_triggered()
 {
     ui->actionStop->setEnabled(false);
     if (process) {
-        if (outputProcess)
-            pipeOutput();
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, 0);
         disconnect(process, SIGNAL(finished(int)), this, 0);
@@ -2228,6 +2251,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
+            solutionCount = 0;
+            solutionLimit = project.defaultBehaviour() ? 100 : project.n_compress_solutions();
+            hiddenSolutions.clear();
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
                 inJSONHandler = false;
@@ -2244,16 +2270,13 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
                         this, SLOT(outputProcError(QProcess::ProcessError)));
-                QStringList outargs;
-                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
             process = new MznProcess(this);
             processName = s.executable;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
             if (runSolns2Out) {
-                connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(pipeOutput()));
+                process->setStandardOutputProcess(outputProcess);
             } else {
                 connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
             }
@@ -2283,6 +2306,11 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 addOutput("<div>"+cmdline+"</div><br>");
             }
             process->start(executable,args,getMznDistribPath());
+            if (runSolns2Out) {
+                QStringList outargs;
+                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+                outputProcess->start("solns2out",outargs,getMznDistribPath());
+            }
             time = 0;
             timer->start(500);
         }
@@ -2847,6 +2875,7 @@ void MainWindow::saveProject(const QString& f)
             out << projectFilesRelPath;
             out << project.defaultBehaviour();
             out << project.mzn2fznPrintStats();
+            out << project.n_compress_solutions();
             project.setModified(false, true);
 
         } else {
@@ -2956,6 +2985,10 @@ void MainWindow::loadProject(const QString& filepath)
     if (version==104 && !in.atEnd()) {
         in >> p_b;
         project.mzn2fznPrintStats(p_b, true);
+    }
+    if (version==104 && !in.atEnd()) {
+        in >> p_i;
+        project.n_compress_solutions(p_i, true);
     }
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
