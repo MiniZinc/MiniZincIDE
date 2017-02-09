@@ -141,6 +141,13 @@
                   </widget>
                  </item>
                 </layout>
+              </item>
+              <item>
+                  <widget class="QCheckBox" name="conf_all_data">
+                   <property name="text">
+                    <string>Include all data files?</string>
+                   </property>
+                 </widget>
                </item>
               </layout>
              </widget>

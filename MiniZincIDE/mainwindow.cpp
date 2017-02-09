@@ -850,6 +850,7 @@ void MainWindow::init(const QString& projectFile)
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
 
     connect(ui->conf_data_file, SIGNAL(currentIndexChanged(int)), &project, SLOT(currentDataFileIndex(int)));
+    connect(ui->conf_all_data, SIGNAL(toggled(bool)), &project, SLOT(allData(bool)));
     connect(ui->conf_have_cmd_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraArgs(bool)));
     connect(ui->conf_cmd_params, SIGNAL(textEdited(QString)), &project, SLOT(extraArgs(QString)));
     connect(ui->conf_have_mzn2fzn_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraMzn2FznArgs(bool)));
@@ -1395,8 +1396,14 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.extraMzn2FznArgs().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
-    if (compileOnly && useDataFile && project.currentDataFile()!="None")
-        ret << "-d" << project.currentDataFile();
+    if (compileOnly && useDataFile)
+        if (project.currentDataFile()!="None") {
+            ret << "-d" << project.currentDataFile();
+        } else if (project.allData()) {
+            for(unsigned int i=1; i < ui->conf_data_file->count()-1; i++) {
+                ret << "-d" << ui->conf_data_file->itemText(i);
+            }
+        }
     bool isOptimisationProblem = true;
     {
         QFile fznFile(currentFznTarget);
@@ -1668,6 +1675,10 @@ void MainWindow::readOutput()
                         sl.append(pattern.capturedTexts()[1]);
                     }
                     JSONOutput.append(sl);
+                } else if (l.trimmed().startsWith("%%%mzn-html-start")) {
+                    inHTMLHandler = true;
+                } else if (l.trimmed().startsWith("%%%mzn-html-end")) {
+                    inHTMLHandler = false;
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
@@ -1705,7 +1716,7 @@ void MainWindow::readOutput()
                                 solutionLimit *= 2;
                             }
                         } else {
-                            addOutput(l,false);
+                            addOutput(l,inHTMLHandler);
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
@@ -1959,6 +1970,7 @@ void MainWindow::procFinished(int, bool showTime) {
     if (outputProcess) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
+        inHTMLHandler = false;
         return;
     }
     updateUiProcessRunning(false);

@@ -366,6 +366,11 @@ bool Project::mzn2fznVerbose(void) const
     return ui->conf_verbose->isChecked();
 }
 
+bool Project::allData(void) const
+{
+    return ui->conf_all_data->isChecked();
+}
+
 bool Project::mzn2fznSavePaths() const
 {
     return ui->conf_save_paths->isChecked();
@@ -496,6 +501,17 @@ void Project::autoClearOutput(bool b, bool init)
     } else {
         checkModified();
     }
+}
+
+void Project::allData(bool b, bool init)
+{
+    //if (init) {
+        _all_data = b;
+        ui->conf_all_data->setChecked(b);
+        ui->conf_data_file->setEnabled(!b);
+    //} else {
+    //    checkModified();
+    //}
 }
 
 void Project::mzn2fznVerbose(bool b, bool init)
@@ -685,6 +701,10 @@ void Project::checkModified()
         return;
     }
     if (mzn2fznVerbose() != _mzn2fzn_verbose) {
+        setModified(true);
+        return;
+    }
+    if (allData() != _all_data) {
         setModified(true);
         return;
     }
