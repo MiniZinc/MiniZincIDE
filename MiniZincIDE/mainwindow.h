@@ -149,7 +149,7 @@ signals:
 
 public slots:
 
-    void openFile(const QString &path = QString(), bool openAsModified=false);
+    void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
     void on_actionStop_triggered();
 
 private slots:
@@ -365,7 +365,7 @@ private:
     CourseraSubmission* courseraSubmission;
     bool processRunning;
 
-    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
@@ -380,6 +380,8 @@ private:
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
     void updateUiProcessRunning(bool pr);
+    void highlightPath(QString& path, int index);
+    QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

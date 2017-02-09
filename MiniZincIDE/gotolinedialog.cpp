@@ -29,3 +29,8 @@ GoToLineDialog::~GoToLineDialog()
 int GoToLineDialog::getLine(bool *ok) {
     return ui->line->text().toInt(ok);
 }
+
+
+QString GoToLineDialog::getText() {
+    return ui->line->text();
+}

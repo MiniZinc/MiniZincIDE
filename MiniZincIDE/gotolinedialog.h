@@ -28,6 +28,7 @@ public:
     ~GoToLineDialog();
 
     int getLine(bool* ok);
+    QString getText();
 
 private:
     Ui::GoToLineDialog *ui;
