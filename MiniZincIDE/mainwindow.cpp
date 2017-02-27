@@ -1923,11 +1923,12 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
+    compileErrors = "";
     emit(finished());
 }
 
 void MainWindow::procFinished(int, bool showTime) {
-    if (outputProcess) {
+    if (outputProcess && outputProcess->state()==QProcess::Running) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
         return;
@@ -1937,6 +1938,10 @@ void MainWindow::procFinished(int, bool showTime) {
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
+    outputProcess = NULL;
+    finishJSONViewer();
+    inJSONHandler = false;
+    JSONOutput.clear();
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
     }
