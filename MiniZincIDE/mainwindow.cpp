@@ -1443,10 +1443,11 @@ void MainWindow::addOutput(const QString& s, bool html)
     QTextCursor cursor = ui->outputConsole->textCursor();
     cursor.movePosition(QTextCursor::End);
     ui->outputConsole->setTextCursor(cursor);
-    if (html)
-        ui->outputConsole->insertHtml(s);
-    else
-        ui->outputConsole->insertPlainText(s);
+    if (html) {
+        cursor.insertHtml(s+"<br />");
+    } else {
+        cursor.insertText(s);
+    }
 }
 
 void MainWindow::checkArgsOutput()
@@ -1677,7 +1678,7 @@ void MainWindow::readOutput()
                                 hiddenSolutions.back() += l;
                             }
                             if (solutionCount == solutionLimit) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit)+" more solutions ]</div><br>");
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit)+" more solutions ]</div>");
                                 solutionCount = 0;
                                 solutionLimit *= 2;
                             }
@@ -1686,7 +1687,7 @@ void MainWindow::readOutput()
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div><br>");
+                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
                             for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
@@ -1719,7 +1720,7 @@ void MainWindow::readOutput()
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
-                addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a><br>");
+                addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a>");
             } else {
                 addOutput(l,false);
             }
@@ -1847,7 +1848,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
-        addOutput("<div style='color:blue;'>"+compiling+"</div><br>");
+        addOutput("<div style='color:blue;'>"+compiling+"</div>");
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -1917,16 +1918,17 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     inJSONHandler = false;
     JSONOutput.clear();
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
     outputBuffer = NULL;
+    compileErrors = "";
     emit(finished());
 }
 
 void MainWindow::procFinished(int, bool showTime) {
-    if (outputProcess) {
+    if (outputProcess && outputProcess->state()==QProcess::Running) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
         return;
@@ -1936,8 +1938,12 @@ void MainWindow::procFinished(int, bool showTime) {
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
+    outputProcess = NULL;
+    finishJSONViewer();
+    inJSONHandler = false;
+    JSONOutput.clear();
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div><br>");
+        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
@@ -2099,7 +2105,7 @@ void MainWindow::on_actionStop_triggered()
         }
         delete process;
         process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div><br>");
+        addOutput("<div style='color:blue;'>Stopped.</div>");
         procFinished(0);
     }
 }
@@ -2165,14 +2171,14 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         args << currentFznTarget;
 
         if (s.detach) {
-            addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div><br>");
+            addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
 
             MznProcess* detached_process = new MznProcess(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
             QString executable = s.executable;
             if (project.solverVerbose()) {
-                addOutput("<div style='color:blue;'>Command line:</div><br>");
+                addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -2181,7 +2187,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                     else
                         cmdline += " "+args[i];
                 }
-                addOutput("<div>"+cmdline+"</div><br>");
+                addOutput("<div>"+cmdline+"</div>");
             }
             detached_process->start(executable,args,getMznDistribPath());
             cleanupTmpDirs.append(tmpDir);
@@ -2229,10 +2235,10 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             }
 
             elapsedTime.start();
-            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div><br>");
+            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
             QString executable = s.executable;
             if (project.solverVerbose()) {
-                addOutput("<div style='color:blue;'>Command line:</div><br>");
+                addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -2241,7 +2247,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                     else
                         cmdline += " "+args[i];
                 }
-                addOutput("<div>"+cmdline+"</div><br>");
+                addOutput("<div>"+cmdline+"</div>");
             }
             process->start(executable,args,getMznDistribPath());
             if (runSolns2Out) {
