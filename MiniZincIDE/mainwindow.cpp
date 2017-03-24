@@ -1741,7 +1741,10 @@ void MainWindow::readOutput()
                 } else if (l.trimmed().startsWith("%%%mzn-html-start")) {
                     inHTMLHandler = true;
                 } else if (l.trimmed().startsWith("%%%mzn-html-end")) {
+                    addOutput(htmlBuffer.join(""), true);
+                    htmlBuffer.clear();
                     inHTMLHandler = false;
+
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
@@ -1778,8 +1781,10 @@ void MainWindow::readOutput()
                                 solutionCount = 0;
                                 solutionLimit *= 2;
                             }
+                        } else if(inHTMLHandler){
+                            htmlBuffer << l;
                         } else {
-                            addOutput(l,inHTMLHandler);
+                            addOutput(l, false);
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
