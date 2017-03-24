@@ -19,7 +19,7 @@ qtHaveModule(webkitwidgets): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.3
+VERSION = 2.1.4
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
