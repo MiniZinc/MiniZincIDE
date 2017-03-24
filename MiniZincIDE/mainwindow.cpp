@@ -2524,7 +2524,9 @@ QVector<QStringList> getBlocksFromPath(QString& path) {
   foreach(QString block, blocks) {
     QStringList elements = block.split(':');
     if(elements.size() >= 5) {
-      elements.erase(elements.begin()+5, elements.end());
+      bool ok = false;
+      if(elements.size() > 5) elements[5].toInt(&ok);
+      elements.erase(elements.begin()+(ok ? 6 : 5), elements.end());
       locs.append(elements);
     }
   }
@@ -2542,9 +2544,9 @@ void MainWindow::highlightPath(QString& path, int index) {
   int t = Qt::yellow;
   QColor colour = static_cast<Qt::GlobalColor>((index % (t-b)) + b);
 
-  int strans = 20;
+  int strans = 25;
   int trans = strans;
-  int tstep = (100-strans) / locs.size();
+  int tstep = (250-strans) / locs.size();
 
   for(int p = 0; p < locs.size(); p++) {
     QStringList& elements = locs[p];
@@ -2555,9 +2557,11 @@ void MainWindow::highlightPath(QString& path, int index) {
     int sc = elements[2].toInt(&ok);
     int el = elements[3].toInt(&ok);
     int ec = elements[4].toInt(&ok);
+    if(elements.size() == 6)
+        trans = elements[5].toInt(&ok);
     if (ok) {
       colour.setAlpha(trans);
-      trans = trans > 100 ? trans+tstep : strans;
+      trans = trans < 250 ? trans+tstep : strans;
 
       Highlighter* hl = ce->getHighlighter();
       hl->addFixedBg(sl,sc,el,ec,colour,path);
