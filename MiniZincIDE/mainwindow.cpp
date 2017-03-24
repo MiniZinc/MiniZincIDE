@@ -1402,14 +1402,15 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.extraMzn2FznArgs().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
-    if (compileOnly && useDataFile)
+    if (compileOnly && useDataFile) {
         if (project.currentDataFile()!="None") {
             ret << "-d" << project.currentDataFile();
         } else if (project.allData()) {
-            for(unsigned int i=1; i < ui->conf_data_file->count()-1; i++) {
+            for(int i=1; i < ui->conf_data_file->count()-1; i++) {
                 ret << "-d" << ui->conf_data_file->itemText(i);
             }
         }
+    }
     bool isOptimisationProblem = true;
     {
         QFile fznFile(currentFznTarget);
