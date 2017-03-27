@@ -2278,7 +2278,6 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);
 
-        args << currentFznTarget;
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         // Populate the map
@@ -2295,8 +2294,13 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             }
           }
         }
-        IDE::instance()->profiler->setCurrentNameMap(names);
+        int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
+                                                                names);
+        args << "--execution_id" << QString::number(eid);
+
 #endif
+
+        args << currentFznTarget;
 
         if (s.detach) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
