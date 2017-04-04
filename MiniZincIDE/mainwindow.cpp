@@ -298,9 +298,16 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     profiler = new ProfilerConductor;
     connect(profiler, SIGNAL(showNodeInfo(std::string)),
             this, SLOT(showNodeInfo(std::string)));
+
+    connect(profiler, SIGNAL(showNogood(std::string)),
+            this, SLOT(showNogoodMap(std::string)));
 #endif
 
     checkUpdate();
+}
+
+void IDE::showNogoodMap(std::string nogoodString) {
+    (*mainWindows.begin())->addOutput(QString::fromStdString(nogoodString), true);
 }
 
 void IDE::showNodeInfo(std::string extra_info) {
@@ -2281,7 +2288,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         // Populate the map
-        std::unordered_map<std::string, std::string> names;
+        NameMap::Map names;
 
         if(currentPathsTarget != "") {
           QFile pf(currentPathsTarget);
@@ -2290,7 +2297,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             while(!in.atEnd()) {
               QString line = in.readLine();
               QStringList s = line.split("\t");
-              names[s[0].toStdString()] = s[1].toStdString();
+              names[s[0].toStdString()] = std::make_pair(s[1].toStdString(), s[2].toStdString());
             }
           }
         }
