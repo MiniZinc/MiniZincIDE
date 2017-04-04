@@ -2933,6 +2933,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.autoClearOutput();
             out << project.mzn2fznVerbose();
             out << project.mzn2fznOptimize();
+            out << project.mzn2fznSavePaths();
             out << project.currentSolver();
             out << (qint32)project.n_solutions();
             out << project.printAll();
@@ -3023,6 +3024,8 @@ void MainWindow::loadProject(const QString& filepath)
     project.mzn2fznVerbose(p_b, true);
     in >> p_b;
     project.mzn2fznOptimize(p_b, true);
+    in >> p_b;
+    project.mzn2fznSavePaths(p_b, true);
     in >> p_s;
     project.currentSolver(p_s, true);
     in >> p_i;

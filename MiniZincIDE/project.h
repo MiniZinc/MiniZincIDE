@@ -98,6 +98,7 @@ public slots:
     void extraMzn2FznArgs(const QString& a, bool init=false);
     void autoClearOutput(bool b, bool init=false);
     void mzn2fznVerbose(bool b, bool init=false);
+    void mzn2fznSavePaths(bool b, bool init=false);
     void allData(bool b, bool init=false);
     void mzn2fznPrintStats(bool b, bool init=false);
     void mzn2fznOptimize(bool b, bool init=false);
@@ -138,6 +139,7 @@ protected:
     bool _all_data;
     bool _mzn2fzn_printStats;
     bool _mzn2fzn_optimize;
+    bool _mzn2fzn_save_paths;
     QString _currentSolver;
     int _n_solutions;
     bool _printAll;

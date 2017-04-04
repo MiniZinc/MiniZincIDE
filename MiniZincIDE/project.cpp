@@ -544,6 +544,16 @@ void Project::mzn2fznOptimize(bool b, bool init)
     }
 }
 
+void Project::mzn2fznSavePaths(bool b, bool init)
+{
+    if (init) {
+        _mzn2fzn_save_paths = b;
+        ui->conf_save_paths->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
 void Project::currentSolver(const QString& s, bool init)
 {
     if (init) {
