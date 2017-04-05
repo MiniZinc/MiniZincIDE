@@ -781,19 +781,19 @@ void MainWindow::init(const QString& projectFile)
 
     IDE::instance()->setEditorFont(editorFont);
 
-    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true);
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true);
-    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true);
+    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true,false);
+    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true,false);
+    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true,false);
 #ifdef MINIZINC_IDE_BUNDLED
-    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true);
+    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true,false);
 #ifdef Q_OS_WIN
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true,false);
 #else
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
+    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true,false);
 #endif
-    Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
-    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
-    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
+    Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true,false);
+    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true,false);
+    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true,false);
 #endif
 
     int nsolvers = settings.beginReadArray("solvers");
@@ -820,6 +820,7 @@ void MainWindow::init(const QString& projectFile)
         solver.builtin = settings.value("builtin").toBool();
         solver.detach = settings.value("detach",false).toBool();
         solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
+        solver.supports_profiler= settings.value("supports_profiler",false).toBool();
         IDE::instance()->stats.solvers.append(solver.name);
         solvers.append(solver);
     }
@@ -2287,23 +2288,25 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
-        // Populate the map
-        NameMap::Map names;
+        if (s.supports_profiler) {
+          // Populate the map
+          NameMap::Map names;
 
-        if(currentPathsTarget != "") {
-          QFile pf(currentPathsTarget);
-          if(pf.open(QIODevice::ReadOnly)) {
-            QTextStream in(&pf);
-            while(!in.atEnd()) {
-              QString line = in.readLine();
-              QStringList s = line.split("\t");
-              names[s[0].toStdString()] = std::make_pair(s[1].toStdString(), s[2].toStdString());
+          if(currentPathsTarget != "") {
+            QFile pf(currentPathsTarget);
+            if(pf.open(QIODevice::ReadOnly)) {
+              QTextStream in(&pf);
+              while(!in.atEnd()) {
+                QString line = in.readLine();
+                QStringList s = line.split("\t");
+                names[s[0].toStdString()] = std::make_pair(s[1].toStdString(), s[2].toStdString());
+              }
             }
           }
+          int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
+              names);
+          args << "--execution_id" << QString::number(eid);
         }
-        int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
-                                                                names);
-        args << "--execution_id" << QString::number(eid);
 
 #endif
 
