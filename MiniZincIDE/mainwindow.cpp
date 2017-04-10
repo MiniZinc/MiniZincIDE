@@ -2045,7 +2045,7 @@ void MainWindow::outputProcFinished(int, bool showTime) {
 }
 
 void MainWindow::procFinished(int, bool showTime) {
-    if (outputProcess && outputProcess->state()==QProcess::Running) {
+    if (outputProcess && outputProcess->state()!=QProcess::NotRunning) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
         inHTMLHandler = false;
