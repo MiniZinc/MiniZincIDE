@@ -25,6 +25,7 @@
 #include "fzndoc.h"
 #include "finddialog.h"
 #include "gotolinedialog.h"
+#include "addoutputdialog.h"
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
@@ -299,15 +300,15 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     connect(profiler, SIGNAL(showNodeInfo(std::string)),
             this, SLOT(showNodeInfo(std::string)));
 
-    connect(profiler, SIGNAL(showNogood(std::string)),
-            this, SLOT(showNogoodMap(std::string)));
+    connect(profiler, SIGNAL(showNogood(QString)),
+            this, SLOT(showNogoodMap(QString)));
 #endif
 
     checkUpdate();
 }
 
-void IDE::showNogoodMap(std::string nogoodString) {
-    (*mainWindows.begin())->addOutput(QString::fromStdString(nogoodString), true);
+void IDE::showNogoodMap(QString nogoodString) {
+    (*mainWindows.begin())->addOutput(nogoodString, true);
 }
 
 void IDE::showNodeInfo(std::string extra_info) {
@@ -2303,8 +2304,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
               }
             }
           }
+
           int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
-              names);
+              NameMap(curEditor->filepath, names));
           args << "--execution_id" << QString::number(eid);
         }
 
@@ -2696,6 +2698,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("builtin",solvers[i].builtin);
         settings.setValue("detach",solvers[i].detach);
         settings.setValue("needs_mzn2fzn",solvers[i].needs_mzn2fzn);
+        settings.setValue("supports_profiler",solvers[i].supports_profiler);
     }
     IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();
@@ -2740,9 +2743,17 @@ void MainWindow::on_actionGo_to_line_triggered()
                 cursor.setPosition(block.position());
                 curEditor->setTextCursor(cursor);
             }
-        } else {
-            addOutput(gtl.getText(), true);
         }
+    }
+}
+
+void MainWindow::on_actionAdd_output_triggered()
+{
+    if (curEditor==NULL)
+        return;
+    AddOutputDialog aol;
+    if (aol.exec()==QDialog::Accepted) {
+        addOutput(aol.getText(), true);
     }
 }
 

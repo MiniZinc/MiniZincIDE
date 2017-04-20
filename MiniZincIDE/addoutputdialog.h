@@ -10,27 +10,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GOTOLINEDIALOG_H
-#define GOTOLINEDIALOG_H
+#ifndef ADDOUTPUTDIALOG_H
+#define ADDOUTPUTDIALOG_H
 
 #include <QDialog>
 
 namespace Ui {
-class GoToLineDialog;
+class AddOutputDialog;
 }
 
-class GoToLineDialog : public QDialog
+class AddOutputDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit GoToLineDialog(QWidget *parent = 0);
-    ~GoToLineDialog();
+    explicit AddOutputDialog(QWidget *parent = 0);
+    ~AddOutputDialog();
 
-    int getLine(bool* ok);
+    QString getText();
 
 private:
-    Ui::GoToLineDialog *ui;
+    Ui::AddOutputDialog *ui;
 };
 
-#endif // GOTOLINEDIALOG_H
+#endif // ADDOUTPUTDIALOG_H

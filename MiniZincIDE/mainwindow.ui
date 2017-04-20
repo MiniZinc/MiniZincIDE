@@ -709,6 +709,7 @@
     <addaction name="separator"/>
     <addaction name="menuFind"/>
     <addaction name="actionGo_to_line"/>
+    <addaction name="actionAdd_output"/>
     <addaction name="actionShift_left"/>
     <addaction name="actionShift_right"/>
     <addaction name="action_Un_comment"/>
@@ -1046,6 +1047,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionAdd_output">
+   <property name="text">
+    <string>Paste to output...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionRun">

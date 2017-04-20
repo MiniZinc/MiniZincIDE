@@ -10,22 +10,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gotolinedialog.h"
-#include "ui_gotolinedialog.h"
+#include "addoutputdialog.h"
+#include "ui_addoutputdialog.h"
 
-GoToLineDialog::GoToLineDialog(QWidget *parent) :
+AddOutputDialog::AddOutputDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::GoToLineDialog)
+    ui(new Ui::AddOutputDialog)
 {
     ui->setupUi(this);
-    ui->line->setFocus();
+    ui->addoutput->setFocus();
 }
 
-GoToLineDialog::~GoToLineDialog()
+AddOutputDialog::~AddOutputDialog()
 {
     delete ui;
 }
 
-int GoToLineDialog::getLine(bool *ok) {
-    return ui->line->text().toInt(ok);
+QString AddOutputDialog::getText() {
+    return ui->addoutput->text();
 }

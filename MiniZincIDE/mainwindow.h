@@ -126,7 +126,7 @@ protected slots:
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);
 public slots:
-    void showNogoodMap(std::string nogoodString);
+    void showNogoodMap(QString nogoodString);
     void showNodeInfo(std::string extra_info);
     void checkUpdate(void);
     void help(void);
@@ -213,6 +213,8 @@ private slots:
     void on_actionSelect_font_triggered();
 
     void on_actionGo_to_line_triggered();
+
+    void on_actionAdd_output_triggered();
 
     void on_actionShift_left_triggered();
 
