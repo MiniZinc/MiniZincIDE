@@ -2290,23 +2290,8 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         if (s.supports_profiler) {
-          // Populate the map
-          NameMap::Map names;
-
-          if(currentPathsTarget != "") {
-            QFile pf(currentPathsTarget);
-            if(pf.open(QIODevice::ReadOnly)) {
-              QTextStream in(&pf);
-              while(!in.atEnd()) {
-                QString line = in.readLine();
-                QStringList s = line.split("\t");
-                names[s[0].toStdString()] = std::make_pair(s[1].toStdString(), s[2].toStdString());
-              }
-            }
-          }
-
           int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
-              NameMap(curEditor->filepath, names));
+              NameMap(currentPathsTarget, curEditor->filepath));
           args << "--execution_id" << QString::number(eid);
         }
 
