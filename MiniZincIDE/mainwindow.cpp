@@ -2285,16 +2285,17 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         QStringList args = parseConf(false,true);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
         if (!s.backend.isEmpty())
-            args << s.backend.split(" ",QString::SkipEmptyParts);
+            args << s.backend.split(" ", QString::SkipEmptyParts);
 
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         if (s.supports_profiler) {
           int eid = IDE::instance()->profiler->getNextExecutionId(currentFznTarget.toStdString(),
               NameMap(currentPathsTarget, curEditor->filepath));
+          int port = IDE::instance()->profiler->getListenPort();
           args << "--execution_id" << QString::number(eid);
+          args << "--profiler_port" << QString::number(port);
         }
-
 #endif
 
         args << currentFznTarget;
