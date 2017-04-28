@@ -300,15 +300,18 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     connect(profiler, SIGNAL(showNodeInfo(std::string)),
             this, SLOT(showNodeInfo(std::string)));
 
-    connect(profiler, SIGNAL(showNogood(QString)),
-            this, SLOT(showNogoodMap(QString)));
+    connect(profiler, SIGNAL(showNogood(QString, QString)),
+            this, SLOT(showNogoodMap(QString, QString)));
 #endif
 
     checkUpdate();
 }
 
-void IDE::showNogoodMap(QString nogoodString) {
-    (*mainWindows.begin())->addOutput(nogoodString, true);
+void IDE::showNogoodMap(QString nogoodUrl, QString text) {
+    QString htmlText = QString::fromStdString("<a href=\"%1\">Heatmap(%2)</a>").arg(nogoodUrl).arg(text);
+    auto& mw = *mainWindows.begin();
+    mw->addOutput(htmlText, true);
+    mw->errorClicked(QUrl::fromUserInput(nogoodUrl));
 }
 
 void IDE::showNodeInfo(std::string extra_info) {
@@ -1660,62 +1663,6 @@ void MainWindow::statusTimerEvent()
     time = (time+1) % 5;
     setElapsedTime();
 }
-
-/*
-QString parseConflict(QString l) {
-    QUrl url;
-    url.setScheme("highlight");
-
-    bool ok = false;
-    int start = l.indexOf('(')+1;
-    int first_comma = l.indexOf(',');
-
-    QString nS = l.mid(start, first_comma - start);
-    int s = nS.toInt(&ok);
-
-    QRegExp assignment(" .+=.+( |;|\\))");
-    assignment.setMinimal(true);
-
-    QRegExp endReg("(;|\\s|\\)|\")");
-    endReg.setMinimal(true);
-
-    // for each mzn_path("X")
-    QStringList conflictSet = l.split("mzn_path(\"");
-    conflictSet.pop_front();
-
-    QStringList assignmentList;
-    QStringList highlightURL;
-    for(int c = 0; c<conflictSet.size(); c++) {
-      QString& Q = conflictSet[c];
-      //   extract locs from X
-      QVector<QStringList> blocks = getBlocksFromPath(Q);
-      QStringList stringLocs;
-      foreach(QStringList loc, blocks) {
-        stringLocs << loc.join(":");
-      }
-      highlightURL << stringLocs.join(";");
-
-      //   extract assignments from X
-      QStringList assignments;
-      int offset = assignment.indexIn(Q);
-      while(offset != -1) {
-        int end = endReg.indexIn(Q, offset+1);
-        assignments << Q.mid(offset, end - offset);
-        offset = assignment.indexIn(Q, offset + 1);
-      }
-      assignmentList << assignments.join(",");
-    }
-
-    url.setQuery(highlightURL.join("&"));
-
-    QStringList output;
-    output << "<a style=\"color:red\" href=\"" << url.toString() << "\""
-       << " title=\"" << url.toString() << "\""
-       << ">Conflict:" << QString::number(s) << ":" << assignmentList.join(";")
-       << "</a><br>";
-    return ok ? output.join("") : "";
-}
-*/
 
 void MainWindow::readOutput()
 {

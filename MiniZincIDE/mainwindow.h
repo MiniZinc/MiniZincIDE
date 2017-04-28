@@ -126,7 +126,7 @@ protected slots:
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);
 public slots:
-    void showNogoodMap(QString nogoodString);
+    void showNogoodMap(QString nogoodUrl, QString text);
     void showNodeInfo(std::string extra_info);
     void checkUpdate(void);
     void help(void);
