@@ -300,18 +300,19 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     connect(profiler, SIGNAL(showNodeInfo(std::string)),
             this, SLOT(showNodeInfo(std::string)));
 
-    connect(profiler, SIGNAL(showNogood(QString, QString)),
-            this, SLOT(showNogoodMap(QString, QString)));
+    connect(profiler, SIGNAL(showNogood(QString, QString, bool)),
+            this, SLOT(showNogoodMap(QString, QString, bool)));
 #endif
 
     checkUpdate();
 }
 
-void IDE::showNogoodMap(QString nogoodUrl, QString text) {
+void IDE::showNogoodMap(QString nogoodUrl, QString text, bool record) {
     QString htmlText = QString::fromStdString("<a href=\"%1\">Heatmap(%2)</a>").arg(nogoodUrl).arg(text);
     auto& mw = *mainWindows.begin();
-    mw->addOutput(htmlText, true);
     mw->errorClicked(QUrl::fromUserInput(nogoodUrl));
+    if(record)
+      mw->addOutput(htmlText, true);
 }
 
 void IDE::showNodeInfo(std::string extra_info) {
