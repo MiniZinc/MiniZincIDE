@@ -52,9 +52,7 @@
 #endif
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
-#include <unordered_map>
-#include <sstream>
-#include <fstream>
+#include "globalhelper.hh"
 #endif
 
 IDEStatistics::IDEStatistics(void)
@@ -296,12 +294,17 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 #endif
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
-    profiler = new ProfilerConductor;
-    connect(profiler, SIGNAL(showNodeInfo(std::string)),
-            this, SLOT(showNodeInfo(std::string)));
+  GlobalParser clParser;
 
-    connect(profiler, SIGNAL(showNogood(QString, QString, bool)),
-            this, SLOT(showNogoodMap(QString, QString, bool)));
+  clParser.process(*this);
+  Settings::init();
+
+  profiler = new ProfilerConductor;
+  connect(profiler, SIGNAL(showNodeInfo(std::string)),
+          this, SLOT(showNodeInfo(std::string)));
+
+  connect(profiler, SIGNAL(showNogood(QString, QString, bool)),
+          this, SLOT(showNogoodMap(QString, QString, bool)));
 #endif
 
     checkUpdate();
@@ -1425,7 +1428,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         }
     }
     bool isOptimisationProblem = true;
-    {
+    if(!currentFznTarget.isEmpty()) {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             int seekSize = strlen("satisfy;\n\n");
