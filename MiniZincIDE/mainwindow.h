@@ -323,7 +323,7 @@ private:
     int curJSONHandler;
     bool inJSONHandler;
     QStringList htmlBuffer;
-    bool inHTMLHandler;
+    bool inHTMLHandler {false};
     bool hadNonJSONOutput;
     QVector<QStringList> JSONOutput;
     QTimer* timer;
