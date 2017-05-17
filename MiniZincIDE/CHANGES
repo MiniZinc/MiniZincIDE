@@ -1,3 +1,8 @@
+2017-05-17
+  v2.1.5
+  - Update to MiniZinc 2.1.5.
+  - Fix an issue where solver output may not get printed if it occurs too
+    quickly after the solver has started.
 2017-03-16
   v2.1.4
   - Update to MiniZinc 2.1.4.
