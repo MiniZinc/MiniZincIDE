@@ -2241,7 +2241,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         if (s.supports_profiler) {
-          int eid = IDE::instance()->profiler->getNextExecId(NameMap(currentPathsTarget, curEditor->filepath));
+          std::string currentPathsTargetStr = currentPathsTarget.toStdString();
+          std::string filepath = curEditor->filepath.toStdString();
+          int eid = IDE::instance()->profiler->getNextExecId(NameMap(currentPathsTargetStr, filepath));
           int port = IDE::instance()->profiler->getListenPort();
           args << "--execution_id" << QString::number(eid);
           args << "--profiler_port" << QString::number(port);
