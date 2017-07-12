@@ -2478,11 +2478,13 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
   return ces;
 }
 
+#define major_sep ';'
+#define minor_sep '|'
 QVector<QStringList> getBlocksFromPath(QString& path) {
   QVector<QStringList> locs;
-  QStringList blocks = path.split(';');
+  QStringList blocks = path.split(major_sep);
   foreach(QString block, blocks) {
-    QStringList elements = block.split(':');
+    QStringList elements = block.split(minor_sep);
     if(elements.size() >= 5) {
       bool ok = false;
       if(elements.size() > 5) elements[5].toInt(&ok);
