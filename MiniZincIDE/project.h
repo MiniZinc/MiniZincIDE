@@ -53,18 +53,23 @@ public:
     void setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
     QVariant data(const QModelIndex &index, int role) const;
     void addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
+    void addReplay(const QString &fileName);
+    void removeReplay(const QString &fileName);
     void removeFile(const QString& fileName);
     QList<QString> files(void) const { return _files.keys(); }
     QString fileAtIndex(const QModelIndex& index);
     virtual Qt::ItemFlags flags(const QModelIndex& index) const;
     QStringList dataFiles(void) const;
+    QStringList replayFiles(void) const;
     virtual bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole );
     bool isProjectFile(const QModelIndex& index) { return projectFile->index()==index; }
     bool isModified() const { return _isModified; }
-    void setModified(bool flag, bool files=false);
+    void setModified(bool flag, bool files=false, bool replays=false);
 
     int currentDataFileIndex(void) const;
     QString currentDataFile(void) const;
+    int currentReplayIndex(void) const;
+    QString currentReplay(void) const;
     bool haveExtraArgs(void) const;
     QString extraArgs(void) const;
     bool haveExtraMzn2FznArgs(void) const;
@@ -88,10 +93,12 @@ public:
     QString seed(void) const;
     int timeLimit(void) const;
     bool solverVerbose(void) const;
+    QString solverReplayPath(void) const;
     CourseraProject& coursera(void) { return *_courseraProject; }
     bool isUndefined(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
+    void currentReplayIndex(int i, bool init=false);
     void haveExtraArgs(bool b, bool init=false);
     void extraArgs(const QString& a, bool init=false);
     void haveExtraMzn2FznArgs(bool b, bool init=false);
@@ -115,6 +122,7 @@ public slots:
     void seed(const QString& s, bool init=false);
     void timeLimit(int n, bool init=false);
     void solverVerbose(bool b, bool init=false);
+    void solverReplayPath(const QString& s, bool init=false);
 signals:
     void fileRenamed(const QString& oldName, const QString& newName);
     void modificationChanged(bool);
@@ -122,14 +130,17 @@ protected:
     Ui::MainWindow *ui;
     bool _isModified;
     bool _filesModified;
+    bool _replaysModified;
     QString projectRoot;
     QMap<QString, QPersistentModelIndex> _files;
+    QSet<QString> _replays;
     QStandardItem* projectFile;
     QStandardItem* mzn;
     QStandardItem* dzn;
     QStandardItem* other;
 
     int _currentDatafileIndex;
+    int _currentReplayIndex;
     bool _haveExtraArgs;
     QString _extraArgs;
     bool _haveExtraMzn2FznArgs;
@@ -153,6 +164,7 @@ protected:
     int _timeLimit;
     int _compressSolutionLimit;
     bool _solverVerbose;
+    QString _solverReplayPath;
     CourseraProject* _courseraProject;
 
     void checkModified(void);

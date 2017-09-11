@@ -141,13 +141,13 @@
                   </widget>
                  </item>
                 </layout>
-              </item>
-              <item>
-                  <widget class="QCheckBox" name="conf_all_data">
-                   <property name="text">
-                    <string>Include all data files?</string>
-                   </property>
-                 </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="conf_all_data">
+                 <property name="text">
+                  <string>Include all data files?</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -549,6 +549,32 @@
                     </size>
                    </property>
                   </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horReplayLayout">
+                 <item>
+                  <widget class="QLabel" name="conf_solver_replay">
+                   <property name="text">
+                    <string>Replay search:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="conf_solver_replay_path">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>None</string>
+                    </property>
+                   </item>
+                  </widget>
                  </item>
                 </layout>
                </item>

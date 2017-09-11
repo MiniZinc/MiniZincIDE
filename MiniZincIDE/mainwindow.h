@@ -126,6 +126,7 @@ protected slots:
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);
 public slots:
+    void addReplay(const QString& path);
     void showNogoodMap(QString nogoodUrl, QString text, bool record);
     void showNodeInfo(std::string extra_info);
     void checkUpdate(void);
@@ -285,6 +286,7 @@ private slots:
     void onClipboardChanged();
 
     void on_conf_data_file_activated(const QString &arg1);
+    void on_conf_solver_replay_path_activated(const QString &arg1);
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
@@ -379,10 +381,12 @@ private:
     QString getLastPath(void);
     QString setElapsedTime();
     void setupDznMenu();
+    void setupReplayMenu();
     void checkMznPath();
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
+    void addReplayToProject(void);
     void updateUiProcessRunning(bool pr);
     void highlightPath(QString& path, int index);
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);

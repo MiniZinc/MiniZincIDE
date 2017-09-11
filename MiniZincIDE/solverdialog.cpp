@@ -85,6 +85,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->detach->setChecked(solvers[index].detach);
         ui->needs_mzn2fzn->setChecked(solvers[index].needs_mzn2fzn);
         ui->supports_profiler->setChecked(solvers[index].supports_profiler);
+        ui->supports_replay->setChecked(solvers[index].supports_replaying);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->backend->setText(solvers[index].backend);
         ui->solver_default->setChecked(index==defaultSolver);
@@ -99,6 +100,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->detach->setChecked(false);
         ui->needs_mzn2fzn->setChecked(true);
         ui->supports_profiler->setChecked(false);
+        ui->supports_replay->setChecked(false);
         ui->mznpath->setText("");
         ui->backend->setText("");
         ui->solverFrame->setEnabled(true);
@@ -136,6 +138,7 @@ void SolverDialog::on_updateButton_clicked()
     solvers[index].detach = ui->detach->isChecked();
     solvers[index].needs_mzn2fzn = ui->needs_mzn2fzn->isChecked();
     solvers[index].supports_profiler = ui->supports_profiler->isChecked();
+    solvers[index].supports_replaying = ui->supports_replay->isChecked();
     if (index==solvers.size()-1) {
         ui->solvers_combo->insertItem(index,ui->name->text(),index);
     }

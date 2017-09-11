@@ -25,12 +25,31 @@ struct Solver {
     QString executable;
     QString mznlib;
     QString backend;
+    QString replayLog;
     bool builtin;
     bool detach;
     bool needs_mzn2fzn;
     bool supports_profiler;
-    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt, bool mzn, bool prof) :
-        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt), needs_mzn2fzn(mzn), supports_profiler(prof) {}
+    bool supports_replaying;
+    Solver(const QString& n,
+           const QString& e,
+           const QString& m,
+           const QString& b,
+           bool bi,
+           bool dt,
+           bool mzn,
+           bool prof = false,
+           bool replay = false) :
+        name(n),
+        executable(e),
+        mznlib(m),
+        backend(b),
+        builtin(bi),
+        detach(dt),
+        needs_mzn2fzn(mzn),
+        supports_profiler(prof),
+        supports_replaying(replay)
+    {}
     Solver(void) {}
 };
 

@@ -305,9 +305,18 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
   connect(profiler, SIGNAL(showNogood(QString, QString, bool)),
           this, SLOT(showNogoodMap(QString, QString, bool)));
+
+  connect(profiler, SIGNAL(searchLogReady(const QString&)),
+          this, SLOT(addReplay(QString)));
 #endif
 
     checkUpdate();
+}
+
+void IDE::addReplay(const QString& path) {
+    auto& mw = *mainWindows.begin();
+    mw->project.addReplay(path);
+    mw->setupReplayMenu();
 }
 
 void IDE::showNogoodMap(QString nogoodUrl, QString text, bool record) {
@@ -829,6 +838,7 @@ void MainWindow::init(const QString& projectFile)
         solver.detach = settings.value("detach",false).toBool();
         solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
         solver.supports_profiler= settings.value("supports_profiler",false).toBool();
+        solver.supports_replaying= settings.value("supports_replaying",false).toBool();
         IDE::instance()->stats.solvers.append(solver.name);
         solvers.append(solver);
     }
@@ -888,6 +898,7 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->conf_seed, SIGNAL(textEdited(QString)), &project, SLOT(seed(QString)));
     connect(ui->conf_timeLimit, SIGNAL(valueChanged(int)), &project, SLOT(timeLimit(int)));
     connect(ui->conf_solver_verbose, SIGNAL(toggled(bool)), &project, SLOT(solverVerbose(bool)));
+    connect(ui->conf_solver_replay_path, SIGNAL(currentIndexChanged(int)), &project, SLOT(currentReplayIndex(int)));
 
     if (!projectFile.isEmpty()) {
         loadProject(projectFile);
@@ -942,6 +953,20 @@ void MainWindow::addFileToProject(bool dznOnly)
         project.addFile(ui->projectView, projectSort, *it);
     }
     setupDznMenu();
+}
+
+void MainWindow::addReplayToProject(void)
+{
+    QStringList fileNames = QFileDialog::getOpenFileNames(this,
+                                                          tr("Select one or more files to open"),
+                                                          getLastPath(),
+                                                          "Replay logs (*.*)");
+
+    for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
+        setLastPath(QFileInfo(*it).absolutePath()+fileDialogSuffix);
+        project.addReplay(*it);
+    }
+    setupReplayMenu();
 }
 
 void MainWindow::updateUiProcessRunning(bool pr)
@@ -1489,6 +1514,27 @@ void MainWindow::setupDznMenu()
         ui->conf_data_file->setCurrentText(curText);
     else
         ui->conf_data_file->setCurrentIndex(0);
+}
+
+void MainWindow::setupReplayMenu()
+{
+  QString curText = ui->conf_solver_replay_path->currentText();
+  ui->conf_solver_replay_path->clear();
+  ui->conf_solver_replay_path->addItem("None");
+  QStringList replayFiles = project.replayFiles();
+  for (int i=0; i<replayFiles.size(); i++) {
+    if(replayFiles[i] != "None")
+      ui->conf_solver_replay_path->addItem(replayFiles[i]);
+  }
+  ui->conf_solver_replay_path->addItem("Add replay log to project...");
+  if (curText != "Add replay log to project...")
+    ui->conf_solver_replay_path->setCurrentText(curText);
+  else
+    ui->conf_solver_replay_path->setCurrentIndex(0);
+
+  Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+  ui->conf_solver_replay_path->setEnabled(s.supports_replaying);
+  ui->conf_solver_replay->setEnabled(s.supports_replaying);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
@@ -2095,6 +2141,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     project.addFile(ui->projectView, projectSort, filepath);
                     ce->filepath = filepath;
                     setupDznMenu();
+                    setupReplayMenu();
                 }
                 ce->document()->setModified(false);
                 ce->filename = QFileInfo(filepath).fileName();
@@ -2126,6 +2173,7 @@ void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
             }
         }
         setupDznMenu();
+        setupReplayMenu();
     }
 }
 
@@ -2243,10 +2291,21 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         if (s.supports_profiler) {
           std::string currentPathsTargetStr = currentPathsTarget.toStdString();
           std::string filepath = curEditor->filepath.toStdString();
-          int eid = IDE::instance()->profiler->getNextExecId(NameMap(currentPathsTargetStr, filepath));
+
+          std::string group_name = basename(filepath.c_str());
+          std::string data_filename = basename(project.currentDataFile().toStdString().c_str());
+
+          int eid = IDE::instance()->profiler->getNextExecId(
+                      group_name, data_filename + " (" + s.name.toStdString() + ")",
+                      NameMap(currentPathsTargetStr, filepath));
           int port = IDE::instance()->profiler->getListenPort();
           args << "--execution_id" << QString::number(eid);
           args << "--profiler_port" << QString::number(port);
+
+          if(s.supports_replaying && ui->conf_solver_replay_path->currentText() != "None") {
+              args << "--replay-log" << ui->conf_solver_replay_path->currentText();
+          }
+
         }
 #endif
 
@@ -2639,6 +2698,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("detach",solvers[i].detach);
         settings.setValue("needs_mzn2fzn",solvers[i].needs_mzn2fzn);
         settings.setValue("supports_profiler",solvers[i].supports_profiler);
+        settings.setValue("supports_replaying",solvers[i].supports_replaying);
     }
     IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();
@@ -2908,6 +2968,7 @@ void MainWindow::saveProject(const QString& f)
             out << (qint32)project.timeLimit();
             out << project.solverVerbose();
             out << (qint32)ui->tabWidget->currentIndex();
+            out << project.solverReplayPath();
             QStringList projectFilesRelPath;
             QStringList projectFiles = project.files();
             for (QList<QString>::const_iterator it = projectFiles.begin();
@@ -3014,6 +3075,11 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         ui->tabWidget->setCurrentIndex(p_i);
     }
+    if (version >= 104) {
+        in >> p_s;
+        project.solverReplayPath(p_s, true);
+    }
+
     QStringList projectFilesRelPath;
     if (version==103 || version==104) {
         in >> projectFilesRelPath;
@@ -3047,6 +3113,7 @@ void MainWindow::loadProject(const QString& filepath)
         openFile(basePath+openFiles[i],false);
     }
     setupDznMenu();
+    setupReplayMenu();
     project.currentDataFileIndex(dataFileIndex, true);
 
     project.setModified(false, true);
@@ -3204,6 +3271,7 @@ void MainWindow::on_conf_solver_activated(const QString &arg1)
     if (arg1=="Add new solver...") {
         on_actionManage_solvers_triggered(true);
     }
+    setupReplayMenu();
 }
 
 void MainWindow::onClipboardChanged()
@@ -3218,6 +3286,17 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
         addFileToProject(true);
         if (nFiles < ui->conf_data_file->count()) {
             ui->conf_data_file->setCurrentIndex(ui->conf_data_file->count()-2);
+        }
+    }
+}
+
+void MainWindow::on_conf_solver_replay_path_activated(const QString &arg1)
+{
+    if (arg1=="Add replay log to project...") {
+        int nFiles = ui->conf_solver_replay_path->count();
+        addReplayToProject();
+        if (nFiles < ui->conf_solver_replay_path->count()) {
+            ui->conf_solver_replay_path->setCurrentIndex(ui->conf_solver_replay_path->count()-2);
         }
     }
 }

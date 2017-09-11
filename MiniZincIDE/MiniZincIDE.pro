@@ -104,8 +104,6 @@ cpprofiler {
   DEFINES += MINIZINC_IDE_HAVE_PROFILER
   
   QT += printsupport
-  
-  CONFIG += own_protobuf
     
   include(../cp-profiler/cp-profiler.pri)
   

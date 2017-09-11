@@ -143,6 +143,13 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="supports_replay">
+          <property name="text">
+           <string>Solver supports replay</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>

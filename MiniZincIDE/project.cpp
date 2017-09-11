@@ -87,6 +87,12 @@ QVariant Project::data(const QModelIndex &index, int role) const
     }
 }
 
+void Project::addReplay(const QString &fileName)
+{
+    _replays.insert(fileName);
+    _replaysModified = true;
+}
+
 void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
 {
     if (_files.contains(fileName))
@@ -188,7 +194,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     }
 coursera_done:
 
-    setModified(true, true);
+    setModified(true, true, true);
     QStandardItem* prevItem = curItem;
     treeView->expand(sort->mapFromSource(curItem->index()));
     curItem = curItem->child(0);
@@ -264,6 +270,19 @@ QStringList Project::dataFiles(void) const
     return ret;
 }
 
+QStringList Project::replayFiles(void) const
+{
+    QStringList ret;
+    for (QSet<QString>::const_iterator it = _replays.begin(); it != _replays.end(); ++it) {
+        ret << *it;
+    }
+    return ret;
+}
+
+void Project::removeReplay(const QString &fileName) {
+    _replays.remove(fileName);
+}
+
 void Project::removeFile(const QString &fileName)
 {
     if (fileName.isEmpty())
@@ -272,7 +291,7 @@ void Project::removeFile(const QString &fileName)
         qDebug() << "Internal error: file " << fileName << " not in project";
         return;
     }
-    setModified(true, true);
+    setModified(true, true, true);
     QModelIndex index = _files[fileName];
     _files.remove(fileName);
     QStandardItem* cur = itemFromIndex(index);
@@ -289,7 +308,7 @@ void Project::removeFile(const QString &fileName)
     }
 }
 
-void Project::setModified(bool flag, bool files)
+void Project::setModified(bool flag, bool files, bool replays)
 {
     if (!projectRoot.isEmpty()) {
         if (_isModified != flag) {
@@ -297,6 +316,9 @@ void Project::setModified(bool flag, bool files)
             _isModified = flag;
             if (files) {
                 _filesModified = _isModified;
+            }
+            if (replays) {
+                _replaysModified = _isModified;
             }
             if (!_isModified) {
                 currentDataFileIndex(currentDataFileIndex(),true);
@@ -318,6 +340,7 @@ void Project::setModified(bool flag, bool files)
                 seed(seed(),true);
                 timeLimit(timeLimit(),true);
                 solverVerbose(solverVerbose(),true);
+                solverReplayPath(solverReplayPath(),true);
             }
         }
     }
@@ -333,7 +356,7 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     if (success) {
         _files[filePath+"/"+value.toString()] = _files[filePath+"/"+oldName];
         _files.remove(filePath+"/"+oldName);
-        setModified(true, true);
+        setModified(true, true, true);
         emit fileRenamed(filePath+"/"+oldName,filePath+"/"+value.toString());
         return QStandardItemModel::setData(index,value,role);
     } else {
@@ -436,6 +459,10 @@ bool Project::solverVerbose(void) const
 {
     return ui->conf_solver_verbose->isChecked();
 }
+QString Project::solverReplayPath(void) const
+{
+    return ui->conf_solver_replay_path->currentText();
+}
 
 bool Project::isUndefined() const
 {
@@ -449,6 +476,17 @@ void Project::currentDataFileIndex(int i, bool init)
         ui->conf_data_file->setCurrentIndex(i);
     } else {
         if (i < ui->conf_data_file->count()-1)
+            checkModified();
+    }
+}
+
+void Project::currentReplayIndex(int i, bool init)
+{
+    if (init) {
+        _currentReplayIndex = i;
+        ui->conf_solver_replay_path->setCurrentIndex(i);
+    } else {
+        if (i < ui->conf_solver_replay_path->count()-1)
             checkModified();
     }
 }
@@ -684,6 +722,16 @@ void Project::solverVerbose(bool b, bool init)
     }
 }
 
+void Project::solverReplayPath(const QString& s, bool init)
+{
+    if (init) {
+        _solverReplayPath = s;
+        addReplay(s);
+    } else {
+        checkModified();
+    }
+}
+
 int Project::currentDataFileIndex(void) const
 {
     return ui->conf_data_file->currentIndex();
@@ -694,9 +742,19 @@ QString Project::currentDataFile(void) const
     return ui->conf_data_file->currentText();
 }
 
+int Project::currentReplayIndex(void) const
+{
+    return ui->conf_solver_replay_path->currentIndex();
+}
+
+QString Project::currentReplay() const
+{
+    return ui->conf_solver_replay_path->currentText();
+}
+
 void Project::checkModified()
 {
-    if (projectRoot.isEmpty() || _filesModified)
+    if (projectRoot.isEmpty() || _filesModified || _replaysModified)
         return;
     if (currentDataFileIndex() != _currentDatafileIndex) {
         setModified(true);
@@ -775,6 +833,10 @@ void Project::checkModified()
         return;
     }
     if (solverVerbose() != _solverVerbose) {
+        setModified(true);
+        return;
+    }
+    if (solverReplayPath() != _solverReplayPath) {
         setModified(true);
         return;
     }
