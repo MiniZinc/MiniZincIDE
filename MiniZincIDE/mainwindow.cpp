@@ -1444,12 +1444,12 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         ret << compilerArgs;
     }
     if (compileOnly && useDataFile) {
-        if (project.currentDataFile()!="None") {
-            ret << "-d" << project.currentDataFile();
-        } else if (project.allData()) {
+        if (project.allData()) {
             for(int i=1; i < ui->conf_data_file->count()-1; i++) {
                 ret << "-d" << ui->conf_data_file->itemText(i);
             }
+        } else if (project.currentDataFile()!="None") {
+            ret << "-d" << project.currentDataFile();
         }
     }
     bool isOptimisationProblem = true;
@@ -1952,8 +1952,13 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
         if (project.currentDataFile()!="None") {
             compiling += " with data ";
-            QFileInfo fi(project.currentDataFile());
-            compiling += fi.fileName();
+            if (project.allData()) {
+              for(int i=1; i < ui->conf_data_file->count()-1; i++) {
+                compiling += QFileInfo(ui->conf_data_file->itemText(i)).fileName();
+              }
+            } else if (project.currentDataFile()!="None") {
+              compiling += QFileInfo(project.currentDataFile()).fileName();
+            }
         }
         if (!additionalDataFile.isEmpty()) {
             compiling += ", with additional data ";
