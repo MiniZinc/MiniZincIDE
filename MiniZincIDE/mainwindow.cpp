@@ -2289,15 +2289,17 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
         if (s.supports_profiler) {
-          std::string currentPathsTargetStr = currentPathsTarget.toStdString();
-          std::string filepath = curEditor->filepath.toStdString();
+          QFileInfo currentpath(currentPathsTarget);
+          QFileInfo filepath(curEditor->filepath);
+          QFileInfo datapath(project.currentDataFile());
 
-          std::string group_name = basename(filepath.c_str());
-          std::string data_filename = basename(project.currentDataFile().toStdString().c_str());
+          std::string group_name    = filepath.baseName().toStdString();
+          std::string data_filename = datapath.baseName().toStdString();
 
           int eid = IDE::instance()->profiler->getNextExecId(
                       group_name, data_filename + " (" + s.name.toStdString() + ")",
-                      NameMap(currentPathsTargetStr, filepath));
+                      NameMap(currentpath.canonicalFilePath().toStdString(),
+                              filepath.canonicalFilePath().toStdString()));
           int port = IDE::instance()->profiler->getListenPort();
           args << "--execution_id" << QString::number(eid);
           args << "--profiler_port" << QString::number(port);
