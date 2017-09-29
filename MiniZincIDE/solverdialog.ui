@@ -135,7 +135,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_10">
+       <layout class="QHBoxLayout" name="horizontalLayout_profiler">
         <item>
          <widget class="QCheckBox" name="supports_profiler">
           <property name="text">
