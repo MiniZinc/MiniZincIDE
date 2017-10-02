@@ -1452,6 +1452,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
             ret << "-d" << project.currentDataFile();
         }
     }
+
     bool isOptimisationProblem = true;
     if(!currentFznTarget.isEmpty()) {
         QFile fznFile(currentFznTarget);
@@ -1936,16 +1937,14 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         procFinished(0);
     } else {
         QFileInfo fi(modelPath);
-        if (!standalone) {
-            currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-            args << "-o" << currentFznTarget;
-            args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-            if(project.mzn2fznSavePaths()) {
-              currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
-              args << "--output-paths-to-file" << currentPathsTarget;
-            } else {
-              currentPathsTarget = "";
-            }
+        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+        args << "-o" << currentFznTarget;
+        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+        if(project.mzn2fznSavePaths()) {
+          currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
+          args << "--output-paths-to-file" << currentPathsTarget;
+        } else {
+          currentPathsTarget = "";
         }
         args << modelPath;
 
@@ -2276,6 +2275,11 @@ void MainWindow::openCompiledFzn(int exitcode)
             }
         }
         openFile(currentFznTarget, true);
+
+        QFile paths_file(currentPathsTarget);
+        if(paths_file.exists()) {
+          openFile(currentPathsTarget, true);
+        }
     }
     procFinished(exitcode);
 }
