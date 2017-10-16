@@ -1937,14 +1937,16 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         procFinished(0);
     } else {
         QFileInfo fi(modelPath);
-        currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
-        args << "-o" << currentFznTarget;
-        args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
-        if(project.mzn2fznSavePaths()) {
-          currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
-          args << "--output-paths-to-file" << currentPathsTarget;
-        } else {
-          currentPathsTarget = "";
+        if(!standalone) {
+          currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
+          args << "-o" << currentFznTarget;
+          args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+          if(project.mzn2fznSavePaths()) {
+            currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
+            args << "--output-paths-to-file" << currentPathsTarget;
+          } else {
+            currentPathsTarget = "";
+          }
         }
         args << modelPath;
 
@@ -2310,13 +2312,12 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                       NameMap(currentpath.canonicalFilePath().toStdString(),
                               filepath.canonicalFilePath().toStdString()));
           int port = IDE::instance()->profiler->getListenPort();
-          args << "--execution_id" << QString::number(eid);
-          args << "--profiler_port" << QString::number(port);
+          args << "--cpprofiler_id" << QString::number(eid);
+          args << "--cpprofiler_port" << QString::number(port);
 
           if(s.supports_replaying && ui->conf_solver_replay_path->currentText() != "None") {
-              args << "--replay-log" << ui->conf_solver_replay_path->currentText();
+            args << "--replay-log" << ui->conf_solver_replay_path->currentText();
           }
-
         }
 #endif
 
