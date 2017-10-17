@@ -749,9 +749,15 @@ void MainWindow::init(const QString& projectFile)
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
+
+    progressBar = new QProgressBar;
+    progressBar->setRange(0, 100);
+    progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
     statusLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
+    ui->statusbar->addPermanentWidget(progressBar);
     ui->statusbar->showMessage("Ready.");
+
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
@@ -1752,7 +1758,6 @@ void MainWindow::readOutput()
                     addOutput(htmlBuffer.join(""), true);
                     htmlBuffer.clear();
                     inHTMLHandler = false;
-
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
@@ -1832,6 +1837,9 @@ void MainWindow::readOutput()
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a>");
+            } else if (l.trimmed().startsWith("%%%mzn-progress")) {
+                float value = l.split(" ")[1].toFloat();
+                progressBar->setValue(static_cast<int>(value));
             } else {
                 addOutput(l,false);
             }
@@ -2039,6 +2047,7 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
+    progressBar->reset();
     process = NULL;
     outputProcess = NULL;
     finishJSONViewer();
