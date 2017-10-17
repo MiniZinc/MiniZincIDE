@@ -1699,6 +1699,8 @@ void MainWindow::readOutput()
                 }
             }
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        readProc->setReadChannel(QProcess::StandardOutput);
     }
 
     if (process != NULL) {
@@ -1726,6 +1728,8 @@ void MainWindow::readOutput()
                 addOutput(l,false);
             }
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        process->setReadChannel(QProcess::StandardOutput);
     }
 
     if (outputProcess != NULL) {
@@ -1743,6 +1747,8 @@ void MainWindow::readOutput()
             }
             addOutput(l,false);
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        outputProcess->setReadChannel(QProcess::StandardOutput);
     }
 }
 
