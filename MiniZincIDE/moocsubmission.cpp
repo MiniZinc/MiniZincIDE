@@ -1,5 +1,5 @@
-#include "courserasubmission.h"
-#include "ui_courserasubmission.h"
+#include "moocsubmission.h"
+#include "ui_moocsubmission.h"
 #include "mainwindow.h"
 
 #include <QCheckBox>
@@ -13,11 +13,17 @@
 #include <QCryptographicHash>
 #include <QJsonDocument>
 
-CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
+MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
     QDialog(NULL), _cur_phase(S_NONE), project(cp), mw(mw0),
-    ui(new Ui::CourseraSubmission)
+    ui(new Ui::MOOCSubmission)
 {
     ui->setupUi(this);
+
+    setWindowTitle("Submit to "+cp.moocName);
+
+    ui->loginEmailLabel->setText(cp.moocName+" login email:");
+    ui->loginTokenLabel->setText(cp.moocPasswordString+":");
+    ui->courseraTokenWarningLabel->setHidden(cp.moocName!="Coursera");
 
     ui->selectedSolver->setText(mw->getProject().currentSolver());
 
@@ -27,13 +33,13 @@ CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
     ui->problemBox->setLayout(problemLayout);
 
     for (int i=0; i<project.models.size(); i++) {
-        const CourseraItem& item = project.models.at(i);
+        const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
         modelLayout->addWidget(cb);
     }
     for (int i=0; i<project.problems.size(); i++) {
-        const CourseraItem& item = project.problems.at(i);
+        const MOOCAssignmentItem& item = project.problems.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
         problemLayout->addWidget(cb);
@@ -55,7 +61,7 @@ CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
 
 }
 
-CourseraSubmission::~CourseraSubmission()
+MOOCSubmission::~MOOCSubmission()
 {
     QSettings settings;
     settings.beginGroup("coursera");
@@ -71,7 +77,7 @@ CourseraSubmission::~CourseraSubmission()
     delete ui;
 }
 
-void CourseraSubmission::disableUI()
+void MOOCSubmission::disableUI()
 {
     ui->loginGroup->setEnabled(false);
     ui->modelBox->setEnabled(false);
@@ -79,7 +85,7 @@ void CourseraSubmission::disableUI()
     ui->runButton->setText("Abort");
 }
 
-void CourseraSubmission::enableUI()
+void MOOCSubmission::enableUI()
 {
     ui->loginGroup->setEnabled(true);
     ui->modelBox->setEnabled(true);
@@ -87,7 +93,7 @@ void CourseraSubmission::enableUI()
     ui->runButton->setText("Run and submit");
 }
 
-void CourseraSubmission::cancelOperation()
+void MOOCSubmission::cancelOperation()
 {
     switch (_cur_phase) {
     case S_NONE:
@@ -108,7 +114,7 @@ void CourseraSubmission::cancelOperation()
     enableUI();
 }
 
-void CourseraSubmission::reject()
+void MOOCSubmission::reject()
 {
     if (_cur_phase != S_NONE &&
             QMessageBox::warning(this, "MiniZinc IDE",
@@ -121,7 +127,7 @@ void CourseraSubmission::reject()
     QDialog::reject();
 }
 
-void CourseraSubmission::solveNext() {
+void MOOCSubmission::solveNext() {
     int n_problems = project.problems.size();
 
     bool done = false;
@@ -136,7 +142,7 @@ void CourseraSubmission::solveNext() {
     } while (!done);
     if (_current_model < n_problems) {
 
-        CourseraItem& item = project.problems[_current_model];
+        MOOCAssignmentItem& item = project.problems[_current_model];
         connect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
         ui->textBrowser->insertPlainText("Running "+item.name+"\n");
         _cur_phase = S_WAIT_SOLVE;
@@ -149,11 +155,11 @@ void CourseraSubmission::solveNext() {
         }
         return;
     } else {
-        submitToCoursera();
+        submitToMOOC();
     }
 }
 
-void CourseraSubmission::submitToCoursera()
+void MOOCSubmission::submitToMOOC()
 {
     QUrl url("https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1");
     QNetworkRequest request;
@@ -164,7 +170,7 @@ void CourseraSubmission::submitToCoursera()
     // add models
     QStringList allfiles = mw->getProject().files();
     for (int i=0; i<project.models.size(); i++) {
-        const CourseraItem& item = project.models.at(i);
+        const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = qobject_cast<QCheckBox*>(ui->modelBox->layout()->itemAt(i)->widget());
         if (cb->isChecked()) {
             bool foundFile = false;
@@ -207,7 +213,7 @@ void CourseraSubmission::submitToCoursera()
     ui->textBrowser->insertPlainText("Submitting to Coursera for grading...\n");
 }
 
-void CourseraSubmission::rcvSubmissionResponse()
+void MOOCSubmission::rcvSubmissionResponse()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
     reply->deleteLater();
@@ -230,7 +236,7 @@ void CourseraSubmission::rcvSubmissionResponse()
     ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 }
 
-void CourseraSubmission::solverFinished()
+void MOOCSubmission::solverFinished()
 {
     disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
 
@@ -248,7 +254,7 @@ void CourseraSubmission::solverFinished()
     solveNext();
 }
 
-void CourseraSubmission::on_runButton_clicked()
+void MOOCSubmission::on_runButton_clicked()
 {
     if (_cur_phase==S_NONE) {
         ui->textBrowser->clear();
@@ -289,7 +295,7 @@ void CourseraSubmission::on_runButton_clicked()
     }
 }
 
-void CourseraSubmission::rcvLoginCheckResponse()
+void MOOCSubmission::rcvLoginCheckResponse()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
     reply->deleteLater();
@@ -320,7 +326,7 @@ void CourseraSubmission::rcvLoginCheckResponse()
     }
 }
 
-void CourseraSubmission::on_storePassword_toggled(bool checked)
+void MOOCSubmission::on_storePassword_toggled(bool checked)
 {
     if (!checked) {
         QSettings settings;

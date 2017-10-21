@@ -27,7 +27,7 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -3005,7 +3005,7 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
 
 void MainWindow::on_actionSubmit_to_Coursera_triggered()
 {
-    courseraSubmission = new CourseraSubmission(this, project.coursera());
+    courseraSubmission = new MOOCSubmission(this, project.coursera());
     connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
     setEnabled(false);
     courseraSubmission->show();

@@ -10,16 +10,16 @@ class QNetworkReply;
 class MainWindow;
 
 namespace Ui {
-class CourseraSubmission;
+class MOOCSubmission;
 }
 
-class CourseraSubmission : public QDialog
+class MOOCSubmission : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit CourseraSubmission(MainWindow* mw, CourseraProject& cp);
-    ~CourseraSubmission();
+    explicit MOOCSubmission(MainWindow* mw, MOOCAssignment& cp);
+    ~MOOCSubmission();
 
 protected:
     enum State { S_NONE, S_WAIT_PWD, S_WAIT_SUBMIT, S_WAIT_SOLVE } _cur_phase;
@@ -31,7 +31,7 @@ protected:
     QJsonObject _submission;
     QJsonObject _parts;
 
-    CourseraProject& project;
+    MOOCAssignment& project;
     MainWindow* mw;
     QNetworkReply* reply;
 
@@ -45,7 +45,7 @@ public slots:
 
 private slots:
 
-    void submitToCoursera();
+    void submitToMOOC();
     void rcvSubmissionResponse();
     void solverFinished();
 
@@ -54,7 +54,7 @@ private slots:
 
     void on_storePassword_toggled(bool checked);
 private:
-    Ui::CourseraSubmission *ui;
+    Ui::MOOCSubmission *ui;
 };
 
 #endif // COURSERASUBMISSION_H

@@ -39,7 +39,7 @@
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 namespace Ui {
 class MainWindow;
@@ -349,7 +349,7 @@ private:
     QAction* fakeCompileAction;
     QAction* minimizeAction;
     QTextStream* outputBuffer;
-    CourseraSubmission* courseraSubmission;
+    MOOCSubmission* courseraSubmission;
     bool processRunning;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
