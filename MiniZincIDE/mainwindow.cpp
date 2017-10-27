@@ -2331,7 +2331,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
           args << "--cpprofiler_port" << QString::number(port);
 
           if(s.supports_replaying && ui->conf_solver_replay_path->currentText() != "None") {
-            args << "--replay-log" << ui->conf_solver_replay_path->currentText();
+            args << "--cpprofiler_replay" << ui->conf_solver_replay_path->currentText();
           }
         }
 #endif
