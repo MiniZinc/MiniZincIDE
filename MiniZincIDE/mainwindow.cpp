@@ -1501,6 +1501,12 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
+    if(!compileOnly) {
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        if(!s.needs_mzn2fzn) {
+            ret << s.backend.split(" ", QString::SkipEmptyParts);
+        }
+    }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
