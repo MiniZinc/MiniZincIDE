@@ -226,7 +226,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         }
         defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
-        QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+        QFont editorFont;
+        editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
         bool darkMode = settings.value("darkMode", false).value<bool>();
         settings.endGroup();
 
@@ -368,7 +369,7 @@ void IDE::setEditorFont(QFont font)
 {
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", font);
+    settings.setValue("editorFont", font.toString());
     settings.endGroup();
     for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
          it != IDE::instance()->mainWindows.end(); ++it) {
@@ -731,7 +732,7 @@ void MainWindow::init(const QString& projectFile)
     }
     defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
-    editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
     ui->outputConsole->setFont(editorFont);
@@ -1210,7 +1211,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", editorFont);
+    settings.setValue("editorFont", editorFont.toString());
     settings.setValue("darkMode", darkMode);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
