@@ -916,8 +916,8 @@ void MainWindow::updateUiProcessRunning(bool pr)
         bool isMzn = false;
         bool isFzn = false;
         if (curEditor) {
-            isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
-            isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+            isMzn = curEditor->filepath=="" || QFileInfo(curEditor->filepath).suffix()=="mzn";
+            isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn";
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn));
         ui->actionRun->setEnabled(isMzn || isFzn);
