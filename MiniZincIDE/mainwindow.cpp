@@ -1376,7 +1376,7 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
     if (compileOnly && useDataFile && project.currentDataFile()!="None")
         ret << "-d" << project.currentDataFile();
     bool isOptimisationProblem = true;
-    {
+    if (!currentFznTarget.isEmpty()) {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             int seekSize = strlen("satisfy;\n\n");
@@ -1497,7 +1497,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             }
         }
     }
-    compileAndRun(curEditor->filepath, additionalCmdlineParams, additionalDataFile);
+    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFile);
 }
 
 void MainWindow::checkArgs(QString filepath)
@@ -1511,6 +1511,7 @@ void MainWindow::checkArgs(QString filepath)
     }
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
+    curModelFilepath = filepath;
     processWasStopped = false;
     process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
     process->setProcessChannelMode(QProcess::MergedChannels);
@@ -1536,41 +1537,67 @@ void MainWindow::on_actionRun_triggered()
             on_actionManage_solvers_triggered();
         return;
     }
-    if (curEditor && curEditor->filepath!="") {
-        if (curEditor->document()->isModified()) {
-            if (!saveBeforeRunning) {
-                QMessageBox msgBox;
-                msgBox.setText("The model has been modified. You have to save it before running.");
-                msgBox.setInformativeText("Do you want to save it now and then run?");
-                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
-                msgBox.addButton(QMessageBox::Cancel);
-                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
-                msgBox.setDefaultButton(QMessageBox::Save);
-                msgBox.exec();
-                if (msgBox.clickedButton()==alwaysButton) {
-                    saveBeforeRunning = true;
-                }
-                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
-                    return;
+    if (curEditor) {
+        QString filepath;
+        bool docIsModified;
+        if (curEditor->filepath!="") {
+            filepath = curEditor->filepath;
+            docIsModified = curEditor->document()->isModified();
+        } else {
+            QTemporaryDir* modelTmpDir = new QTemporaryDir;
+            if (!modelTmpDir->isValid()) {
+                QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+            } else {
+                cleanupTmpDirs.append(modelTmpDir);
+                docIsModified = false;
+                filepath = modelTmpDir->path()+"/untitled_model.mzn";
+                QFile modelFile(filepath);
+                if (modelFile.open(QIODevice::ReadWrite)) {
+                    QTextStream ts(&modelFile);
+                    ts << curEditor->document()->toPlainText();
+                    modelFile.close();
+                } else {
+                    QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
+                    filepath = "";
                 }
             }
-            on_actionSave_triggered();
         }
-        if (curEditor->document()->isModified())
-            return;
-        if (project.autoClearOutput()) {
-            on_actionClear_output_triggered();
-        }
-        updateUiProcessRunning(true);
-        on_actionSplit_triggered();
-        IDE::instance()->stats.modelsRun++;
-        if (curEditor->filepath.endsWith(".fzn")) {
-            currentFznTarget = curEditor->filepath;
-            runSolns2Out = false;
-            runCompiledFzn(0,QProcess::NormalExit);
-        } else {
-            compileOnly = false;
-            checkArgs(curEditor->filepath);
+        if (filepath != "") {
+            if (docIsModified) {
+                if (!saveBeforeRunning) {
+                    QMessageBox msgBox;
+                    msgBox.setText("The model has been modified. You have to save it before running.");
+                    msgBox.setInformativeText("Do you want to save it now and then run?");
+                    QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+                    msgBox.addButton(QMessageBox::Cancel);
+                    QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+                    msgBox.setDefaultButton(QMessageBox::Save);
+                    msgBox.exec();
+                    if (msgBox.clickedButton()==alwaysButton) {
+                        saveBeforeRunning = true;
+                    }
+                    if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                        return;
+                    }
+                }
+                on_actionSave_triggered();
+            }
+            if (curEditor->filepath!="" && curEditor->document()->isModified())
+                return;
+            if (project.autoClearOutput()) {
+                on_actionClear_output_triggered();
+            }
+            updateUiProcessRunning(true);
+            on_actionSplit_triggered();
+            IDE::instance()->stats.modelsRun++;
+            if (filepath.endsWith(".fzn")) {
+                currentFznTarget = filepath;
+                runSolns2Out = false;
+                runCompiledFzn(0,QProcess::NormalExit);
+            } else {
+                compileOnly = false;
+                checkArgs(filepath);
+            }
         }
     }
 }
