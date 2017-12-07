@@ -118,7 +118,7 @@ void MOOCSubmission::reject()
 {
     if (_cur_phase != S_NONE &&
             QMessageBox::warning(this, "MiniZinc IDE",
-                                 "Do you want to close this window and abort the Coursera submission?",
+                                 "Do you want to close this window and abort the "+project.moocName+" submission?",
                                  QMessageBox::Close| QMessageBox::Cancel,
                                  QMessageBox::Cancel) == QMessageBox::Cancel) {
         return;
@@ -147,7 +147,7 @@ void MOOCSubmission::solveNext() {
         ui->textBrowser->insertPlainText("Running "+item.name+"\n");
         _cur_phase = S_WAIT_SOLVE;
         _output_string = "";
-        mw->addOutput("<div style='color:orange;'>Running Coursera submission "+item.name+"</div><br>\n");
+        mw->addOutput("<div style='color:orange;'>Running "+project.moocName+" submission "+item.name+"</div><br>\n");
         if (!mw->runWithOutput(item.model, item.data, item.timeout, _output_stream)) {
             ui->textBrowser->insertPlainText("Error: could not run "+item.name+"\n");
             ui->textBrowser->insertPlainText("Skipping.\n");
@@ -161,7 +161,7 @@ void MOOCSubmission::solveNext() {
 
 void MOOCSubmission::submitToMOOC()
 {
-    QUrl url("https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1");
+    QUrl url(project.submissionURL);
     QNetworkRequest request;
     request.setUrl(url);
     request.setRawHeader(QByteArray("Cache-Control"),QByteArray("no-cache"));
@@ -210,7 +210,7 @@ void MOOCSubmission::submitToMOOC()
     _cur_phase = S_WAIT_SUBMIT;
     reply = IDE::instance()->networkManager->post(request,doc.toJson());
     connect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
-    ui->textBrowser->insertPlainText("Submitting to Coursera for grading...\n");
+    ui->textBrowser->insertPlainText("Submitting to "+project.moocName+" for grading...\n");
 }
 
 void MOOCSubmission::rcvSubmissionResponse()
@@ -261,7 +261,7 @@ void MOOCSubmission::on_runButton_clicked()
         QString email = ui->login->text();
         if (email.isEmpty()) {
             QMessageBox::warning(this, "MiniZinc IDE",
-                                 "Enter an email address for Coursera login!");
+                                 "Enter an email address for "+project.moocName+" login!");
             return;
         }
         if (ui->password->text().isEmpty()) {
@@ -271,7 +271,7 @@ void MOOCSubmission::on_runButton_clicked()
         }
 
         // Send empty request to check password
-        QUrl url("https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1");
+        QUrl url(project.submissionURL);
         QNetworkRequest request;
         request.setUrl(url);
         request.setRawHeader(QByteArray("Cache-Control"),QByteArray("no-cache"));
@@ -321,6 +321,7 @@ void MOOCSubmission::rcvLoginCheckResponse()
                 ui->textBrowser->insertPlainText(">> "+details["learnerMessage"].toString()+"\n");
             }
         }
+        ui->textBrowser->insertPlainText("Done.\n");
         _cur_phase = S_NONE;
         enableUI();
     }

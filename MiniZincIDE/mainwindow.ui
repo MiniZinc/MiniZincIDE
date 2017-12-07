@@ -90,7 +90,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>607</width>
+             <width>608</width>
              <height>878</height>
             </rect>
            </property>
@@ -705,7 +705,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
-    <addaction name="actionSubmit_to_Coursera"/>
+    <addaction name="actionSubmit_to_MOOC"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
@@ -828,7 +828,7 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
-   <addaction name="actionSubmit_to_Coursera"/>
+   <addaction name="actionSubmit_to_MOOC"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -1330,7 +1330,7 @@
     <bool>false</bool>
    </property>
   </action>
-  <action name="actionSubmit_to_Coursera">
+  <action name="actionSubmit_to_MOOC">
    <property name="icon">
     <iconset resource="minizincide.qrc">
      <normaloff>:/icons/images/coursera.png</normaloff>:/icons/images/coursera.png</iconset>

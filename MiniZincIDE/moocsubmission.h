@@ -1,5 +1,5 @@
-#ifndef COURSERASUBMISSION_H
-#define COURSERASUBMISSION_H
+#ifndef MOOCSUBMISSION_H
+#define MOOCSUBMISSION_H
 
 #include <QDialog>
 #include <QTextStream>
@@ -57,4 +57,4 @@ private:
     Ui::MOOCSubmission *ui;
 };
 
-#endif // COURSERASUBMISSION_H
+#endif // MOOCSUBMISSION_H

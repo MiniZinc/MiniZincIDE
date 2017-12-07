@@ -89,7 +89,7 @@ public:
     QString seed(void) const;
     int timeLimit(void) const;
     bool solverVerbose(void) const;
-    MOOCAssignment& coursera(void) { return *_moocAssignment; }
+    MOOCAssignment& moocAssignment(void) { return *_moocAssignment; }
     bool isUndefined(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
@@ -153,7 +153,6 @@ protected:
     MOOCAssignment* _moocAssignment;
 
     void checkModified(void);
-    void courseraError(void);
 };
 
 #endif // PROJECT_H

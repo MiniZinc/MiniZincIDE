@@ -715,7 +715,7 @@ void MainWindow::init(const QString& projectFile)
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
-    ui->actionSubmit_to_Coursera->setVisible(false);
+    ui->actionSubmit_to_MOOC->setVisible(false);
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
@@ -912,7 +912,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
         bool isMzn = false;
         bool isFzn = false;
@@ -926,7 +926,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(true);
+        ui->actionSubmit_to_MOOC->setEnabled(true);
     }
 }
 
@@ -3004,16 +3004,16 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
     }
 }
 
-void MainWindow::on_actionSubmit_to_Coursera_triggered()
+void MainWindow::on_actionSubmit_to_MOOC_triggered()
 {
-    courseraSubmission = new MOOCSubmission(this, project.coursera());
-    connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
+    moocSubmission = new MOOCSubmission(this, project.moocAssignment());
+    connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
     setEnabled(false);
-    courseraSubmission->show();
+    moocSubmission->show();
 }
 
-void MainWindow::courseraFinished(int) {
-    courseraSubmission->deleteLater();
+void MainWindow::moocFinished(int) {
+    moocSubmission->deleteLater();
     setEnabled(true);
 }
 
