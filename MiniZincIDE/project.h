@@ -23,25 +23,28 @@ namespace Ui {
 
 class QSortFilterProxyModel;
 
-class CourseraItem {
+class MOOCAssignmentItem {
 public:
     QString id;
     QString model;
     QString data;
     int timeout;
     QString name;
-    CourseraItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
+    MOOCAssignmentItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
         : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0) {}
-    CourseraItem(QString id0, QString model0, QString name0)
+    MOOCAssignmentItem(QString id0, QString model0, QString name0)
         : id(id0), model(model0), timeout(-1), name(name0) {}
 };
 
-class CourseraProject {
+class MOOCAssignment {
 public:
     QString name;
     QString assignmentKey;
-    QList<CourseraItem> problems;
-    QList<CourseraItem> models;
+    QString moocName;
+    QString moocPasswordString;
+    QString submissionURL;
+    QList<MOOCAssignmentItem> problems;
+    QList<MOOCAssignmentItem> models;
 };
 
 class Project : public QStandardItemModel
@@ -86,7 +89,7 @@ public:
     QString seed(void) const;
     int timeLimit(void) const;
     bool solverVerbose(void) const;
-    CourseraProject& coursera(void) { return *_courseraProject; }
+    MOOCAssignment& moocAssignment(void) { return *_moocAssignment; }
     bool isUndefined(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
@@ -147,10 +150,9 @@ protected:
     int _timeLimit;
     int _compressSolutionLimit;
     bool _solverVerbose;
-    CourseraProject* _courseraProject;
+    MOOCAssignment* _moocAssignment;
 
     void checkModified(void);
-    void courseraError(void);
 };
 
 #endif // PROJECT_H

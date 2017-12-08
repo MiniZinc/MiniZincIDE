@@ -39,7 +39,7 @@
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 namespace Ui {
 class MainWindow;
@@ -260,7 +260,7 @@ private slots:
 
     void on_actionNewData_file_triggered();
 
-    void on_actionSubmit_to_Coursera_triggered();
+    void on_actionSubmit_to_MOOC_triggered();
 
     void fileRenamed(const QString&, const QString&);
 
@@ -279,7 +279,7 @@ private slots:
 
     void on_actionDark_mode_toggled(bool arg1);
 
-    void courseraFinished(int);
+    void moocFinished(int);
 
     void on_defaultBehaviourButton_toggled(bool checked);
 
@@ -349,7 +349,7 @@ private:
     QAction* fakeCompileAction;
     QAction* minimizeAction;
     QTextStream* outputBuffer;
-    CourseraSubmission* courseraSubmission;
+    MOOCSubmission* moocSubmission;
     bool processRunning;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);

@@ -27,7 +27,7 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -715,7 +715,7 @@ void MainWindow::init(const QString& projectFile)
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
-    ui->actionSubmit_to_Coursera->setVisible(false);
+    ui->actionSubmit_to_MOOC->setVisible(false);
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
@@ -912,7 +912,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
         bool isMzn = false;
         bool isFzn = false;
@@ -926,7 +926,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(true);
+        ui->actionSubmit_to_MOOC->setEnabled(true);
     }
 }
 
@@ -2816,17 +2816,33 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         project.n_compress_solutions(p_i, true);
     }
+    bool hasNewMoocFile = false;
+    QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
-            project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+            if (fi.baseName()=="_mooc")
+                hasNewMoocFile = true;
         } else {
-            QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
+            missingFiles.append(basePath+projectFilesRelPath[i]);
         }
+    }
+    if (missingFiles.empty()) {
+        for (int i=0; i<projectFilesRelPath.size(); i++) {
+            QFileInfo fi(basePath+projectFilesRelPath[i]);
+            if (!hasNewMoocFile || fi.baseName()!="_coursera") {
+                project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+            }
+        }
+    } else {
+        QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
     }
 
     for (int i=0; i<openFiles.size(); i++) {
-        openFile(basePath+openFiles[i],false);
+        QFileInfo fi(basePath+openFiles[i]);
+        if (fi.exists()) {
+            openFile(basePath+openFiles[i],false);
+        }
     }
     setupDznMenu();
     project.currentDataFileIndex(dataFileIndex, true);
@@ -3004,16 +3020,16 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
     }
 }
 
-void MainWindow::on_actionSubmit_to_Coursera_triggered()
+void MainWindow::on_actionSubmit_to_MOOC_triggered()
 {
-    courseraSubmission = new CourseraSubmission(this, project.coursera());
-    connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
+    moocSubmission = new MOOCSubmission(this, project.moocAssignment());
+    connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
     setEnabled(false);
-    courseraSubmission->show();
+    moocSubmission->show();
 }
 
-void MainWindow::courseraFinished(int) {
-    courseraSubmission->deleteLater();
+void MainWindow::moocFinished(int) {
+    moocSubmission->deleteLater();
     setEnabled(true);
 }
 
