@@ -1690,7 +1690,7 @@ void MainWindow::readOutput()
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
                                 addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
-                            for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
+                            for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
                             }
                         }
