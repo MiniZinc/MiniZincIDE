@@ -2816,17 +2816,33 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         project.n_compress_solutions(p_i, true);
     }
+    bool hasNewMoocFile = false;
+    QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
-            project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+            if (fi.baseName()=="_mooc")
+                hasNewMoocFile = true;
         } else {
-            QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
+            missingFiles.append(basePath+projectFilesRelPath[i]);
         }
+    }
+    if (missingFiles.empty()) {
+        for (int i=0; i<projectFilesRelPath.size(); i++) {
+            QFileInfo fi(basePath+projectFilesRelPath[i]);
+            if (!hasNewMoocFile || fi.baseName()!="_coursera") {
+                project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+            }
+        }
+    } else {
+        QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
     }
 
     for (int i=0; i<openFiles.size(); i++) {
-        openFile(basePath+openFiles[i],false);
+        QFileInfo fi(basePath+openFiles[i]);
+        if (fi.exists()) {
+            openFile(basePath+openFiles[i],false);
+        }
     }
     setupDznMenu();
     project.currentDataFileIndex(dataFileIndex, true);
