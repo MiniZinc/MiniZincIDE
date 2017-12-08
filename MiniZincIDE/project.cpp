@@ -146,8 +146,10 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
         QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonString.toUtf8());
         if (jsonDoc.isNull()) {
             moocA->submissionURL = "https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1";
+            moocA->moocName = "Coursera";
+            moocA->moocPasswordString = "Assignment token";
             // try old format
-            QTextStream in(&metadata);
+            QTextStream in(&jsonString);
             if (in.status() != QTextStream::Ok) {
                 delete moocA;
                 moocA = NULL;
