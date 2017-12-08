@@ -301,7 +301,7 @@ void MOOCSubmission::rcvLoginCheckResponse()
     reply->deleteLater();
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-    if (doc.object().contains("message") && doc.object()["message"].toString().endsWith("but found: Set()")) {
+    if (doc.object().contains("message") && (doc.object()["message"].toString().endsWith("but found: Set()") || doc.object()["message"].toString().endsWith("Success"))) {
         ui->textBrowser->insertPlainText("Done.\n");
         _current_model = -1;
         for (int i=0; i<project.problems.size(); i++) {
