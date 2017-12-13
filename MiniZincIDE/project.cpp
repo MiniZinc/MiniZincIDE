@@ -22,7 +22,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL), _courseraAssignment(NULL)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -42,6 +42,7 @@ Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL)
 
 Project::~Project() {
     delete _moocAssignment;
+    delete _courseraAssignment;
 }
 
 void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
@@ -123,12 +124,20 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     }
 
     if (isMOOC) {
-        if (_moocAssignment) {
+
+        if (fi.baseName()=="_coursera" && _courseraAssignment != NULL) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                "Cannot add second Coursera options file",
+                                QMessageBox::Ok);
+            return;
+        }
+        if (fi.baseName()=="_mooc" && _moocAssignment != NULL) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
                                 "Cannot add second MOOC options file",
                                 QMessageBox::Ok);
             return;
         }
+
         QFile metadata(absFileName);
         if (!metadata.open(QIODevice::ReadOnly)) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
@@ -254,11 +263,16 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             }
         }
 
-        _moocAssignment = moocA;
-        if (_moocAssignment) {
+        if (fi.baseName()=="_coursera") {
+            _courseraAssignment = moocA;
+        } else {
+            _moocAssignment = moocA;
+        }
+        if (moocA) {
             ui->actionSubmit_to_MOOC->setVisible(true);
-            ui->actionSubmit_to_MOOC->setText("Submit to "+_moocAssignment->moocName);
-            if (_moocAssignment->moocName=="Coursera") {
+            QString moocName = _moocAssignment ? _moocAssignment->moocName : _courseraAssignment->moocName;
+            ui->actionSubmit_to_MOOC->setText("Submit to "+moocName);
+            if (moocName=="Coursera") {
                 ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
             } else {
                 ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/application-certificate.png"));
@@ -363,9 +377,20 @@ void Project::removeFile(const QString &fileName)
     }
     QFileInfo fi(fileName);
     if (fi.fileName()=="_coursera") {
+        delete _courseraAssignment;
+        _courseraAssignment = NULL;
+        if (_moocAssignment==NULL) {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
+    } else if (fi.fileName()=="_mooc") {
         delete _moocAssignment;
         _moocAssignment = NULL;
-        ui->actionSubmit_to_MOOC->setVisible(false);
+        if (_courseraAssignment!=NULL) {
+            ui->actionSubmit_to_MOOC->setText("Submit to "+_courseraAssignment->moocName);
+            ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+        } else {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
     }
 }
 

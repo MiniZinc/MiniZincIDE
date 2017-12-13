@@ -2822,25 +2822,16 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         project.n_compress_solutions(p_i, true);
     }
-    bool hasNewMoocFile = false;
     QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
-            if (fi.baseName()=="_mooc")
-                hasNewMoocFile = true;
+            project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
         } else {
             missingFiles.append(basePath+projectFilesRelPath[i]);
         }
     }
-    if (missingFiles.empty()) {
-        for (int i=0; i<projectFilesRelPath.size(); i++) {
-            QFileInfo fi(basePath+projectFilesRelPath[i]);
-            if (!hasNewMoocFile || fi.baseName()!="_coursera") {
-                project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
-            }
-        }
-    } else {
+    if (!missingFiles.empty()) {
         QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
     }
 
