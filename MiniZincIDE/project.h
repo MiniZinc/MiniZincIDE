@@ -82,6 +82,7 @@ public:
     bool printAll(void) const;
     bool defaultBehaviour(void) const;
     bool printStats(void) const;
+    bool printTiming(void) const;
     bool haveSolverFlags(void) const;
     QString solverFlags(void) const;
     int n_threads(void) const;
@@ -107,6 +108,7 @@ public slots:
     void printAll(bool b, bool init=false);
     void defaultBehaviour(bool b, bool init=false);
     void printStats(bool b, bool init=false);
+    void printTiming(bool b, bool init=false);
     void haveSolverFlags(bool b, bool init=false);
     void solverFlags(const QString& s, bool init=false);
     void n_threads(int n, bool init=false);
@@ -142,6 +144,7 @@ protected:
     bool _printAll;
     bool _defaultBehaviour;
     bool _printStats;
+    bool _printTiming;
     bool _haveSolverFlags;
     QString _solverFlags;
     int _n_threads;

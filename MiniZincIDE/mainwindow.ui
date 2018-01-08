@@ -89,9 +89,9 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
+             <y>-306</y>
              <width>608</width>
-             <height>878</height>
+             <height>899</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -455,7 +455,7 @@
                <item>
                 <widget class="QCheckBox" name="conf_flatten_stats">
                  <property name="text">
-                  <string>Statistics for flattening</string>
+                  <string>Output statistics for flattening</string>
                  </property>
                 </widget>
                </item>
@@ -594,9 +594,16 @@
                 </widget>
                </item>
                <item>
+                <widget class="QCheckBox" name="conf_solver_timing">
+                 <property name="text">
+                  <string>Output timing information</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="conf_stats">
                  <property name="text">
-                  <string>Statistics for solving</string>
+                  <string>Output statistics for solving</string>
                  </property>
                 </widget>
                </item>
@@ -609,6 +616,7 @@
               <zorder>conf_optimize</zorder>
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
+              <zorder>conf_solver_timing</zorder>
              </widget>
             </item>
            </layout>

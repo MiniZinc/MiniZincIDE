@@ -2259,6 +2259,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             process->start(executable,args,getMznDistribPath());
             if (runSolns2Out) {
                 QStringList outargs;
+                if (project.printTiming()) {
+                    outargs << "--output-time";
+                }
                 outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
                 outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
@@ -2708,6 +2711,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.defaultBehaviour();
             out << project.mzn2fznPrintStats();
             out << project.n_compress_solutions();
+            out << project.printTiming();
             project.setModified(false, true);
 
         } else {
@@ -2821,6 +2825,10 @@ void MainWindow::loadProject(const QString& filepath)
     if (version==104 && !in.atEnd()) {
         in >> p_i;
         project.n_compress_solutions(p_i, true);
+    }
+    if (version==104 && !in.atEnd()) {
+        in >> p_b;
+        project.printTiming(p_b, true);
     }
     QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {

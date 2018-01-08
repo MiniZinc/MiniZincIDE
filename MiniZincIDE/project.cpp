@@ -503,6 +503,10 @@ bool Project::printStats(void) const
 {
     return ui->conf_stats->isChecked();
 }
+bool Project::printTiming(void) const
+{
+    return ui->conf_solver_timing->isChecked();
+}
 bool Project::haveSolverFlags(void) const
 {
     return ui->conf_have_solverFlags->isChecked();
@@ -688,6 +692,16 @@ void Project::printStats(bool b, bool init)
     }
 }
 
+void Project::printTiming(bool b, bool init)
+{
+    if (init) {
+        _printTiming = b;
+        ui->conf_solver_timing->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
 void Project::haveSolverFlags(bool b, bool init)
 {
     if (init) {
@@ -817,6 +831,10 @@ void Project::checkModified()
         return;
     }
     if (printStats() != _printStats) {
+        setModified(true);
+        return;
+    }
+    if (printTiming() != _printTiming) {
         setModified(true);
         return;
     }
