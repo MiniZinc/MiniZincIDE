@@ -19,7 +19,7 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.6
+VERSION = 2.1.7
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
