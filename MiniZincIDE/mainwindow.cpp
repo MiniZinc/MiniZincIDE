@@ -27,7 +27,7 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -226,7 +226,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         }
         defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
-        QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+        QFont editorFont;
+        editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
         bool darkMode = settings.value("darkMode", false).value<bool>();
         settings.endGroup();
 
@@ -368,7 +369,7 @@ void IDE::setEditorFont(QFont font)
 {
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", font);
+    settings.setValue("editorFont", font.toString());
     settings.endGroup();
     for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
          it != IDE::instance()->mainWindows.end(); ++it) {
@@ -714,7 +715,7 @@ void MainWindow::init(const QString& projectFile)
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
-    ui->actionSubmit_to_Coursera->setVisible(false);
+    ui->actionSubmit_to_MOOC->setVisible(false);
 
     connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
 
@@ -731,7 +732,7 @@ void MainWindow::init(const QString& projectFile)
     }
     defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
-    editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
     ui->outputConsole->setFont(editorFont);
@@ -911,13 +912,13 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
         bool isMzn = false;
         bool isFzn = false;
         if (curEditor) {
-            isMzn = QFileInfo(curEditor->filepath).completeSuffix()=="mzn";
-            isFzn = QFileInfo(curEditor->filepath).completeSuffix()=="fzn";
+            isMzn = curEditor->filepath=="" || QFileInfo(curEditor->filepath).suffix()=="mzn";
+            isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn";
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn));
         ui->actionRun->setEnabled(isMzn || isFzn);
@@ -925,7 +926,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(true);
+        ui->actionSubmit_to_MOOC->setEnabled(true);
     }
 }
 
@@ -1210,7 +1211,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", editorFont);
+    settings.setValue("editorFont", editorFont.toString());
     settings.setValue("darkMode", darkMode);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
@@ -1689,7 +1690,7 @@ void MainWindow::readOutput()
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
                                 addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
-                            for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
+                            for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
                             }
                         }
@@ -1698,6 +1699,8 @@ void MainWindow::readOutput()
                 }
             }
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        readProc->setReadChannel(QProcess::StandardOutput);
     }
 
     if (process != NULL) {
@@ -1725,6 +1728,8 @@ void MainWindow::readOutput()
                 addOutput(l,false);
             }
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        process->setReadChannel(QProcess::StandardOutput);
     }
 
     if (outputProcess != NULL) {
@@ -1742,6 +1747,8 @@ void MainWindow::readOutput()
             }
             addOutput(l,false);
         }
+        // Reset read channel so readyRead() signal is triggered correctly
+        outputProcess->setReadChannel(QProcess::StandardOutput);
     }
 }
 
@@ -2252,6 +2259,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             process->start(executable,args,getMznDistribPath());
             if (runSolns2Out) {
                 QStringList outargs;
+                if (project.printTiming()) {
+                    outargs << "--output-time";
+                }
                 outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
                 outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
@@ -2701,6 +2711,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.defaultBehaviour();
             out << project.mzn2fznPrintStats();
             out << project.n_compress_solutions();
+            out << project.printTiming();
             project.setModified(false, true);
 
         } else {
@@ -2815,17 +2826,28 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         project.n_compress_solutions(p_i, true);
     }
+    if (version==104 && !in.atEnd()) {
+        in >> p_b;
+        project.printTiming(p_b, true);
+    }
+    QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
             project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
         } else {
-            QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
+            missingFiles.append(basePath+projectFilesRelPath[i]);
         }
+    }
+    if (!missingFiles.empty()) {
+        QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
     }
 
     for (int i=0; i<openFiles.size(); i++) {
-        openFile(basePath+openFiles[i],false);
+        QFileInfo fi(basePath+openFiles[i]);
+        if (fi.exists()) {
+            openFile(basePath+openFiles[i],false);
+        }
     }
     setupDznMenu();
     project.currentDataFileIndex(dataFileIndex, true);
@@ -3003,16 +3025,16 @@ void MainWindow::on_conf_data_file_activated(const QString &arg1)
     }
 }
 
-void MainWindow::on_actionSubmit_to_Coursera_triggered()
+void MainWindow::on_actionSubmit_to_MOOC_triggered()
 {
-    courseraSubmission = new CourseraSubmission(this, project.coursera());
-    connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
+    moocSubmission = new MOOCSubmission(this, project.moocAssignment());
+    connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
     setEnabled(false);
-    courseraSubmission->show();
+    moocSubmission->show();
 }
 
-void MainWindow::courseraFinished(int) {
-    courseraSubmission->deleteLater();
+void MainWindow::moocFinished(int) {
+    moocSubmission->deleteLater();
     setEnabled(true);
 }
 

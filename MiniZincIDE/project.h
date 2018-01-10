@@ -23,25 +23,28 @@ namespace Ui {
 
 class QSortFilterProxyModel;
 
-class CourseraItem {
+class MOOCAssignmentItem {
 public:
     QString id;
     QString model;
     QString data;
     int timeout;
     QString name;
-    CourseraItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
+    MOOCAssignmentItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
         : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0) {}
-    CourseraItem(QString id0, QString model0, QString name0)
+    MOOCAssignmentItem(QString id0, QString model0, QString name0)
         : id(id0), model(model0), timeout(-1), name(name0) {}
 };
 
-class CourseraProject {
+class MOOCAssignment {
 public:
     QString name;
     QString assignmentKey;
-    QList<CourseraItem> problems;
-    QList<CourseraItem> models;
+    QString moocName;
+    QString moocPasswordString;
+    QString submissionURL;
+    QList<MOOCAssignmentItem> problems;
+    QList<MOOCAssignmentItem> models;
 };
 
 class Project : public QStandardItemModel
@@ -79,6 +82,7 @@ public:
     bool printAll(void) const;
     bool defaultBehaviour(void) const;
     bool printStats(void) const;
+    bool printTiming(void) const;
     bool haveSolverFlags(void) const;
     QString solverFlags(void) const;
     int n_threads(void) const;
@@ -86,7 +90,7 @@ public:
     QString seed(void) const;
     int timeLimit(void) const;
     bool solverVerbose(void) const;
-    CourseraProject& coursera(void) { return *_courseraProject; }
+    MOOCAssignment& moocAssignment(void) { return _moocAssignment!=NULL ? *_moocAssignment : *_courseraAssignment; }
     bool isUndefined(void) const;
 public slots:
     void currentDataFileIndex(int i, bool init=false);
@@ -104,6 +108,7 @@ public slots:
     void printAll(bool b, bool init=false);
     void defaultBehaviour(bool b, bool init=false);
     void printStats(bool b, bool init=false);
+    void printTiming(bool b, bool init=false);
     void haveSolverFlags(bool b, bool init=false);
     void solverFlags(const QString& s, bool init=false);
     void n_threads(int n, bool init=false);
@@ -139,6 +144,7 @@ protected:
     bool _printAll;
     bool _defaultBehaviour;
     bool _printStats;
+    bool _printTiming;
     bool _haveSolverFlags;
     QString _solverFlags;
     int _n_threads;
@@ -147,10 +153,10 @@ protected:
     int _timeLimit;
     int _compressSolutionLimit;
     bool _solverVerbose;
-    CourseraProject* _courseraProject;
+    MOOCAssignment* _moocAssignment;
+    MOOCAssignment* _courseraAssignment;
 
     void checkModified(void);
-    void courseraError(void);
 };
 
 #endif // PROJECT_H
