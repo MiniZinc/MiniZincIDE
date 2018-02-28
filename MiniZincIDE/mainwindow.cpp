@@ -16,6 +16,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <csignal>
+#include <sstream>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -28,6 +29,7 @@
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
 #include "moocsubmission.h"
+#include "highlighter.h"
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -1028,7 +1030,7 @@ void MainWindow::on_defaultBehaviourButton_toggled(bool checked)
     ui->userBehaviourFrame->setEnabled(!checked);
 }
 
-void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly) {
+void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly, bool focus) {
     QTextDocument* doc = NULL;
     bool large = false;
     QString fileContents;
@@ -1074,8 +1076,10 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         if (readOnly || ce->filename == "_coursera")
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
-        ui->tabWidget->setCurrentIndex(tab);
-        curEditor->setFocus();
+        if (focus) {
+            ui->tabWidget->setCurrentIndex(tab);
+            curEditor->setFocus();
+        }
         if (openAsModified) {
             curEditor->filepath = "";
             curEditor->document()->setPlainText(fileContents);
@@ -1101,7 +1105,7 @@ QString MainWindow::getLastPath(void)
     return IDE::instance()->getLastPath();
 }
 
-void MainWindow::openFile(const QString &path, bool openAsModified)
+void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
 {
     QString fileName = path;
 
@@ -1116,7 +1120,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified)
         if (fileName.endsWith(".mzp")) {
             openProject(fileName);
         } else {
-            createEditor(fileName, openAsModified, false);
+            createEditor(fileName, openAsModified, false, false, focus);
         }
     }
 
@@ -1647,6 +1651,12 @@ void MainWindow::readOutput()
                         sl.append(pattern.capturedTexts()[1]);
                     }
                     JSONOutput.append(sl);
+                } else if (l.trimmed().startsWith("%%%mzn-html-start")) {
+                    inHTMLHandler = true;
+                } else if (l.trimmed().startsWith("%%%mzn-html-end")) {
+                    addOutput(htmlBuffer.join(""), true);
+                    htmlBuffer.clear();
+                    inHTMLHandler = false;
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
@@ -1683,8 +1693,10 @@ void MainWindow::readOutput()
                                 solutionCount = 0;
                                 solutionLimit *= 2;
                             }
+                        } else if(inHTMLHandler){
+                            htmlBuffer << l;
                         } else {
-                            addOutput(l,false);
+                            addOutput(l, false);
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
@@ -1938,6 +1950,7 @@ void MainWindow::procFinished(int, bool showTime) {
     if (outputProcess && outputProcess->state()!=QProcess::NotRunning) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
+        inHTMLHandler = false;
         return;
     }
     updateUiProcessRunning(false);
@@ -2359,9 +2372,134 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
     AboutDialog(IDE::instance()->applicationVersion()).exec();
 }
 
+QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) {
+  QVector<CodeEditor*> ces;
+  ces.resize(locs.size());
+  // Open each file in the path
+  for (int p = 0; p < locs.size(); p++) {
+    QStringList& elements = locs[p];
+
+    QString filename = elements[0];
+    QUrl url = QUrl::fromLocalFile(filename);
+    QFileInfo urlinfo(url.toLocalFile());
+
+    bool notOpen = true;
+    if (filename != "") {
+      for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          QFileInfo ceinfo(ce->filepath);
+
+          if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+            ces[p] = ce;
+            if(p == locs.size()-1) {
+              ui->tabWidget->setCurrentIndex(i);
+            }
+            notOpen = false;
+            break;
+          }
+        }
+      }
+      if (notOpen && filename.size() > 0) {
+        openFile(url.toLocalFile(), false, false);
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
+        QFileInfo ceinfo(ce->filepath);
+
+        if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+          ces[p] = ce;
+        } else {
+          throw -1;
+        }
+      }
+    } else {
+       CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->currentIndex()));
+       ces[p] = ce;
+    }
+  }
+  return ces;
+}
+
+#define major_sep ';'
+#define minor_sep '|'
+QVector<QStringList> getBlocksFromPath(QString& path) {
+  QVector<QStringList> locs;
+  QStringList blocks = path.split(major_sep);
+  foreach(QString block, blocks) {
+    QStringList elements = block.split(minor_sep);
+    if(elements.size() >= 5) {
+      bool ok = false;
+      if(elements.size() > 5) elements[5].toInt(&ok);
+      elements.erase(elements.begin()+(ok ? 6 : 5), elements.end());
+      locs.append(elements);
+    }
+  }
+  return locs;
+}
+
+void MainWindow::highlightPath(QString& path, int index) {
+  // Build list of blocks to be highlighted
+  QVector<QStringList> locs = getBlocksFromPath(path);
+  if(locs.size() == 0) return;
+  QVector<CodeEditor*> ces = collectCodeEditors(locs);
+  if(ces.size() != locs.size()) return;
+
+  int b = Qt::red;
+  int t = Qt::yellow;
+  QColor colour = static_cast<Qt::GlobalColor>((index % (t-b)) + b);
+
+  int strans = 25;
+  int trans = strans;
+  int tstep = (250-strans) / locs.size();
+
+  for(int p = 0; p < locs.size(); p++) {
+    QStringList& elements = locs[p];
+    CodeEditor* ce = ces[p];
+
+    bool ok;
+    int sl = elements[1].toInt(&ok);
+    int sc = elements[2].toInt(&ok);
+    int el = elements[3].toInt(&ok);
+    int ec = elements[4].toInt(&ok);
+    if(elements.size() == 6)
+        trans = elements[5].toInt(&ok);
+    if (ok) {
+      colour.setAlpha(trans);
+      trans = trans < 250 ? trans+tstep : strans;
+
+      Highlighter& hl = ce->getHighlighter();
+      hl.addFixedBg(sl,sc,el,ec,colour,path);
+      hl.rehighlight();
+
+      ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
+    }
+  }
+}
+
 void MainWindow::errorClicked(const QUrl & anUrl)
 {
     QUrl url = anUrl;
+
+    if(url.scheme() == "highlight") {
+      // Reset the highlighters
+      for (int i=0; i<ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) != ui->configuration) {
+          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          Highlighter& hl = ce->getHighlighter();
+          hl.clearFixedBg();
+          hl.rehighlight();
+        }
+      }
+
+      QString query = url.query();
+      QStringList conflictSet = query.split("&");
+
+      for(int c = 0; c<conflictSet.size(); c++) {
+        QString& Q = conflictSet[c];
+        highlightPath(Q, c);
+      }
+      return;
+    }
+
     QString query = url.query();
     url.setQuery("");
     url.setScheme("file");
