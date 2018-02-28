@@ -708,8 +708,13 @@ void MainWindow::init(const QString& projectFile)
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
+
+    progressBar = new QProgressBar;
+    progressBar->setRange(0, 100);
+    progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
     statusLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
+    ui->statusbar->addPermanentWidget(progressBar);
     ui->statusbar->showMessage("Ready.");
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
@@ -764,6 +769,9 @@ void MainWindow::init(const QString& projectFile)
     Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
     Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
 #endif
+#ifdef MINIZINC_GLOBALIZER_BUNDLED
+    Solver globalizer("MiniZinc Globalizer", "minizinc-globalizer", "-I/path/to/datafile/dir", "--output-html ",true,false,false);
+#endif
 
     int nsolvers = settings.beginReadArray("solvers");
 #ifdef MINIZINC_IDE_BUNDLED
@@ -776,6 +784,9 @@ void MainWindow::init(const QString& projectFile)
     solvers.append(g12fd);
     solvers.append(g12lazyfd);
     solvers.append(g12mip);
+#ifdef MINIZINC_GLOBALIZER_BUNDLED
+    solvers.append(globalizer);
+#endif
     IDE::instance()->stats.solvers.clear();
     for (int i=0; i<nsolvers; i++) {
         settings.setArrayIndex(i);
@@ -830,6 +841,7 @@ void MainWindow::init(const QString& projectFile)
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
 
     connect(ui->conf_data_file, SIGNAL(currentIndexChanged(int)), &project, SLOT(currentDataFileIndex(int)));
+    connect(ui->conf_all_data, SIGNAL(toggled(bool)), &project, SLOT(allData(bool)));
     connect(ui->conf_have_cmd_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraArgs(bool)));
     connect(ui->conf_cmd_params, SIGNAL(textEdited(QString)), &project, SLOT(extraArgs(QString)));
     connect(ui->conf_have_mzn2fzn_params, SIGNAL(toggled(bool)), &project, SLOT(haveExtraMzn2FznArgs(bool)));
@@ -1377,10 +1389,18 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
                 project.extraMzn2FznArgs().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
-    if (compileOnly && useDataFile && project.currentDataFile()!="None")
-        ret << "-d" << project.currentDataFile();
+    if (compileOnly && useDataFile) {
+        if (project.allData()) {
+            for(int i=1; i < ui->conf_data_file->count()-1; i++) {
+                ret << "-d" << ui->conf_data_file->itemText(i);
+            }
+        } else if (project.currentDataFile()!="None") {
+            ret << "-d" << project.currentDataFile();
+        }
+    }
+
     bool isOptimisationProblem = true;
-    {
+    if(!currentFznTarget.isEmpty()) {
         QFile fznFile(currentFznTarget);
         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             int seekSize = strlen("satisfy;\n\n");
@@ -1420,6 +1440,12 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         QStringList solverArgs =
                 project.solverFlags().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
+    }
+    if(!compileOnly) {
+        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        if(!s.needs_mzn2fzn) {
+            ret << s.backend.split(" ", QString::SkipEmptyParts);
+        }
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     if (compileOnly && !s.mznlib.isEmpty())
@@ -1736,6 +1762,9 @@ void MainWindow::readOutput()
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a>");
+            } else if (l.trimmed().startsWith("%%%mzn-progress")) {
+                float value = l.split(" ")[1].toFloat();
+                progressBar->setValue(static_cast<int>(value));
             } else {
                 addOutput(l,false);
             }
@@ -1855,9 +1884,14 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         args << modelPath;
         QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
         if (project.currentDataFile()!="None") {
-            compiling += " with data ";
-            QFileInfo fi(project.currentDataFile());
-            compiling += fi.fileName();
+            compiling += " with data files: ";
+            if (project.allData()) {
+              for(int i=1; i < ui->conf_data_file->count()-1; i++) {
+                compiling += " " + QFileInfo(ui->conf_data_file->itemText(i)).fileName();
+              }
+            } else if (project.currentDataFile()!="None") {
+              compiling += QFileInfo(project.currentDataFile()).fileName();
+            }
         }
         if (!additionalDataFile.isEmpty()) {
             compiling += ", with additional data ";
@@ -1931,6 +1965,7 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
+    progressBar->reset();
     process = NULL;
     outputProcess = NULL;
     finishJSONViewer();

@@ -26,6 +26,10 @@ bundled {
     DEFINES += MINIZINC_IDE_BUNDLED
 }
 
+globalizer_bundled {
+    DEFINES += MINIZINC_GLOBALIZER_BUNDLED
+}
+
 macx {
     ICON = mznide.icns
     OBJECTIVE_SOURCES += rtfexporter.mm
