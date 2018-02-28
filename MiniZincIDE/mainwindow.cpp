@@ -2466,9 +2466,9 @@ void MainWindow::highlightPath(QString& path, int index) {
       colour.setAlpha(trans);
       trans = trans < 250 ? trans+tstep : strans;
 
-      Highlighter* hl = ce->getHighlighter();
-      hl->addFixedBg(sl,sc,el,ec,colour,path);
-      hl->rehighlight();
+      Highlighter& hl = ce->getHighlighter();
+      hl.addFixedBg(sl,sc,el,ec,colour,path);
+      hl.rehighlight();
 
       ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
     }
@@ -2484,9 +2484,9 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          Highlighter* hl = ce->getHighlighter();
-          hl->clearFixedBg();
-          hl->rehighlight();
+          Highlighter& hl = ce->getHighlighter();
+          hl.clearFixedBg();
+          hl.rehighlight();
         }
       }
 

@@ -113,8 +113,8 @@ void CodeEditor::setDarkMode(bool enable)
     }
 }
 
-Highlighter* CodeEditor::getHighlighter() {
-    return highlighter;
+Highlighter& CodeEditor::getHighlighter() {
+    return *highlighter;
 }
 
 void CodeEditor::docChanged(bool c)
