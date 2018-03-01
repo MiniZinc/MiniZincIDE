@@ -19,7 +19,7 @@ qtHaveModule(webkitwidgets): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.6
+VERSION = 2.1.7
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -60,8 +60,8 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    courserasubmission.cpp \
-    addoutputdialog.cpp
+    addoutputdialog.cpp \
+    moocsubmission.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -79,8 +79,8 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    courserasubmission.h \
-    addoutputdialog.h
+    addoutputdialog.h \
+    moocsubmission.h
 
 FORMS    += \
     mainwindow.ui \
@@ -92,8 +92,8 @@ FORMS    += \
     paramdialog.ui \
     checkupdatedialog.ui \
     htmlwindow.ui \
-    courserasubmission.ui \
-    addoutputdialog.ui
+    addoutputdialog.ui \
+    moocsubmission.ui
 
 RESOURCES += \
     minizincide.qrc

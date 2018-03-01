@@ -29,10 +29,8 @@
 #include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 #include "highlighter.h"
-
-#include <iostream>
 
 #include <QtGlobal>
 #ifdef Q_OS_WIN
@@ -235,7 +233,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         }
         defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
-        QFont editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+        QFont editorFont;
+        editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
         bool darkMode = settings.value("darkMode", false).value<bool>();
         settings.endGroup();
 
@@ -412,7 +411,7 @@ void IDE::setEditorFont(QFont font)
 {
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", font);
+    settings.setValue("editorFont", font.toString());
     settings.endGroup();
     for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
          it != IDE::instance()->mainWindows.end(); ++it) {
@@ -764,7 +763,7 @@ void MainWindow::init(const QString& projectFile)
     tabChange(0);
     tb->setTabButton(0, QTabBar::LeftSide, 0);
 
-    ui->actionSubmit_to_Coursera->setVisible(false);
+    ui->actionSubmit_to_MOOC->setVisible(false);
 
 #ifdef MINIZINC_IDE_HAVE_PROFILER
     ui->actionShow_profiler->setVisible(true);
@@ -788,7 +787,7 @@ void MainWindow::init(const QString& projectFile)
     }
     defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
-    editorFont = settings.value("editorFont", defaultFont).value<QFont>();
+    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
     ui->outputConsole->setFont(editorFont);
@@ -986,7 +985,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
-        ui->actionSubmit_to_Coursera->setEnabled(false);
+        ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
         bool isMzn = false;
         bool isFzn = false;
@@ -1000,7 +999,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
-        ui->actionSubmit_to_Coursera->setEnabled(true);
+        ui->actionSubmit_to_MOOC->setEnabled(true);
     }
 }
 
@@ -1287,7 +1286,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", editorFont);
+    settings.setValue("editorFont", editorFont.toString());
     settings.setValue("darkMode", darkMode);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
@@ -1809,7 +1808,7 @@ void MainWindow::readOutput()
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
                                 addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
-                            for (int i=hiddenSolutions.size()-2; i<hiddenSolutions.size(); i++) {
+                            for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
                             }
                         }
@@ -2426,6 +2425,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             process->start(executable,args,getMznDistribPath());
             if (runSolns2Out) {
                 QStringList outargs;
+                if (project.printTiming()) {
+                    outargs << "--output-time";
+                }
                 outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
                 outputProcess->start("solns2out",outargs,getMznDistribPath());
             }
@@ -2617,9 +2619,9 @@ void MainWindow::highlightPath(QString& path, int index) {
       colour.setAlpha(trans);
       trans = trans < 250 ? trans+tstep : strans;
 
-      Highlighter* hl = ce->getHighlighter();
-      hl->addFixedBg(sl,sc,el,ec,colour,path);
-      hl->rehighlight();
+      Highlighter& hl = ce->getHighlighter();
+      hl.addFixedBg(sl,sc,el,ec,colour,path);
+      hl.rehighlight();
 
       ce->setTextCursor(QTextCursor(ce->document()->findBlockByLineNumber(el)));
     }
@@ -2628,56 +2630,57 @@ void MainWindow::highlightPath(QString& path, int index) {
 
 void MainWindow::errorClicked(const QUrl & anUrl)
 {
-    QUrl url = anUrl;
-    if(url.scheme() == "err") {
-      QString query = url.query();
-      url.setQuery("");
-      url.setScheme("file");
-      QFileInfo urlinfo(url.toLocalFile());
-      IDE::instance()->stats.errorsClicked++;
-      for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          QFileInfo ceinfo(ce->filepath);
-          if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-            QRegExp re_line("line=([0-9]+)");
-            if (re_line.indexIn(query) != -1) {
-              bool ok;
-              int line = re_line.cap(1).toInt(&ok);
-              if (ok) {
-                QTextBlock block = ce->document()->findBlockByNumber(line-1);
-                if (block.isValid()) {
-                  QTextCursor cursor = ce->textCursor();
-                  cursor.setPosition(block.position());
-                  ce->setFocus();
-                  ce->setTextCursor(cursor);
-                  ce->centerCursor();
-                  ui->tabWidget->setCurrentIndex(i);
-                }
-              }
+  QUrl url = anUrl;
+  if(url.scheme() == "highlight") {
+    // Reset the highlighters
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+      if (ui->tabWidget->widget(i) != ui->configuration) {
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        Highlighter& hl = ce->getHighlighter();
+        hl.clearFixedBg();
+        hl.rehighlight();
+      }
+    }
+
+    QString query = url.query();
+    QStringList conflictSet = query.split("&");
+
+    for(int c = 0; c<conflictSet.size(); c++) {
+      QString& Q = conflictSet[c];
+      highlightPath(Q, c);
+    }
+    return;
+  }
+
+  QString query = url.query();
+  url.setQuery("");
+  url.setScheme("file");
+  QFileInfo urlinfo(url.toLocalFile());
+  IDE::instance()->stats.errorsClicked++;
+  for (int i=0; i<ui->tabWidget->count(); i++) {
+    if (ui->tabWidget->widget(i) != ui->configuration) {
+      CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+      QFileInfo ceinfo(ce->filepath);
+      if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+        QRegExp re_line("line=([0-9]+)");
+        if (re_line.indexIn(query) != -1) {
+          bool ok;
+          int line = re_line.cap(1).toInt(&ok);
+          if (ok) {
+            QTextBlock block = ce->document()->findBlockByNumber(line-1);
+            if (block.isValid()) {
+              QTextCursor cursor = ce->textCursor();
+              cursor.setPosition(block.position());
+              ce->setFocus();
+              ce->setTextCursor(cursor);
+              ce->centerCursor();
+              ui->tabWidget->setCurrentIndex(i);
             }
           }
         }
       }
-    } else if(url.scheme() == "highlight") {
-      // Reset the highlighters
-      for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          Highlighter* hl = ce->getHighlighter();
-          hl->clearFixedBg();
-          hl->rehighlight();
-        }
-      }
-
-      QString query = url.query();
-      QStringList conflictSet = query.split("&");
-
-      for(int c = 0; c<conflictSet.size(); c++) {
-        QString& Q = conflictSet[c];
-        highlightPath(Q, c);
-      }
     }
+  }
 }
 
 void MainWindow::on_actionManage_solvers_triggered(bool addNew)
@@ -3012,6 +3015,7 @@ void MainWindow::saveProject(const QString& f)
             out << project.defaultBehaviour();
             out << project.mzn2fznPrintStats();
             out << project.n_compress_solutions();
+            out << project.printTiming();
             project.setModified(false, true);
 
         } else {
@@ -3133,17 +3137,28 @@ void MainWindow::loadProject(const QString& filepath)
         in >> p_i;
         project.n_compress_solutions(p_i, true);
     }
+    if (version==104 && !in.atEnd()) {
+        in >> p_b;
+        project.printTiming(p_b, true);
+    }
+    QStringList missingFiles;
     for (int i=0; i<projectFilesRelPath.size(); i++) {
         QFileInfo fi(basePath+projectFilesRelPath[i]);
         if (fi.exists()) {
             project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
         } else {
-            QMessageBox::warning(this, "MiniZinc IDE", "Could not find file in project: "+basePath+projectFilesRelPath[i]);
+            missingFiles.append(basePath+projectFilesRelPath[i]);
         }
+    }
+    if (!missingFiles.empty()) {
+        QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
     }
 
     for (int i=0; i<openFiles.size(); i++) {
-        openFile(basePath+openFiles[i],false);
+        QFileInfo fi(basePath+openFiles[i]);
+        if (fi.exists()) {
+            openFile(basePath+openFiles[i],false);
+        }
     }
     setupDznMenu();
     setupReplayMenu();
@@ -3334,12 +3349,12 @@ void MainWindow::on_conf_solver_replay_path_activated(const QString &arg1)
     }
 }
 
-void MainWindow::on_actionSubmit_to_Coursera_triggered()
+void MainWindow::on_actionSubmit_to_MOOC_triggered()
 {
-    courseraSubmission = new CourseraSubmission(this, project.coursera());
-    connect(courseraSubmission, SIGNAL(finished(int)), this, SLOT(courseraFinished(int)));
+    moocSubmission = new MOOCSubmission(this, project.moocAssignment());
+    connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
     setEnabled(false);
-    courseraSubmission->show();
+    moocSubmission->show();
 }
 
 void MainWindow::on_actionShow_profiler_triggered()
@@ -3349,8 +3364,8 @@ void MainWindow::on_actionShow_profiler_triggered()
 #endif
 }
 
-void MainWindow::courseraFinished(int) {
-    courseraSubmission->deleteLater();
+void MainWindow::moocFinished(int) {
+    moocSubmission->deleteLater();
     setEnabled(true);
 }
 

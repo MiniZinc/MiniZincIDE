@@ -462,7 +462,7 @@
                <item>
                 <widget class="QCheckBox" name="conf_flatten_stats">
                  <property name="text">
-                  <string>Statistics for flattening</string>
+                  <string>Output statistics for flattening</string>
                  </property>
                 </widget>
                </item>
@@ -634,9 +634,16 @@
                 </widget>
                </item>
                <item>
+                <widget class="QCheckBox" name="conf_solver_timing">
+                 <property name="text">
+                  <string>Output timing information</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="conf_stats">
                  <property name="text">
-                  <string>Statistics for solving</string>
+                  <string>Output statistics for solving</string>
                  </property>
                 </widget>
                </item>
@@ -650,6 +657,7 @@
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
               <zorder>conf_save_paths</zorder>
+              <zorder>conf_solver_timing</zorder>
              </widget>
             </item>
            </layout>
@@ -748,7 +756,7 @@
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
     <addaction name="actionShow_profiler"/>
-    <addaction name="actionSubmit_to_Coursera"/>
+    <addaction name="actionSubmit_to_MOOC"/>
     <addaction name="separator"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
@@ -871,7 +879,7 @@
    <addaction name="separator"/>
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
-   <addaction name="actionSubmit_to_Coursera"/>
+   <addaction name="actionSubmit_to_MOOC"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -1381,7 +1389,7 @@
     <bool>false</bool>
    </property>
   </action>
-  <action name="actionSubmit_to_Coursera">
+  <action name="actionSubmit_to_MOOC">
    <property name="icon">
     <iconset resource="minizincide.qrc">
      <normaloff>:/icons/images/coursera.png</normaloff>:/icons/images/coursera.png</iconset>

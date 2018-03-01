@@ -12,15 +12,17 @@
 
 #include "project.h"
 #include "ui_mainwindow.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
+#include <QJsonDocument>
+#include <QJsonArray>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL), _courseraAssignment(NULL)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -39,7 +41,8 @@ Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
 }
 
 Project::~Project() {
-    delete _courseraProject;
+    delete _moocAssignment;
+    delete _courseraAssignment;
 }
 
 void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
@@ -113,7 +116,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     }
     QStandardItem* curItem;
     bool isMiniZinc = true;
-    bool isCoursera = false;
+    bool isMOOC = false;
     if (fi.suffix()=="mzn") {
         curItem = mzn;
     } else if (fi.suffix()=="dzn") {
@@ -123,74 +126,165 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     } else {
         curItem = other;
         isMiniZinc = false;
-        isCoursera = fi.completeBaseName()=="_coursera";
+        isMOOC = fi.baseName()=="_coursera" || fi.baseName()=="_mooc";
     }
 
-    if (isCoursera) {
-        if (_courseraProject) {
+    if (isMOOC) {
+
+        if (fi.baseName()=="_coursera" && _courseraAssignment != NULL) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
                                 "Cannot add second Coursera options file",
                                 QMessageBox::Ok);
             return;
         }
+        if (fi.baseName()=="_mooc" && _moocAssignment != NULL) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                "Cannot add second MOOC options file",
+                                QMessageBox::Ok);
+            return;
+        }
+
         QFile metadata(absFileName);
         if (!metadata.open(QIODevice::ReadOnly)) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
-                                 "Cannot open Coursera options file",
+                                 "Cannot open MOOC options file",
                                  QMessageBox::Ok);
             return;
         }
-        QTextStream in(&metadata);
-        CourseraProject* cp = new CourseraProject;
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        cp->assignmentKey = in.readLine();
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        cp->name = in.readLine();
-        QString nSolutions_s = in.readLine();
-        int nSolutions = nSolutions_s.toInt();
-        for (int i=0; i<nSolutions; i++) {
+
+        MOOCAssignment* moocA = new MOOCAssignment;
+
+        // Try to read as JSON file (new format)
+
+        QTextStream jsonIn(&metadata);
+        QString jsonString = jsonIn.readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+        if (jsonDoc.isNull()) {
+            moocA->submissionURL = "https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1";
+            moocA->moocName = "Coursera";
+            moocA->moocPasswordString = "Assignment token";
+            // try old format
+            QTextStream in(&jsonString);
             if (in.status() != QTextStream::Ok) {
-                delete cp;
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            QString line = in.readLine();
-            QStringList tokens = line.split(", ");
-            if (tokens.size() < 5) {
-                delete cp;
-                goto coursera_done;
-            }
-            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
-                              tokens[3].trimmed(),tokens[4].trimmed());
-            cp->problems.append(item);
-        }
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        nSolutions_s = in.readLine();
-        nSolutions = nSolutions_s.toInt();
-        for (int i=0; i<nSolutions; i++) {
+            moocA->assignmentKey = in.readLine();
             if (in.status() != QTextStream::Ok) {
-                delete cp;
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            QString line = in.readLine();
-            QStringList tokens = line.split(", ");
-            if (tokens.size() < 3) {
-                delete cp;
+            moocA->name = in.readLine();
+            QString nSolutions_s = in.readLine();
+            int nSolutions = nSolutions_s.toInt();
+            for (int i=0; i<nSolutions; i++) {
+                if (in.status() != QTextStream::Ok) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                QString line = in.readLine();
+                QStringList tokens = line.split(", ");
+                if (tokens.size() < 5) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
+                                  tokens[3].trimmed(),tokens[4].trimmed());
+                moocA->problems.append(item);
+            }
+            if (in.status() != QTextStream::Ok) {
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
-            cp->models.append(item);
+            nSolutions_s = in.readLine();
+            nSolutions = nSolutions_s.toInt();
+            for (int i=0; i<nSolutions; i++) {
+                if (in.status() != QTextStream::Ok) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                QString line = in.readLine();
+                QStringList tokens = line.split(", ");
+                if (tokens.size() < 3) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
+                moocA->models.append(item);
+            }
+        } else {
+            bool hadError = false;
+            if (jsonDoc.isObject()) {
+                QJsonObject moocO = jsonDoc.object();
+                if (moocO.isEmpty()) {
+                    hadError = true;
+                } else {
+                    if (!moocO["assignmentKey"].isString() || !moocO["name"].isString() || !moocO["moocName"].isString() ||
+                            !moocO["moocPasswordString"].isString() || !moocO["submissionURL"].isString() ||
+                            !moocO["solutionAssignments"].isArray() || !moocO["modelAssignments"].isArray()) {
+                        hadError = true;
+                    } else {
+                        moocA->assignmentKey = moocO["assignmentKey"].toString();
+                        moocA->name = moocO["name"].toString();
+                        moocA->moocName = moocO["moocName"].toString();
+                        moocA->moocPasswordString = moocO["moocPasswordString"].toString();
+                        moocA->submissionURL = moocO["submissionURL"].toString();
+                        QJsonArray sols = moocO["solutionAssignments"].toArray();
+                        for (int i=0; i<sols.size(); i++) {
+                            QJsonObject solO = sols[i].toObject();
+                            if (!sols[i].isObject() || !solO["id"].isString() || !solO["model"].isString() ||
+                                    !solO["data"].isString() || (!solO["timeout"].isDouble() && !solO["timeout"].isString() ) || !solO["name"].isString()) {
+                                hadError = true;
+                            } else {
+                                QString timeout = solO["timeout"].isDouble() ? QString::number(solO["timeout"].toInt()) : solO["timeout"].toString();
+                                MOOCAssignmentItem item(solO["id"].toString(), solO["model"].toString(), solO["data"].toString(),
+                                                        timeout, solO["name"].toString());
+                                moocA->problems.append(item);
+                            }
+                        }
+                        QJsonArray models = moocO["modelAssignments"].toArray();
+                        for (int i=0; i<models.size(); i++) {
+                            QJsonObject modelO = models[i].toObject();
+                            MOOCAssignmentItem item(modelO["id"].toString(), modelO["model"].toString(), modelO["name"].toString());
+                            moocA->models.append(item);
+                        }
+                    }
+                }
+            } else {
+                hadError = true;
+            }
+            if (hadError) {
+                QMessageBox::warning(treeView,"MiniZinc IDE",
+                                     "MOOC options file contains errors",
+                                     QMessageBox::Ok);
+                delete moocA;
+                moocA = NULL;
+            }
         }
-        _courseraProject = cp;
-        ui->actionSubmit_to_Coursera->setVisible(true);
+
+        if (fi.baseName()=="_coursera") {
+            _courseraAssignment = moocA;
+        } else {
+            _moocAssignment = moocA;
+        }
+        if (moocA) {
+            ui->actionSubmit_to_MOOC->setVisible(true);
+            QString moocName = _moocAssignment ? _moocAssignment->moocName : _courseraAssignment->moocName;
+            ui->actionSubmit_to_MOOC->setText("Submit to "+moocName);
+            if (moocName=="Coursera") {
+                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+            } else {
+                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/application-certificate.png"));
+            }
+
+        }
     }
 coursera_done:
 
@@ -302,9 +396,20 @@ void Project::removeFile(const QString &fileName)
     }
     QFileInfo fi(fileName);
     if (fi.fileName()=="_coursera") {
-        delete _courseraProject;
-        _courseraProject = NULL;
-        ui->actionSubmit_to_Coursera->setVisible(false);
+        delete _courseraAssignment;
+        _courseraAssignment = NULL;
+        if (_moocAssignment==NULL) {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
+    } else if (fi.fileName()=="_mooc") {
+        delete _moocAssignment;
+        _moocAssignment = NULL;
+        if (_courseraAssignment!=NULL) {
+            ui->actionSubmit_to_MOOC->setText("Submit to "+_courseraAssignment->moocName);
+            ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+        } else {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
     }
 }
 
@@ -430,6 +535,10 @@ bool Project::defaultBehaviour(void) const
 bool Project::printStats(void) const
 {
     return ui->conf_stats->isChecked();
+}
+bool Project::printTiming(void) const
+{
+    return ui->conf_solver_timing->isChecked();
 }
 bool Project::haveSolverFlags(void) const
 {
@@ -652,6 +761,16 @@ void Project::printStats(bool b, bool init)
     }
 }
 
+void Project::printTiming(bool b, bool init)
+{
+    if (init) {
+        _printTiming = b;
+        ui->conf_solver_timing->setChecked(b);
+    } else {
+        checkModified();
+    }
+}
+
 void Project::haveSolverFlags(bool b, bool init)
 {
     if (init) {
@@ -808,6 +927,10 @@ void Project::checkModified()
         setModified(true);
         return;
     }
+    if (printTiming() != _printTiming) {
+        setModified(true);
+        return;
+    }
     if (haveSolverFlags() != _haveSolverFlags) {
         setModified(true);
         return;
@@ -841,12 +964,4 @@ void Project::checkModified()
         return;
     }
     setModified(false);
-}
-
-void Project::courseraError()
-{
-    QMessageBox::warning(NULL,"MiniZinc IDE",
-                        "Error reading Coursera options file",
-                        QMessageBox::Ok);
-
 }

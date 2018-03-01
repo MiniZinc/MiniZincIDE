@@ -24,5 +24,6 @@
         <file>images/package-x-generic.png</file>
         <file>images/coursera.png</file>
         <file>images/coursera@2x.png</file>
+        <file>images/application-certificate.png</file>
     </qresource>
 </RCC>
