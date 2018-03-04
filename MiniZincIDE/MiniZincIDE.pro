@@ -60,7 +60,9 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    moocsubmission.cpp
+    moocsubmission.cpp \
+    solverconfiguration.cpp \
+    esclineedit.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -78,7 +80,9 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    moocsubmission.h
+    moocsubmission.h \
+    solverconfiguration.h \
+    esclineedit.h
 
 FORMS    += \
     mainwindow.ui \

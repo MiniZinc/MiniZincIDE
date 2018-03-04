@@ -32,6 +32,7 @@
 #include <QFileSystemWatcher>
 #include <QNetworkAccessManager>
 #include <QSortFilterProxyModel>
+#include <QToolButton>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -40,6 +41,7 @@
 #include "project.h"
 #include "htmlwindow.h"
 #include "moocsubmission.h"
+#include "solverconfiguration.h"
 
 namespace Ui {
 class MainWindow;
@@ -283,6 +285,22 @@ private slots:
 
     void on_defaultBehaviourButton_toggled(bool checked);
 
+    void on_actionEditSolverConfig_triggered();
+
+    void on_conf_solver_conf_currentIndexChanged(int index);
+
+    void on_solverConfigurationSelected(QAction*);
+
+    void on_cloneSolverConfButton_clicked();
+    void on_deleteSolverConfButton_clicked();
+    void on_saveSolverConfButton_clicked();
+    void on_renameSolverConfButton_clicked();
+
+    void on_solverConfNameEdit_returnPressed();
+    void on_solverConfNameEdit_escPressed();
+
+    void on_confCloseButton_clicked();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -293,6 +311,7 @@ protected:
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
+    QString currentSolver(void) const;
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -334,6 +353,7 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
+    int runTimeout;
     QString mzn2fzn_executable;
     Project project;
     QSortFilterProxyModel* projectSort;
@@ -354,6 +374,15 @@ private:
     MOOCSubmission* moocSubmission;
     bool processRunning;
 
+    QToolButton* runButton;
+    QVector<SolverConfiguration> projectSolverConfigs;
+    QVector<SolverConfiguration> bookmarkedSolverConfigs;
+    int currentSolverConfig;
+    QVector<QPair<QWidget*,QString> > openTabs;
+    int selectedTabIndex;
+    bool outputWasOpen;
+    bool renamingSolverConf;
+
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     QStringList parseConf(bool compileOnly, bool useDataFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
@@ -371,6 +400,10 @@ private:
     void updateUiProcessRunning(bool pr);
     void highlightPath(QString& path, int index);
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
+    void updateSolverConfigs(void);
+    void setCurrentSolverConfig(int idx);
+    void saveSolverConfigsToSettings(void);
+    void loadSolverConfigsFromSettings(void);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
