@@ -29,6 +29,7 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringLi
     def.verboseSolving = false;
     def.outputTiming = false;
     def.solvingStats = false;
+    def.runSolutionChecker = true;
 
     for (auto n : solverNames) {
         def.name = n;
@@ -60,5 +61,6 @@ bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
             sc.solverFlags==solverFlags &&
             sc.verboseSolving==verboseSolving &&
             sc.outputTiming==outputTiming &&
-            sc.solvingStats==solvingStats;
+            sc.solvingStats==solvingStats &&
+            sc.runSolutionChecker==runSolutionChecker;
 }

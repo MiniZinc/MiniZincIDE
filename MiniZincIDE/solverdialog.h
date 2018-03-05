@@ -53,7 +53,8 @@ public:
     QString def();
     static void checkMzn2fznExecutable(const QString& mznDistribPath,
                                        QString& mzn2fzn_executable,
-                                       QString& mzn2fzn_version_string);
+                                       QString& mzn2fzn_version_string,
+                                       bool& supportsChecking);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 

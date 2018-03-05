@@ -58,6 +58,7 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     void addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
     void removeFile(const QString& fileName);
+    bool containsFile(const QString& fileName);
     QList<QString> files(void) const { return _files.keys(); }
     QString fileAtIndex(const QModelIndex& index);
     virtual Qt::ItemFlags flags(const QModelIndex& index) const;

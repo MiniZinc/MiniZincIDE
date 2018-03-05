@@ -355,6 +355,7 @@ private:
     bool compileOnly;
     int runTimeout;
     QString mzn2fzn_executable;
+    bool mzn2fznSupportsChecking;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
@@ -384,7 +385,7 @@ private:
     bool renamingSolverConf;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
-    QStringList parseConf(bool compileOnly, bool useDataFile);
+    QStringList parseConf(bool compileOnly, bool useDataFile, const QString& modelFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);

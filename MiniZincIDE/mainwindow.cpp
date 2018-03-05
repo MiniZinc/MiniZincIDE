@@ -1321,6 +1321,20 @@ void MainWindow::tabChange(int tab) {
             } else {
                 setWindowFilePath(curEditor->filepath);
                 setWindowTitle(curEditor->filename+p+"[*]");
+
+                bool haveChecker = false;
+                if (curEditor->filename.endsWith(".mzn")) {
+                    QString checkFile = curEditor->filepath;
+                    checkFile.replace(checkFile.length()-1,1,"c");
+                    haveChecker = project.containsFile(checkFile);
+                }
+                if (mzn2fznSupportsChecking && haveChecker &&
+                        (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+                    ui->actionRun->setText("Run + check");
+                } else {
+                    ui->actionRun->setText("Run");
+                }
+
             }
             ui->actionSave->setEnabled(true);
             ui->actionSave_as->setEnabled(true);
@@ -1386,7 +1400,7 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
+QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile, const QString& modelFile)
 {
     QStringList ret;
     if (compileOnly && !ui->conf_optimize->isChecked())
@@ -1397,6 +1411,15 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile)
         ret << "-s";
     if (compileOnly && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
+    if (compileOnly && mzn2fznSupportsChecking && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+        if (modelFile.endsWith(".mzn")) {
+            QString checkFile = modelFile;
+            checkFile.replace(checkFile.length()-1,1,"c");
+            if (project.containsFile(checkFile))
+                ret << "--solution-checker" << checkFile;
+        }
+    }
+
     if (compileOnly && !ui->conf_mzn2fzn_params->text().isEmpty()) {
         QStringList compilerArgs =
                 ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
@@ -1548,7 +1571,7 @@ void MainWindow::checkArgs(QString filepath)
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(checkArgsError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, true);
+    QStringList args = parseConf(true, true, "");
     args << "--instance-check-only" << "--output-to-stdout";
     args << filepath;
     compileErrors = "";
@@ -1853,7 +1876,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, additionalDataFile.isEmpty());
+    QStringList args = parseConf(true, additionalDataFile.isEmpty(), modelPath);
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
@@ -1862,7 +1885,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
 
     if (standalone) {
-        QStringList runArgs = parseConf(false,true);
+        QStringList runArgs = parseConf(false,true, modelPath);
         args << runArgs;
     }
 
@@ -2213,7 +2236,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         return;
     if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
-        QStringList args = parseConf(false,true);
+        QStringList args = parseConf(false,true,"");
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);
@@ -2515,6 +2538,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.solverFlags = ui->conf_solverFlags->text();
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
+            oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
             if (oldConf.isBookmark) {
                 saveSolverConfigsToSettings();
             }
@@ -2542,6 +2566,20 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_solverFlags->setText(conf.solverFlags);
     ui->conf_solver_verbose->setChecked(conf.verboseSolving);
     ui->conf_stats->setChecked(conf.solvingStats);
+    ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
+
+    bool haveChecker = false;
+    if (curEditor!=NULL && curEditor->filename.endsWith(".mzn")) {
+        QString checkFile = curEditor->filepath;
+        checkFile.replace(checkFile.length()-1,1,"c");
+        haveChecker = project.containsFile(checkFile);
+    }
+    if (mzn2fznSupportsChecking && haveChecker &&
+            (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+        ui->actionRun->setText("Run + check");
+    } else {
+        ui->actionRun->setText("Run");
+    }
 
     runButton->setToolTip("Run "+conf.name);
 
@@ -2605,6 +2643,7 @@ void MainWindow::saveSolverConfigsToSettings()
         settings.setValue("verboseSolving", sc.verboseSolving);
         settings.setValue("outputTiming", sc.outputTiming);
         settings.setValue("solvingStats", sc.solvingStats);
+        settings.setValue("runSolutionChecker", sc.runSolutionChecker);
     }
     settings.endArray();
 }
@@ -2639,6 +2678,7 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.verboseSolving = settings.value("verboseSolving").toBool();
         sc.outputTiming = settings.value("outputTiming").toBool();
         sc.solvingStats = settings.value("solvingStats").toBool();
+        sc.runSolutionChecker = settings.value("runSolutionChecker",true).toBool();
         newBookmarks.push_back(sc);
     }
 
@@ -3041,7 +3081,7 @@ void MainWindow::on_actionGo_to_line_triggered()
 void MainWindow::checkMznPath()
 {
     QString ignoreVersionString;
-    SolverDialog::checkMzn2fznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString);
+    SolverDialog::checkMzn2fznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,mzn2fznSupportsChecking);
 
     if (mzn2fzn_executable.isEmpty()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
@@ -3289,6 +3329,7 @@ void MainWindow::saveProject(const QString& f)
                 out << sc.verboseSolving;
                 out << sc.outputTiming;
                 out << sc.solvingStats;
+                out << sc.runSolutionChecker;
             }
             project.setModified(false, true);
 
@@ -3338,6 +3379,7 @@ void MainWindow::loadProject(const QString& filepath)
     int dataFileIndex;
 
     SolverConfiguration newConf;
+    newConf.runSolutionChecker = true;
 
     in >> p_s; // Used to be additional include path
     in >> dataFileIndex;
@@ -3421,6 +3463,7 @@ void MainWindow::loadProject(const QString& filepath)
             in >> sc.verboseSolving;
             in >> sc.outputTiming;
             in >> sc.solvingStats;
+            in >> sc.runSolutionChecker;
             projectSolverConfigs.push_back(sc);
         }
         project.solverConfigs(projectSolverConfigs,true);

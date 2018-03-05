@@ -192,7 +192,8 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
 
 void SolverDialog::checkMzn2fznExecutable(const QString& mznDistribPath,
                                           QString& mzn2fzn_executable,
-                                          QString& mzn2fzn_version_string)
+                                          QString& mzn2fzn_version_string,
+                                          bool& supportsChecking)
 {
     MznProcess p;
     QStringList args;
@@ -211,13 +212,26 @@ void SolverDialog::checkMzn2fznExecutable(const QString& mznDistribPath,
         mzn2fzn_executable = "mzn2fzn";
     }
     mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
+    supportsChecking = false;
+    if (!mzn2fzn_executable.isEmpty()) {
+        args.clear();
+        args << "--help";
+        p.start(mzn2fzn_executable, args, mznDistribPath);
+        if (p.waitForStarted() && p.waitForFinished()) {
+            QString allOutput = p.readAllStandardOutput()+p.readAllStandardError();
+            if (allOutput.indexOf("--solution-checker") != -1) {
+                supportsChecking = true;
+            }
+        }
+    }
 }
 
 void SolverDialog::editingFinished(bool showError)
 {
     QString mzn2fzn_executable;
     QString mzn2fzn_version;
-    checkMzn2fznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version);
+    bool ignoreSupportsChecking;
+    checkMzn2fznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,ignoreSupportsChecking);
     if (mzn2fzn_executable.isEmpty()) {
         if (showError) {
             QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",

@@ -31,6 +31,7 @@ public:
     bool verboseSolving;
     bool outputTiming;
     bool solvingStats;
+    bool runSolutionChecker;
 
     static QVector<SolverConfiguration> defaultConfigs(const QStringList& solverNames);
 

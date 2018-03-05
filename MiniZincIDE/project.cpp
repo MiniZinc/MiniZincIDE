@@ -394,6 +394,11 @@ void Project::removeFile(const QString &fileName)
     }
 }
 
+bool Project::containsFile(const QString &fileName)
+{
+    return _files.contains(fileName);
+}
+
 void Project::setModified(bool flag, bool files)
 {
     if (!projectRoot.isEmpty()) {

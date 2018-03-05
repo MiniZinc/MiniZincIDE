@@ -90,8 +90,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>608</width>
-             <height>1092</height>
+             <width>614</width>
+             <height>1066</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -387,6 +387,13 @@
                      </widget>
                     </item>
                     <item>
+                     <widget class="QLabel" name="label_16">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Check solutions (if solution checker model is present in project)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QLabel" name="label_12">
                       <property name="text">
                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Compress solution output after 100 solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -469,6 +476,13 @@
                        </spacer>
                       </item>
                      </layout>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="conf_check_solutions">
+                      <property name="text">
+                       <string>Check solutions (if solution checker model is present in project)</string>
+                      </property>
+                     </widget>
                     </item>
                     <item>
                      <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -713,16 +727,15 @@
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
               <zorder>conf_solver_timing</zorder>
-              <zorder>confCloseButton</zorder>
              </widget>
             </item>
-             <item>
-              <widget class="QPushButton" name="confCloseButton">
-               <property name="text">
-                <string>Close</string>
-               </property>
-              </widget>
-             </item>
+            <item>
+             <widget class="QPushButton" name="confCloseButton">
+              <property name="text">
+               <string>Close</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </widget>
