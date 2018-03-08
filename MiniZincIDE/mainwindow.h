@@ -319,6 +319,7 @@ private:
     HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
+    QString curModelFilepath;
     MznProcess* outputProcess;
     bool processWasStopped;
     int solutionCount;
