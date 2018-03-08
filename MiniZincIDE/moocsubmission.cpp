@@ -1,5 +1,5 @@
-#include "courserasubmission.h"
-#include "ui_courserasubmission.h"
+#include "moocsubmission.h"
+#include "ui_moocsubmission.h"
 #include "mainwindow.h"
 
 #include <QCheckBox>
@@ -13,13 +13,19 @@
 #include <QCryptographicHash>
 #include <QJsonDocument>
 
-CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
+MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
     QDialog(NULL), _cur_phase(S_NONE), project(cp), mw(mw0),
-    ui(new Ui::CourseraSubmission)
+    ui(new Ui::MOOCSubmission)
 {
     ui->setupUi(this);
 
-    ui->selectedSolver->setText(mw->getProject().currentSolver());
+    setWindowTitle("Submit to "+cp.moocName);
+
+    ui->loginEmailLabel->setText(cp.moocName+" login email:");
+    ui->loginTokenLabel->setText(cp.moocPasswordString+":");
+    ui->courseraTokenWarningLabel->setHidden(cp.moocName!="Coursera");
+
+    ui->selectedSolver->setText(mw->currentSolver());
 
     QVBoxLayout* modelLayout = new QVBoxLayout;
     ui->modelBox->setLayout(modelLayout);
@@ -27,13 +33,13 @@ CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
     ui->problemBox->setLayout(problemLayout);
 
     for (int i=0; i<project.models.size(); i++) {
-        const CourseraItem& item = project.models.at(i);
+        const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
         modelLayout->addWidget(cb);
     }
     for (int i=0; i<project.problems.size(); i++) {
-        const CourseraItem& item = project.problems.at(i);
+        const MOOCAssignmentItem& item = project.problems.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
         problemLayout->addWidget(cb);
@@ -55,7 +61,7 @@ CourseraSubmission::CourseraSubmission(MainWindow* mw0, CourseraProject& cp) :
 
 }
 
-CourseraSubmission::~CourseraSubmission()
+MOOCSubmission::~MOOCSubmission()
 {
     QSettings settings;
     settings.beginGroup("coursera");
@@ -71,7 +77,7 @@ CourseraSubmission::~CourseraSubmission()
     delete ui;
 }
 
-void CourseraSubmission::disableUI()
+void MOOCSubmission::disableUI()
 {
     ui->loginGroup->setEnabled(false);
     ui->modelBox->setEnabled(false);
@@ -79,7 +85,7 @@ void CourseraSubmission::disableUI()
     ui->runButton->setText("Abort");
 }
 
-void CourseraSubmission::enableUI()
+void MOOCSubmission::enableUI()
 {
     ui->loginGroup->setEnabled(true);
     ui->modelBox->setEnabled(true);
@@ -87,11 +93,14 @@ void CourseraSubmission::enableUI()
     ui->runButton->setText("Run and submit");
 }
 
-void CourseraSubmission::cancelOperation()
+void MOOCSubmission::cancelOperation()
 {
     switch (_cur_phase) {
     case S_NONE:
         return;
+    case S_WAIT_PWD:
+        disconnect(mw, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+        break;
     case S_WAIT_SOLVE:
         disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
         mw->on_actionStop_triggered();
@@ -105,11 +114,11 @@ void CourseraSubmission::cancelOperation()
     enableUI();
 }
 
-void CourseraSubmission::reject()
+void MOOCSubmission::reject()
 {
     if (_cur_phase != S_NONE &&
             QMessageBox::warning(this, "MiniZinc IDE",
-                                 "Do you want to close this window and abort the Coursera submission?",
+                                 "Do you want to close this window and abort the "+project.moocName+" submission?",
                                  QMessageBox::Close| QMessageBox::Cancel,
                                  QMessageBox::Cancel) == QMessageBox::Cancel) {
         return;
@@ -118,7 +127,7 @@ void CourseraSubmission::reject()
     QDialog::reject();
 }
 
-void CourseraSubmission::solveNext() {
+void MOOCSubmission::solveNext() {
     int n_problems = project.problems.size();
 
     bool done = false;
@@ -133,12 +142,12 @@ void CourseraSubmission::solveNext() {
     } while (!done);
     if (_current_model < n_problems) {
 
-        CourseraItem& item = project.problems[_current_model];
+        MOOCAssignmentItem& item = project.problems[_current_model];
         connect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
         ui->textBrowser->insertPlainText("Running "+item.name+"\n");
         _cur_phase = S_WAIT_SOLVE;
         _output_string = "";
-        mw->addOutput("<div style='color:orange;'>Running Coursera submission "+item.name+"</div><br>\n");
+        mw->addOutput("<div style='color:orange;'>Running "+project.moocName+" submission "+item.name+"</div><br>\n");
         if (!mw->runWithOutput(item.model, item.data, item.timeout, _output_stream)) {
             ui->textBrowser->insertPlainText("Error: could not run "+item.name+"\n");
             ui->textBrowser->insertPlainText("Skipping.\n");
@@ -146,13 +155,13 @@ void CourseraSubmission::solveNext() {
         }
         return;
     } else {
-        submitToCoursera();
+        submitToMOOC();
     }
 }
 
-void CourseraSubmission::submitToCoursera()
+void MOOCSubmission::submitToMOOC()
 {
-    QUrl url("https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1");
+    QUrl url(project.submissionURL);
     QNetworkRequest request;
     request.setUrl(url);
     request.setRawHeader(QByteArray("Cache-Control"),QByteArray("no-cache"));
@@ -161,7 +170,7 @@ void CourseraSubmission::submitToCoursera()
     // add models
     QStringList allfiles = mw->getProject().files();
     for (int i=0; i<project.models.size(); i++) {
-        const CourseraItem& item = project.models.at(i);
+        const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = qobject_cast<QCheckBox*>(ui->modelBox->layout()->itemAt(i)->widget());
         if (cb->isChecked()) {
             bool foundFile = false;
@@ -201,10 +210,10 @@ void CourseraSubmission::submitToCoursera()
     _cur_phase = S_WAIT_SUBMIT;
     reply = IDE::instance()->networkManager->post(request,doc.toJson());
     connect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
-    ui->textBrowser->insertPlainText("Submitting to Coursera for grading...\n");
+    ui->textBrowser->insertPlainText("Submitting to "+project.moocName+" for grading...\n");
 }
 
-void CourseraSubmission::rcvSubmissionResponse()
+void MOOCSubmission::rcvSubmissionResponse()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
     reply->deleteLater();
@@ -227,7 +236,7 @@ void CourseraSubmission::rcvSubmissionResponse()
     ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 }
 
-void CourseraSubmission::solverFinished()
+void MOOCSubmission::solverFinished()
 {
     disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
 
@@ -245,13 +254,14 @@ void CourseraSubmission::solverFinished()
     solveNext();
 }
 
-void CourseraSubmission::on_runButton_clicked()
+void MOOCSubmission::on_runButton_clicked()
 {
     if (_cur_phase==S_NONE) {
+        ui->textBrowser->clear();
         QString email = ui->login->text();
         if (email.isEmpty()) {
             QMessageBox::warning(this, "MiniZinc IDE",
-                                 "Enter an email address for Coursera login!");
+                                 "Enter an email address for "+project.moocName+" login!");
             return;
         }
         if (ui->password->text().isEmpty()) {
@@ -259,6 +269,40 @@ void CourseraSubmission::on_runButton_clicked()
                                  "Enter an assignment key!");
             return;
         }
+
+        // Send empty request to check password
+        QUrl url(project.submissionURL);
+        QNetworkRequest request;
+        request.setUrl(url);
+        request.setRawHeader(QByteArray("Cache-Control"),QByteArray("no-cache"));
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QJsonObject checkPwdSubmission;
+        checkPwdSubmission["assignmentKey"] = project.assignmentKey;
+        checkPwdSubmission["secret"] = ui->password->text();
+        checkPwdSubmission["submitterEmail"] = ui->login->text();
+        QJsonObject emptyParts;
+        checkPwdSubmission["parts"] = emptyParts;
+
+        QJsonDocument doc(checkPwdSubmission);
+
+        _cur_phase = S_WAIT_PWD;
+        disableUI();
+        reply = IDE::instance()->networkManager->post(request,doc.toJson());
+        connect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+        ui->textBrowser->insertPlainText("Checking login and assignment token...\n");
+    } else {
+        cancelOperation();
+    }
+}
+
+void MOOCSubmission::rcvLoginCheckResponse()
+{
+    disconnect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+    reply->deleteLater();
+
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+    if (doc.object().contains("message") && (doc.object()["message"].toString().endsWith("but found: Set()") || doc.object()["message"].toString().endsWith("Success"))) {
+        ui->textBrowser->insertPlainText("Done.\n");
         _current_model = -1;
         for (int i=0; i<project.problems.size(); i++) {
             _parts[project.problems[i].id] = QJsonObject();
@@ -266,14 +310,24 @@ void CourseraSubmission::on_runButton_clicked()
         for (int i=0; i<project.models.size(); i++) {
             _parts[project.models[i].id] = QJsonObject();
         }
-        disableUI();
         solveNext();
     } else {
-        cancelOperation();
+        if (doc.object().contains("message")) {
+            ui->textBrowser->insertPlainText("== "+doc.object()["message"].toString()+"\n");
+        }
+        if (doc.object().contains("details")) {
+            QJsonObject details = doc.object()["details"].toObject();
+            if (details.contains("learnerMessage")) {
+                ui->textBrowser->insertPlainText(">> "+details["learnerMessage"].toString()+"\n");
+            }
+        }
+        ui->textBrowser->insertPlainText("Done.\n");
+        _cur_phase = S_NONE;
+        enableUI();
     }
 }
 
-void CourseraSubmission::on_storePassword_toggled(bool checked)
+void MOOCSubmission::on_storePassword_toggled(bool checked)
 {
     if (!checked) {
         QSettings settings;

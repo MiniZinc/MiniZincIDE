@@ -4,14 +4,22 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webkitwidgets
+QT       += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): {
+  greaterThan(QT_MINOR_VERSION, 5): {
+    QT += webenginewidgets
+    DEFINES += MINIZINC_IDE_HAVE_WEBENGINE
+  }
+  !greaterThan(QT_MINOR_VERSION, 5): {
+    QT += webkitwidgets
+  }
+}
 
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.0.14
+VERSION = 2.1.7
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -38,11 +46,15 @@ RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
 
-exists($$OUT_PWD/../libminizinc) {
-  LIBS += -L$$OUT_PWD/../libminizinc -lminizinc
-  INCLUDEPATH += ../libminizinc_src/include ../libminizinc_src/lib/cached ../libminizinc
-  DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
-}
+#exists($$OUT_PWD/../libminizinc) {
+#  LIBS += -L$$OUT_PWD/../libminizinc -lminizinc
+#  INCLUDEPATH += ../libminizinc_src/include ../libminizinc_src/lib/cached ../libminizinc
+#  DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
+#}
+
+LIBS += -L/Users/tack/Programming/MiniZinc/libmzn/build_xcode/Debug -lminizinc
+INCLUDEPATH += /Users/tack/Programming/MiniZinc/libmzn/include /Users/tack/Programming/MiniZinc/libmzn/build_xcode
+DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -60,7 +72,9 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    courserasubmission.cpp
+    moocsubmission.cpp \
+    solverconfiguration.cpp \
+    esclineedit.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
@@ -78,7 +92,9 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    courserasubmission.h
+    moocsubmission.h \
+    solverconfiguration.h \
+    esclineedit.h
 
 FORMS    += \
     mainwindow.ui \
@@ -90,7 +106,10 @@ FORMS    += \
     paramdialog.ui \
     checkupdatedialog.ui \
     htmlwindow.ui \
-    courserasubmission.ui
+    moocsubmission.ui
 
 RESOURCES += \
     minizincide.qrc
+
+target.path = /bin
+INSTALLS += target

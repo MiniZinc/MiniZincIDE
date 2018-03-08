@@ -27,8 +27,9 @@ struct Solver {
     QString backend;
     bool builtin;
     bool detach;
-    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt) :
-        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt) {}
+    bool needs_mzn2fzn;
+    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt, bool mzn) :
+        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt), needs_mzn2fzn(mzn) {}
     Solver(void) {}
 };
 
@@ -52,7 +53,8 @@ public:
     QString def();
     static void checkMzn2fznExecutable(const QString& mznDistribPath,
                                        QString& mzn2fzn_executable,
-                                       QString& mzn2fzn_version_string);
+                                       QString& mzn2fzn_version_string,
+                                       bool& supportsChecking);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -67,8 +69,6 @@ private slots:
     void on_solver_default_stateChanged(int arg1);
 
     void on_check_updates_stateChanged(int arg1);
-
-    void on_send_stats_stateChanged(int arg1);
 
     void on_mznDistribPath_returnPressed();
 

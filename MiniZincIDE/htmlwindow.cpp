@@ -2,7 +2,6 @@
 #include "ui_htmlwindow.h"
 #include "htmlpage.h"
 
-#include <QWebView>
 #include <QMdiSubWindow>
 #include <QDebug>
 #include <QDockWidget>
@@ -15,11 +14,11 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
     ui->setupUi(this);
 
     for (int i=0; i<specs.size(); i++) {
-        QWebView* wv = new QWebView;
+        MznIdeWebView* wv = new MznIdeWebView;
         HTMLPage* p = new HTMLPage(mw,wv);
         pages.append(p);
         wv->setPage(p);
-        loadQueue.append(QPair<QWebView*,QString>(wv,specs[i].url));
+        loadQueue.append(QPair<MznIdeWebView*,QString>(wv,specs[i].url));
         QDockWidget* dw = new QDockWidget(this);
         dw->setFeatures(QDockWidget::DockWidgetMovable);
         dw->setWidget(wv);
@@ -28,7 +27,7 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
 
     if (specs.size() > 0) {
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
-        QWebView* wv0 = loadQueue[0].first;
+        MznIdeWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;
         wv0->load(QUrl::fromUserInput(url0));
     }
@@ -65,7 +64,7 @@ void HTMLWindow::loadFinished(bool)
     loadQueue.pop_front();
     if (loadQueue.size() > 0) {
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
-        QWebView* wv0 = loadQueue[0].first;
+        MznIdeWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;
         wv0->load(QUrl::fromUserInput(url0));
     }
