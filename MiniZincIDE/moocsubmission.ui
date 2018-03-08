@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CourseraSubmission</class>
- <widget class="QDialog" name="CourseraSubmission">
+ <class>MOOCSubmission</class>
+ <widget class="QDialog" name="MOOCSubmission">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -46,7 +46,7 @@
          <enum>QLayout::SetMinimumSize</enum>
         </property>
         <item>
-         <widget class="QLabel" name="label_3">
+         <widget class="QLabel" name="loginEmailLabel">
           <property name="text">
            <string>Coursera login email:</string>
           </property>
@@ -63,7 +63,7 @@
          <enum>QLayout::SetMinimumSize</enum>
         </property>
         <item>
-         <widget class="QLabel" name="label_4">
+         <widget class="QLabel" name="loginTokenLabel">
           <property name="text">
            <string>Assignment token:</string>
           </property>
@@ -79,7 +79,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="courseraTokenWarningLabel">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -229,7 +229,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>CourseraSubmission</receiver>
+   <receiver>MOOCSubmission</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -245,7 +245,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>CourseraSubmission</receiver>
+   <receiver>MOOCSubmission</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

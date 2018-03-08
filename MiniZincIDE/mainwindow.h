@@ -32,6 +32,7 @@
 #include <QFileSystemWatcher>
 #include <QNetworkAccessManager>
 #include <QSortFilterProxyModel>
+#include <QToolButton>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -39,7 +40,8 @@
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
+#include "solverconfiguration.h"
 
 namespace Ui {
 class MainWindow;
@@ -140,7 +142,7 @@ signals:
 
 public slots:
 
-    void openFile(const QString &path = QString(), bool openAsModified=false);
+    void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
     void on_actionStop_triggered();
 
 private slots:
@@ -260,7 +262,7 @@ private slots:
 
     void on_actionNewData_file_triggered();
 
-    void on_actionSubmit_to_Coursera_triggered();
+    void on_actionSubmit_to_MOOC_triggered();
 
     void fileRenamed(const QString&, const QString&);
 
@@ -279,9 +281,25 @@ private slots:
 
     void on_actionDark_mode_toggled(bool arg1);
 
-    void courseraFinished(int);
+    void moocFinished(int);
 
     void on_defaultBehaviourButton_toggled(bool checked);
+
+    void on_actionEditSolverConfig_triggered();
+
+    void on_conf_solver_conf_currentIndexChanged(int index);
+
+    void on_solverConfigurationSelected(QAction*);
+
+    void on_cloneSolverConfButton_clicked();
+    void on_deleteSolverConfButton_clicked();
+    void on_saveSolverConfButton_clicked();
+    void on_renameSolverConfButton_clicked();
+
+    void on_solverConfNameEdit_returnPressed();
+    void on_solverConfNameEdit_escPressed();
+
+    void on_confCloseButton_clicked();
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -293,6 +311,7 @@ protected:
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
+    QString currentSolver(void) const;
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -309,6 +328,8 @@ private:
     QVector<QString> hiddenSolutions;
     int curJSONHandler;
     bool inJSONHandler;
+    QStringList htmlBuffer;
+    bool inHTMLHandler {false};
     bool hadNonJSONOutput;
     QVector<QStringList> JSONOutput;
     QTimer* timer;
@@ -333,7 +354,9 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
+    int runTimeout;
     QString mzn2fzn_executable;
+    bool mzn2fznSupportsChecking;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
@@ -350,11 +373,20 @@ private:
     QAction* fakeCompileAction;
     QAction* minimizeAction;
     QTextStream* outputBuffer;
-    CourseraSubmission* courseraSubmission;
+    MOOCSubmission* moocSubmission;
     bool processRunning;
 
-    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
-    QStringList parseConf(bool compileOnly, bool useDataFile);
+    QToolButton* runButton;
+    QVector<SolverConfiguration> projectSolverConfigs;
+    QVector<SolverConfiguration> bookmarkedSolverConfigs;
+    int currentSolverConfig;
+    QVector<QPair<QWidget*,QString> > openTabs;
+    int selectedTabIndex;
+    bool outputWasOpen;
+    bool renamingSolverConf;
+
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
+    QStringList parseConf(bool compileOnly, bool useDataFile, const QString& modelFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
@@ -368,6 +400,12 @@ private:
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
     void updateUiProcessRunning(bool pr);
+    void highlightPath(QString& path, int index);
+    QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
+    void updateSolverConfigs(void);
+    void setCurrentSolverConfig(int idx);
+    void saveSolverConfigsToSettings(void);
+    void loadSolverConfigsFromSettings(void);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

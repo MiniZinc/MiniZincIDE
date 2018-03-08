@@ -15,8 +15,6 @@
         <file>images/edit-undo.png</file>
         <file>images/format-indent-less.png</file>
         <file>images/format-indent-more.png</file>
-        <file>images/media-playback-start.png</file>
-        <file>images/media-playback-stop.png</file>
         <file>images/process-stop.png</file>
         <file>images/edit-copy.png</file>
         <file>images/edit-cut.png</file>
@@ -24,5 +22,9 @@
         <file>images/package-x-generic.png</file>
         <file>images/coursera.png</file>
         <file>images/coursera@2x.png</file>
+        <file>images/application-certificate.png</file>
+        <file>images/media-playback-start.svg</file>
+        <file>images/media-playback-stop.svg</file>
+        <file>images/applications-system.svg</file>
     </qresource>
 </RCC>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>982</height>
+    <height>1369</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,8 +90,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>607</width>
-             <height>878</height>
+             <width>614</width>
+             <height>1066</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -104,6 +104,102 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
+            <item>
+             <widget class="QGroupBox" name="groupBox_4">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string/>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_4_1">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_2_1">
+                 <item>
+                  <widget class="EscLineEdit" name="solverConfNameEdit"/>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="nameAlreadyUsedLabel">
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#fc0107;&quot;&gt;Name already used!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="conf_solver_conf">
+                   <item>
+                    <property name="text">
+                     <string>None</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_2_2" stretch="0,0,0,0,0,0">
+                 <property name="spacing">
+                  <number>-1</number>
+                 </property>
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetMinimumSize</enum>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="cloneSolverConfButton">
+                   <property name="text">
+                    <string>Clone</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="renameSolverConfButton">
+                   <property name="text">
+                    <string>Rename</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="deleteSolverConfButton">
+                   <property name="text">
+                    <string>Delete</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="saveSolverConfButton">
+                   <property name="text">
+                    <string>Save as bookmark</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_5">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="solverConfType">
+                   <property name="text">
+                    <string>TextLabel</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
             <item>
              <widget class="QGroupBox" name="groupBox">
               <property name="sizePolicy">
@@ -291,6 +387,13 @@
                      </widget>
                     </item>
                     <item>
+                     <widget class="QLabel" name="label_16">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Check solutions (if solution checker model is present in project)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QLabel" name="label_12">
                       <property name="text">
                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Compress solution output after 100 solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -375,6 +478,13 @@
                      </layout>
                     </item>
                     <item>
+                     <widget class="QCheckBox" name="conf_check_solutions">
+                      <property name="text">
+                       <string>Check solutions (if solution checker model is present in project)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <layout class="QHBoxLayout" name="horizontalLayout_5">
                       <item>
                        <widget class="QLabel" name="label_11">
@@ -455,7 +565,7 @@
                <item>
                 <widget class="QCheckBox" name="conf_flatten_stats">
                  <property name="text">
-                  <string>Statistics for flattening</string>
+                  <string>Output statistics for flattening</string>
                  </property>
                 </widget>
                </item>
@@ -472,7 +582,7 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_3">
                  <item>
-                  <widget class="QCheckBox" name="conf_have_cmd_params">
+                  <widget class="QLabel" name="label_13">
                    <property name="text">
                     <string>Additional data:</string>
                    </property>
@@ -486,7 +596,7 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_9">
                  <item>
-                  <widget class="QCheckBox" name="conf_have_mzn2fzn_params">
+                  <widget class="QLabel" name="label_14">
                    <property name="text">
                     <string>Additional mzn2fzn arguments:</string>
                    </property>
@@ -575,9 +685,9 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_10">
                  <item>
-                  <widget class="QCheckBox" name="conf_have_solverFlags">
+                  <widget class="QLabel" name="label_15">
                    <property name="text">
-                    <string>Solver flags:</string>
+                    <string>Additional solver command line arguments:</string>
                    </property>
                   </widget>
                  </item>
@@ -594,9 +704,16 @@
                 </widget>
                </item>
                <item>
+                <widget class="QCheckBox" name="conf_solver_timing">
+                 <property name="text">
+                  <string>Output timing information</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="conf_stats">
                  <property name="text">
-                  <string>Statistics for solving</string>
+                  <string>Output statistics for solving</string>
                  </property>
                 </widget>
                </item>
@@ -609,6 +726,14 @@
               <zorder>conf_optimize</zorder>
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
+              <zorder>conf_solver_timing</zorder>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="confCloseButton">
+              <property name="text">
+               <string>Close</string>
+              </property>
              </widget>
             </item>
            </layout>
@@ -702,11 +827,19 @@
     <property name="title">
      <string>MiniZinc</string>
     </property>
+    <widget class="QMenu" name="menuSolver_configurations">
+     <property name="title">
+      <string>Solver configurations</string>
+     </property>
+     <addaction name="actionDefaultSolverConfig"/>
+     <addaction name="actionEditSolverConfig"/>
+    </widget>
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
-    <addaction name="actionSubmit_to_Coursera"/>
+    <addaction name="actionSubmit_to_MOOC"/>
     <addaction name="separator"/>
+    <addaction name="menuSolver_configurations"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
    </widget>
@@ -753,6 +886,9 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="OutputDockWidget" name="outputDockWidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
      <horstretch>0</horstretch>
@@ -826,9 +962,8 @@
    <addaction name="actionShift_left"/>
    <addaction name="actionShift_right"/>
    <addaction name="separator"/>
-   <addaction name="actionRun"/>
    <addaction name="actionStop"/>
-   <addaction name="actionSubmit_to_Coursera"/>
+   <addaction name="actionSubmit_to_MOOC"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -1035,9 +1170,12 @@
   <action name="actionRun">
    <property name="icon">
     <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/media-playback-start.png</normaloff>:/icons/images/media-playback-start.png</iconset>
+     <normaloff>:/icons/images/media-playback-start.svg</normaloff>:/icons/images/media-playback-start.svg</iconset>
    </property>
    <property name="text">
+    <string>Run</string>
+   </property>
+   <property name="toolTip">
     <string>Run</string>
    </property>
    <property name="shortcut">
@@ -1052,7 +1190,7 @@
   <action name="actionStop">
    <property name="icon">
     <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/media-playback-stop.png</normaloff>:/icons/images/media-playback-stop.png</iconset>
+     <normaloff>:/icons/images/media-playback-stop.svg</normaloff>:/icons/images/media-playback-stop.svg</iconset>
    </property>
    <property name="text">
     <string>Stop</string>
@@ -1330,7 +1468,7 @@
     <bool>false</bool>
    </property>
   </action>
-  <action name="actionSubmit_to_Coursera">
+  <action name="actionSubmit_to_MOOC">
    <property name="icon">
     <iconset resource="minizincide.qrc">
      <normaloff>:/icons/images/coursera.png</normaloff>:/icons/images/coursera.png</iconset>
@@ -1355,6 +1493,22 @@
     <string>Dark mode</string>
    </property>
   </action>
+  <action name="actionDefaultSolverConfig">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>default</string>
+   </property>
+  </action>
+  <action name="actionEditSolverConfig">
+   <property name="text">
+    <string>Edit...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1362,6 +1516,11 @@
    <extends>QDockWidget</extends>
    <header>outputdockwidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>EscLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>esclineedit.h</header>
   </customwidget>
  </customwidgets>
  <resources>

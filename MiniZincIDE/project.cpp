@@ -12,15 +12,17 @@
 
 #include "project.h"
 #include "ui_mainwindow.h"
-#include "courserasubmission.h"
+#include "moocsubmission.h"
 
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
+#include <QJsonDocument>
+#include <QJsonArray>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL), _courseraAssignment(NULL)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -39,7 +41,8 @@ Project::Project(Ui::MainWindow *ui0) : ui(ui0), _courseraProject(NULL)
 }
 
 Project::~Project() {
-    delete _courseraProject;
+    delete _moocAssignment;
+    delete _courseraAssignment;
 }
 
 void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString &fileName)
@@ -107,7 +110,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     }
     QStandardItem* curItem;
     bool isMiniZinc = true;
-    bool isCoursera = false;
+    bool isMOOC = false;
     if (fi.suffix()=="mzn") {
         curItem = mzn;
     } else if (fi.suffix()=="dzn") {
@@ -117,74 +120,165 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     } else {
         curItem = other;
         isMiniZinc = false;
-        isCoursera = fi.completeBaseName()=="_coursera";
+        isMOOC = fi.baseName()=="_coursera" || fi.baseName()=="_mooc";
     }
 
-    if (isCoursera) {
-        if (_courseraProject) {
+    if (isMOOC) {
+
+        if (fi.baseName()=="_coursera" && _courseraAssignment != NULL) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
                                 "Cannot add second Coursera options file",
                                 QMessageBox::Ok);
             return;
         }
+        if (fi.baseName()=="_mooc" && _moocAssignment != NULL) {
+            QMessageBox::warning(treeView,"MiniZinc IDE",
+                                "Cannot add second MOOC options file",
+                                QMessageBox::Ok);
+            return;
+        }
+
         QFile metadata(absFileName);
         if (!metadata.open(QIODevice::ReadOnly)) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
-                                 "Cannot open Coursera options file",
+                                 "Cannot open MOOC options file",
                                  QMessageBox::Ok);
             return;
         }
-        QTextStream in(&metadata);
-        CourseraProject* cp = new CourseraProject;
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        cp->assignmentKey = in.readLine();
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        cp->name = in.readLine();
-        QString nSolutions_s = in.readLine();
-        int nSolutions = nSolutions_s.toInt();
-        for (int i=0; i<nSolutions; i++) {
+
+        MOOCAssignment* moocA = new MOOCAssignment;
+
+        // Try to read as JSON file (new format)
+
+        QTextStream jsonIn(&metadata);
+        QString jsonString = jsonIn.readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+        if (jsonDoc.isNull()) {
+            moocA->submissionURL = "https://www.coursera.org/api/onDemandProgrammingScriptSubmissions.v1";
+            moocA->moocName = "Coursera";
+            moocA->moocPasswordString = "Assignment token";
+            // try old format
+            QTextStream in(&jsonString);
             if (in.status() != QTextStream::Ok) {
-                delete cp;
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            QString line = in.readLine();
-            QStringList tokens = line.split(", ");
-            if (tokens.size() < 5) {
-                delete cp;
-                goto coursera_done;
-            }
-            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
-                              tokens[3].trimmed(),tokens[4].trimmed());
-            cp->problems.append(item);
-        }
-        if (in.status() != QTextStream::Ok) {
-            delete cp;
-            goto coursera_done;
-        }
-        nSolutions_s = in.readLine();
-        nSolutions = nSolutions_s.toInt();
-        for (int i=0; i<nSolutions; i++) {
+            moocA->assignmentKey = in.readLine();
             if (in.status() != QTextStream::Ok) {
-                delete cp;
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            QString line = in.readLine();
-            QStringList tokens = line.split(", ");
-            if (tokens.size() < 3) {
-                delete cp;
+            moocA->name = in.readLine();
+            QString nSolutions_s = in.readLine();
+            int nSolutions = nSolutions_s.toInt();
+            for (int i=0; i<nSolutions; i++) {
+                if (in.status() != QTextStream::Ok) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                QString line = in.readLine();
+                QStringList tokens = line.split(", ");
+                if (tokens.size() < 5) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
+                                  tokens[3].trimmed(),tokens[4].trimmed());
+                moocA->problems.append(item);
+            }
+            if (in.status() != QTextStream::Ok) {
+                delete moocA;
+                moocA = NULL;
                 goto coursera_done;
             }
-            CourseraItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
-            cp->models.append(item);
+            nSolutions_s = in.readLine();
+            nSolutions = nSolutions_s.toInt();
+            for (int i=0; i<nSolutions; i++) {
+                if (in.status() != QTextStream::Ok) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                QString line = in.readLine();
+                QStringList tokens = line.split(", ");
+                if (tokens.size() < 3) {
+                    delete moocA;
+                    moocA = NULL;
+                    goto coursera_done;
+                }
+                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
+                moocA->models.append(item);
+            }
+        } else {
+            bool hadError = false;
+            if (jsonDoc.isObject()) {
+                QJsonObject moocO = jsonDoc.object();
+                if (moocO.isEmpty()) {
+                    hadError = true;
+                } else {
+                    if (!moocO["assignmentKey"].isString() || !moocO["name"].isString() || !moocO["moocName"].isString() ||
+                            !moocO["moocPasswordString"].isString() || !moocO["submissionURL"].isString() ||
+                            !moocO["solutionAssignments"].isArray() || !moocO["modelAssignments"].isArray()) {
+                        hadError = true;
+                    } else {
+                        moocA->assignmentKey = moocO["assignmentKey"].toString();
+                        moocA->name = moocO["name"].toString();
+                        moocA->moocName = moocO["moocName"].toString();
+                        moocA->moocPasswordString = moocO["moocPasswordString"].toString();
+                        moocA->submissionURL = moocO["submissionURL"].toString();
+                        QJsonArray sols = moocO["solutionAssignments"].toArray();
+                        for (int i=0; i<sols.size(); i++) {
+                            QJsonObject solO = sols[i].toObject();
+                            if (!sols[i].isObject() || !solO["id"].isString() || !solO["model"].isString() ||
+                                    !solO["data"].isString() || (!solO["timeout"].isDouble() && !solO["timeout"].isString() ) || !solO["name"].isString()) {
+                                hadError = true;
+                            } else {
+                                QString timeout = solO["timeout"].isDouble() ? QString::number(solO["timeout"].toInt()) : solO["timeout"].toString();
+                                MOOCAssignmentItem item(solO["id"].toString(), solO["model"].toString(), solO["data"].toString(),
+                                                        timeout, solO["name"].toString());
+                                moocA->problems.append(item);
+                            }
+                        }
+                        QJsonArray models = moocO["modelAssignments"].toArray();
+                        for (int i=0; i<models.size(); i++) {
+                            QJsonObject modelO = models[i].toObject();
+                            MOOCAssignmentItem item(modelO["id"].toString(), modelO["model"].toString(), modelO["name"].toString());
+                            moocA->models.append(item);
+                        }
+                    }
+                }
+            } else {
+                hadError = true;
+            }
+            if (hadError) {
+                QMessageBox::warning(treeView,"MiniZinc IDE",
+                                     "MOOC options file contains errors",
+                                     QMessageBox::Ok);
+                delete moocA;
+                moocA = NULL;
+            }
         }
-        _courseraProject = cp;
-        ui->actionSubmit_to_Coursera->setVisible(true);
+
+        if (fi.baseName()=="_coursera") {
+            _courseraAssignment = moocA;
+        } else {
+            _moocAssignment = moocA;
+        }
+        if (moocA) {
+            ui->actionSubmit_to_MOOC->setVisible(true);
+            QString moocName = _moocAssignment ? _moocAssignment->moocName : _courseraAssignment->moocName;
+            ui->actionSubmit_to_MOOC->setText("Submit to "+moocName);
+            if (moocName=="Coursera") {
+                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+            } else {
+                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/application-certificate.png"));
+            }
+
+        }
     }
 coursera_done:
 
@@ -283,10 +377,26 @@ void Project::removeFile(const QString &fileName)
     }
     QFileInfo fi(fileName);
     if (fi.fileName()=="_coursera") {
-        delete _courseraProject;
-        _courseraProject = NULL;
-        ui->actionSubmit_to_Coursera->setVisible(false);
+        delete _courseraAssignment;
+        _courseraAssignment = NULL;
+        if (_moocAssignment==NULL) {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
+    } else if (fi.fileName()=="_mooc") {
+        delete _moocAssignment;
+        _moocAssignment = NULL;
+        if (_courseraAssignment!=NULL) {
+            ui->actionSubmit_to_MOOC->setText("Submit to "+_courseraAssignment->moocName);
+            ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+        } else {
+            ui->actionSubmit_to_MOOC->setVisible(false);
+        }
     }
+}
+
+bool Project::containsFile(const QString &fileName)
+{
+    return _files.contains(fileName);
 }
 
 void Project::setModified(bool flag, bool files)
@@ -299,25 +409,7 @@ void Project::setModified(bool flag, bool files)
                 _filesModified = _isModified;
             }
             if (!_isModified) {
-                currentDataFileIndex(currentDataFileIndex(),true);
-                haveExtraArgs(haveExtraArgs(),true);
-                extraArgs(extraArgs(),true);
-                mzn2fznVerbose(mzn2fznVerbose(),true);
-                mzn2fznPrintStats(mzn2fznPrintStats(),true);
-                mzn2fznOptimize(mzn2fznOptimize(),true);
-                currentSolver(currentSolver(),true);
-                n_solutions(n_solutions(),true);
-                n_compress_solutions(n_compress_solutions(),true);
-                printAll(printAll(),true);
-                defaultBehaviour(defaultBehaviour(),true);
-                printStats(printStats(),true);
-                haveSolverFlags(haveSolverFlags(),true);
-                solverFlags(solverFlags(),true);
-                n_threads(n_threads(),true);
-                haveSeed(haveSeed(),true);
-                seed(seed(),true);
-                timeLimit(timeLimit(),true);
-                solverVerbose(solverVerbose(),true);
+                solverConfigs(solverConfigs(),true);
             }
         }
     }
@@ -341,90 +433,8 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     }
 }
 
-bool Project::haveExtraArgs(void) const
-{
-    return ui->conf_have_cmd_params->isChecked();
-}
-QString Project::extraArgs(void) const
-{
-    return ui->conf_cmd_params->text();
-}
-bool Project::haveExtraMzn2FznArgs(void) const
-{
-    return ui->conf_have_mzn2fzn_params->isChecked();
-}
-QString Project::extraMzn2FznArgs(void) const
-{
-    return ui->conf_mzn2fzn_params->text();
-}
-bool Project::autoClearOutput(void) const
-{
-    return ui->autoclear_output->isChecked();
-}
-bool Project::mzn2fznVerbose(void) const
-{
-    return ui->conf_verbose->isChecked();
-}
-
-bool Project::mzn2fznPrintStats() const
-{
-    return ui->conf_flatten_stats->isChecked();
-}
-bool Project::mzn2fznOptimize(void) const
-{
-    return ui->conf_optimize->isChecked();
-}
-QString Project::currentSolver(void) const
-{
-    return ui->conf_solver->currentText();
-}
-int Project::n_solutions(void) const
-{
-    return ui->conf_nsol->value();
-}
-int Project::n_compress_solutions(void) const
-{
-    return ui->conf_compressSolutionLimit->value();
-}
-bool Project::printAll(void) const
-{
-    return ui->conf_printall->isChecked();
-}
-bool Project::defaultBehaviour(void) const
-{
-    return ui->defaultBehaviourButton->isChecked();
-}
-bool Project::printStats(void) const
-{
-    return ui->conf_stats->isChecked();
-}
-bool Project::haveSolverFlags(void) const
-{
-    return ui->conf_have_solverFlags->isChecked();
-}
-QString Project::solverFlags(void) const
-{
-    return ui->conf_solverFlags->text();
-}
-int Project::n_threads(void) const
-{
-    return ui->conf_nthreads->value();
-}
-bool Project::haveSeed(void) const
-{
-    return ui->conf_have_seed->isChecked();
-}
-QString Project::seed(void) const
-{
-    return ui->conf_seed->text();
-}
-int Project::timeLimit(void) const
-{
-    return ui->conf_timeLimit->value();
-}
-bool Project::solverVerbose(void) const
-{
-    return ui->conf_solver_verbose->isChecked();
+const QVector<SolverConfiguration>& Project::solverConfigs(void) const {
+    return _solverConfigs;
 }
 
 bool Project::isUndefined() const
@@ -432,324 +442,22 @@ bool Project::isUndefined() const
     return projectRoot.isEmpty();
 }
 
-void Project::currentDataFileIndex(int i, bool init)
+void Project::solverConfigs(const QVector<SolverConfiguration> &sc, bool init)
 {
     if (init) {
-        _currentDatafileIndex = i;
-        ui->conf_data_file->setCurrentIndex(i);
+        _solverConfigs = sc;
     } else {
-        if (i < ui->conf_data_file->count()-1)
-            checkModified();
+        bool equal = true;
+        if (sc.size() != _solverConfigs.size()) {
+            setModified(true);
+        } else {
+            for (int i=0; i<sc.size(); i++) {
+                if (!(sc[i]==_solverConfigs[i])) {
+                    setModified(true);
+                    return;
+                }
+            }
+            setModified(false);
+        }
     }
-}
-
-void Project::haveExtraArgs(bool b, bool init)
-{
-    if (init) {
-        _haveExtraArgs = b;
-        ui->conf_have_cmd_params->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::extraArgs(const QString& a, bool init)
-{
-    if (init) {
-        _extraArgs = a;
-        ui->conf_cmd_params->setText(a);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveExtraMzn2FznArgs(bool b, bool init)
-{
-    if (init) {
-        _haveExtraMzn2FznArgs = b;
-        ui->conf_have_mzn2fzn_params->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::extraMzn2FznArgs(const QString& a, bool init)
-{
-    if (init) {
-        _extraMzn2FznArgs = a;
-        ui->conf_mzn2fzn_params->setText(a);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::autoClearOutput(bool b, bool init)
-{
-    if (init) {
-        _autoclear_output= b;
-        ui->autoclear_output->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznVerbose(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_verbose= b;
-        ui->conf_verbose->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznPrintStats(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_printStats = b;
-        ui->conf_flatten_stats->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznOptimize(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_optimize = b;
-        ui->conf_optimize->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::currentSolver(const QString& s, bool init)
-{
-    if (init) {
-        _currentSolver = s;
-        ui->conf_solver->setCurrentText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_solutions(int n, bool init)
-{
-    if (init) {
-        _n_solutions = n;
-        ui->conf_nsol->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_compress_solutions(int n, bool init)
-{
-    if (init) {
-        _compressSolutionLimit = n;
-        ui->conf_compressSolutionLimit->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::printAll(bool b, bool init)
-{
-    if (init) {
-        _printAll = b;
-        ui->conf_printall->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::defaultBehaviour(bool b, bool init)
-{
-    if (init) {
-        _defaultBehaviour = b;
-        ui->defaultBehaviourButton->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::printStats(bool b, bool init)
-{
-    if (init) {
-        _printStats = b;
-        ui->conf_stats->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveSolverFlags(bool b, bool init)
-{
-    if (init) {
-        _haveSolverFlags = b;
-        ui->conf_have_solverFlags->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::solverFlags(const QString& s, bool init)
-{
-    if (init) {
-        _solverFlags = s;
-        ui->conf_solverFlags->setText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_threads(int n, bool init)
-{
-    if (init) {
-        _n_threads = n;
-        ui->conf_nthreads->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveSeed(bool b, bool init)
-{
-    if (init) {
-        _haveSeed = b;
-        ui->conf_have_seed->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::seed(const QString& s, bool init)
-{
-    if (init) {
-        _seed = s;
-        ui->conf_seed->setText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::timeLimit(int n, bool init)
-{
-    if (init) {
-        _timeLimit = n;
-        ui->conf_timeLimit->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::solverVerbose(bool b, bool init)
-{
-    if (init) {
-        _solverVerbose = b;
-        ui->conf_solver_verbose->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-int Project::currentDataFileIndex(void) const
-{
-    return ui->conf_data_file->currentIndex();
-}
-
-QString Project::currentDataFile(void) const
-{
-    return ui->conf_data_file->currentText();
-}
-
-void Project::checkModified()
-{
-    if (projectRoot.isEmpty() || _filesModified)
-        return;
-    if (currentDataFileIndex() != _currentDatafileIndex) {
-        setModified(true);
-        return;
-    }
-    if (haveExtraArgs() != _haveExtraArgs) {
-        setModified(true);
-        return;
-    }
-    if (extraArgs() != _extraArgs) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznVerbose() != _mzn2fzn_verbose) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznPrintStats() != _mzn2fzn_printStats) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznOptimize() != _mzn2fzn_optimize) {
-        setModified(true);
-        return;
-    }
-    if (currentSolver() != _currentSolver) {
-        setModified(true);
-        return;
-    }
-    if (n_solutions() != _n_solutions) {
-        setModified(true);
-        return;
-    }
-    if (n_compress_solutions() != _compressSolutionLimit) {
-        setModified(true);
-        return;
-    }
-    if (printAll() != _printAll) {
-        setModified(true);
-        return;
-    }
-    if (defaultBehaviour() != _defaultBehaviour) {
-        setModified(true);
-        return;
-    }
-    if (printStats() != _printStats) {
-        setModified(true);
-        return;
-    }
-    if (haveSolverFlags() != _haveSolverFlags) {
-        setModified(true);
-        return;
-    }
-    if (solverFlags() != _solverFlags) {
-        setModified(true);
-        return;
-    }
-    if (n_threads() != _n_threads) {
-        setModified(true);
-        return;
-    }
-    if (haveSeed() != _haveSeed) {
-        setModified(true);
-        return;
-    }
-    if (seed() != _seed) {
-        setModified(true);
-        return;
-    }
-    if (timeLimit() != _timeLimit) {
-        setModified(true);
-        return;
-    }
-    if (solverVerbose() != _solverVerbose) {
-        setModified(true);
-        return;
-    }
-    setModified(false);
-}
-
-void Project::courseraError()
-{
-    QMessageBox::warning(NULL,"MiniZinc IDE",
-                        "Error reading Coursera options file",
-                        QMessageBox::Ok);
-
 }

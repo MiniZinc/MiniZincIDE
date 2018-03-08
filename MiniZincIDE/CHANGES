@@ -1,4 +1,13 @@
 2017-05-17
+  v2.1.7
+  - Update to MiniZinc 2.1.7.
+  - Fix problem where files with a . in the filename could not be run (bug #44).
+  - Fix font settings (were not saved reliably on some platforms).
+  - Enable generic interface for submitting assignments (not just to Coursera).
+  - Fix output handling for solvers that do not run mzn2fzn.
+  - Fix hidden solution display when there are exactly as many solutions as the
+    configured threshold for hiding solutions (bug #42).
+  - Add configuration option to print timing information for each solution.
   v2.1.6
   - Update to MiniZinc 2.1.6.
   v2.1.5
