@@ -1780,6 +1780,7 @@ void MainWindow::readOutput()
                             for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
                             }
+                            hiddenSolutions.clear();
                         }
                         hadNonJSONOutput = true;
                     }
@@ -2016,6 +2017,15 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     finishJSONViewer();
     inJSONHandler = false;
     JSONOutput.clear();
+    if (!hiddenSolutions.isEmpty()) {
+        if (solutionCount!=solutionLimit && solutionCount > 1) {
+            addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
+        }
+        for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
+            addOutput(hiddenSolutions[i], false);
+        }
+    }
+
     if (showTime) {
         addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
     }
