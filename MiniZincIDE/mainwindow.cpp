@@ -1518,7 +1518,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
     if (processWasStopped || exitstatus==QProcess::CrashExit)
         return;
     QString additionalCmdlineParams;
-    QString additionalDataFile;
+    QStringList additionalDataFiles;
     if (exitcode!=0) {
         checkArgsOutput();
         compileErrors = compileErrors.simplified();
@@ -1532,8 +1532,8 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
         }
         if (undefinedArgs.size() > 0) {
             QStringList params;
-            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFile);
-            if (additionalDataFile.isEmpty()) {
+            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
+            if (additionalDataFiles.isEmpty()) {
                 if (params.size()==0) {
                     procFinished(0,false);
                     return;
@@ -1549,7 +1549,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             }
         }
     }
-    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFile);
+    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles);
 }
 
 void MainWindow::checkArgs(QString filepath)
@@ -1873,7 +1873,7 @@ void MainWindow::finishJSONViewer(void)
     }
 }
 
-void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile)
+void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles)
 {
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
@@ -1904,12 +1904,13 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, additionalDataFile.isEmpty(), modelPath);
+    QStringList args = parseConf(true, additionalDataFiles.isEmpty(), modelPath);
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
-    if (!additionalDataFile.isEmpty()) {
-        args << "-d" << additionalDataFile;
+    if (!additionalDataFiles.isEmpty()) {
+        for (auto df: additionalDataFiles)
+            args << "-d" << df;
     }
 
     if (standalone) {
@@ -1935,10 +1936,12 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             QFileInfo fi(ui->conf_data_file->currentText());
             compiling += fi.fileName();
         }
-        if (!additionalDataFile.isEmpty()) {
+        if (!additionalDataFiles.isEmpty()) {
             compiling += ", with additional data ";
-            QFileInfo fi(additionalDataFile);
-            compiling += fi.fileName();
+            for (auto df: additionalDataFiles) {
+                QFileInfo fi(df);
+                compiling += fi.fileName()+" ";
+            }
         }
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
@@ -1983,7 +1986,9 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     runTimeout = timeout;
     updateUiProcessRunning(true);
     on_actionSplit_triggered();
-    compileAndRun(modelFilePath,"",dataFilePath);
+    QStringList dataFiles;
+    dataFiles.push_back(dataFilePath);
+    compileAndRun(modelFilePath,"",dataFiles);
     return true;
 }
 

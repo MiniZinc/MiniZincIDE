@@ -308,7 +308,7 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
-    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
+    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
     QString currentSolver(void) const;

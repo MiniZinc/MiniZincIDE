@@ -15,6 +15,8 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QFormLayout>
+#include <QListWidget>
 
 namespace Ui {
 class ParamDialog;
@@ -27,14 +29,15 @@ class ParamDialog : public QDialog
 public:
     explicit ParamDialog(QWidget *parent = 0);
     ~ParamDialog();
-    void getParams(QStringList params, const QStringList& dataFiles, QStringList& values, QString& dataFile);
+    void getParams(QStringList params, const QStringList& dataFiles, QStringList& values, QStringList& additionalDataFiles);
 private:
     Ui::ParamDialog *ui;
+    QFormLayout* formLayout;
+    QListWidget* selectedFiles;
     QStringList previousParams;
     QStringList previousValues;
-    QString previousDataFile;
-private slots:
-    void dataFileChanged(int);
+    QStringList previousDataFiles;
+    bool previousWasManual;
 };
 
 #endif // PARAMDIALOG_H
