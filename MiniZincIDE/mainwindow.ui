@@ -489,17 +489,17 @@
                       <item>
                        <widget class="QLabel" name="label_11">
                         <property name="text">
-                         <string>Compress solution output after this many solutions:</string>
+                         <string>Compress solution output after this many solutions (0 means &quot;never&quot;):</string>
                         </property>
                        </widget>
                       </item>
                       <item>
                        <widget class="QSpinBox" name="conf_compressSolutionLimit">
                         <property name="minimum">
-                         <number>100</number>
+                         <number>0</number>
                         </property>
                         <property name="maximum">
-                         <number>2000</number>
+                         <number>1000000</number>
                         </property>
                         <property name="singleStep">
                          <number>100</number>

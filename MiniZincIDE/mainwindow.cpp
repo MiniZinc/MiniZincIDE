@@ -1737,7 +1737,7 @@ void MainWindow::readOutput()
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
-                        if ( solutionCount > solutionLimit || !hiddenSolutions.isEmpty()) {
+                        if ( (solutionLimit != 0 && solutionCount > solutionLimit) || !hiddenSolutions.isEmpty()) {
                             if (hiddenSolutions.isEmpty()) {
                                 solutionCount = 0;
                                 if (!curJSONHandler || hadNonJSONOutput)
@@ -1765,7 +1765,7 @@ void MainWindow::readOutput()
                             if (l.trimmed() != "----------") {
                                 hiddenSolutions.back() += l;
                             }
-                            if (solutionCount == solutionLimit) {
+                            if (solutionLimit != 0 && solutionCount == solutionLimit) {
                                 addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit)+" more solutions ]</div>");
                                 solutionCount = 0;
                                 solutionLimit *= 2;
@@ -2025,7 +2025,7 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     inJSONHandler = false;
     JSONOutput.clear();
     if (!hiddenSolutions.isEmpty()) {
-        if (solutionCount!=solutionLimit && solutionCount > 1) {
+        if (solutionLimit != 0 && solutionCount!=solutionLimit && solutionCount > 1) {
             addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
         }
         for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
