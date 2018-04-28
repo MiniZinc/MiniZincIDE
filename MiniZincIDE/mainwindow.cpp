@@ -1549,6 +1549,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             }
         }
     }
+    runTimeout = ui->conf_timeLimit->value();
     compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles);
 }
 
@@ -1645,6 +1646,7 @@ void MainWindow::on_actionRun_triggered()
             if (filepath.endsWith(".fzn")) {
                 currentFznTarget = filepath;
                 runSolns2Out = false;
+                runTimeout = ui->conf_timeLimit->value();
                 runCompiledFzn(0,QProcess::NormalExit);
             } else {
                 compileOnly = false;
@@ -2345,8 +2347,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                     this, SLOT(procError(QProcess::ProcessError)));
 
             if (runTimeout != 0) {
-                int timeout = runTimeout;
-                solverTimeout->start(timeout*1000);
+                solverTimeout->start(runTimeout*1000);
             }
 
             elapsedTime.start();
