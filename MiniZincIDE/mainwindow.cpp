@@ -1074,7 +1074,9 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     }
     if (doc || !fileContents.isEmpty() || isNewFile) {
         int closeTab = -1;
-        if (!isNewFile && ui->tabWidget->count()==2) {
+        if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
+            tabCloseRequest(0);
+        if (!isNewFile && ui->tabWidget->count()==1) {
             CodeEditor* ce =
                     static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
                                                  ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
@@ -1085,8 +1087,6 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
         if (readOnly || ce->filename == "_coursera")
             ce->setReadOnly(true);
-        if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
-            tabCloseRequest(0);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         if (focus) {
             ui->tabWidget->setCurrentIndex(tab);
@@ -3201,7 +3201,9 @@ void MainWindow::openProject(const QString& fileName)
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
             if (isEmptyProject()) {
-                int closeTab = ui->tabWidget->count()==2 ? (ui->tabWidget->widget(0)==ui->configuration ? 1 : 0) : -1;
+                if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
+                    tabCloseRequest(0);
+                int closeTab = ui->tabWidget->count()==1 ? 0 : -1;
                 loadProject(fileName);
                 if (closeTab > 0 && ui->tabWidget->count()>1) {
                     CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(closeTab));
