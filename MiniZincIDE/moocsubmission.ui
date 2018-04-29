@@ -37,7 +37,7 @@
    <item>
     <widget class="QGroupBox" name="loginGroup">
      <property name="title">
-      <string>Coursera login information</string>
+      <string>Login information</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
