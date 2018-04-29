@@ -1182,6 +1182,9 @@ void MainWindow::tabCloseRequest(int tab)
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
+    // make sure any modifications in solver configurations are saved
+    on_conf_solver_conf_currentIndexChanged(ui->conf_solver_conf->currentIndex());
+
     bool modified = false;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         if (ui->tabWidget->widget(i) != ui->configuration &&
@@ -2512,7 +2515,7 @@ void MainWindow::updateSolverConfigs()
         ui->menuSolver_configurations->addSeparator();
     }
     for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
-        QString scn = bookmarkedSolverConfigs[i].name+(bookmarkedSolverConfigs[i].isBuiltin ? " [default]" : " [bookmark]");
+        QString scn = bookmarkedSolverConfigs[i].name+(bookmarkedSolverConfigs[i].isBuiltin ? " [built-in]" : " [bookmark]");
         ui->conf_solver_conf->addItem(scn);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(scn);
         solverConfAction->setCheckable(true);
@@ -2608,8 +2611,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     else
         ui->solverConfType->setText("configuration in current project");
 
-    ui->groupBox_2->setEnabled(!conf.isBookmark);
-    ui->groupBox_3->setEnabled(!conf.isBookmark);
+    ui->groupBox_2->setEnabled(!conf.isBuiltin);
+    ui->groupBox_3->setEnabled(!conf.isBuiltin);
     ui->cloneSolverConfButton->setEnabled(true);
     ui->deleteSolverConfButton->setEnabled(!conf.isBuiltin);
     if (conf.isBuiltin) {
@@ -2621,9 +2624,10 @@ void MainWindow::setCurrentSolverConfig(int idx)
         ui->renameSolverConfButton->show();
         ui->renameSolverConfButton->setEnabled(true);
         if (conf.isBookmark) {
-            ui->saveSolverConfButton->setText("Edit bookmark");
+            ui->saveSolverConfButton->hide();
         } else {
             ui->saveSolverConfButton->setText("Save as bookmark");
+            ui->saveSolverConfButton->show();
         }
     }
     project.solverConfigs(projectSolverConfigs,false);
@@ -2726,7 +2730,7 @@ void MainWindow::on_cloneSolverConfButton_clicked()
 {
     QString cur = ui->conf_solver_conf->currentText();
     cur = cur.replace(" [bookmark]","");
-    cur = cur.replace(" [default]","");
+    cur = cur.replace(" [built-in]","");
     int clone = 1;
     QRegExp re("Clone (\\d+) of (.*)");
     int pos = re.indexIn(cur);
@@ -2789,13 +2793,6 @@ void MainWindow::on_saveSolverConfButton_clicked()
         currentSolverConfig = projectSolverConfigs.size();
         updateSolverConfigs();
         setCurrentSolverConfig(projectSolverConfigs.size());
-    } else {
-        ui->groupBox_2->setEnabled(true);
-        ui->groupBox_3->setEnabled(true);
-        ui->cloneSolverConfButton->setEnabled(true);
-        ui->deleteSolverConfButton->setEnabled(true);
-        ui->saveSolverConfButton->setEnabled(false);
-        ui->renameSolverConfButton->setEnabled(true);
     }
 }
 
