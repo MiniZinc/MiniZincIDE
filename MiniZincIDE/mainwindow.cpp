@@ -3390,6 +3390,8 @@ void MainWindow::loadProject(const QString& filepath)
     int dataFileIndex;
 
     SolverConfiguration newConf;
+    newConf.isBuiltin = false;
+    newConf.isBookmark = false;
     newConf.runSolutionChecker = true;
 
     in >> p_s; // Used to be additional include path
@@ -3451,6 +3453,8 @@ void MainWindow::loadProject(const QString& filepath)
         int nSolverConfigs = p_i;
         for (int i=0; i<nSolverConfigs; i++) {
             SolverConfiguration sc;
+            sc.isBuiltin = false;
+            sc.isBookmark = false;
             in >> sc.name;
             in >> sc.solverName;
             in >> sc.timeLimit;
