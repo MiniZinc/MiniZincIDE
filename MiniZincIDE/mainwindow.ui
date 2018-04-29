@@ -285,7 +285,7 @@
                  <item>
                   <widget class="QRadioButton" name="defaultBehaviourButton">
                    <property name="text">
-                    <string>Default behaviour</string>
+                    <string>Default behavior</string>
                    </property>
                    <property name="checked">
                     <bool>true</bool>
