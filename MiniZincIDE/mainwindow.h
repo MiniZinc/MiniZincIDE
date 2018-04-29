@@ -272,8 +272,6 @@ private slots:
 
     void onClipboardChanged();
 
-    void on_conf_data_file_activated(const QString &arg1);
-
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(void);
@@ -344,6 +342,7 @@ private:
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
+    QStringList currentAdditionalDataFiles;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
@@ -386,7 +385,7 @@ private:
     bool renamingSolverConf;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
-    QStringList parseConf(bool compileOnly, bool useDataFile, const QString& modelFile);
+    QStringList parseConf(bool compileOnly, const QString& modelFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
@@ -394,7 +393,6 @@ private:
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime();
-    void setupDznMenu();
     void checkMznPath();
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);

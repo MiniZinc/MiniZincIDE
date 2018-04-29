@@ -9,7 +9,6 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringLi
     QVector<SolverConfiguration> ret;
 
     SolverConfiguration def;
-    def.datafile = "";
     def.isBuiltin = true;
     def.isBookmark = true;
     def.timeLimit = 0;
@@ -43,7 +42,6 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringLi
 bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
 {
     return  sc.solverName==solverName &&
-            sc.datafile==datafile &&
             sc.timeLimit==timeLimit &&
             sc.defaultBehaviour==defaultBehaviour &&
             sc.printIntermediate==printIntermediate &&

@@ -447,7 +447,6 @@ void Project::solverConfigs(const QVector<SolverConfiguration> &sc, bool init)
     if (init) {
         _solverConfigs = sc;
     } else {
-        bool equal = true;
         if (sc.size() != _solverConfigs.size()) {
             setModified(true);
         } else {

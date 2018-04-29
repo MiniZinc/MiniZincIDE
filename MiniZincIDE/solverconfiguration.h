@@ -13,7 +13,6 @@ public:
     bool isBookmark;
     bool isBuiltin;
     QString solverName;
-    QString datafile;
     int timeLimit;
     bool defaultBehaviour;
     bool printIntermediate;

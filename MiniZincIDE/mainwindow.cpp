@@ -910,7 +910,6 @@ void MainWindow::addFileToProject(bool dznOnly)
         setLastPath(QFileInfo(*it).absolutePath()+fileDialogSuffix);
         project.addFile(ui->projectView, projectSort, *it);
     }
-    setupDznMenu();
 }
 
 void MainWindow::updateUiProcessRunning(bool pr)
@@ -965,7 +964,6 @@ void MainWindow::onActionProjectRemove_triggered()
         }
     }
     project.removeFile(projectSelectedFile);
-    setupDznMenu();
 }
 
 void MainWindow::onActionProjectRename_triggered()
@@ -975,7 +973,8 @@ void MainWindow::onActionProjectRename_triggered()
 
 void MainWindow::onActionProjectRunWith_triggered()
 {
-    ui->conf_data_file->setCurrentIndex(ui->conf_data_file->findText(projectSelectedFile));
+    currentAdditionalDataFiles.clear();
+    currentAdditionalDataFiles.append(projectSelectedFile);
     on_actionRun_triggered();
 }
 
@@ -1103,7 +1102,6 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         }
         if (closeTab >= 0)
             tabCloseRequest(closeTab);
-        setupDznMenu();
     }
 }
 
@@ -1178,7 +1176,6 @@ void MainWindow::tabCloseRequest(int tab)
     }
     ce->document()->setModified(false);
     ui->tabWidget->removeTab(tab);
-    setupDznMenu();
     if (!ce->filepath.isEmpty())
         IDE::instance()->removeEditor(ce->filepath,ce);
     delete ce;
@@ -1400,7 +1397,7 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile, const QString& modelFile)
+QStringList MainWindow::parseConf(bool compileOnly, const QString& modelFile)
 {
     QStringList ret;
     if (compileOnly && !ui->conf_optimize->isChecked())
@@ -1425,8 +1422,6 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile, const QStr
                 ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
-    if (compileOnly && useDataFile && ui->conf_data_file->currentText()!="None")
-        ret << "-d" << ui->conf_data_file->currentText();
     bool isOptimisationProblem = true;
     if (!currentFznTarget.isEmpty()) {
         QFile fznFile(currentFznTarget);
@@ -1473,22 +1468,6 @@ QStringList MainWindow::parseConf(bool compileOnly, bool useDataFile, const QStr
     if (compileOnly && !s.mznlib.isEmpty())
         ret << s.mznlib;
     return ret;
-}
-
-void MainWindow::setupDznMenu()
-{
-    QString curText = ui->conf_data_file->currentText();
-    ui->conf_data_file->clear();
-    ui->conf_data_file->addItem("None");
-    QStringList dataFiles = project.dataFiles();
-    for (int i=0; i<dataFiles.size(); i++) {
-        ui->conf_data_file->addItem(dataFiles[i]);
-    }
-    ui->conf_data_file->addItem("Add data file to project...");
-    if (curText != "Add data file to project...")
-        ui->conf_data_file->setCurrentText(curText);
-    else
-        ui->conf_data_file->setCurrentIndex(0);
 }
 
 void MainWindow::addOutput(const QString& s, bool html)
@@ -1549,6 +1528,9 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             }
         }
     }
+    for (QString dzn: currentAdditionalDataFiles)
+        additionalDataFiles.append(dzn);
+    currentAdditionalDataFiles.clear();
     runTimeout = ui->conf_timeLimit->value();
     compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles);
 }
@@ -1573,8 +1555,10 @@ void MainWindow::checkArgs(QString filepath)
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(checkArgsError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, true, "");
+    QStringList args = parseConf(true, "");
     args << "--instance-check-only" << "--output-to-stdout";
+    for (QString dzn: currentAdditionalDataFiles)
+        args << "-d" << dzn;
     args << filepath;
     compileErrors = "";
     elapsedTime.start();
@@ -1906,7 +1890,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, additionalDataFiles.isEmpty(), modelPath);
+    QStringList args = parseConf(true, modelPath);
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
@@ -1916,7 +1900,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
 
     if (standalone) {
-        QStringList runArgs = parseConf(false,true, modelPath);
+        QStringList runArgs = parseConf(false,modelPath);
         args << runArgs;
     }
 
@@ -1933,11 +1917,6 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         }
         args << modelPath;
         QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();
-        if (ui->conf_data_file->currentText()!="None") {
-            compiling += " with data ";
-            QFileInfo fi(ui->conf_data_file->currentText());
-            compiling += fi.fileName();
-        }
         if (!additionalDataFiles.isEmpty()) {
             compiling += ", with additional data ";
             for (auto df: additionalDataFiles) {
@@ -2141,7 +2120,6 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                     project.removeFile(ce->filepath);
                     project.addFile(ui->projectView, projectSort, filepath);
                     ce->filepath = filepath;
-                    setupDznMenu();
                 }
                 ce->document()->setModified(false);
                 ce->filename = QFileInfo(filepath).fileName();
@@ -2172,7 +2150,6 @@ void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
                     tabChange(i);
             }
         }
-        setupDznMenu();
     }
 }
 
@@ -2280,7 +2257,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         return;
     if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
-        QStringList args = parseConf(false,true,"");
+        QStringList args = parseConf(false,"");
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
         if (!s.backend.isEmpty())
             args << s.backend.split(" ",QString::SkipEmptyParts);
@@ -2564,7 +2541,6 @@ void MainWindow::setCurrentSolverConfig(int idx)
         SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
         if (!oldConf.isBuiltin) {
             oldConf.solverName = ui->conf_solver->currentText();
-            oldConf.datafile = ui->conf_data_file->currentText()=="None" ? "" : ui->conf_data_file->currentText();
             oldConf.timeLimit = ui->conf_timeLimit->value();
             oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
             oldConf.printIntermediate = ui->conf_printall->isChecked();
@@ -2591,7 +2567,6 @@ void MainWindow::setCurrentSolverConfig(int idx)
     SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
 
     ui->conf_solver->setCurrentText(conf.solverName);
-    ui->conf_data_file->setCurrentText(conf.datafile.isEmpty() ? "None" : conf.datafile);
     ui->conf_timeLimit->setValue(conf.timeLimit);
     ui->defaultBehaviourButton->setChecked(conf.defaultBehaviour);
     ui->userBehaviourButton->setChecked(!conf.defaultBehaviour);
@@ -2633,7 +2608,6 @@ void MainWindow::setCurrentSolverConfig(int idx)
     else
         ui->solverConfType->setText("configuration in current project");
 
-    ui->groupBox->setEnabled(!conf.isBookmark);
     ui->groupBox_2->setEnabled(!conf.isBookmark);
     ui->groupBox_3->setEnabled(!conf.isBookmark);
     ui->cloneSolverConfButton->setEnabled(true);
@@ -2668,7 +2642,6 @@ void MainWindow::saveSolverConfigsToSettings()
         settings.setArrayIndex(j++);
         settings.setValue("name", sc.name);
         settings.setValue("solverName", sc.solverName);
-        settings.setValue("dataFile", sc.datafile);
         settings.setValue("timeLimit", sc.timeLimit);
         settings.setValue("defaultBehaviour", sc.defaultBehaviour);
         settings.setValue("printIntermediate", sc.printIntermediate);
@@ -2703,7 +2676,6 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.isBookmark = true;
         sc.isBuiltin = false;
         sc.solverName = settings.value("solverName").toString();
-        sc.datafile = settings.value("dataFile","").toString();
         sc.timeLimit = settings.value("timeLimit").toInt();
         sc.defaultBehaviour = settings.value("defaultBehaviour").toBool();
         sc.printIntermediate = settings.value("printIntermediate").toBool();
@@ -2770,7 +2742,6 @@ void MainWindow::on_cloneSolverConfButton_clicked()
     ui->nameAlreadyUsedLabel->hide();
     ui->solverConfType->hide();
     ui->conf_solver_conf->hide();
-    ui->groupBox->setEnabled(false);
     ui->groupBox_2->setEnabled(false);
     ui->groupBox_3->setEnabled(false);
     ui->deleteSolverConfButton->setEnabled(false);
@@ -2819,7 +2790,6 @@ void MainWindow::on_saveSolverConfButton_clicked()
         updateSolverConfigs();
         setCurrentSolverConfig(projectSolverConfigs.size());
     } else {
-        ui->groupBox->setEnabled(true);
         ui->groupBox_2->setEnabled(true);
         ui->groupBox_3->setEnabled(true);
         ui->cloneSolverConfButton->setEnabled(true);
@@ -2839,7 +2809,6 @@ void MainWindow::on_renameSolverConfButton_clicked()
     ui->nameAlreadyUsedLabel->hide();
     ui->solverConfType->hide();
     ui->conf_solver_conf->hide();
-    ui->groupBox->setEnabled(false);
     ui->groupBox_2->setEnabled(false);
     ui->groupBox_3->setEnabled(false);
     ui->deleteSolverConfButton->setEnabled(false);
@@ -3317,7 +3286,7 @@ void MainWindow::saveProject(const QString& f)
             SolverConfiguration& curSc = scIdx < projectSolverConfigs.size() ? projectSolverConfigs[scIdx] : bookmarkedSolverConfigs[scIdx-projectSolverConfigs.size()];
 
             out << QString(""); // Used to be additional include path
-            out << (qint32)ui->conf_data_file->currentIndex();
+            out << (qint32)0; // Used to be additional dzn file
             out << !curSc.additionalData.isEmpty();
             out << curSc.additionalData;
             out << !curSc.additionalCompilerCommandline.isEmpty();
@@ -3550,8 +3519,6 @@ void MainWindow::loadProject(const QString& filepath)
             openFile(basePath+openFiles[i],false);
         }
     }
-    setupDznMenu();
-    ui->conf_data_file->setCurrentIndex(dataFileIndex);
 
     project.setModified(false, true);
 
@@ -3713,17 +3680,6 @@ void MainWindow::on_conf_solver_activated(const QString &arg1)
 void MainWindow::onClipboardChanged()
 {
     ui->actionPaste->setEnabled(!QApplication::clipboard()->text().isEmpty());
-}
-
-void MainWindow::on_conf_data_file_activated(const QString &arg1)
-{
-    if (arg1=="Add data file to project...") {
-        int nFiles = ui->conf_data_file->count();
-        addFileToProject(true);
-        if (nFiles < ui->conf_data_file->count()) {
-            ui->conf_data_file->setCurrentIndex(ui->conf_data_file->count()-2);
-        }
-    }
 }
 
 void MainWindow::on_actionSubmit_to_MOOC_triggered()
