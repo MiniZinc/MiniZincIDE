@@ -3498,6 +3498,15 @@ void MainWindow::loadProject(const QString& filepath)
         updateSolverConfigs();
     } else {
         // create new solver configuration based on projet settings
+        bool foundSolver = false;
+        for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
+            if (bookmarkedSolverConfigs[i].name==newConf.solverName) {
+                foundSolver=true;
+                break;
+            }
+        }
+        if (!foundSolver)
+            newConf.solverName=bookmarkedSolverConfigs[defaultSolverIdx].name;
         bool foundConfig = false;
         for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
             if (bookmarkedSolverConfigs[i]==newConf) {
