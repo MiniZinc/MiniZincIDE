@@ -805,25 +805,19 @@ void MainWindow::init(const QString& projectFile)
     settings.endArray();
     settings.beginGroup("minizinc");
     mznDistribPath = settings.value("mznpath","").toString();
-    defaultSolver = settings.value("defaultSolver","").toString();
+    defaultSolverIdx = settings.value("defaultSolverIdx",0).toInt();
     settings.endGroup();
     QStringList solverNames;
-    int defaultSolverIdx = 0;
     for (int i=0; i<solvers.size(); i++) {
         solverNames.push_back(solvers[i].name);
-        if (solvers[i].name==defaultSolver)
-            defaultSolverIdx = i;
     }
 
     checkMznPath();
     for (int i=0; i<solvers.size(); i++)
         ui->conf_solver->addItem(solvers[i].name,i);
     ui->conf_solver->addItem("Add new solver...");
-    if (!defaultSolver.isEmpty())
-        ui->conf_solver->setCurrentText(defaultSolver);
 
     loadSolverConfigsFromSettings();
-    defaultSolverIdx += bookmarkedSolverConfigs.size();
     QVector<SolverConfiguration> builtinConfigs = SolverConfiguration::defaultConfigs(solverNames);
     for (int i=0; i<builtinConfigs.size(); i++)
         bookmarkedSolverConfigs.push_back(builtinConfigs[i]);
@@ -2589,6 +2583,14 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
 
+    if (idx < projectSolverConfigs.size()) {
+        ui->conf_default->hide();
+    } else {
+        ui->conf_default->setChecked(idx-projectSolverConfigs.size()==defaultSolverIdx);
+        ui->conf_default->setEnabled(idx-projectSolverConfigs.size()!=defaultSolverIdx);
+        ui->conf_default->show();
+    }
+
     bool haveChecker = false;
     if (curEditor!=NULL && curEditor->filename.endsWith(".mzn")) {
         QString checkFile = curEditor->filepath;
@@ -2996,9 +2998,8 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,defaultSolver,addNew,mznDistribPath);
+    SolverDialog sd(solvers,addNew,mznDistribPath);
     sd.exec();
-    defaultSolver = sd.def();
     mznDistribPath = sd.mznPath();
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
@@ -3012,7 +3013,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     if (!addNew && idx!=-1)
         ui->conf_solver->setCurrentIndex(idx);
     else
-        ui->conf_solver->setCurrentText(defaultSolver);
+        ui->conf_solver->setCurrentIndex(0);
 
     settings.beginGroup("ide");
     if (!checkUpdates && settings.value("checkforupdates21",false).toBool()) {
@@ -3023,7 +3024,6 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
 
     settings.beginGroup("minizinc");
     settings.setValue("mznpath",mznDistribPath);
-    settings.setValue("defaultSolver",defaultSolver);
     settings.endGroup();
 
     settings.beginWriteArray("solvers");
@@ -3042,6 +3042,19 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     }
     IDE::instance()->stats.solvers = solvers_list;
     settings.endArray();
+}
+
+
+void MainWindow::on_conf_default_toggled(bool checked)
+{
+    if (checked) {
+        ui->conf_default->setEnabled(false);
+        defaultSolverIdx = projectSolverConfigs.size()==0 ? ui->conf_solver_conf->currentIndex() : ui->conf_solver_conf->currentIndex()-projectSolverConfigs.size()-1;
+        QSettings settings;
+        settings.beginGroup("minizinc");
+        settings.setValue("defaultSolverIdx",defaultSolverIdx);
+        settings.endGroup();
+    }
 }
 
 void MainWindow::on_actionFind_triggered()
@@ -3494,6 +3507,7 @@ void MainWindow::loadProject(const QString& filepath)
             }
         }
         if (!foundConfig) {
+            newConf.name = "Project solver configuration";
             projectSolverConfigs.push_front(newConf);
             currentSolverConfig = 0;
             project.solverConfigs(projectSolverConfigs,true);

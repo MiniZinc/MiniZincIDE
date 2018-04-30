@@ -35,13 +35,12 @@
 #endif
 #endif
 
-SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
+SolverDialog::SolverDialog(QVector<Solver>& solvers0,
                            bool openAsAddNew,
                            const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
-    solvers(solvers0),
-    defaultSolver(0)
+    solvers(solvers0)
 {
     ui->setupUi(this);
 
@@ -50,9 +49,6 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0, const QString& def,
         ui->solvers_combo->insertItem(0,solvers[i].name,i);
     }
     ui->solvers_combo->setCurrentIndex(0);
-    defaultSolver = ui->solvers_combo->findText(def);
-    ui->solver_default->setChecked(0==defaultSolver);
-    ui->solver_default->setEnabled(0!=defaultSolver);
     QSettings settings;
     settings.beginGroup("ide");
     ui->check_updates->setChecked(settings.value("checkforupdates21",false).toBool());
@@ -72,11 +68,6 @@ QString SolverDialog::mznPath()
     return ui->mznDistribPath->text();
 }
 
-QString SolverDialog::def()
-{
-    return ui->solvers_combo->itemText(defaultSolver);
-}
-
 void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 {
     if (index<solvers.size()) {
@@ -86,9 +77,6 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->needs_mzn2fzn->setChecked(solvers[index].needs_mzn2fzn);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->backend->setText(solvers[index].backend);
-        ui->solver_default->setChecked(index==defaultSolver);
-        ui->solver_default->setEnabled(index!=defaultSolver);
-
         ui->updateButton->setText("Update");
         ui->deleteButton->setEnabled(true);
         ui->solverFrame->setEnabled(!solvers[index].builtin);
@@ -145,8 +133,6 @@ void SolverDialog::on_deleteButton_clicked()
     if (QMessageBox::warning(this,"MiniZinc IDE","Delete solver "+solvers[index].name+"?",QMessageBox::Ok | QMessageBox::Cancel)
             == QMessageBox::Ok) {
         solvers.remove(index);
-        if (ui->solver_default->isChecked())
-            defaultSolver = 0;
         ui->solvers_combo->removeItem(index);
     }
 }
@@ -171,14 +157,6 @@ void SolverDialog::on_exec_select_clicked()
     fd.setFileMode(QFileDialog::ExistingFile);
     if (fd.exec()) {
         ui->executable->setText(fd.selectedFiles().first());
-    }
-}
-
-void SolverDialog::on_solver_default_stateChanged(int state)
-{
-    if (state==Qt::Checked) {
-        defaultSolver = ui->solvers_combo->currentIndex();
-        ui->solver_default->setEnabled(false);
     }
 }
 

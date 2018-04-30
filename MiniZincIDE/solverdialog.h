@@ -44,13 +44,12 @@ class SolverDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SolverDialog(QVector<Solver>& solvers, const QString& def,
+    explicit SolverDialog(QVector<Solver>& solvers,
                           bool openAsAddNew,
                           const QString& mznPath,
                           QWidget *parent = 0);
     ~SolverDialog();
     QString mznPath();
-    QString def();
     static void checkMzn2fznExecutable(const QString& mznDistribPath,
                                        QString& mzn2fzn_executable,
                                        QString& mzn2fzn_version_string,
@@ -66,8 +65,6 @@ private slots:
 
     void on_exec_select_clicked();
 
-    void on_solver_default_stateChanged(int arg1);
-
     void on_check_updates_stateChanged(int arg1);
 
     void on_mznDistribPath_returnPressed();
@@ -77,7 +74,6 @@ private slots:
 private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;
-    int defaultSolver;
     void editingFinished(bool showError);
 };
 

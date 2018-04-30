@@ -299,6 +299,8 @@ private slots:
 
     void on_confCloseButton_clicked();
 
+    void on_conf_default_toggled(bool checked);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -338,7 +340,7 @@ private:
     QFont editorFont;
     bool darkMode;
     QVector<Solver> solvers;
-    QString defaultSolver;
+    int defaultSolverIdx;
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
