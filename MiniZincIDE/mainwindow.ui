@@ -1362,16 +1362,10 @@
    <property name="text">
     <string>Previous tab</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+{</string>
-   </property>
   </action>
   <action name="actionNext_tab">
    <property name="text">
     <string>Next tab</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+}</string>
    </property>
   </action>
   <action name="actionClear_menu">

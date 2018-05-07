@@ -852,6 +852,9 @@ void MainWindow::init(const QString& projectFile)
             this, SLOT(onProjectCustomContextMenu(QPoint)));
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
 
+    ui->actionNext_tab->setShortcuts(QKeySequence::NextChild);
+    ui->actionPrevious_tab->setShortcuts(QKeySequence::PreviousChild);
+
     if (!projectFile.isEmpty()) {
         loadProject(projectFile);
         setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
