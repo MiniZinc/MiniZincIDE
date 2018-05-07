@@ -760,65 +760,18 @@ void MainWindow::init(const QString& projectFile)
 
     IDE::instance()->setEditorFont(editorFont);
 
-    Solver g12fd("G12 fd","flatzinc","-Gg12_fd","",true,false,true);
-    Solver g12lazyfd("G12 lazyfd","flatzinc","-Gg12_lazyfd","-b lazy",true,false,true);
-    Solver g12mip("G12 MIP","flatzinc","-Glinear","-b mip",true,false,true);
-#ifdef MINIZINC_IDE_BUNDLED
-    Solver gecode("Gecode (bundled)","fzn-gecode","-Ggecode","",true,false,true);
-#ifdef Q_OS_WIN
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist.bat","-Ggecode","",true,true,true);
-#else
-    Solver gecodeGist("Gecode (Gist, bundled)","fzn-gecode-gist","-Ggecode","",true,true,true);
-#endif
-    Solver chuffed("Chuffed (bundled)","fzn-chuffed","-Gchuffed","",true,false,true);
-    Solver cbc("COIN-OR CBC (bundled)","mzn-cbc","-Glinear","",true,false,true);
-    Solver gurobi("Gurobi (bundled)","mzn-gurobi","-Glinear","",true,false,true);
-#endif
-
-    int nsolvers = settings.beginReadArray("solvers");
-#ifdef MINIZINC_IDE_BUNDLED
-    solvers.append(gecode);
-    solvers.append(gecodeGist);
-    solvers.append(chuffed);
-    solvers.append(cbc);
-    solvers.append(gurobi);
-#endif
-    solvers.append(g12fd);
-    solvers.append(g12lazyfd);
-    solvers.append(g12mip);
-    IDE::instance()->stats.solvers.clear();
-    for (int i=0; i<nsolvers; i++) {
-        settings.setArrayIndex(i);
-        if (settings.value("builtin").toBool())
-            continue;
-        Solver solver;
-        solver.name = settings.value("name").toString();
-        solver.executable = settings.value("executable").toString();
-        solver.mznlib = settings.value("mznlib").toString();
-        solver.backend = settings.value("backend").toString();
-        solver.builtin = settings.value("builtin").toBool();
-        solver.detach = settings.value("detach",false).toBool();
-        solver.needs_mzn2fzn= settings.value("needs_mzn2fzn",true).toBool();
-        IDE::instance()->stats.solvers.append(solver.name);
-        solvers.append(solver);
-    }
-    settings.endArray();
     settings.beginGroup("minizinc");
     mznDistribPath = settings.value("mznpath","").toString();
     defaultSolverIdx = settings.value("defaultSolverIdx",0).toInt();
     settings.endGroup();
-    QStringList solverNames;
-    for (int i=0; i<solvers.size(); i++) {
-        solverNames.push_back(solvers[i].name);
-    }
-
     checkMznPath();
-    for (int i=0; i<solvers.size(); i++)
-        ui->conf_solver->addItem(solvers[i].name,i);
+    for (int i=0; i<solvers.size(); i++) {
+        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,QStringList({solvers[i].id,solvers[i].version}));
+    }
     ui->conf_solver->addItem("Add new solver...");
 
     loadSolverConfigsFromSettings();
-    QVector<SolverConfiguration> builtinConfigs = SolverConfiguration::defaultConfigs(solverNames);
+    QVector<SolverConfiguration> builtinConfigs = SolverConfiguration::defaultConfigs(solvers);
     for (int i=0; i<builtinConfigs.size(); i++)
         bookmarkedSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
@@ -1868,7 +1821,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     if (!compileOnly) {
         // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-        if (!s.needs_mzn2fzn) {
+        if (s.supportsMzn) {
             standalone = true;
             processName = s.executable;
         }
@@ -2259,12 +2212,10 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         readOutput();
         QStringList args = parseConf(false,"");
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
-        if (!s.backend.isEmpty())
-            args << s.backend.split(" ",QString::SkipEmptyParts);
 
         args << currentFznTarget;
 
-        if (s.detach) {
+        if (s.isGUIApplication) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
 
             MznProcess* detached_process = new MznProcess(this);
@@ -2540,7 +2491,9 @@ void MainWindow::setCurrentSolverConfig(int idx)
     if (currentSolverConfig != -1) {
         SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
         if (!oldConf.isBuiltin) {
-            oldConf.solverName = ui->conf_solver->currentText();
+            QStringList idAndVersion = ui->conf_solver->currentData().value<QStringList>();
+            oldConf.solverId = idAndVersion[0];
+            oldConf.solverVersion = idAndVersion[1];
             oldConf.timeLimit = ui->conf_timeLimit->value();
             oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
             oldConf.printIntermediate = ui->conf_printall->isChecked();
@@ -2566,7 +2519,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     currentSolverConfig = idx;
     SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
 
-    ui->conf_solver->setCurrentText(conf.solverName);
+    int solverIdx = ui->conf_solver->findData(QStringList({conf.solverId,conf.solverVersion}));
+    ui->conf_solver->setCurrentIndex(solverIdx==-1 ? 0 : solverIdx);
     ui->conf_timeLimit->setValue(conf.timeLimit);
     ui->defaultBehaviourButton->setChecked(conf.defaultBehaviour);
     ui->userBehaviourButton->setChecked(!conf.defaultBehaviour);
@@ -2650,7 +2604,8 @@ void MainWindow::saveSolverConfigsToSettings()
 
         settings.setArrayIndex(j++);
         settings.setValue("name", sc.name);
-        settings.setValue("solverName", sc.solverName);
+        settings.setValue("solverId", sc.solverId);
+        settings.setValue("solverVersion", sc.solverVersion);
         settings.setValue("timeLimit", sc.timeLimit);
         settings.setValue("defaultBehaviour", sc.defaultBehaviour);
         settings.setValue("printIntermediate", sc.printIntermediate);
@@ -2684,7 +2639,8 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.name = settings.value("name").toString();
         sc.isBookmark = true;
         sc.isBuiltin = false;
-        sc.solverName = settings.value("solverName").toString();
+        sc.solverId = settings.value("solverId").toString();
+        sc.solverVersion = settings.value("solverVersion").toString();
         sc.timeLimit = settings.value("timeLimit").toInt();
         sc.defaultBehaviour = settings.value("defaultBehaviour").toBool();
         sc.printIntermediate = settings.value("printIntermediate").toBool();
@@ -3001,7 +2957,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,addNew,mznDistribPath);
+    SolverDialog sd(solvers,userSolverConfigDir,addNew,mznDistribPath);
     sd.exec();
     mznDistribPath = sd.mznPath();
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
@@ -3010,7 +2966,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     QString curSelection = ui->conf_solver->currentText();
     ui->conf_solver->clear();
     for (int i=0; i<solvers.size(); i++)
-        ui->conf_solver->addItem(solvers[i].name,i);
+        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,i);
     ui->conf_solver->addItem("Add new solver...",solvers.size());
     int idx = ui->conf_solver->findText(curSelection);
     if (!addNew && idx!=-1)
@@ -3029,22 +2985,6 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     settings.setValue("mznpath",mznDistribPath);
     settings.endGroup();
 
-    settings.beginWriteArray("solvers");
-    QStringList solvers_list;
-    for (int i=0; i<solvers.size(); i++) {
-        if (!solvers[i].builtin)
-            solvers_list.append(solvers[i].name);
-        settings.setArrayIndex(i);
-        settings.setValue("name",solvers[i].name);
-        settings.setValue("executable",solvers[i].executable);
-        settings.setValue("mznlib",solvers[i].mznlib);
-        settings.setValue("backend",solvers[i].backend);
-        settings.setValue("builtin",solvers[i].builtin);
-        settings.setValue("detach",solvers[i].detach);
-        settings.setValue("needs_mzn2fzn",solvers[i].needs_mzn2fzn);
-    }
-    IDE::instance()->stats.solvers = solvers_list;
-    settings.endArray();
 }
 
 
@@ -3106,10 +3046,10 @@ void MainWindow::on_actionGo_to_line_triggered()
 void MainWindow::checkMznPath()
 {
     QString ignoreVersionString;
-    SolverDialog::checkMzn2fznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,mzn2fznSupportsChecking);
+    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir);
 
     if (mzn2fzn_executable.isEmpty()) {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
@@ -3307,7 +3247,7 @@ void MainWindow::saveProject(const QString& f)
             out << curSc.clearOutputWindow;
             out << curSc.verboseFlattening;
             out << curSc.optimizedFlattening;
-            out << curSc.solverName;
+            out << QString(""); // Used to be solver name
             out << (qint32)curSc.stopAfter;
             out << curSc.printIntermediate;
             out << curSc.solvingStats;
@@ -3336,7 +3276,8 @@ void MainWindow::saveProject(const QString& f)
             for (int i=0; i<projectSolverConfigs.size(); i++) {
                 SolverConfiguration& sc = projectSolverConfigs[i];
                 out << sc.name;
-                out << sc.solverName;
+                out << sc.solverId;
+                out << sc.solverVersion;
                 out << sc.timeLimit;
                 out << sc.defaultBehaviour;
                 out << sc.printIntermediate;
@@ -3426,7 +3367,7 @@ void MainWindow::loadProject(const QString& filepath)
     }
     in >> newConf.verboseFlattening;
     in >> newConf.optimizedFlattening;
-    in >> newConf.solverName;
+    in >> p_s; // Used to be solver name
     in >> newConf.stopAfter;
     in >> newConf.printIntermediate;
     in >> newConf.solvingStats;
@@ -3472,7 +3413,8 @@ void MainWindow::loadProject(const QString& filepath)
             sc.isBuiltin = false;
             sc.isBookmark = false;
             in >> sc.name;
-            in >> sc.solverName;
+            in >> sc.solverId;
+            in >> sc.solverVersion;
             in >> sc.timeLimit;
             in >> sc.defaultBehaviour;
             in >> sc.printIntermediate;
@@ -3501,15 +3443,17 @@ void MainWindow::loadProject(const QString& filepath)
         updateSolverConfigs();
     } else {
         // create new solver configuration based on projet settings
-        bool foundSolver = false;
-        for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
-            if (bookmarkedSolverConfigs[i].name==newConf.solverName) {
-                foundSolver=true;
-                break;
-            }
-        }
-        if (!foundSolver)
-            newConf.solverName=bookmarkedSolverConfigs[defaultSolverIdx].name;
+//        bool foundSolver = false;
+//        for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
+//            if (bookmarkedSolverConfigs[i].name==newConf.solverName) {
+//                foundSolver=true;
+//                break;
+//            }
+//        }
+//        if (!foundSolver)
+//            newConf.solverName=bookmarkedSolverConfigs[defaultSolverIdx].name;
+        newConf.solverId = bookmarkedSolverConfigs[defaultSolverIdx].solverId;
+        newConf.solverVersion = bookmarkedSolverConfigs[defaultSolverIdx].solverVersion;
         bool foundConfig = false;
         for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
             if (bookmarkedSolverConfigs[i]==newConf) {

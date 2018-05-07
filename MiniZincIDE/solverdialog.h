@@ -15,21 +15,31 @@
 
 #include <QDialog>
 #include <QProcess>
+#include <QJsonObject>
 
 namespace Ui {
 class SolverDialog;
 }
 
 struct Solver {
+    QString configFile;
+    QString id;
     QString name;
     QString executable;
     QString mznlib;
-    QString backend;
-    bool builtin;
-    bool detach;
-    bool needs_mzn2fzn;
-    Solver(const QString& n, const QString& e, const QString& m, const QString& b, bool bi, bool dt, bool mzn) :
-        name(n), executable(e), mznlib(m), backend(b), builtin(bi), detach(dt), needs_mzn2fzn(mzn) {}
+    QString version;
+    int mznLibVersion;
+    QString description;
+    QString contact;
+    QString website;
+    bool supportsMzn;
+    bool supportsFzn;
+    bool needsSolns2Out;
+    bool isGUIApplication;
+    QStringList stdFlags;
+    QStringList extraFlags;
+    QStringList tags;
+    QJsonObject json;
     Solver(void) {}
 };
 
@@ -45,15 +55,17 @@ class SolverDialog : public QDialog
 
 public:
     explicit SolverDialog(QVector<Solver>& solvers,
+                          QString& userSolverConfigDir,
                           bool openAsAddNew,
                           const QString& mznPath,
                           QWidget *parent = 0);
     ~SolverDialog();
     QString mznPath();
-    static void checkMzn2fznExecutable(const QString& mznDistribPath,
-                                       QString& mzn2fzn_executable,
-                                       QString& mzn2fzn_version_string,
-                                       bool& supportsChecking);
+    static void checkMznExecutable(const QString& mznDistribPath,
+                                   QString& mzn_executable,
+                                   QString& mzn_version_string,
+                                   QVector<Solver>& solvers,
+                                   QString& userSolverConfigDir);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -74,6 +86,7 @@ private slots:
 private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;
+    QString& userSolverConfigDir;
     void editingFinished(bool showError);
 };
 

@@ -340,6 +340,7 @@ private:
     QFont editorFont;
     bool darkMode;
     QVector<Solver> solvers;
+    QString userSolverConfigDir;
     int defaultSolverIdx;
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
