@@ -2243,17 +2243,17 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             solutionCount = 0;
             solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
             hiddenSolutions.clear();
+            inJSONHandler = false;
+            curJSONHandler = 0;
+            JSONOutput.clear();
+            if (curHtmlWindow) {
+                disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+                curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+                curHtmlWindow = NULL;
+            }
+            hadNonJSONOutput = false;
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
-                inJSONHandler = false;
-                curJSONHandler = 0;
-                JSONOutput.clear();
-                if (curHtmlWindow) {
-                    disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
-                    curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-                    curHtmlWindow = NULL;
-                }
-                hadNonJSONOutput = false;
                 outputProcess->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
                 connect(outputProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(readOutput()));
                 connect(outputProcess, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
