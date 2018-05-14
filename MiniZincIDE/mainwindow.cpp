@@ -766,7 +766,7 @@ void MainWindow::init(const QString& projectFile)
     settings.endGroup();
     checkMznPath();
     for (int i=0; i<solvers.size(); i++) {
-        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,QStringList({solvers[i].id,solvers[i].version}));
+        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,i);
     }
     ui->conf_solver->addItem("Add new solver...");
 
@@ -1350,18 +1350,18 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compileOnly, const QString& modelFile)
+QStringList MainWindow::parseConf(bool compile, const QString& modelFile)
 {
     QStringList ret;
-    if (compileOnly && !ui->conf_optimize->isChecked())
+    if (compile && !ui->conf_optimize->isChecked())
         ret << "--no-optimize";
-    if (compileOnly && ui->conf_verbose->isChecked())
+    if (compile && ui->conf_verbose->isChecked())
         ret << "-v";
-    if (compileOnly && ui->conf_flatten_stats->isChecked())
+    if (compile && ui->conf_flatten_stats->isChecked())
         ret << "-s";
-    if (compileOnly && !ui->conf_cmd_params->text().isEmpty())
+    if (compile && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
-    if (compileOnly && mzn2fznSupportsChecking && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+    if (compile && mzn2fznSupportsChecking && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
         if (modelFile.endsWith(".mzn")) {
             QString checkFile = modelFile;
             checkFile.replace(checkFile.length()-1,1,"c");
@@ -1370,7 +1370,7 @@ QStringList MainWindow::parseConf(bool compileOnly, const QString& modelFile)
         }
     }
 
-    if (compileOnly && !ui->conf_mzn2fzn_params->text().isEmpty()) {
+    if (compile && !ui->conf_mzn2fzn_params->text().isEmpty()) {
         QStringList compilerArgs =
                 ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
@@ -1389,7 +1389,7 @@ QStringList MainWindow::parseConf(bool compileOnly, const QString& modelFile)
         }
     }
 
-    if (!compileOnly) {
+    if (!compile) {
         if (ui->defaultBehaviourButton->isChecked()) {
             if (isOptimisationProblem)
                 ret << "-a";
@@ -1406,20 +1406,20 @@ QStringList MainWindow::parseConf(bool compileOnly, const QString& modelFile)
         }
     }
 
-    if (!compileOnly && ui->conf_stats->isChecked())
+    if (!compile && ui->conf_stats->isChecked())
         ret << "-s";
-    if (!compileOnly && ui->conf_nthreads->value() > 1)
+    if (!compile && ui->conf_nthreads->value() > 1)
         ret << "-p" << QString::number(ui->conf_nthreads->value());
-    if (!compileOnly && ui->conf_have_seed->isChecked())
+    if (!compile && ui->conf_have_seed->isChecked())
         ret << "-r" << ui->conf_seed->text();
-    if (!compileOnly && !ui->conf_solverFlags->text().isEmpty()) {
+    if (!compile && !ui->conf_solverFlags->text().isEmpty()) {
         QStringList solverArgs =
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (compileOnly && !s.mznlib.isEmpty())
-        ret << s.mznlib;
+    if (compile && (s.executable.isEmpty() || s.supportsMzn))
+        ret << "--solver" << s.id+"@"+s.version;
     return ret;
 }
 
@@ -1823,7 +1823,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
         if (s.supportsMzn) {
             standalone = true;
-            processName = s.executable;
+            if (s.executable.size())
+                processName = s.executable;
         }
     }
 
@@ -1855,8 +1856,9 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     if (standalone) {
         QStringList runArgs = parseConf(false,modelPath);
         args << runArgs;
+    } else {
+        args << "-c";
     }
-
     tmpDir = new QTemporaryDir;
     if (!tmpDir->isValid()) {
         QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
@@ -2491,9 +2493,9 @@ void MainWindow::setCurrentSolverConfig(int idx)
     if (currentSolverConfig != -1) {
         SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
         if (!oldConf.isBuiltin) {
-            QStringList idAndVersion = ui->conf_solver->currentData().value<QStringList>();
-            oldConf.solverId = idAndVersion[0];
-            oldConf.solverVersion = idAndVersion[1];
+            Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+            oldConf.solverId = selectedSolver.id;
+            oldConf.solverVersion = selectedSolver.version;
             oldConf.timeLimit = ui->conf_timeLimit->value();
             oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
             oldConf.printIntermediate = ui->conf_printall->isChecked();
@@ -2519,7 +2521,15 @@ void MainWindow::setCurrentSolverConfig(int idx)
     currentSolverConfig = idx;
     SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
 
-    int solverIdx = ui->conf_solver->findData(QStringList({conf.solverId,conf.solverVersion}));
+    int solverIdx = -1;
+    for (int i=solvers.size(); i--;) {
+        Solver& s = solvers[i];
+        if (s.id==conf.solverId) {
+            solverIdx = i;
+            if (s.version==conf.solverVersion)
+                break;
+        }
+    }
     ui->conf_solver->setCurrentIndex(solverIdx==-1 ? 0 : solverIdx);
     ui->conf_timeLimit->setValue(conf.timeLimit);
     ui->defaultBehaviourButton->setChecked(conf.defaultBehaviour);

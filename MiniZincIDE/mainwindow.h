@@ -388,7 +388,7 @@ private:
     bool renamingSolverConf;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
-    QStringList parseConf(bool compileOnly, const QString& modelFile);
+    QStringList parseConf(bool compile, const QString& modelFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
