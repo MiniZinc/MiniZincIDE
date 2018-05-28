@@ -1854,6 +1854,19 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             args << "-d" << df;
     }
 
+    solutionCount = 0;
+    solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
+    hiddenSolutions.clear();
+    inJSONHandler = false;
+    curJSONHandler = 0;
+    JSONOutput.clear();
+    if (curHtmlWindow) {
+        disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+        curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+        curHtmlWindow = NULL;
+    }
+    hadNonJSONOutput = false;
+
     if (standalone) {
         QStringList runArgs = parseConf(false,modelPath);
         args << runArgs;
@@ -2243,18 +2256,6 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             tmpDir = NULL;
             procFinished(exitcode);
         } else {
-            solutionCount = 0;
-            solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
-            hiddenSolutions.clear();
-            inJSONHandler = false;
-            curJSONHandler = 0;
-            JSONOutput.clear();
-            if (curHtmlWindow) {
-                disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
-                curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-                curHtmlWindow = NULL;
-            }
-            hadNonJSONOutput = false;
             if (runSolns2Out) {
                 outputProcess = new MznProcess(this);
                 outputProcess->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
