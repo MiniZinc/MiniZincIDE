@@ -31,6 +31,8 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QVector<S
     def.runSolutionChecker = true;
 
     for (const Solver& n : solvers) {
+        if (n.requiredFlags.size())
+            continue;
         def.name = n.name+" "+n.version;
         def.solverId = n.id;
         def.solverVersion = n.version;

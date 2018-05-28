@@ -1418,8 +1418,9 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile)
         ret << solverArgs;
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (compile && (s.executable.isEmpty() || s.supportsMzn))
-        ret << "--solver" << s.id+"@"+s.version;
+    if (compile && (s.executable.isEmpty() || s.supportsMzn)) {
+        ret << "--solver" << s.id+(s.version.startsWith("<unknown") ? "" : ("@"+s.version));
+    }
     return ret;
 }
 

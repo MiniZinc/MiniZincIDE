@@ -259,6 +259,12 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                     s.website = sj["website"].toString("");
                     s.supportsFzn = sj["supportsFzn"].toBool(true);
                     s.supportsMzn = sj["supportsMzn"].toBool(false);
+                    if (sj["requiredFlags"].isArray()) {
+                        QJsonArray rfs = sj["requiredFlags"].toArray();
+                        for (auto rf : rfs) {
+                            s.requiredFlags.push_back(rf.toString());
+                        }
+                    }
                     s.isGUIApplication = sj["isGUIApplication"].toBool(false);
                     s.executable = sj["executable"].toString("");
                     s.id = sj["id"].toString();

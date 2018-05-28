@@ -38,6 +38,7 @@ struct Solver {
     bool isGUIApplication;
     QStringList stdFlags;
     QStringList extraFlags;
+    QStringList requiredFlags;
     QStringList tags;
     QJsonObject json;
     Solver(void) {}
