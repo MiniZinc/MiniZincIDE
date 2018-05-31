@@ -345,6 +345,7 @@ private:
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
+    bool isOptimisation;
     QStringList currentAdditionalDataFiles;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
@@ -387,7 +388,7 @@ private:
     bool renamingSolverConf;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
-    QStringList parseConf(bool compile, const QString& modelFile);
+    QStringList parseConf(bool compile, const QString& modelFile, bool isOptimisation);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);

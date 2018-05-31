@@ -1356,7 +1356,7 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compile, const QString& modelFile)
+QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool isOptimisation)
 {
     QStringList ret;
     if (compile && !ui->conf_optimize->isChecked())
@@ -1383,26 +1383,13 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile)
                 ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
-    bool isOptimisationProblem = true;
-    if (!currentFznTarget.isEmpty()) {
-        QFile fznFile(currentFznTarget);
-        if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            int seekSize = strlen("satisfy;\n\n");
-            if (fznFile.size() >= seekSize) {
-                fznFile.seek(fznFile.size()-seekSize);
-                QString line = fznFile.readLine();
-                if (line.contains("satisfy;"))
-                    isOptimisationProblem = false;
-            }
-        }
-    }
 
     if (!compile) {
         if (ui->defaultBehaviourButton->isChecked()) {
-            if (isOptimisationProblem)
+            if (isOptimisation)
                 ret << "-a";
         } else {
-            if (isOptimisationProblem) {
+            if (isOptimisation) {
                 if (ui->conf_printall->isChecked())
                     ret << "-a";
             } else {
@@ -1456,21 +1443,16 @@ QString MainWindow::getMznDistribPath(void) const {
 
 void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus)
 {
+    (void) exitcode;
     if (processWasStopped || exitstatus==QProcess::CrashExit)
         return;
     QString additionalCmdlineParams;
     QStringList additionalDataFiles;
-    if (exitcode!=0) {
-        checkArgsOutput();
-        compileErrors = compileErrors.simplified();
-        QRegExp undefined("symbol error: variable `([a-zA-Z][a-zA-Z0-9_]*)' must be defined");
-        undefined.setMinimal(true);
-        int pos = 0;
-        QStringList undefinedArgs;
-        while ( (pos = undefined.indexIn(compileErrors,pos)) != -1 ) {
-            undefinedArgs << undefined.cap(1);
-            pos += undefined.matchedLength();
-        }
+    checkArgsOutput();
+    QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
+    if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+        isOptimisation = (jdoc.object()["method"].toString() != "sat");
+        QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
         if (undefinedArgs.size() > 0) {
             QStringList params;
             paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
@@ -1489,7 +1471,12 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                 }
             }
         }
+    } else {
+        QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
+        procFinished(0);
+        return;
     }
+
     for (QString dzn: currentAdditionalDataFiles)
         additionalDataFiles.append(dzn);
     currentAdditionalDataFiles.clear();
@@ -1523,8 +1510,8 @@ void MainWindow::checkArgs(QString filepath)
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(checkArgsError(QProcess::ProcessError)));
 
-        QStringList args = parseConf(true, "");
-        args << "--instance-check-only" << "--output-to-stdout";
+        QStringList args = parseConf(true, "", false);
+        args << "--model-interface-only";
         for (QString dzn: currentAdditionalDataFiles)
             args << "-d" << dzn;
         args << filepath;
@@ -1599,6 +1586,19 @@ void MainWindow::on_actionRun_triggered()
                 currentFznTarget = filepath;
                 runSolns2Out = false;
                 runTimeout = ui->conf_timeLimit->value();
+                isOptimisation = true;
+                if (!currentFznTarget.isEmpty()) {
+                    QFile fznFile(currentFznTarget);
+                    if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                        int seekSize = strlen("satisfy;\n\n");
+                        if (fznFile.size() >= seekSize) {
+                            fznFile.seek(fznFile.size()-seekSize);
+                            QString line = fznFile.readLine();
+                            if (line.contains("satisfy;"))
+                                isOptimisation = false;
+                        }
+                    }
+                }
                 runCompiledFzn(0,QProcess::NormalExit);
             } else {
                 compileOnly = false;
@@ -1859,7 +1859,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, modelPath);
+    QStringList args = parseConf(true, modelPath, false);
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
@@ -1882,7 +1882,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     hadNonJSONOutput = false;
 
     if (standalone) {
-        QStringList runArgs = parseConf(false,modelPath);
+        QStringList runArgs = parseConf(false,modelPath,isOptimisation);
         args << runArgs;
     } else {
         if (modelPath.endsWith(".mzc.mzn")) {
@@ -2245,7 +2245,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         return;
     if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
-        QStringList args = parseConf(false,"");
+        QStringList args = parseConf(false,"",isOptimisation);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
 
         args << currentFznTarget;
