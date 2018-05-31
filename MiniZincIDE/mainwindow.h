@@ -358,7 +358,6 @@ private:
     bool compileOnly;
     int runTimeout;
     QString mzn2fzn_executable;
-    bool mzn2fznSupportsChecking;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;

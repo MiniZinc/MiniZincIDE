@@ -914,6 +914,7 @@ void MainWindow::onActionProjectRemove_triggered()
         }
     }
     project.removeFile(projectSelectedFile);
+    tabChange(ui->tabWidget->currentIndex());
 }
 
 void MainWindow::onActionProjectRename_triggered()
@@ -1276,10 +1277,9 @@ void MainWindow::tabChange(int tab) {
                 if (curEditor->filename.endsWith(".mzn")) {
                     QString checkFile = curEditor->filepath;
                     checkFile.replace(checkFile.length()-1,1,"c");
-                    haveChecker = project.containsFile(checkFile);
+                    haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
                 }
-                if (mzn2fznSupportsChecking && haveChecker &&
-                        (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+                if (haveChecker && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
                     ui->actionRun->setText("Run + check");
                 } else {
                     ui->actionRun->setText("Run");
@@ -1361,12 +1361,14 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile)
         ret << "-s";
     if (compile && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
-    if (compile && mzn2fznSupportsChecking && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+    if (compile && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
         if (modelFile.endsWith(".mzn")) {
             QString checkFile = modelFile;
             checkFile.replace(checkFile.length()-1,1,"c");
             if (project.containsFile(checkFile))
-                ret << "--solution-checker" << checkFile;
+                ret << checkFile;
+            else if (project.containsFile(checkFile+".mzn"))
+                ret << checkFile+".mzn";
         }
     }
 
@@ -1502,21 +1504,27 @@ void MainWindow::checkArgs(QString filepath)
     processName = mzn2fzn_executable;
     curModelFilepath = filepath;
     processWasStopped = false;
-    process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
-    process->setProcessChannelMode(QProcess::MergedChannels);
-    connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
-    connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
-    connect(process, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(checkArgsError(QProcess::ProcessError)));
-
-    QStringList args = parseConf(true, "");
-    args << "--instance-check-only" << "--output-to-stdout";
-    for (QString dzn: currentAdditionalDataFiles)
-        args << "-d" << dzn;
-    args << filepath;
     compileErrors = "";
-    elapsedTime.start();
-    process->start(mzn2fzn_executable,args,getMznDistribPath());
+
+    if (filepath.endsWith(".mzc.mzn")) {
+        // We are compiling a solution checker
+        checkArgsFinished(0, QProcess::NormalExit);
+    } else {
+        process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
+        connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
+        connect(process, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(checkArgsError(QProcess::ProcessError)));
+
+        QStringList args = parseConf(true, "");
+        args << "--instance-check-only" << "--output-to-stdout";
+        for (QString dzn: currentAdditionalDataFiles)
+            args << "-d" << dzn;
+        args << filepath;
+        elapsedTime.start();
+        process->start(mzn2fzn_executable,args,getMznDistribPath());
+    }
 }
 
 void MainWindow::on_actionRun_triggered()
@@ -1871,7 +1879,12 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         QStringList runArgs = parseConf(false,modelPath);
         args << runArgs;
     } else {
-        args << "-c";
+        if (modelPath.endsWith(".mzc.mzn")) {
+            args << "--compile-solution-checker";
+            currentFznTarget = modelPath.mid(0,modelPath.size()-4);
+        } else {
+            args << "-c";
+        }
     }
     tmpDir = new QTemporaryDir;
     if (!tmpDir->isValid()) {
@@ -1879,7 +1892,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         procFinished(0);
     } else {
         QFileInfo fi(modelPath);
-        if (!standalone) {
+        if (!standalone && !modelPath.endsWith(".mzc.mzn")) {
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
             args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
@@ -2564,10 +2577,9 @@ void MainWindow::setCurrentSolverConfig(int idx)
     if (curEditor!=NULL && curEditor->filename.endsWith(".mzn")) {
         QString checkFile = curEditor->filepath;
         checkFile.replace(checkFile.length()-1,1,"c");
-        haveChecker = project.containsFile(checkFile);
+        haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
     }
-    if (mzn2fznSupportsChecking && haveChecker &&
-            (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+    if (haveChecker && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
         ui->actionRun->setText("Run + check");
     } else {
         ui->actionRun->setText("Run");
