@@ -1035,7 +1035,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             }
         }
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
-        if (readOnly || ce->filename == "_coursera")
+        if (readOnly || ce->filename == "_coursera" || ce->filename.endsWith(".mzc"))
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
         if (focus) {
@@ -2228,7 +2228,7 @@ void MainWindow::openCompiledFzn(int exitcode)
                 break;
             }
         }
-        openFile(currentFznTarget, true);
+        openFile(currentFznTarget, !currentFznTarget.endsWith(".mzc"));
     }
     procFinished(exitcode);
 }
