@@ -812,7 +812,7 @@ void MainWindow::init(const QString& projectFile)
         loadProject(projectFile);
         setLastPath(QFileInfo(projectFile).absolutePath()+fileDialogSuffix);
     } else {
-        on_actionNewModel_file_triggered();
+        createEditor("Playground",false,true);
         if (getLastPath().isEmpty()) {
             setLastPath(QDir::currentPath()+fileDialogSuffix);
         }
@@ -996,7 +996,13 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     QString fileContents;
     QString absPath = QFileInfo(path).canonicalFilePath();
     if (isNewFile) {
-        absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
+        if (path=="Playground") {
+            absPath=path;
+            fileContents="% Use this editor for quickly trying out MiniZinc expressions\n";
+            openAsModified=true;
+        } else {
+            absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
+        }
     } else if (path.isEmpty()) {
         absPath = path;
         // Do nothing
