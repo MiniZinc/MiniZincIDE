@@ -1763,11 +1763,19 @@ void MainWindow::readOutput()
             QRegExp errexp("^(.*):([0-9]+):\\s*$");
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
+                if (errFile.endsWith("untitled_model.mzn")) {
+                    for (QTemporaryDir* d : cleanupTmpDirs) {
+                        if (d->filePath("untitled_model.mzn")==errFile) {
+                            errFile = "Playground";
+                            break;
+                        }
+                    }
+                }
                 QUrl url = QUrl::fromLocalFile(errFile);
                 url.setQuery("line="+errexp.cap(2));
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
-                addOutput("<a style='color:red' href='"+url.toString()+"'>"+errexp.cap(1)+":"+errexp.cap(2)+":</a>");
+                addOutput("<a style='color:red' href='"+url.toString()+"'>"+errFile+":"+errexp.cap(2)+":</a>");
             } else {
                 addOutput(l,false);
             }
