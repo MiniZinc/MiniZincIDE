@@ -4,7 +4,7 @@ SolverConfiguration::SolverConfiguration()
 {
 }
 
-QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringList& solverNames)
+QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers)
 {
     QVector<SolverConfiguration> ret;
 
@@ -30,9 +30,12 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringLi
     def.solvingStats = false;
     def.runSolutionChecker = true;
 
-    for (auto n : solverNames) {
-        def.name = n;
-        def.solverName = n;
+    for (const Solver& n : solvers) {
+        if (n.requiredFlags.size())
+            continue;
+        def.name = n.name+" "+n.version;
+        def.solverId = n.id;
+        def.solverVersion = n.version;
         ret.push_back(def);
     }
 
@@ -41,7 +44,8 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QStringLi
 
 bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
 {
-    return  sc.solverName==solverName &&
+    return  sc.solverId==solverId &&
+            sc.solverVersion==solverVersion &&
             sc.timeLimit==timeLimit &&
             sc.defaultBehaviour==defaultBehaviour &&
             sc.printIntermediate==printIntermediate &&
