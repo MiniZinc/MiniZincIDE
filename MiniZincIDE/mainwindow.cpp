@@ -1443,39 +1443,40 @@ QString MainWindow::getMznDistribPath(void) const {
 
 void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus)
 {
-    (void) exitcode;
     if (processWasStopped || exitstatus==QProcess::CrashExit)
         return;
     QString additionalCmdlineParams;
     QStringList additionalDataFiles;
     checkArgsOutput();
-    QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
-    compileErrors = "";
-    if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
-        isOptimisation = (jdoc.object()["method"].toString() != "sat");
-        QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
-        if (undefinedArgs.size() > 0) {
-            QStringList params;
-            paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
-            if (additionalDataFiles.isEmpty()) {
-                if (params.size()==0) {
-                    procFinished(0,false);
-                    return;
-                }
-                for (int i=0; i<undefinedArgs.size(); i++) {
-                    if (params[i].isEmpty()) {
-                        QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                        procFinished(0);
+    if (exitcode==0) {
+        QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
+        compileErrors = "";
+        if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+            isOptimisation = (jdoc.object()["method"].toString() != "sat");
+            QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
+            if (undefinedArgs.size() > 0) {
+                QStringList params;
+                paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
+                if (additionalDataFiles.isEmpty()) {
+                    if (params.size()==0) {
+                        procFinished(0,false);
                         return;
                     }
-                    additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                    for (int i=0; i<undefinedArgs.size(); i++) {
+                        if (params[i].isEmpty()) {
+                            QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                            procFinished(0);
+                            return;
+                        }
+                        additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                    }
                 }
             }
+        } else {
+            QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
+            procFinished(0);
+            return;
         }
-    } else {
-        QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
-        procFinished(0);
-        return;
     }
 
     for (QString dzn: currentAdditionalDataFiles)
