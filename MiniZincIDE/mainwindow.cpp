@@ -2079,8 +2079,16 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             ui->tabWidget->setCurrentIndex(tabIndex);
         }
         QString dialogPath = ce->filepath.isEmpty() ? getLastPath()+"/"+ce->filename: ce->filepath;
-
-        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc files (*.mzn *.dzn *.fzn)");
+        QString selectedFilter = "Other (*)";
+        if (dialogPath.endsWith(".mzn"))
+            selectedFilter = "MiniZinc model (*.mzn)";
+        else if (dialogPath.endsWith(".dzn"))
+            selectedFilter = "MiniZinc data (*.dzn)";
+        else if (dialogPath.endsWith(".fzn"))
+            selectedFilter = "FlatZinc (*.fzn)";
+        else if (dialogPath.endsWith(".mzc"))
+            selectedFilter = "MiniZinc solution checker (*.mzc)";
+        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc model (*.mzn);;MiniZinc data (*.dzn);;MiniZinc solution checker (*.mzc);;FlatZinc (*.fzn);;Other (*)",&selectedFilter);
         if (!filepath.isNull()) {
             setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
         }
