@@ -998,8 +998,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     if (isNewFile) {
         if (path=="Playground") {
             absPath=path;
-            fileContents="% Use this editor for quickly trying out MiniZinc expressions\n";
-            openAsModified=true;
+            fileContents="% Use this editor as a MiniZinc scratch book\n";
+            openAsModified=false;
         } else {
             absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
         }
@@ -1048,10 +1048,10 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             ui->tabWidget->setCurrentIndex(tab);
             curEditor->setFocus();
         }
-        if (openAsModified) {
+        if (!fileContents.isEmpty()) {
             curEditor->filepath = "";
             curEditor->document()->setPlainText(fileContents);
-            curEditor->document()->setModified(true);
+            curEditor->document()->setModified(openAsModified);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
             project.addFile(ui->projectView, projectSort, absPath);
