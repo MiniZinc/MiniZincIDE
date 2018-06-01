@@ -1450,6 +1450,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
     QStringList additionalDataFiles;
     checkArgsOutput();
     QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
+    compileErrors = "";
     if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
         isOptimisation = (jdoc.object()["method"].toString() != "sat");
         QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
