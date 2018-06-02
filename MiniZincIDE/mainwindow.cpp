@@ -1760,7 +1760,7 @@ void MainWindow::readOutput()
             } else {
                 break;
             }
-            QRegExp errexp("^(.*):([0-9]+):\\s*$");
+            QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-[0-9]+(\\.[0-9]+)?)?)?):\\s*$");
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
                 if (errFile.endsWith("untitled_model.mzn")) {
@@ -1772,7 +1772,10 @@ void MainWindow::readOutput()
                     }
                 }
                 QUrl url = QUrl::fromLocalFile(errFile);
-                url.setQuery("line="+errexp.cap(2));
+                QString query = "line="+errexp.cap(3);
+                if (!errexp.cap(5).isEmpty())
+                    query += "&column="+errexp.cap(5);
+                url.setQuery(query);
                 url.setScheme("err");
                 IDE::instance()->stats.errorsShown++;
                 addOutput("<a style='color:red' href='"+url.toString()+"'>"+errFile+":"+errexp.cap(2)+":</a>");
@@ -2982,10 +2985,18 @@ void MainWindow::errorClicked(const QUrl & anUrl)
                     bool ok;
                     int line = re_line.cap(1).toInt(&ok);
                     if (ok) {
+                        int col = 1;
+                        QRegExp re_col("column=([0-9]+)");
+                        if (re_col.indexIn(query) != -1) {
+                            bool ok;
+                            col = re_col.cap(1).toInt(&ok);
+                            if (!ok)
+                                col = 1;
+                        }
                         QTextBlock block = ce->document()->findBlockByNumber(line-1);
                         if (block.isValid()) {
                             QTextCursor cursor = ce->textCursor();
-                            cursor.setPosition(block.position());
+                            cursor.setPosition(block.position()+col-1);
                             ce->setFocus();
                             ce->setTextCursor(cursor);
                             ce->centerCursor();
