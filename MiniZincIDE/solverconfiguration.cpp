@@ -19,7 +19,7 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QVector<S
     def.clearOutputWindow = false;
     def.verboseFlattening = false;
     def.flatteningStats = false;
-    def.optimizedFlattening = true;
+    def.optimizationLevel = 1;
     def.additionalData = "";
     def.additionalCompilerCommandline = "";
     def.nThreads = 1;
@@ -54,7 +54,7 @@ bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
             sc.clearOutputWindow==clearOutputWindow &&
             sc.verboseFlattening==verboseFlattening &&
             sc.flatteningStats==flatteningStats &&
-            sc.optimizedFlattening==optimizedFlattening &&
+            sc.optimizationLevel==optimizationLevel &&
             sc.additionalData==additionalData &&
             sc.additionalCompilerCommandline==additionalCompilerCommandline &&
             sc.nThreads==nThreads &&
