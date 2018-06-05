@@ -284,15 +284,21 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>mznDistribPath</tabstop>
+  <tabstop>mznpath_select</tabstop>
+  <tabstop>check_solver</tabstop>
+  <tabstop>check_updates</tabstop>
   <tabstop>solvers_combo</tabstop>
   <tabstop>name</tabstop>
+  <tabstop>solverId</tabstop>
+  <tabstop>version</tabstop>
   <tabstop>executable</tabstop>
   <tabstop>exec_select</tabstop>
+  <tabstop>detach</tabstop>
+  <tabstop>needs_mzn2fzn</tabstop>
   <tabstop>mznpath</tabstop>
-  <tabstop>version</tabstop>
   <tabstop>deleteButton</tabstop>
   <tabstop>updateButton</tabstop>
-  <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
  <connections>
