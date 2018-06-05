@@ -244,7 +244,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         args << "--solvers-json";
         p.start(mzn2fzn_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
-            QString allOutput = p.readAllStandardOutput()+p.readAllStandardError();
+            QString allOutput = p.readAllStandardOutput();
             QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
             if (!jd.isNull()) {
                 solvers.clear();
