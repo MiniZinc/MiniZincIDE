@@ -1413,7 +1413,7 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool i
         ret << solverArgs;
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (compile && (s.executable.isEmpty() || s.supportsMzn)) {
+    if (compile && (s.executable.isEmpty() || !s.supportsMzn)) {
         ret << "--solver" << s.id+(s.version.startsWith("<unknown") ? "" : ("@"+s.version));
     }
     return ret;
