@@ -2093,7 +2093,7 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         }
         QString dialogPath = ce->filepath.isEmpty() ? getLastPath()+"/"+ce->filename: ce->filepath;
         QString selectedFilter = "Other (*)";
-        if (dialogPath.endsWith(".mzn"))
+        if (dialogPath.endsWith(".mzn") || (ce->filepath.isEmpty() && ce->filename=="Playground"))
             selectedFilter = "MiniZinc model (*.mzn)";
         else if (dialogPath.endsWith(".dzn"))
             selectedFilter = "MiniZinc data (*.dzn)";
