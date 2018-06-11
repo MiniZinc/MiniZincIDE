@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>528</width>
-    <height>527</height>
+    <height>575</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -234,6 +234,59 @@
         </item>
         <item>
          <widget class="QLineEdit" name="mznpath"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Supported standard command line flags:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_12">
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_a">
+          <property name="text">
+           <string>-a</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_n">
+          <property name="text">
+           <string>-n</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_s">
+          <property name="text">
+           <string>-s</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_p">
+          <property name="text">
+           <string>-p</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_r">
+          <property name="text">
+           <string>-r</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="has_stdflag_f">
+          <property name="text">
+           <string>-f</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

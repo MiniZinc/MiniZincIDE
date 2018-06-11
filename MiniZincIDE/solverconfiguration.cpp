@@ -22,6 +22,7 @@ SolverConfiguration SolverConfiguration::defaultConfig() {
     def.nThreads = 1;
     def.randomSeed = QVariant();
     def.solverFlags = "";
+    def.freeSearch = false;
     def.verboseSolving = false;
     def.outputTiming = false;
     def.solvingStats = false;
@@ -85,6 +86,7 @@ bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
             sc.randomSeed.isValid()==randomSeed.isValid() &&
             (sc.randomSeed.isValid() ? sc.randomSeed.toInt()==randomSeed.toInt():true) &&
             sc.solverFlags==solverFlags &&
+            sc.freeSearch==freeSearch &&
             sc.verboseSolving==verboseSolving &&
             sc.outputTiming==outputTiming &&
             sc.solvingStats==solvingStats &&

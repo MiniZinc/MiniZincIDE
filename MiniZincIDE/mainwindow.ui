@@ -717,6 +717,13 @@
                 </layout>
                </item>
                <item>
+                <widget class="QCheckBox" name="conf_solver_free">
+                 <property name="text">
+                  <string>Free search</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="conf_solver_verbose">
                  <property name="text">
                   <string>Verbose solving</string>
@@ -746,6 +753,7 @@
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
               <zorder>conf_solver_timing</zorder>
+              <zorder>conf_solver_free</zorder>
              </widget>
             </item>
             <item>

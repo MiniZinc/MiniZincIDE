@@ -30,6 +30,7 @@ public:
     int nThreads;
     QVariant randomSeed;
     QString solverFlags;
+    bool freeSearch;
     bool verboseSolving;
     bool outputTiming;
     bool solvingStats;

@@ -1365,6 +1365,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveStats = currentSolver.stdFlags.contains("-s");
     bool haveAllSol = currentSolver.stdFlags.contains("-a");
     bool haveNSol = currentSolver.stdFlags.contains("-n");
+    bool haveFreeSearch = currentSolver.stdFlags.contains("-f");
 
     bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
     bool haveCompilerVerbose =  isMiniZinc || currentSolver.stdFlags.contains("-v");
@@ -1426,6 +1427,8 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
 
     if (confMode==CONF_RUN && ui->conf_stats->isChecked() && haveStats)
         ret << "-s";
+    if (confMode==CONF_RUN && ui->conf_solver_free->isChecked() && haveFreeSearch)
+        ret << "-f";
     if (confMode==CONF_RUN && ui->conf_nthreads->value() > 1 && haveThreads)
         ret << "-p" << QString::number(ui->conf_nthreads->value());
     if (confMode==CONF_RUN && ui->conf_have_seed->isChecked() && haveSeed)
@@ -2574,6 +2577,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.nThreads = ui->conf_nthreads->value();
             oldConf.randomSeed = ui->conf_seed->text().isEmpty() ? QVariant() : ui->conf_seed->text().toInt();
             oldConf.solverFlags = ui->conf_solverFlags->text();
+            oldConf.freeSearch = ui->conf_solver_free->isChecked();
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
             oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
@@ -2610,6 +2614,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_nthreads->setValue(conf.nThreads);
     ui->conf_seed->setText(conf.randomSeed.isValid() ? QString().number(conf.randomSeed.toInt()) : QString());
     ui->conf_solverFlags->setText(conf.solverFlags);
+    ui->conf_solver_free->setChecked(conf.freeSearch);
     ui->conf_solver_verbose->setChecked(conf.verboseSolving);
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
@@ -2624,6 +2629,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_nsol->setEnabled(currentSolver.stdFlags.contains("-n"));
     ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
     ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
+    ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
 
     if (idx < projectSolverConfigs.size()) {
         ui->conf_default->hide();
@@ -2705,6 +2711,7 @@ void MainWindow::saveSolverConfigsToSettings()
         settings.setValue("nThreads", sc.nThreads);
         settings.setValue("randomSeed", sc.randomSeed);
         settings.setValue("solverFlags", sc.solverFlags);
+        settings.setValue("freeSearch", sc.freeSearch);
         settings.setValue("verboseSolving", sc.verboseSolving);
         settings.setValue("outputTiming", sc.outputTiming);
         settings.setValue("solvingStats", sc.solvingStats);
@@ -2740,6 +2747,7 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.nThreads = settings.value("nThreads").toInt();
         sc.randomSeed = settings.value("randomSeed");
         sc.solverFlags = settings.value("solverFlags").toString();
+        sc.freeSearch = settings.value("freeSearch",false).toBool();
         sc.verboseSolving = settings.value("verboseSolving").toBool();
         sc.outputTiming = settings.value("outputTiming").toBool();
         sc.solvingStats = settings.value("solvingStats").toBool();
@@ -3403,6 +3411,7 @@ void MainWindow::saveProject(const QString& f)
                 if (sc.randomSeed.isValid())
                     out << sc.randomSeed.toInt();
                 out << sc.solverFlags;
+                out << sc.freeSearch;
                 out << sc.verboseSolving;
                 out << sc.outputTiming;
                 out << sc.solvingStats;
@@ -3543,6 +3552,7 @@ void MainWindow::loadProject(const QString& filepath)
                 sc.randomSeed.setValue(p_i);
             }
             in >> sc.solverFlags;
+            in >> sc.freeSearch;
             in >> sc.verboseSolving;
             in >> sc.outputTiming;
             in >> sc.solvingStats;

@@ -85,6 +85,13 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->updateButton->setText("Update");
         ui->deleteButton->setEnabled(true);
         ui->solverFrame->setEnabled(!solvers[index].configFile.isEmpty());
+
+        ui->has_stdflag_a->setChecked(solvers[index].stdFlags.contains("-a"));
+        ui->has_stdflag_p->setChecked(solvers[index].stdFlags.contains("-p"));
+        ui->has_stdflag_r->setChecked(solvers[index].stdFlags.contains("-r"));
+        ui->has_stdflag_n->setChecked(solvers[index].stdFlags.contains("-n"));
+        ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
+        ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
     } else {
         ui->name->setText("");
         ui->solverId->setText("");
@@ -96,6 +103,12 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->solverFrame->setEnabled(true);
         ui->updateButton->setText("Add");
         ui->deleteButton->setEnabled(false);
+        ui->has_stdflag_a->setChecked(false);
+        ui->has_stdflag_p->setChecked(false);
+        ui->has_stdflag_r->setChecked(false);
+        ui->has_stdflag_n->setChecked(false);
+        ui->has_stdflag_s->setChecked(false);
+        ui->has_stdflag_f->setChecked(false);
     }
 }
 
@@ -129,6 +142,40 @@ void SolverDialog::on_updateButton_clicked()
         s.configFile = userSolverConfigDir+"/"+ui->solverId->text().trimmed()+".msc";
         solvers.append(s);
     }
+
+    solvers[index].executable = ui->executable->text().trimmed();
+    solvers[index].mznlib = ui->mznpath->text();
+    solvers[index].name = ui->name->text().trimmed();
+    solvers[index].id = ui->solverId->text().trimmed();
+    solvers[index].version = ui->version->text().trimmed();
+    solvers[index].isGUIApplication= ui->detach->isChecked();
+    solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
+
+    solvers[index].stdFlags.removeAll("-a");
+    if (ui->has_stdflag_a->isChecked()) {
+        solvers[index].stdFlags.push_back("-a");
+    }
+    solvers[index].stdFlags.removeAll("-n");
+    if (ui->has_stdflag_n->isChecked()) {
+        solvers[index].stdFlags.push_back("-n");
+    }
+    solvers[index].stdFlags.removeAll("-p");
+    if (ui->has_stdflag_p->isChecked()) {
+        solvers[index].stdFlags.push_back("-p");
+    }
+    solvers[index].stdFlags.removeAll("-s");
+    if (ui->has_stdflag_s->isChecked()) {
+        solvers[index].stdFlags.push_back("-s");
+    }
+    solvers[index].stdFlags.removeAll("-r");
+    if (ui->has_stdflag_r->isChecked()) {
+        solvers[index].stdFlags.push_back("-r");
+    }
+    solvers[index].stdFlags.removeAll("-f");
+    if (ui->has_stdflag_f->isChecked()) {
+        solvers[index].stdFlags.push_back("-f");
+    }
+
     QJsonObject json = solvers[index].json;
     json.remove("configFile");
     json["executable"] = ui->executable->text().trimmed();
@@ -138,6 +185,7 @@ void SolverDialog::on_updateButton_clicked()
     json["version"] = ui->version->text().trimmed();
     json["isGUIApplication"] = ui->detach->isChecked();
     json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
+    json["stdFlags"] = QJsonArray::fromStringList(solvers[index].stdFlags);
     QJsonDocument jdoc(json);
     QFile jdocFile(solvers[index].configFile);
     if (!jdocFile.open(QIODevice::ReadWrite)) {
@@ -148,14 +196,6 @@ void SolverDialog::on_updateButton_clicked()
         QMessageBox::warning(this,"MiniZinc IDE","Cannot save configuration file "+solvers[index].configFile,QMessageBox::Ok);
         return;
     }
-
-    solvers[index].executable = ui->executable->text().trimmed();
-    solvers[index].mznlib = ui->mznpath->text();
-    solvers[index].name = ui->name->text().trimmed();
-    solvers[index].id = ui->solverId->text().trimmed();
-    solvers[index].version = ui->version->text().trimmed();
-    solvers[index].isGUIApplication= ui->detach->isChecked();
-    solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
 
     if (index==solvers.size()-1) {
         ui->solvers_combo->insertItem(index,ui->name->text()+" "+ui->version->text(),index);
