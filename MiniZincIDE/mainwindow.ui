@@ -403,9 +403,9 @@
                      </widget>
                     </item>
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_7">
+                     <layout class="QHBoxLayout" name="nsol_layout">
                       <item>
-                       <widget class="QLabel" name="label_3">
+                       <widget class="QLabel" name="nsol_label_1">
                         <property name="text">
                          <string>Stop after this many solutions (0 means &quot;all&quot;):</string>
                         </property>
@@ -422,7 +422,7 @@
                        </widget>
                       </item>
                       <item>
-                       <widget class="QLabel" name="label_6">
+                       <widget class="QLabel" name="nsol_label_2">
                         <property name="text">
                          <string>(for satisfaction problems)</string>
                         </property>
@@ -517,21 +517,21 @@
                <item>
                 <widget class="QLabel" name="label_7">
                  <property name="text">
-                  <string>Translation options:</string>
+                  <string>Compiler options:</string>
                  </property>
                 </widget>
                </item>
                <item>
                 <widget class="QCheckBox" name="conf_verbose">
                  <property name="text">
-                  <string>Verbose flattening</string>
+                  <string>Verbose compilation</string>
                  </property>
                 </widget>
                </item>
                <item>
                 <widget class="QCheckBox" name="conf_flatten_stats">
                  <property name="text">
-                  <string>Output statistics for flattening</string>
+                  <string>Output statistics for compilation</string>
                  </property>
                 </widget>
                </item>
@@ -637,7 +637,7 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_13">
                  <item>
-                  <widget class="QLabel" name="label_4">
+                  <widget class="QLabel" name="nthreads_label">
                    <property name="text">
                     <string>Number of threads:</string>
                    </property>
@@ -746,7 +746,6 @@
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
               <zorder>conf_solver_timing</zorder>
-              <zorder>horizontalLayoutWidget</zorder>
              </widget>
             </item>
             <item>

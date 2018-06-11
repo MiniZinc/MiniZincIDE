@@ -1359,16 +1359,38 @@ void MainWindow::on_actionOpen_triggered()
 
 QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation)
 {
+    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+    bool haveThreads = currentSolver.stdFlags.contains("-p");
+    bool haveSeed = currentSolver.stdFlags.contains("-r");
+    bool haveStats = currentSolver.stdFlags.contains("-s");
+    bool haveAllSol = currentSolver.stdFlags.contains("-a");
+    bool haveNSol = currentSolver.stdFlags.contains("-n");
+
+    bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
+    bool haveCompilerVerbose =  isMiniZinc || currentSolver.stdFlags.contains("-v");
+    bool haveCompilerStats =  isMiniZinc || currentSolver.stdFlags.contains("-s");
+    bool haveCompilerOpt[6];
+    haveCompilerOpt[0] =  isMiniZinc || currentSolver.stdFlags.contains("-O0");
+    haveCompilerOpt[1] =  isMiniZinc || currentSolver.stdFlags.contains("-O1");
+    haveCompilerOpt[2] =  isMiniZinc || currentSolver.stdFlags.contains("-O2");
+    haveCompilerOpt[3] =  isMiniZinc || currentSolver.stdFlags.contains("-O3");
+    haveCompilerOpt[4] =  isMiniZinc || currentSolver.stdFlags.contains("-O4");
+    haveCompilerOpt[5] =  isMiniZinc || currentSolver.stdFlags.contains("-O5");
+    bool haveCompilerCheck = isMiniZinc;
+
     QStringList ret;
-    if (confMode==CONF_COMPILE)
-        ret << "-O"+QString().number(ui->conf_optlevel->currentIndex());
-    if (confMode==CONF_COMPILE && ui->conf_verbose->isChecked())
+    if (confMode==CONF_COMPILE) {
+        int optLevel = ui->conf_optlevel->currentIndex();
+        if (optLevel < 6 && haveCompilerOpt[optLevel])
+            ret << "-O"+QString().number(optLevel);
+    }
+    if (confMode==CONF_COMPILE && ui->conf_verbose->isChecked() && haveCompilerVerbose)
         ret << "-v";
-    if (confMode==CONF_COMPILE && ui->conf_flatten_stats->isChecked())
+    if (confMode==CONF_COMPILE && ui->conf_flatten_stats->isChecked() && haveCompilerStats)
         ret << "-s";
     if ( (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
-    if (confMode==CONF_COMPILE && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+    if (confMode==CONF_COMPILE && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked()) && haveCompilerCheck) {
         if (modelFile.endsWith(".mzn")) {
             QString checkFile = modelFile;
             checkFile.replace(checkFile.length()-1,1,"c");
@@ -1387,35 +1409,34 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
 
     if (confMode==CONF_RUN) {
         if (ui->defaultBehaviourButton->isChecked()) {
-            if (isOptimisation)
+            if (isOptimisation && haveAllSol)
                 ret << "-a";
         } else {
             if (isOptimisation) {
-                if (ui->conf_printall->isChecked())
+                if (ui->conf_printall->isChecked() && haveAllSol)
                     ret << "-a";
             } else {
-                if (ui->conf_nsol->value() == 0)
+                if (ui->conf_nsol->value() == 0 && haveAllSol)
                     ret << "-a";
-                else if (ui->conf_nsol->value() > 1)
+                else if (ui->conf_nsol->value() > 1 && haveNSol)
                     ret << "-n" << QString::number(ui->conf_nsol->value());
             }
         }
     }
 
-    if (confMode==CONF_RUN && ui->conf_stats->isChecked())
+    if (confMode==CONF_RUN && ui->conf_stats->isChecked() && haveStats)
         ret << "-s";
-    if (confMode==CONF_RUN && ui->conf_nthreads->value() > 1)
+    if (confMode==CONF_RUN && ui->conf_nthreads->value() > 1 && haveThreads)
         ret << "-p" << QString::number(ui->conf_nthreads->value());
-    if (confMode==CONF_RUN && ui->conf_have_seed->isChecked())
+    if (confMode==CONF_RUN && ui->conf_have_seed->isChecked() && haveSeed)
         ret << "-r" << ui->conf_seed->text();
     if (confMode==CONF_RUN && !ui->conf_solverFlags->text().isEmpty()) {
         QStringList solverArgs =
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && (s.executable.isEmpty() || !s.supportsMzn)) {
-        ret << "--solver" << s.id+(s.version.startsWith("<unknown") ? "" : ("@"+s.version));
+    if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && isMiniZinc) {
+        ret << "--solver" << currentSolver.id+(currentSolver.version.startsWith("<unknown") ? "" : ("@"+currentSolver.version));
     }
     return ret;
 }
@@ -2592,6 +2613,17 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_solver_verbose->setChecked(conf.verboseSolving);
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
+
+    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+    ui->conf_nthreads->setEnabled(currentSolver.stdFlags.contains("-p"));
+    ui->nthreads_label->setEnabled(currentSolver.stdFlags.contains("-p"));
+    ui->conf_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
+    ui->conf_have_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
+    ui->conf_stats->setEnabled(currentSolver.stdFlags.contains("-s"));
+    ui->conf_printall->setEnabled(currentSolver.stdFlags.contains("-a"));
+    ui->conf_nsol->setEnabled(currentSolver.stdFlags.contains("-n"));
+    ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
+    ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
 
     if (idx < projectSolverConfigs.size()) {
         ui->conf_default->hide();
