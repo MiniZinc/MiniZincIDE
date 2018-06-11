@@ -1360,8 +1360,8 @@ void MainWindow::on_actionOpen_triggered()
 QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool isOptimisation)
 {
     QStringList ret;
-    if (compile && !ui->conf_optimize->isChecked())
-        ret << "--no-optimize";
+    if (compile)
+        ret << "-O"+QString().number(ui->conf_optlevel->currentIndex());
     if (compile && ui->conf_verbose->isChecked())
         ret << "-v";
     if (compile && ui->conf_flatten_stats->isChecked())
@@ -1414,7 +1414,7 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool i
         ret << solverArgs;
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (compile && (s.executable.isEmpty() || s.supportsMzn)) {
+    if (compile && (s.executable.isEmpty() || !s.supportsMzn)) {
         ret << "--solver" << s.id+(s.version.startsWith("<unknown") ? "" : ("@"+s.version));
     }
     return ret;
@@ -2548,7 +2548,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 oldConf.clearOutputWindow = ui->autoclear_output->isChecked();
                 oldConf.verboseFlattening = ui->conf_verbose->isChecked();
                 oldConf.flatteningStats = ui->conf_flatten_stats->isChecked();
-                oldConf.optimizedFlattening = ui->conf_optimize->isChecked();
+                oldConf.optimizationLevel = ui->conf_optlevel->currentIndex();
                 oldConf.additionalData = ui->conf_cmd_params->text();
                 oldConf.additionalCompilerCommandline = ui->conf_mzn2fzn_params->text();
                 oldConf.nThreads = ui->conf_nthreads->value();
@@ -2585,7 +2585,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->autoclear_output->setChecked(conf.clearOutputWindow);
     ui->conf_verbose->setChecked(conf.verboseFlattening);
     ui->conf_flatten_stats->setChecked(conf.flatteningStats);
-    ui->conf_optimize->setChecked(conf.optimizedFlattening);
+    ui->conf_optlevel->setCurrentIndex(conf.optimizationLevel);
     ui->conf_cmd_params->setText(conf.additionalData);
     ui->conf_mzn2fzn_params->setText(conf.additionalCompilerCommandline);
     ui->conf_nthreads->setValue(conf.nThreads);
@@ -2668,7 +2668,7 @@ void MainWindow::saveSolverConfigsToSettings()
         settings.setValue("clearOutputWindow", sc.clearOutputWindow);
         settings.setValue("verboseFlattening", sc.verboseFlattening);
         settings.setValue("flatteningStats", sc.flatteningStats);
-        settings.setValue("optimizedFlattening", sc.optimizedFlattening);
+        settings.setValue("optimizationLevel", sc.optimizationLevel);
         settings.setValue("additionalData", sc.additionalData);
         settings.setValue("additionalCompilerCommandline", sc.additionalCompilerCommandline);
         settings.setValue("nThreads", sc.nThreads);
@@ -2703,7 +2703,7 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.clearOutputWindow = settings.value("clearOutputWindow").toBool();
         sc.verboseFlattening = settings.value("verboseFlattening").toBool();
         sc.flatteningStats = settings.value("flatteningStats").toBool();
-        sc.optimizedFlattening = settings.value("optimizedFlattening").toBool();
+        sc.optimizationLevel = settings.value("optimizationLevel", settings.value("optimizedFlattening", true).toBool() ? 1 : 0).toInt();
         sc.additionalData = settings.value("additionalData").toString();
         sc.additionalCompilerCommandline = settings.value("additionalCompilerCommandline").toString();
         sc.nThreads = settings.value("nThreads").toInt();
@@ -3311,7 +3311,7 @@ void MainWindow::saveProject(const QString& f)
             out << curSc.additionalCompilerCommandline;
             out << curSc.clearOutputWindow;
             out << curSc.verboseFlattening;
-            out << curSc.optimizedFlattening;
+            out << (curSc.optimizationLevel > 0 ? true : false);
             out << QString(""); // Used to be solver name
             out << (qint32)curSc.stopAfter;
             out << curSc.printIntermediate;
@@ -3351,7 +3351,7 @@ void MainWindow::saveProject(const QString& f)
                 out << sc.clearOutputWindow;
                 out << sc.verboseFlattening;
                 out << sc.flatteningStats;
-                out << sc.optimizedFlattening;
+                out << sc.optimizationLevel;
                 out << sc.additionalData;
                 out << sc.additionalCompilerCommandline;
                 out << sc.nThreads;
@@ -3431,7 +3431,8 @@ void MainWindow::loadProject(const QString& filepath)
         newConf.clearOutputWindow = false;
     }
     in >> newConf.verboseFlattening;
-    in >> newConf.optimizedFlattening;
+    in >> p_b;
+    newConf.optimizationLevel = p_b ? 1 : 0;
     in >> p_s; // Used to be solver name
     in >> newConf.stopAfter;
     in >> newConf.printIntermediate;
@@ -3488,7 +3489,7 @@ void MainWindow::loadProject(const QString& filepath)
             in >> sc.clearOutputWindow;
             in >> sc.verboseFlattening;
             in >> sc.flatteningStats;
-            in >> sc.optimizedFlattening;
+            in >> sc.optimizationLevel;
             in >> sc.additionalData;
             in >> sc.additionalCompilerCommandline;
             in >> sc.nThreads;

@@ -536,14 +536,68 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="conf_optimize">
-                 <property name="text">
-                  <string>Produce optimized FlatZinc (disable if flattening takes too long)</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                 <item>
+                  <widget class="QLabel" name="label_5">
+                   <property name="text">
+                    <string>Compiler optimisation level:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="conf_optlevel">
+                   <property name="currentText">
+                    <string>-O1 (default)</string>
+                   </property>
+                   <property name="currentIndex">
+                    <number>1</number>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>-O0 (no optimization)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>-O1 (default)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>-O2 (two-pass compilation)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>-O3 (two-pass compilation with Gecode)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>-O4 (as -O3 + shaving)</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>-O5 (as -O3 + singleton arc consistency)</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_7">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
                </item>
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -564,7 +618,7 @@
                  <item>
                   <widget class="QLabel" name="label_14">
                    <property name="text">
-                    <string>Additional mzn2fzn arguments:</string>
+                    <string>Additional compiler arguments:</string>
                    </property>
                   </widget>
                  </item>
@@ -689,10 +743,10 @@
               <zorder>label</zorder>
               <zorder>label_7</zorder>
               <zorder>conf_verbose</zorder>
-              <zorder>conf_optimize</zorder>
               <zorder>autoclear_output</zorder>
               <zorder>conf_flatten_stats</zorder>
               <zorder>conf_solver_timing</zorder>
+              <zorder>horizontalLayoutWidget</zorder>
              </widget>
             </item>
             <item>
@@ -1496,6 +1550,41 @@
    <header>esclineedit.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>solverConfNameEdit</tabstop>
+  <tabstop>conf_solver_conf</tabstop>
+  <tabstop>cloneSolverConfButton</tabstop>
+  <tabstop>renameSolverConfButton</tabstop>
+  <tabstop>deleteSolverConfButton</tabstop>
+  <tabstop>saveSolverConfButton</tabstop>
+  <tabstop>conf_default</tabstop>
+  <tabstop>conf_solver</tabstop>
+  <tabstop>conf_timeLimit</tabstop>
+  <tabstop>defaultBehaviourButton</tabstop>
+  <tabstop>userBehaviourButton</tabstop>
+  <tabstop>conf_printall</tabstop>
+  <tabstop>conf_nsol</tabstop>
+  <tabstop>conf_check_solutions</tabstop>
+  <tabstop>conf_compressSolutionLimit</tabstop>
+  <tabstop>autoclear_output</tabstop>
+  <tabstop>conf_verbose</tabstop>
+  <tabstop>conf_flatten_stats</tabstop>
+  <tabstop>conf_optlevel</tabstop>
+  <tabstop>conf_cmd_params</tabstop>
+  <tabstop>conf_mzn2fzn_params</tabstop>
+  <tabstop>conf_nthreads</tabstop>
+  <tabstop>conf_have_seed</tabstop>
+  <tabstop>conf_seed</tabstop>
+  <tabstop>conf_solverFlags</tabstop>
+  <tabstop>conf_solver_verbose</tabstop>
+  <tabstop>conf_solver_timing</tabstop>
+  <tabstop>conf_stats</tabstop>
+  <tabstop>confCloseButton</tabstop>
+  <tabstop>outputConsole</tabstop>
+  <tabstop>projectView</tabstop>
+ </tabstops>
  <resources>
   <include location="minizincide.qrc"/>
  </resources>

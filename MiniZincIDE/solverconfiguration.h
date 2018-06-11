@@ -24,7 +24,7 @@ public:
     bool clearOutputWindow;
     bool verboseFlattening;
     bool flatteningStats;
-    bool optimizedFlattening;
+    int optimizationLevel;
     QString additionalData;
     QString additionalCompilerCommandline;
     int nThreads;
