@@ -771,7 +771,8 @@ void MainWindow::init(const QString& projectFile)
     ui->conf_solver->addItem("Add new solver...");
 
     loadSolverConfigsFromSettings();
-    QVector<SolverConfiguration> builtinConfigs = SolverConfiguration::defaultConfigs(solvers);
+    QVector<SolverConfiguration> builtinConfigs;
+    SolverConfiguration::defaultConfigs(solvers, builtinConfigs);
     for (int i=0; i<builtinConfigs.size(); i++)
         bookmarkedSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
@@ -2533,30 +2534,32 @@ void MainWindow::setCurrentSolverConfig(int idx)
     }
 
     if (currentSolverConfig != -1) {
-        SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
-        if (!oldConf.isBuiltin) {
-            Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-            oldConf.solverId = selectedSolver.id;
-            oldConf.solverVersion = selectedSolver.version;
-            oldConf.timeLimit = ui->conf_timeLimit->value();
-            oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
-            oldConf.printIntermediate = ui->conf_printall->isChecked();
-            oldConf.stopAfter = ui->conf_nsol->value();
-            oldConf.compressSolutionOutput = ui->conf_compressSolutionLimit->value();
-            oldConf.clearOutputWindow = ui->autoclear_output->isChecked();
-            oldConf.verboseFlattening = ui->conf_verbose->isChecked();
-            oldConf.flatteningStats = ui->conf_flatten_stats->isChecked();
-            oldConf.optimizedFlattening = ui->conf_optimize->isChecked();
-            oldConf.additionalData = ui->conf_cmd_params->text();
-            oldConf.additionalCompilerCommandline = ui->conf_mzn2fzn_params->text();
-            oldConf.nThreads = ui->conf_nthreads->value();
-            oldConf.randomSeed = ui->conf_seed->text().isEmpty() ? QVariant() : ui->conf_seed->text().toInt();
-            oldConf.solverFlags = ui->conf_solverFlags->text();
-            oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
-            oldConf.solvingStats = ui->conf_stats->isChecked();
-            oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
-            if (oldConf.isBookmark) {
-                saveSolverConfigsToSettings();
+        if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < bookmarkedSolverConfigs.size()) {
+            SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
+            if (!oldConf.isBuiltin) {
+                Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+                oldConf.solverId = selectedSolver.id;
+                oldConf.solverVersion = selectedSolver.version;
+                oldConf.timeLimit = ui->conf_timeLimit->value();
+                oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
+                oldConf.printIntermediate = ui->conf_printall->isChecked();
+                oldConf.stopAfter = ui->conf_nsol->value();
+                oldConf.compressSolutionOutput = ui->conf_compressSolutionLimit->value();
+                oldConf.clearOutputWindow = ui->autoclear_output->isChecked();
+                oldConf.verboseFlattening = ui->conf_verbose->isChecked();
+                oldConf.flatteningStats = ui->conf_flatten_stats->isChecked();
+                oldConf.optimizedFlattening = ui->conf_optimize->isChecked();
+                oldConf.additionalData = ui->conf_cmd_params->text();
+                oldConf.additionalCompilerCommandline = ui->conf_mzn2fzn_params->text();
+                oldConf.nThreads = ui->conf_nthreads->value();
+                oldConf.randomSeed = ui->conf_seed->text().isEmpty() ? QVariant() : ui->conf_seed->text().toInt();
+                oldConf.solverFlags = ui->conf_solverFlags->text();
+                oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
+                oldConf.solvingStats = ui->conf_stats->isChecked();
+                oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
+                if (oldConf.isBookmark) {
+                    saveSolverConfigsToSettings();
+                }
             }
         }
     }
@@ -3032,6 +3035,9 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         ui->conf_solver->setCurrentIndex(idx);
     else
         ui->conf_solver->setCurrentIndex(0);
+
+    SolverConfiguration::defaultConfigs(solvers, bookmarkedSolverConfigs);
+    updateSolverConfigs();
 
     settings.beginGroup("ide");
     if (!checkUpdates && settings.value("checkforupdates21",false).toBool()) {

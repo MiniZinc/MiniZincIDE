@@ -4,10 +4,8 @@ SolverConfiguration::SolverConfiguration()
 {
 }
 
-QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers)
+void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs)
 {
-    QVector<SolverConfiguration> ret;
-
     SolverConfiguration def;
     def.isBuiltin = true;
     def.isBookmark = true;
@@ -30,16 +28,38 @@ QVector<SolverConfiguration> SolverConfiguration::defaultConfigs(const QVector<S
     def.solvingStats = false;
     def.runSolutionChecker = true;
 
+    int j = 0;
+    for (int i=0; i<solverConfigs.size(); i++) {
+        if (!solverConfigs[i].isBuiltin) {
+            solverConfigs[j++] = solverConfigs[i];
+        } else {
+            for (const Solver& n : solvers) {
+                if (solverConfigs[i].name==n.name+" "+n.version) {
+                    solverConfigs[j++] = solverConfigs[i];
+                    break;
+                }
+            }
+        }
+    }
+    solverConfigs.resize(j);
+
     for (const Solver& n : solvers) {
         if (n.requiredFlags.size())
             continue;
-        def.name = n.name+" "+n.version;
-        def.solverId = n.id;
-        def.solverVersion = n.version;
-        ret.push_back(def);
+        bool haveSolver = false;
+        for (int i=0; i<j; i++) {
+            if (solverConfigs[i].isBuiltin && solverConfigs[i].name==n.name+" "+n.version) {
+                haveSolver = true;
+                break;
+            }
+        }
+        if (!haveSolver) {
+            def.name = n.name+" "+n.version;
+            def.solverId = n.id;
+            def.solverVersion = n.version;
+            solverConfigs.push_back(def);
+        }
     }
-
-    return ret;
 }
 
 bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
