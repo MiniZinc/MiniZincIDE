@@ -1357,18 +1357,18 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
-QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool isOptimisation)
+QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation)
 {
     QStringList ret;
-    if (compile)
+    if (confMode==CONF_COMPILE)
         ret << "-O"+QString().number(ui->conf_optlevel->currentIndex());
-    if (compile && ui->conf_verbose->isChecked())
+    if (confMode==CONF_COMPILE && ui->conf_verbose->isChecked())
         ret << "-v";
-    if (compile && ui->conf_flatten_stats->isChecked())
+    if (confMode==CONF_COMPILE && ui->conf_flatten_stats->isChecked())
         ret << "-s";
-    if (compile && !ui->conf_cmd_params->text().isEmpty())
+    if ( (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
-    if (compile && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+    if (confMode==CONF_COMPILE && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
         if (modelFile.endsWith(".mzn")) {
             QString checkFile = modelFile;
             checkFile.replace(checkFile.length()-1,1,"c");
@@ -1379,13 +1379,13 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool i
         }
     }
 
-    if (compile && !ui->conf_mzn2fzn_params->text().isEmpty()) {
+    if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_mzn2fzn_params->text().isEmpty()) {
         QStringList compilerArgs =
                 ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
         ret << compilerArgs;
     }
 
-    if (!compile) {
+    if (confMode==CONF_RUN) {
         if (ui->defaultBehaviourButton->isChecked()) {
             if (isOptimisation)
                 ret << "-a";
@@ -1402,19 +1402,19 @@ QStringList MainWindow::parseConf(bool compile, const QString& modelFile, bool i
         }
     }
 
-    if (!compile && ui->conf_stats->isChecked())
+    if (confMode==CONF_RUN && ui->conf_stats->isChecked())
         ret << "-s";
-    if (!compile && ui->conf_nthreads->value() > 1)
+    if (confMode==CONF_RUN && ui->conf_nthreads->value() > 1)
         ret << "-p" << QString::number(ui->conf_nthreads->value());
-    if (!compile && ui->conf_have_seed->isChecked())
+    if (confMode==CONF_RUN && ui->conf_have_seed->isChecked())
         ret << "-r" << ui->conf_seed->text();
-    if (!compile && !ui->conf_solverFlags->text().isEmpty()) {
+    if (confMode==CONF_RUN && !ui->conf_solverFlags->text().isEmpty()) {
         QStringList solverArgs =
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
     Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    if (compile && (s.executable.isEmpty() || !s.supportsMzn)) {
+    if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && (s.executable.isEmpty() || !s.supportsMzn)) {
         ret << "--solver" << s.id+(s.version.startsWith("<unknown") ? "" : ("@"+s.version));
     }
     return ret;
@@ -1513,7 +1513,7 @@ void MainWindow::checkArgs(QString filepath)
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(checkArgsError(QProcess::ProcessError)));
 
-        QStringList args = parseConf(true, "", false);
+        QStringList args = parseConf(CONF_CHECKARGS, "", false);
         args << "--model-interface-only";
         for (QString dzn: currentAdditionalDataFiles)
             args << "-d" << dzn;
@@ -1873,7 +1873,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     connect(process, SIGNAL(error(QProcess::ProcessError)),
             this, SLOT(procError(QProcess::ProcessError)));
 
-    QStringList args = parseConf(true, modelPath, false);
+    QStringList args = parseConf(CONF_COMPILE, modelPath, false);
     if (!additionalCmdlineParams.isEmpty()) {
         args << "-D" << additionalCmdlineParams;
     }
@@ -1896,7 +1896,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     hadNonJSONOutput = false;
 
     if (standalone) {
-        QStringList runArgs = parseConf(false,modelPath,isOptimisation);
+        QStringList runArgs = parseConf(CONF_RUN,modelPath,isOptimisation);
         args << runArgs;
     } else {
         if (modelPath.endsWith(".mzc.mzn")) {
@@ -2267,7 +2267,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         return;
     if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
-        QStringList args = parseConf(false,"",isOptimisation);
+        QStringList args = parseConf(CONF_RUN,"",isOptimisation);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
 
         args << currentFznTarget;
