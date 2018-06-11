@@ -4,8 +4,7 @@ SolverConfiguration::SolverConfiguration()
 {
 }
 
-void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs)
-{
+SolverConfiguration SolverConfiguration::defaultConfig() {
     SolverConfiguration def;
     def.isBuiltin = true;
     def.isBookmark = true;
@@ -27,7 +26,12 @@ void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector
     def.outputTiming = false;
     def.solvingStats = false;
     def.runSolutionChecker = true;
+    return def;
+}
 
+void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs)
+{
+    SolverConfiguration def = defaultConfig();
     int j = 0;
     for (int i=0; i<solverConfigs.size(); i++) {
         if (!solverConfigs[i].isBuiltin) {

@@ -2512,7 +2512,7 @@ void MainWindow::updateSolverConfigs()
         ui->conf_solver_conf->addItem(scn);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(scn);
         solverConfAction->setCheckable(true);
-        if (bookmarkedSolverConfigs[i].name==curText) {
+        if (scn==curText) {
             idx = i+projectSolverConfigs.size();
             solverConfAction->setChecked(true);
         }
@@ -2536,30 +2536,28 @@ void MainWindow::setCurrentSolverConfig(int idx)
     if (currentSolverConfig != -1) {
         if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < bookmarkedSolverConfigs.size()) {
             SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
-            if (!oldConf.isBuiltin) {
-                Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-                oldConf.solverId = selectedSolver.id;
-                oldConf.solverVersion = selectedSolver.version;
-                oldConf.timeLimit = ui->conf_timeLimit->value();
-                oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
-                oldConf.printIntermediate = ui->conf_printall->isChecked();
-                oldConf.stopAfter = ui->conf_nsol->value();
-                oldConf.compressSolutionOutput = ui->conf_compressSolutionLimit->value();
-                oldConf.clearOutputWindow = ui->autoclear_output->isChecked();
-                oldConf.verboseFlattening = ui->conf_verbose->isChecked();
-                oldConf.flatteningStats = ui->conf_flatten_stats->isChecked();
-                oldConf.optimizationLevel = ui->conf_optlevel->currentIndex();
-                oldConf.additionalData = ui->conf_cmd_params->text();
-                oldConf.additionalCompilerCommandline = ui->conf_mzn2fzn_params->text();
-                oldConf.nThreads = ui->conf_nthreads->value();
-                oldConf.randomSeed = ui->conf_seed->text().isEmpty() ? QVariant() : ui->conf_seed->text().toInt();
-                oldConf.solverFlags = ui->conf_solverFlags->text();
-                oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
-                oldConf.solvingStats = ui->conf_stats->isChecked();
-                oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
-                if (oldConf.isBookmark) {
-                    saveSolverConfigsToSettings();
-                }
+            Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+            oldConf.solverId = selectedSolver.id;
+            oldConf.solverVersion = selectedSolver.version;
+            oldConf.timeLimit = ui->conf_timeLimit->value();
+            oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
+            oldConf.printIntermediate = ui->conf_printall->isChecked();
+            oldConf.stopAfter = ui->conf_nsol->value();
+            oldConf.compressSolutionOutput = ui->conf_compressSolutionLimit->value();
+            oldConf.clearOutputWindow = ui->autoclear_output->isChecked();
+            oldConf.verboseFlattening = ui->conf_verbose->isChecked();
+            oldConf.flatteningStats = ui->conf_flatten_stats->isChecked();
+            oldConf.optimizationLevel = ui->conf_optlevel->currentIndex();
+            oldConf.additionalData = ui->conf_cmd_params->text();
+            oldConf.additionalCompilerCommandline = ui->conf_mzn2fzn_params->text();
+            oldConf.nThreads = ui->conf_nthreads->value();
+            oldConf.randomSeed = ui->conf_seed->text().isEmpty() ? QVariant() : ui->conf_seed->text().toInt();
+            oldConf.solverFlags = ui->conf_solverFlags->text();
+            oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
+            oldConf.solvingStats = ui->conf_stats->isChecked();
+            oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
+            if (oldConf.isBookmark && !oldConf.isBuiltin) {
+                saveSolverConfigsToSettings();
             }
         }
     }
@@ -2624,10 +2622,11 @@ void MainWindow::setCurrentSolverConfig(int idx)
     else
         ui->solverConfType->setText("configuration in current project");
 
-    ui->groupBox_2->setEnabled(!conf.isBuiltin);
-    ui->groupBox_3->setEnabled(!conf.isBuiltin);
+    ui->groupBox_2->setEnabled(true);
+    ui->groupBox_3->setEnabled(true);
     ui->cloneSolverConfButton->setEnabled(true);
-    ui->deleteSolverConfButton->setEnabled(!conf.isBuiltin);
+    ui->deleteSolverConfButton->setEnabled(true);
+    ui->deleteSolverConfButton->setText(conf.isBuiltin ? "Reset to defaults" : "Delete");
     if (conf.isBuiltin) {
         ui->saveSolverConfButton->hide();
         ui->renameSolverConfButton->hide();
@@ -2772,23 +2771,36 @@ void MainWindow::on_cloneSolverConfButton_clicked()
 
 void MainWindow::on_deleteSolverConfButton_clicked()
 {
-    QString curSolver = ui->conf_solver_conf->currentText();
-    QMessageBox msg;
-    msg.setText("Do you really want to delete the solver configuration \""+curSolver+"\"?");
-    msg.setStandardButtons(QMessageBox::Yes| QMessageBox::Cancel);
-    msg.setDefaultButton(QMessageBox::Cancel);
-    if (msg.exec()==QMessageBox::Yes) {
-        int idx = ui->conf_solver_conf->currentIndex();
-        if (idx<projectSolverConfigs.size()) {
-            projectSolverConfigs.remove(idx);
-        } else {
-            if (projectSolverConfigs.size()!=0)
-                idx = idx-projectSolverConfigs.size()-1;
-            bookmarkedSolverConfigs.remove(idx);
-            saveSolverConfigsToSettings();
-        }
+    SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
+    if (oldConf.isBuiltin) {
+        // reset builtin configuration to default values
+        SolverConfiguration newConf = SolverConfiguration::defaultConfig();
+        newConf.name = oldConf.name;
+        newConf.solverId = oldConf.solverId;
+        newConf.solverVersion = oldConf.solverVersion;
+        oldConf = newConf;
+        currentSolverConfig = -1;
         updateSolverConfigs();
-        setCurrentSolverConfig(0);
+    } else {
+        QString curSolver = ui->conf_solver_conf->currentText();
+
+        QMessageBox msg;
+        msg.setText("Do you really want to delete the solver configuration \""+curSolver+"\"?");
+        msg.setStandardButtons(QMessageBox::Yes| QMessageBox::Cancel);
+        msg.setDefaultButton(QMessageBox::Cancel);
+        if (msg.exec()==QMessageBox::Yes) {
+            int idx = ui->conf_solver_conf->currentIndex();
+            if (idx<projectSolverConfigs.size()) {
+                projectSolverConfigs.remove(idx);
+            } else {
+                if (projectSolverConfigs.size()!=0)
+                    idx = idx-projectSolverConfigs.size()-1;
+                bookmarkedSolverConfigs.remove(idx);
+                saveSolverConfigsToSettings();
+            }
+            updateSolverConfigs();
+            setCurrentSolverConfig(0);
+        }
     }
 }
 
