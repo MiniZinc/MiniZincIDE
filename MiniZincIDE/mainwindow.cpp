@@ -934,10 +934,13 @@ void MainWindow::activateFileInProject(const QModelIndex &proxyIndex)
 {
     QModelIndex index = projectSort->mapToSource(proxyIndex);
     if (project.isProjectFile(index)) {
-        ui->tabWidget->setCurrentWidget(ui->configuration);
+        on_actionEditSolverConfig_triggered();
     } else {
         QString fileName = project.fileAtIndex(index);
         if (!fileName.isEmpty()) {
+            if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
+                tabCloseRequest(0);
+
             bool foundFile = false;
             for (int i=0; i<ui->tabWidget->count(); i++) {
                 if (ui->tabWidget->widget(i) != ui->configuration) {
