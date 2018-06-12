@@ -297,8 +297,6 @@ private slots:
     void on_solverConfNameEdit_returnPressed();
     void on_solverConfNameEdit_escPressed();
 
-    void on_confCloseButton_clicked();
-
     void on_conf_default_toggled(bool checked);
 
 protected:
@@ -382,9 +380,6 @@ private:
     QVector<SolverConfiguration> projectSolverConfigs;
     QVector<SolverConfiguration> bookmarkedSolverConfigs;
     int currentSolverConfig;
-    QVector<QPair<QWidget*,QString> > openTabs;
-    int selectedTabIndex;
-    bool outputWasOpen;
     bool renamingSolverConf;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);

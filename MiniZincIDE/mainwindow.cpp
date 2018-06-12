@@ -683,7 +683,7 @@ void MainWindow::init(const QString& projectFile)
 #endif
     QWidget* toolBarSpacer = new QWidget();
     toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    ui->toolBar->insertWidget(ui->actionShow_project_explorer, toolBarSpacer);
+    ui->toolBar->insertWidget(ui->actionEditSolverConfig, toolBarSpacer);
 
     newFileCounter = 1;
 
@@ -791,6 +791,7 @@ void MainWindow::init(const QString& projectFile)
     ui->projectView->sortByColumn(0, Qt::AscendingOrder);
     ui->projectView->setEditTriggers(QAbstractItemView::EditKeyPressed);
     ui->projectExplorerDockWidget->hide();
+    ui->conf_dock_widget->hide();
     connect(ui->projectView, SIGNAL(activated(QModelIndex)),
             this, SLOT(activateFileInProject(QModelIndex)));
 
@@ -902,15 +903,13 @@ void MainWindow::onActionProjectRemove_triggered()
     int tabCount = ui->tabWidget->count();
     if (!projectSelectedFile.isEmpty()) {
         for (int i=0; i<tabCount; i++) {
-            if (ui->tabWidget->widget(i) != ui->configuration) {
-                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-                if (ce->filepath == projectSelectedFile) {
-                    tabCloseRequest(i);
-                    if (ui->tabWidget->count() == tabCount)
-                        return;
-                    tabCount = ui->tabWidget->count();
-                    i--;
-                }
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (ce->filepath == projectSelectedFile) {
+                tabCloseRequest(i);
+                if (ui->tabWidget->count() == tabCount)
+                    return;
+                tabCount = ui->tabWidget->count();
+                i--;
             }
         }
     }
@@ -933,23 +932,18 @@ void MainWindow::onActionProjectRunWith_triggered()
 void MainWindow::activateFileInProject(const QModelIndex &proxyIndex)
 {
     QModelIndex index = projectSort->mapToSource(proxyIndex);
-    if (project.isProjectFile(index)) {
+    if (project.isProjectFile(index) && ui->conf_dock_widget->isHidden()) {
         on_actionEditSolverConfig_triggered();
     } else {
         QString fileName = project.fileAtIndex(index);
         if (!fileName.isEmpty()) {
-            if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
-                tabCloseRequest(0);
-
             bool foundFile = false;
             for (int i=0; i<ui->tabWidget->count(); i++) {
-                if (ui->tabWidget->widget(i) != ui->configuration) {
-                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-                    if (ce->filepath == fileName) {
-                        ui->tabWidget->setCurrentIndex(i);
-                        foundFile = true;
-                        break;
-                    }
+                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                if (ce->filepath == fileName) {
+                    ui->tabWidget->setCurrentIndex(i);
+                    foundFile = true;
+                    break;
                 }
             }
             if (!foundFile) {
@@ -1034,14 +1028,10 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     }
     if (doc || !fileContents.isEmpty() || isNewFile) {
         int closeTab = -1;
-        if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
-            tabCloseRequest(0);
         if (!isNewFile && ui->tabWidget->count()==1) {
-            CodeEditor* ce =
-                    static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
-                                                 ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(0));
             if (ce->filepath == "" && !ce->document()->isModified()) {
-                closeTab = ui->tabWidget->widget(0)==ui->configuration ? 1 : 0;
+                closeTab = 0;
             }
         }
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
@@ -1099,21 +1089,6 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
 
 void MainWindow::tabCloseRequest(int tab)
 {
-    if (ui->tabWidget->widget(tab)==ui->configuration) {
-        on_conf_solver_conf_currentIndexChanged(ui->conf_solver_conf->currentIndex());
-        assert(tab==0);
-        assert(ui->tabWidget->count()==1);
-        ui->tabWidget->removeTab(0);
-        while (!openTabs.empty()) {
-            QPair<QWidget*,QString>& nextTab = openTabs.back();
-            ui->tabWidget->addTab(nextTab.first,nextTab.second);
-            openTabs.pop_back();
-        }
-        ui->tabWidget->setCurrentIndex(selectedTabIndex);
-        if (outputWasOpen)
-            on_actionSplit_triggered();
-        return;
-    }
     CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
     if (ce->document()->isModified()) {
         QMessageBox msg;
@@ -1148,8 +1123,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     bool modified = false;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration &&
-            static_cast<CodeEditor*>(ui->tabWidget->widget(i))->document()->isModified()) {
+        if (static_cast<CodeEditor*>(ui->tabWidget->widget(i))->document()->isModified()) {
             modified = true;
             break;
         }
@@ -1187,13 +1161,11 @@ void MainWindow::closeEvent(QCloseEvent* e) {
         process->kill();
     }
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            ce->setDocument(NULL);
-            ce->filepath = "";
-            if (ce->filepath != "")
-                IDE::instance()->removeEditor(ce->filepath,ce);
-        }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        ce->setDocument(NULL);
+        ce->filepath = "";
+        if (ce->filepath != "")
+            IDE::instance()->removeEditor(ce->filepath,ce);
     }
     if (!projectPath.isEmpty())
         IDE::instance()->projects.remove(projectPath);
@@ -1249,103 +1221,67 @@ void MainWindow::tabChange(int tab) {
         curEditor = NULL;
         ui->actionClose->setEnabled(false);
     } else {
-        if (ui->tabWidget->widget(tab)!=ui->configuration) {
-            ui->actionClose->setEnabled(true);
-            curEditor = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
-            connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
-            connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
-            connect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
-            connect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
-            connect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
-            connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
-            connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
-            connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                    this, SLOT(setWindowModified(bool)));
-            connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
-                    ui->actionUndo, SLOT(setEnabled(bool)));
-            connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
-                    ui->actionRedo, SLOT(setEnabled(bool)));
-            setWindowModified(curEditor->document()->isModified());
-            QString p;
-            p += " ";
-            p += QChar(0x2014);
-            p += " ";
-            if (projectPath.isEmpty()) {
-                p += "Untitled Project";
-            } else {
-                QFileInfo fi(projectPath);
-                p += "Project: "+fi.baseName();
-            }
-            if (curEditor->filepath.isEmpty()) {
-                setWindowFilePath(curEditor->filename);
-                setWindowTitle(curEditor->filename+p+"[*]");
-            } else {
-                setWindowFilePath(curEditor->filepath);
-                setWindowTitle(curEditor->filename+p+"[*]");
-
-                bool haveChecker = false;
-                if (curEditor->filename.endsWith(".mzn")) {
-                    QString checkFile = curEditor->filepath;
-                    checkFile.replace(checkFile.length()-1,1,"c");
-                    haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
-                }
-                if (haveChecker && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
-                    ui->actionRun->setText("Run + check");
-                } else {
-                    ui->actionRun->setText("Run");
-                }
-
-            }
-            ui->actionSave->setEnabled(true);
-            ui->actionSave_as->setEnabled(true);
-            ui->actionSelect_All->setEnabled(true);
-            ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
-            ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
-            updateUiProcessRunning(processRunning);
-
-            findDialog->setEditor(curEditor);
-            ui->actionFind->setEnabled(true);
-            ui->actionFind_next->setEnabled(true);
-            ui->actionFind_previous->setEnabled(true);
-            ui->actionReplace->setEnabled(true);
-            ui->actionShift_left->setEnabled(true);
-            ui->actionShift_right->setEnabled(true);
-            curEditor->setFocus();
+        ui->actionClose->setEnabled(true);
+        curEditor = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
+        connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
+        connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
+        connect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
+        connect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
+        connect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
+        connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
+        connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
+        connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
+                this, SLOT(setWindowModified(bool)));
+        connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
+                ui->actionUndo, SLOT(setEnabled(bool)));
+        connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
+                ui->actionRedo, SLOT(setEnabled(bool)));
+        setWindowModified(curEditor->document()->isModified());
+        QString p;
+        p += " ";
+        p += QChar(0x2014);
+        p += " ";
+        if (projectPath.isEmpty()) {
+            p += "Untitled Project";
         } else {
-            curEditor = NULL;
-            setWindowModified(project.isModified());
-            connect(&project, SIGNAL(modificationChanged(bool)),
-                    this, SLOT(setWindowModified(bool)));
-            ui->actionClose->setEnabled(false);
-            ui->actionSave->setEnabled(false);
-            ui->actionSave_as->setEnabled(false);
-            ui->actionCut->setEnabled(false);
-            ui->actionCopy->setEnabled(false);
-            ui->actionPaste->setEnabled(false);
-            ui->actionSelect_All->setEnabled(false);
-            ui->actionUndo->setEnabled(false);
-            ui->actionRedo->setEnabled(false);
-            fakeRunAction->setEnabled(true);
-            fakeCompileAction->setEnabled(true);
-            ui->actionRun->setEnabled(false);
-            ui->actionCompile->setEnabled(false);
-            ui->actionFind->setEnabled(false);
-            ui->actionFind_next->setEnabled(false);
-            ui->actionFind_previous->setEnabled(false);
-            ui->actionReplace->setEnabled(false);
-            ui->actionShift_left->setEnabled(false);
-            ui->actionShift_right->setEnabled(false);
-            findDialog->close();
-            setWindowFilePath(projectPath);
-            QString p;
-            if (projectPath.isEmpty()) {
-                p = "Untitled Project";
-            } else {
-                QFileInfo fi(projectPath);
-                p = "Project: "+fi.baseName();
-            }
-            setWindowTitle(p+"[*]");
+            QFileInfo fi(projectPath);
+            p += "Project: "+fi.baseName();
         }
+        if (curEditor->filepath.isEmpty()) {
+            setWindowFilePath(curEditor->filename);
+            setWindowTitle(curEditor->filename+p+"[*]");
+        } else {
+            setWindowFilePath(curEditor->filepath);
+            setWindowTitle(curEditor->filename+p+"[*]");
+
+            bool haveChecker = false;
+            if (curEditor->filename.endsWith(".mzn")) {
+                QString checkFile = curEditor->filepath;
+                checkFile.replace(checkFile.length()-1,1,"c");
+                haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
+            }
+            if (haveChecker && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+                ui->actionRun->setText("Run + check");
+            } else {
+                ui->actionRun->setText("Run");
+            }
+
+        }
+        ui->actionSave->setEnabled(true);
+        ui->actionSave_as->setEnabled(true);
+        ui->actionSelect_All->setEnabled(true);
+        ui->actionUndo->setEnabled(curEditor->document()->isUndoAvailable());
+        ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
+        updateUiProcessRunning(processRunning);
+
+        findDialog->setEditor(curEditor);
+        ui->actionFind->setEnabled(true);
+        ui->actionFind_next->setEnabled(true);
+        ui->actionFind_previous->setEnabled(true);
+        ui->actionReplace->setEnabled(true);
+        ui->actionShift_left->setEnabled(true);
+        ui->actionShift_right->setEnabled(true);
+        curEditor->setFocus();
     }
 }
 
@@ -2175,17 +2111,15 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
 void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
 {
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            if (ce->filepath==oldPath) {
-                ce->filepath = newPath;
-                ce->filename = QFileInfo(newPath).fileName();
-                IDE::instance()->renameFile(oldPath,newPath);
-                ui->tabWidget->setTabText(i,ce->filename);
-                updateRecentFiles(newPath);
-                if (ce==curEditor)
-                    tabChange(i);
-            }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce->filepath==oldPath) {
+            ce->filepath = newPath;
+            ce->filename = QFileInfo(newPath).fileName();
+            IDE::instance()->renameFile(oldPath,newPath);
+            ui->tabWidget->setTabText(i,ce->filename);
+            updateRecentFiles(newPath);
+            if (ce==curEditor)
+                tabChange(i);
         }
     }
 }
@@ -2438,10 +2372,8 @@ void MainWindow::setEditorFont(QFont font)
     cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
     cursor.mergeCharFormat(format);
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i)!=ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            ce->setEditorFont(font);
-        }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        ce->setEditorFont(font);
     }
 }
 
@@ -2482,19 +2414,17 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
     bool notOpen = true;
     if (filename != "") {
       for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
           QFileInfo ceinfo(ce->filepath);
 
           if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-            ces[p] = ce;
-            if(p == locs.size()-1) {
-              ui->tabWidget->setCurrentIndex(i);
-            }
-            notOpen = false;
-            break;
+              ces[p] = ce;
+              if(p == locs.size()-1) {
+                  ui->tabWidget->setCurrentIndex(i);
+              }
+              notOpen = false;
+              break;
           }
-        }
       }
       if (notOpen && filename.size() > 0) {
         openFile(url.toLocalFile(), false, false);
@@ -2941,12 +2871,6 @@ void MainWindow::on_solverConfNameEdit_escPressed()
     on_conf_solver_conf_currentIndexChanged(ui->conf_solver_conf->currentIndex());
 }
 
-void MainWindow::on_confCloseButton_clicked()
-{
-    tabCloseRequest(0);
-}
-
-
 #define major_sep ';'
 #define minor_sep '|'
 QVector<QStringList> getBlocksFromPath(QString& path) {
@@ -3010,12 +2934,10 @@ void MainWindow::errorClicked(const QUrl & anUrl)
     if(url.scheme() == "highlight") {
       // Reset the highlighters
       for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
           CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
           Highlighter& hl = ce->getHighlighter();
           hl.clearFixedBg();
           hl.rehighlight();
-        }
       }
 
       QString query = url.query();
@@ -3034,32 +2956,30 @@ void MainWindow::errorClicked(const QUrl & anUrl)
     QFileInfo urlinfo(url.toLocalFile());
     IDE::instance()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            QFileInfo ceinfo(ce->filepath);
-            if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-                QRegExp re_line("line=([0-9]+)");
-                if (re_line.indexIn(query) != -1) {
-                    bool ok;
-                    int line = re_line.cap(1).toInt(&ok);
-                    if (ok) {
-                        int col = 1;
-                        QRegExp re_col("column=([0-9]+)");
-                        if (re_col.indexIn(query) != -1) {
-                            bool ok;
-                            col = re_col.cap(1).toInt(&ok);
-                            if (!ok)
-                                col = 1;
-                        }
-                        QTextBlock block = ce->document()->findBlockByNumber(line-1);
-                        if (block.isValid()) {
-                            QTextCursor cursor = ce->textCursor();
-                            cursor.setPosition(block.position()+col-1);
-                            ce->setFocus();
-                            ce->setTextCursor(cursor);
-                            ce->centerCursor();
-                            ui->tabWidget->setCurrentIndex(i);
-                        }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        QFileInfo ceinfo(ce->filepath);
+        if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
+            QRegExp re_line("line=([0-9]+)");
+            if (re_line.indexIn(query) != -1) {
+                bool ok;
+                int line = re_line.cap(1).toInt(&ok);
+                if (ok) {
+                    int col = 1;
+                    QRegExp re_col("column=([0-9]+)");
+                    if (re_col.indexIn(query) != -1) {
+                        bool ok;
+                        col = re_col.cap(1).toInt(&ok);
+                        if (!ok)
+                            col = 1;
+                    }
+                    QTextBlock block = ce->document()->findBlockByNumber(line-1);
+                    if (block.isValid()) {
+                        QTextCursor cursor = ce->textCursor();
+                        cursor.setPosition(block.position()+col-1);
+                        ce->setFocus();
+                        ce->setTextCursor(cursor);
+                        ce->centerCursor();
+                        ui->tabWidget->setCurrentIndex(i);
                     }
                 }
             }
@@ -3226,15 +3146,14 @@ void MainWindow::on_actionNew_project_triggered()
 
 bool MainWindow::isEmptyProject(void)
 {
-    if (ui->tabWidget->count() == 1) {
+    if (ui->tabWidget->count() == 0) {
         return project.isUndefined();
     }
-    if (ui->tabWidget->count() != 2)
-        return false;
-    CodeEditor* ce =
-            static_cast<CodeEditor*>(ui->tabWidget->widget(0)==ui->configuration ?
-                                         ui->tabWidget->widget(1) : ui->tabWidget->widget(0));
-    return ce->filepath == "" && !ce->document()->isModified() && !project.isModified();
+    if (ui->tabWidget->count() == 1) {
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(0));
+        return ce->filepath == "" && !ce->document()->isModified() && !project.isModified();
+    }
+    return false;
 }
 
 void MainWindow::openProject(const QString& fileName)
@@ -3244,8 +3163,6 @@ void MainWindow::openProject(const QString& fileName)
         IDE::PMap::iterator it = pmap.find(fileName);
         if (it==pmap.end()) {
             if (isEmptyProject()) {
-                if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
-                    tabCloseRequest(0);
                 int closeTab = ui->tabWidget->count()==1 ? 0 : -1;
                 loadProject(fileName);
                 if (closeTab > 0 && ui->tabWidget->count()>1) {
@@ -3345,11 +3262,9 @@ void MainWindow::saveProject(const QString& f)
             QStringList openFiles;
             QDir projectDir = QFileInfo(filepath).absoluteDir();
             for (int i=0; i<ui->tabWidget->count(); i++) {
-                if (ui->tabWidget->widget(i)!=ui->configuration) {
-                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-                    if (!ce->filepath.isEmpty())
-                        openFiles << projectDir.relativeFilePath(ce->filepath);
-                }
+                CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                if (!ce->filepath.isEmpty())
+                    openFiles << projectDir.relativeFilePath(ce->filepath);
             }
             out << openFiles;
 
@@ -3651,11 +3566,9 @@ void MainWindow::on_actionFind_previous_triggered()
 void MainWindow::on_actionSave_all_triggered()
 {
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i)!=ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            if (ce->document()->isModified())
-                saveFile(ce,ce->filepath);
-        }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce->document()->isModified())
+            saveFile(ce,ce->filepath);
     }
 }
 
@@ -3823,27 +3736,19 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     settings.setValue("darkMode",darkMode);
     settings.endGroup();
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (ui->tabWidget->widget(i) != ui->configuration) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-            ce->setDarkMode(darkMode);
-        }
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        ce->setDarkMode(darkMode);
     }
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
 {
-    if (ui->tabWidget->count()==1 && ui->tabWidget->widget(0)==ui->configuration)
-        return;
-    assert(openTabs.empty());
-    for (int i=ui->tabWidget->count(); i--;) {
-        openTabs.push_back(qMakePair(ui->tabWidget->widget(i),ui->tabWidget->tabText(i)));
+    if (ui->conf_dock_widget->isHidden()) {
+        ui->actionEditSolverConfig->setText("Hide configuration editor...");
+        ui->conf_dock_widget->show();
+    } else {
+        ui->actionEditSolverConfig->setText("Show configuration editor...");
+        ui->conf_dock_widget->hide();
     }
-    selectedTabIndex = ui->tabWidget->currentIndex();
-    for (int i=ui->tabWidget->count(); i--;) {
-        ui->tabWidget->removeTab(0);
-    }
-    outputWasOpen = !ui->outputDockWidget->isFloating() && !ui->outputDockWidget->isHidden();
-    on_actionOnly_editor_triggered();
-    ui->tabWidget->addTab(ui->configuration,"Set up solver configuration");
 }
