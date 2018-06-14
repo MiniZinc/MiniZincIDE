@@ -3349,6 +3349,11 @@ void MainWindow::loadProject(const QString& filepath)
 {
     QFile pfile(filepath);
     pfile.open(QIODevice::ReadOnly);
+    if (!pfile.isOpen()) {
+        QMessageBox::warning(this, "MiniZinc IDE",
+                             "Could not open project file");
+        return;
+    }
     QDataStream in(&pfile);
     quint32 magic;
     in >> magic;
