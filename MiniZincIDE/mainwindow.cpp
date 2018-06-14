@@ -3192,7 +3192,8 @@ void MainWindow::updateRecentProjects(const QString& p) {
     }
     ui->menuRecent_Projects->clear();
     for (int i=0; i<IDE::instance()->recentProjects.size(); i++) {
-        ui->menuRecent_Projects->addAction(IDE::instance()->recentProjects[i]);
+        QAction* na = ui->menuRecent_Projects->addAction(IDE::instance()->recentProjects[i]);
+        na->setData(IDE::instance()->recentProjects[i]);
     }
     ui->menuRecent_Projects->addSeparator();
     ui->menuRecent_Projects->addAction("Clear Menu");
@@ -3206,7 +3207,8 @@ void MainWindow::updateRecentFiles(const QString& p) {
     }
     ui->menuRecent_Files->clear();
     for (int i=0; i<IDE::instance()->recentFiles.size(); i++) {
-        ui->menuRecent_Files->addAction(IDE::instance()->recentFiles[i]);
+        QAction* na = ui->menuRecent_Files->addAction(IDE::instance()->recentFiles[i]);
+        na->setData(IDE::instance()->recentFiles[i]);
     }
     ui->menuRecent_Files->addSeparator();
     ui->menuRecent_Files->addAction("Clear Menu");
@@ -3217,7 +3219,7 @@ void MainWindow::recentFileMenuAction(QAction* a) {
         IDE::instance()->recentFiles.clear();
         updateRecentFiles("");
     } else {
-        openFile(a->text());
+        openFile(a->data().toString());
     }
 }
 
@@ -3226,7 +3228,7 @@ void MainWindow::recentProjectMenuAction(QAction* a) {
         IDE::instance()->recentProjects.clear();
         updateRecentProjects("");
     } else {
-        openProject(a->text());
+        openProject(a->data().toString());
     }
 }
 
