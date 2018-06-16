@@ -3100,14 +3100,20 @@ void MainWindow::checkMznPath()
 void MainWindow::on_actionShift_left_triggered()
 {
     QTextCursor cursor = curEditor->textCursor();
-    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
+    QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
+    if (block==endblock || !cursor.atBlockStart())
+        endblock = endblock.next();
     QRegExp white("\\s");
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    QRegExp twowhite("\\s\\s");
     cursor.beginEditBlock();
     do {
         cursor.setPosition(block.position());
         if (block.length() > 2) {
             cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
+            if (twowhite.indexIn(cursor.selectedText()) != 0) {
+                cursor.movePosition(QTextCursor::Left,QTextCursor::KeepAnchor,1);
+            }
             if (white.indexIn(cursor.selectedText()) == 0) {
                 cursor.removeSelectedText();
             }
@@ -3120,8 +3126,10 @@ void MainWindow::on_actionShift_left_triggered()
 void MainWindow::on_actionShift_right_triggered()
 {
     QTextCursor cursor = curEditor->textCursor();
-    QTextBlock block = curEditor->document()->findBlock(cursor.anchor());
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.position()).next();
+    QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
+    QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
+    if (block==endblock || !cursor.atBlockStart())
+        endblock = endblock.next();
     cursor.beginEditBlock();
     do {
         cursor.setPosition(block.position());
