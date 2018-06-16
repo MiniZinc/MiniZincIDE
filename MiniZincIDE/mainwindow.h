@@ -298,6 +298,7 @@ private slots:
     void on_solverConfNameEdit_escPressed();
 
     void on_conf_default_toggled(bool checked);
+    void on_conf_dock_widget_visibilityChanged(bool visible);
 
 protected:
     virtual void closeEvent(QCloseEvent*);

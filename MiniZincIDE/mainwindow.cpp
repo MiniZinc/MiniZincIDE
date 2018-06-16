@@ -3752,10 +3752,17 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
 void MainWindow::on_actionEditSolverConfig_triggered()
 {
     if (ui->conf_dock_widget->isHidden()) {
-        ui->actionEditSolverConfig->setText("Hide configuration editor...");
         ui->conf_dock_widget->show();
     } else {
-        ui->actionEditSolverConfig->setText("Show configuration editor...");
         ui->conf_dock_widget->hide();
+    }
+}
+
+void MainWindow::on_conf_dock_widget_visibilityChanged(bool visible)
+{
+    if (visible) {
+        ui->actionEditSolverConfig->setText("Hide configuration editor...");
+    } else {
+        ui->actionEditSolverConfig->setText("Show configuration editor...");
     }
 }
