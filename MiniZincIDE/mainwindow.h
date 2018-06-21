@@ -135,7 +135,7 @@ public:
 
 private:
     void init(const QString& project);
-
+    void compileOrRun();
 signals:
     /// emitted when compilation and running of a model has finished
     void finished();

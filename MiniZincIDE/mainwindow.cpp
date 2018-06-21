@@ -1488,6 +1488,12 @@ void MainWindow::checkArgs(QString filepath)
 
 void MainWindow::on_actionRun_triggered()
 {
+    compileOnly = false;
+    compileOrRun();
+}
+
+void MainWindow::compileOrRun()
+{
     if (mzn2fzn_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
@@ -1546,28 +1552,29 @@ void MainWindow::on_actionRun_triggered()
                 on_actionClear_output_triggered();
             }
             updateUiProcessRunning(true);
-            on_actionSplit_triggered();
-            IDE::instance()->stats.modelsRun++;
-            if (filepath.endsWith(".fzn")) {
-                currentFznTarget = filepath;
-                runSolns2Out = false;
-                runTimeout = ui->conf_timeLimit->value();
-                isOptimisation = true;
-                if (!currentFznTarget.isEmpty()) {
-                    QFile fznFile(currentFznTarget);
-                    if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                        int seekSize = strlen("satisfy;\n\n");
-                        if (fznFile.size() >= seekSize) {
-                            fznFile.seek(fznFile.size()-seekSize);
-                            QString line = fznFile.readLine();
-                            if (line.contains("satisfy;"))
-                                isOptimisation = false;
+            if (!compileOnly) {
+                on_actionSplit_triggered();
+                IDE::instance()->stats.modelsRun++;
+                if (filepath.endsWith(".fzn")) {
+                    currentFznTarget = filepath;
+                    runSolns2Out = false;
+                    runTimeout = ui->conf_timeLimit->value();
+                    isOptimisation = true;
+                    if (!currentFznTarget.isEmpty()) {
+                        QFile fznFile(currentFznTarget);
+                        if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                            int seekSize = strlen("satisfy;\n\n");
+                            if (fznFile.size() >= seekSize) {
+                                fznFile.seek(fznFile.size()-seekSize);
+                                QString line = fznFile.readLine();
+                                if (line.contains("satisfy;"))
+                                    isOptimisation = false;
+                            }
                         }
                     }
+                    runCompiledFzn(0,QProcess::NormalExit);
                 }
-                runCompiledFzn(0,QProcess::NormalExit);
             } else {
-                compileOnly = false;
                 checkArgs(filepath);
             }
         }
@@ -2320,40 +2327,8 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 void MainWindow::on_actionCompile_triggered()
 {
-    if (mzn2fzn_executable=="") {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
-                                       QMessageBox::Ok | QMessageBox::Cancel);
-        if (ret == QMessageBox::Ok)
-            on_actionManage_solvers_triggered();
-        return;
-    }
-    if (curEditor && curEditor->filepath!="") {
-        if (curEditor->document()->isModified()) {
-            if (!saveBeforeRunning) {
-                QMessageBox msgBox;
-                msgBox.setText("The model has been modified.");
-                msgBox.setInformativeText("Do you want to save it before compiling?");
-                QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
-                msgBox.addButton(QMessageBox::Cancel);
-                QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
-                msgBox.setDefaultButton(QMessageBox::Save);
-                msgBox.exec();
-                if (msgBox.clickedButton()==alwaysButton) {
-                    saveBeforeRunning = true;
-                }
-                if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
-                    return;
-                }
-            }
-            on_actionSave_triggered();
-        }
-        if (curEditor->document()->isModified())
-            return;
-        updateUiProcessRunning(true);
-
-        compileOnly = true;
-        checkArgs(curEditor->filepath);
-    }
+    compileOnly = true;
+    compileOrRun();
 }
 
 void MainWindow::on_actionClear_output_triggered()
