@@ -312,26 +312,40 @@ void IDE::fileModifiedTimeout(void)
                 msg.setStandardButtons(QMessageBox::Ok);
             } else {
                 msg.setText("The file "+fi.fileName()+" has been modified outside MiniZinc IDE.");
-                if (it.value()->td.isModified()) {
-                    msg.setInformativeText("Do you want to reload the file and discard your changes?");
-                } else {
-                    msg.setInformativeText("Do you want to reload the file?");
-                }
-                QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
-                msg.addButton("Reload", QMessageBox::AcceptRole);
-                msg.exec();
-                if (msg.clickedButton()==cancelButton) {
-                    it.value()->td.setModified(true);
-                } else {
-                    QFile file(*s_it);
-                    if (file.open(QFile::ReadOnly | QFile::Text)) {
-                        it.value()->td.setPlainText(file.readAll());
-                        it.value()->td.setModified(false);
+
+                bool isModified = it.value()->td.isModified();
+                if (!isModified) {
+                    QFile newFile(fi.absoluteFilePath());
+                    if (newFile.open(QFile::ReadOnly | QFile::Text)) {
+                        QString newFileContents = newFile.readAll();
+                        isModified = (newFileContents != it.value()->td.toPlainText());
                     } else {
-                        QMessageBox::warning(NULL, "MiniZinc IDE",
-                                             "Could not reload file "+*s_it,
-                                             QMessageBox::Ok);
+                        isModified = true;
+                    }
+                }
+
+                if (isModified) {
+                    if (it.value()->td.isModified()) {
+                        msg.setInformativeText("Do you want to reload the file and discard your changes?");
+                    } else {
+                        msg.setInformativeText("Do you want to reload the file?");
+                    }
+                    QPushButton* cancelButton = msg.addButton(QMessageBox::Cancel);
+                    msg.addButton("Reload", QMessageBox::AcceptRole);
+                    msg.exec();
+                    if (msg.clickedButton()==cancelButton) {
                         it.value()->td.setModified(true);
+                    } else {
+                        QFile file(*s_it);
+                        if (file.open(QFile::ReadOnly | QFile::Text)) {
+                            it.value()->td.setPlainText(file.readAll());
+                            it.value()->td.setModified(false);
+                        } else {
+                            QMessageBox::warning(NULL, "MiniZinc IDE",
+                                                 "Could not reload file "+*s_it,
+                                                 QMessageBox::Ok);
+                            it.value()->td.setModified(true);
+                        }
                     }
                 }
             }
