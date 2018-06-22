@@ -1391,6 +1391,12 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
+    if (confMode==CONF_RUN && currentSolver.needsMznExecutable) {
+        ret << "--mzn-exe" << mzn2fzn_executable;
+    }
+    if (confMode==CONF_RUN && currentSolver.needsStdlibDir && !mznStdlibDir.isEmpty()) {
+        ret << "--mzn-stdlib-dir" << mznStdlibDir;
+    }
     if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && isMiniZinc) {
         ret << "--solver" << currentSolver.id+(currentSolver.version.startsWith("<unknown") ? "" : ("@"+currentSolver.version));
     }
@@ -2983,7 +2989,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,userSolverConfigDir,addNew,mznDistribPath);
+    SolverDialog sd(solvers,userSolverConfigDir,mznStdlibDir,addNew,mznDistribPath);
     sd.exec();
     mznDistribPath = sd.mznPath();
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
@@ -3075,7 +3081,7 @@ void MainWindow::on_actionGo_to_line_triggered()
 void MainWindow::checkMznPath()
 {
     QString ignoreVersionString;
-    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir);
+    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir,mznStdlibDir);
 
     if (mzn2fzn_executable.isEmpty()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",

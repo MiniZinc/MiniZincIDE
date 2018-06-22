@@ -40,11 +40,12 @@
 
 SolverDialog::SolverDialog(QVector<Solver>& solvers0,
                            QString& userSolverConfigDir0,
+                           QString& mznStdlibDir0,
                            bool openAsAddNew,
                            const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
-    solvers(solvers0), userSolverConfigDir(userSolverConfigDir0)
+    solvers(solvers0), userSolverConfigDir(userSolverConfigDir0), mznStdlibDir(mznStdlibDir0)
 {
     ui->setupUi(this);
 
@@ -253,7 +254,8 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                                       QString& mzn2fzn_executable,
                                       QString& mzn2fzn_version_string,                                      
                                       QVector<Solver>& solvers,
-                                      QString& userSolverConfigDir)
+                                      QString& userSolverConfigDir,
+                                      QString& mznStdlibDir)
 {
     MznProcess p;
     QStringList args;
@@ -274,11 +276,16 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
     mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
     if (!mzn2fzn_executable.isEmpty()) {
         args.clear();
-        args << "--user-solver-config-dir";
+        args << "--config-dirs";
         p.start(mzn2fzn_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
             QString allOutput = p.readAllStandardOutput();
-            userSolverConfigDir = allOutput.trimmed();
+            QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
+            if (!jd.isNull()) {
+                QJsonObject sj = jd.object();
+                userSolverConfigDir = sj["userSolverConfigDir"].toString();
+                mznStdlibDir = sj["mznStdlibDir"].toString();
+            }
         }
         args.clear();
         args << "--solvers-json";
@@ -312,6 +319,8 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                         }
                     }
                     s.isGUIApplication = sj["isGUIApplication"].toBool(false);
+                    s.needsMznExecutable = sj["needsMznExecutable"].toBool(false);
+                    s.needsStdlibDir = sj["needsStdlibDir"].toBool(false);
                     s.executable = sj["executable"].toString("");
                     s.id = sj["id"].toString();
                     s.version = sj["version"].toString();
@@ -328,7 +337,7 @@ void SolverDialog::editingFinished(bool showError)
 {
     QString mzn2fzn_executable;
     QString mzn2fzn_version;
-    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir);
+    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,mznStdlibDir);
     if (mzn2fzn_executable.isEmpty()) {
         if (showError) {
             QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",

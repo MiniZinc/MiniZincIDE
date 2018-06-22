@@ -36,6 +36,8 @@ struct Solver {
     bool supportsFzn;
     bool needsSolns2Out;
     bool isGUIApplication;
+    bool needsMznExecutable;
+    bool needsStdlibDir;
     QStringList stdFlags;
     QStringList extraFlags;
     QStringList requiredFlags;
@@ -57,6 +59,7 @@ class SolverDialog : public QDialog
 public:
     explicit SolverDialog(QVector<Solver>& solvers,
                           QString& userSolverConfigDir,
+                          QString& mznStdlibDir,
                           bool openAsAddNew,
                           const QString& mznPath,
                           QWidget *parent = 0);
@@ -66,7 +69,8 @@ public:
                                    QString& mzn_executable,
                                    QString& mzn_version_string,
                                    QVector<Solver>& solvers,
-                                   QString& userSolverConfigDir);
+                                   QString& userSolverConfigDir,
+                                   QString& mznStdlibDir);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -88,6 +92,7 @@ private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;
     QString& userSolverConfigDir;
+    QString& mznStdlibDir;
     void editingFinished(bool showError);
 };
 
