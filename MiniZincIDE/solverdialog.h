@@ -50,6 +50,9 @@ class MznProcess : public QProcess {
 public:
     MznProcess(QObject* parent=NULL) : QProcess(parent) {}
     void start(const QString& program, const QStringList& arguments, const QString& path);
+    void terminate(void);
+protected:
+    virtual void setupChildProcess();
 };
 
 class SolverDialog : public QDialog

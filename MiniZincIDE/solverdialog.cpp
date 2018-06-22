@@ -22,6 +22,13 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+#ifndef Q_OS_WIN
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
+#include <iostream>
+#endif
+
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 #define pathSep ";"
@@ -377,6 +384,38 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
     _putenv_s("PATH", curPath.toStdString().c_str());
 #else
     setenv("PATH", curPath.toStdString().c_str(), 1);
+#endif
+}
+
+void MznProcess::terminate()
+{
+#ifdef Q_OS_WIN
+        AttachConsole(pid()->dwProcessId);
+        SetConsoleCtrlHandler(NULL, TRUE);
+        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+#else
+        ::kill(processId(), SIGINT);
+#endif
+        if (!waitForFinished(500)) {
+            if (state() != QProcess::NotRunning) {
+#ifdef Q_OS_WIN
+#else
+                ::killpg(processId(), SIGKILL);
+#endif
+                if (!waitForFinished(500)) {
+                    kill();
+                    waitForFinished();
+                }
+            }
+        }
+}
+
+void MznProcess::setupChildProcess()
+{
+#ifndef Q_OS_WIN
+    if (::setpgid(0,0)) {
+        std::cerr << "Error: Failed to create sub-process\n";
+    }
 #endif
 }
 

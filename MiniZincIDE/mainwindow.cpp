@@ -973,13 +973,11 @@ MainWindow::~MainWindow()
         delete cleanupTmpDirs[i];
     }
     for (int i=0; i<cleanupProcesses.size(); i++) {
-        cleanupProcesses[i]->kill();
-        cleanupProcesses[i]->waitForFinished();
+        cleanupProcesses[i]->terminate();
         delete cleanupProcesses[i];
     }
     if (process) {
-        process->kill();
-        process->waitForFinished();
+        process->terminate();
         delete process;
     }
     delete ui;
@@ -1172,7 +1170,9 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     if (process) {
         disconnect(process, SIGNAL(error(QProcess::ProcessError)),
                    this, 0);
-        process->kill();
+        process->terminate();
+        delete process;
+        process = NULL;
     }
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -2181,19 +2181,7 @@ void MainWindow::on_actionStop_triggered()
         disconnect(process, SIGNAL(finished(int)), this, 0);
         processWasStopped = true;
 
-#ifdef Q_OS_WIN
-        AttachConsole(process->pid()->dwProcessId);
-        SetConsoleCtrlHandler(NULL, TRUE);
-        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
-#else
-        ::kill(process->pid(), SIGINT);
-#endif
-        if (!process->waitForFinished(500)) {
-            if (process->state() != QProcess::NotRunning) {
-                process->kill();
-                process->waitForFinished();
-            }
-        }
+        process->terminate();
         delete process;
         process = NULL;
         addOutput("<div style='color:blue;'>Stopped.</div>");
