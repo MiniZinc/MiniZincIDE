@@ -1594,9 +1594,8 @@ void MainWindow::compileOrRun()
                     }
                     runCompiledFzn(0,QProcess::NormalExit);
                 }
-            } else {
-                checkArgs(filepath);
             }
+            checkArgs(filepath);
         }
     }
 }
