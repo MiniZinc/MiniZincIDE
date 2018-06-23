@@ -17,6 +17,10 @@
 #include <QProcess>
 #include <QJsonObject>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 namespace Ui {
 class SolverDialog;
 }
@@ -47,12 +51,21 @@ struct Solver {
 };
 
 class MznProcess : public QProcess {
+#ifdef Q_OS_WIN
+    Q_OBJECT
+#endif
 public:
     MznProcess(QObject* parent=NULL) : QProcess(parent) {}
     void start(const QString& program, const QStringList& arguments, const QString& path);
     void terminate(void);
 protected:
     virtual void setupChildProcess();
+#ifdef Q_OS_WIN
+private:
+    HANDLE jobObject;
+private slots:
+    void attachJob();
+#endif
 };
 
 class SolverDialog : public QDialog

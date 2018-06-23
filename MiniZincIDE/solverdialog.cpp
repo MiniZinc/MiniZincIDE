@@ -376,6 +376,8 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
     setProcessEnvironment(env);
 #ifdef Q_OS_WIN
     _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
+    jobObject = CreateJobObject(NULL, NULL);
+    connect(this, SIGNAL(started()), this, SLOT(attachJob()));
 #else
     setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
@@ -399,6 +401,7 @@ void MznProcess::terminate()
         if (!waitForFinished(500)) {
             if (state() != QProcess::NotRunning) {
 #ifdef Q_OS_WIN
+                TerminateJobObject(jobObject, EXIT_FAILURE);
 #else
                 ::killpg(processId(), SIGKILL);
 #endif
@@ -418,6 +421,13 @@ void MznProcess::setupChildProcess()
     }
 #endif
 }
+
+#ifdef Q_OS_WIN
+void MznProcess::attachJob()
+{
+    AssignProcessToJobObject(jobObject, pid()->hProcess);
+}
+#endif
 
 void SolverDialog::on_check_solver_clicked()
 {
