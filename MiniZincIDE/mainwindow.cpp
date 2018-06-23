@@ -1754,8 +1754,10 @@ void MainWindow::readOutput()
             if (errexp.indexIn(l) != -1) {
                 QString errFile = errexp.cap(1).trimmed();
                 if (errFile.endsWith("untitled_model.mzn")) {
+                    QFileInfo errFileInfo(errFile);
                     for (QTemporaryDir* d : cleanupTmpDirs) {
-                        if (d->filePath("untitled_model.mzn")==errFile) {
+                        QFileInfo tmpFileInfo(d->path()+"/untitled_model.mzn");
+                        if (errFileInfo.canonicalFilePath()==tmpFileInfo.canonicalFilePath()) {
                             errFile = "Playground";
                             break;
                         }
@@ -2432,7 +2434,7 @@ void MainWindow::updateSolverConfigs()
     QString curText = ui->conf_solver_conf->currentText();
     ui->conf_solver_conf->clear();
     ui->menuSolver_configurations->clear();
-    int idx = 0;
+    int idx = -1;
     for (int i=0; i<projectSolverConfigs.size(); i++) {
         ui->conf_solver_conf->addItem(projectSolverConfigs[i].name);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(projectSolverConfigs[i].name);
@@ -2463,7 +2465,7 @@ void MainWindow::updateSolverConfigs()
 
 void MainWindow::setCurrentSolverConfig(int idx)
 {
-    if (idx==-1)
+    if (idx==-1 || idx >= projectSolverConfigs.size()+bookmarkedSolverConfigs.size())
         return;
     int actionIdx = (projectSolverConfigs.size()!=0 && idx >= projectSolverConfigs.size()) ? idx+1 : idx;
     ui->conf_solver_conf->setCurrentIndex(actionIdx);
