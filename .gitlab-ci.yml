@@ -1,0 +1,22 @@
+stages:
+  - build
+  - bundle
+
+
+build:win32:
+  stage: build
+  variables:
+    QT_DIR: "C:/Qt/Qt5.7.0/5.7/msvc2015"
+  script:
+    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat"
+    - if not exist "build" mkdir build
+    - cd build
+    - echo set -x; export PATH=`cygpath -u %QT_DIR%/bin`:$PATH; qmake "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
+    - d2u build.sh
+    - bash build.sh
+  tags:
+     - win32
+  cache:
+    key: "win32_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
