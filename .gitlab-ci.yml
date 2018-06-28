@@ -3,44 +3,66 @@ stages:
   - bundle
 
 .win_build_template: &win_build_definition
-    stage: build
-    script:
-      - call "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/vcvarsall.bat" %CL_ARCH%
-      - if not exist "build" mkdir build
-      - if not exist "ide" mkdir ide
-      - cd build
-      - echo set -x; export PATH=`cygpath -u %QT_DIR%/bin`:$PATH; qmake "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
-      - d2u build.sh
-      - bash build.sh
-      - cp release/MiniZincIDE.exe ../ide
-      - cd ../ide
-      - if not exist "platforms" mkdir platforms
-      - cp %QT_DIR%/bin/Qt5Core.dll .
-      - cp %QT_DIR%/bin/Qt5Gui.dll .
-      - cp %QT_DIR%/bin/Qt5Multimedia.dll .
-      - cp %QT_DIR%/bin/Qt5MultimediaWidgets.dll .
-      - cp %QT_DIR%/bin/Qt5Network.dll .
-      - cp %QT_DIR%/bin/Qt5OpenGL.dll .
-      - cp %QT_DIR%/bin/Qt5Positioning.dll .
-      - cp %QT_DIR%/bin/Qt5PrintSupport.dll .
-      - cp %QT_DIR%/bin/Qt5Qml.dll .
-      - cp %QT_DIR%/bin/Qt5Quick.dll .
-      - cp %QT_DIR%/bin/Qt5Sensors.dll .
-      - cp %QT_DIR%/bin/Qt5Sql.dll .
-      - cp %QT_DIR%/bin/Qt5WebChannel.dll .
-      - cp %QT_DIR%/bin/Qt5WebSockets.dll .
-      - cp %QT_DIR%/bin/Qt5WebEngine.dll .
-      - cp %QT_DIR%/bin/Qt5WebEngineWidgets.dll .
-      - cp %QT_DIR%/bin/Qt5WebView.dll .
-      - cp %QT_DIR%/bin/Qt5WebEngineCore.dll .
-      - cp %QT_DIR%/bin/Qt5Widgets.dll .
-      - cp %QT_DIR%/bin/QtWebEngineProcess.exe .
-      - cp %QT_DIR%/resources/qtwebengine_resources*.pak .
-      - cp %QT_DIR%/resources/icudtl.dat .
-      - cp %QT_DIR%/plugins/platforms/qwindows.dll ./platforms
-    artifacts:
-      paths:
-        - ide/
+  stage: build
+  script:
+    - call "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/vcvarsall.bat" %CL_ARCH%
+    - if not exist "build" mkdir build
+    - if not exist "ide" mkdir ide
+    - cd build
+    - echo set -x; export PATH=`cygpath -u %QT_DIR%/bin`:$PATH; qmake "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
+    - d2u build.sh
+    - bash build.sh
+    - cp release/MiniZincIDE.exe ../ide
+    - cd ../ide
+    - if not exist "platforms" mkdir platforms
+    - cp %QT_DIR%/bin/Qt5Core.dll .
+    - cp %QT_DIR%/bin/Qt5Gui.dll .
+    - cp %QT_DIR%/bin/Qt5Multimedia.dll .
+    - cp %QT_DIR%/bin/Qt5MultimediaWidgets.dll .
+    - cp %QT_DIR%/bin/Qt5Network.dll .
+    - cp %QT_DIR%/bin/Qt5OpenGL.dll .
+    - cp %QT_DIR%/bin/Qt5Positioning.dll .
+    - cp %QT_DIR%/bin/Qt5PrintSupport.dll .
+    - cp %QT_DIR%/bin/Qt5Qml.dll .
+    - cp %QT_DIR%/bin/Qt5Quick.dll .
+    - cp %QT_DIR%/bin/Qt5Sensors.dll .
+    - cp %QT_DIR%/bin/Qt5Sql.dll .
+    - cp %QT_DIR%/bin/Qt5WebChannel.dll .
+    - cp %QT_DIR%/bin/Qt5WebSockets.dll .
+    - cp %QT_DIR%/bin/Qt5WebEngine.dll .
+    - cp %QT_DIR%/bin/Qt5WebEngineWidgets.dll .
+    - cp %QT_DIR%/bin/Qt5WebView.dll .
+    - cp %QT_DIR%/bin/Qt5WebEngineCore.dll .
+    - cp %QT_DIR%/bin/Qt5Widgets.dll .
+    - cp %QT_DIR%/bin/QtWebEngineProcess.exe .
+    - cp %QT_DIR%/resources/qtwebengine_resources*.pak .
+    - cp %QT_DIR%/resources/icudtl.dat .
+    - cp %QT_DIR%/plugins/platforms/qwindows.dll ./platforms
+  artifacts:
+    paths:
+      - ide/
+
+build:osx:
+  stage: build
+  variables:
+    QT_DIR: "/usr/local/opt/qt/bin"
+  script:
+    - export PATH="$QT_DIR:$PATH"
+    - mkdir -p build; cd build
+    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - make -j4
+    - cp -r MiniZincIDE.app ..
+  tags:
+     - osx
+     - cpp
+     - qt
+  artifacts:
+    paths:
+      - MiniZincIDE.app
+  cache:
+    key: "osx_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
 
 build:win32:
   <<: *win_build_definition
