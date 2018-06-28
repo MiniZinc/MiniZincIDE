@@ -2482,9 +2482,11 @@ void MainWindow::setCurrentSolverConfig(int idx)
     if (currentSolverConfig != -1) {
         if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < bookmarkedSolverConfigs.size()) {
             SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
-            Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-            oldConf.solverId = selectedSolver.id;
-            oldConf.solverVersion = selectedSolver.version;
+            if (ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt() < solvers.size()) {
+                Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+                oldConf.solverId = selectedSolver.id;
+                oldConf.solverVersion = selectedSolver.version;
+            }
             oldConf.timeLimit = ui->conf_timeLimit->value();
             oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
             oldConf.printIntermediate = ui->conf_printall->isChecked();
@@ -2541,17 +2543,19 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
 
-    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-    ui->conf_nthreads->setEnabled(currentSolver.stdFlags.contains("-p"));
-    ui->nthreads_label->setEnabled(currentSolver.stdFlags.contains("-p"));
-    ui->conf_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
-    ui->conf_have_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
-    ui->conf_stats->setEnabled(currentSolver.stdFlags.contains("-s"));
-    ui->conf_printall->setEnabled(currentSolver.stdFlags.contains("-a"));
-    ui->conf_nsol->setEnabled(currentSolver.stdFlags.contains("-n"));
-    ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
-    ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
-    ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
+    if (ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt() < solvers.size()) {
+        Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+        ui->conf_nthreads->setEnabled(currentSolver.stdFlags.contains("-p"));
+        ui->nthreads_label->setEnabled(currentSolver.stdFlags.contains("-p"));
+        ui->conf_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
+        ui->conf_have_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
+        ui->conf_stats->setEnabled(currentSolver.stdFlags.contains("-s"));
+        ui->conf_printall->setEnabled(currentSolver.stdFlags.contains("-a"));
+        ui->conf_nsol->setEnabled(currentSolver.stdFlags.contains("-n"));
+        ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
+        ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
+        ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
+    }
 
     if (idx < projectSolverConfigs.size()) {
         ui->conf_default->hide();
