@@ -1396,13 +1396,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
-    if (confMode==CONF_RUN && currentSolver.needsMznExecutable) {
-        ret << "--mzn-exe" << mzn2fzn_executable;
-    }
-    if (confMode==CONF_RUN && currentSolver.needsStdlibDir && !mznStdlibDir.isEmpty()) {
-        ret << "--mzn-stdlib-dir" << mznStdlibDir;
-    }
-    if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && isMiniZinc) {
+    if (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) {
         ret << "--solver" << currentSolver.id+(currentSolver.version.startsWith("<unknown") ? "" : ("@"+currentSolver.version));
     }
     return ret;
@@ -1848,8 +1842,6 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
         if (s.supportsMzn) {
             standalone = true;
-            if (s.executable.size())
-                processName = s.executable;
         }
     }
 
