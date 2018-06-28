@@ -308,7 +308,14 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                     Solver s;
                     s.json = sj;
                     s.name = sj["name"].toString();
-                    s.configFile = sj["configFile"].toString("");
+                    QJsonObject extraInfo = sj["extraInfo"].toObject();
+                    s.configFile = extraInfo["configFile"].toString("");
+                    if (extraInfo["defaultFlags"].isArray()) {
+                        QJsonArray ei = extraInfo["defaultFlags"].toArray();
+                        for (auto df : ei) {
+                            s.defaultFlags.push_back(df.toString());
+                        }
+                    }
                     s.contact = sj["contact"].toString("");
                     s.website = sj["website"].toString("");
                     s.supportsFzn = sj["supportsFzn"].toBool(true);

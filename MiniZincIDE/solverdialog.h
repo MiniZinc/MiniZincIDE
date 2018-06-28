@@ -45,6 +45,7 @@ struct Solver {
     QStringList stdFlags;
     QStringList extraFlags;
     QStringList requiredFlags;
+    QStringList defaultFlags;
     QStringList tags;
     QJsonObject json;
     Solver(void) {}

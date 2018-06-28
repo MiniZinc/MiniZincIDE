@@ -49,8 +49,17 @@ void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector
     solverConfigs.resize(j);
 
     for (const Solver& n : solvers) {
-        if (n.requiredFlags.size())
-            continue;
+        if (n.requiredFlags.size()) {
+            bool foundAll = true;
+            for (auto& rf : n.requiredFlags) {
+                if (!n.defaultFlags.contains(rf)) {
+                    foundAll=false;
+                    break;
+                }
+            }
+            if (!foundAll)
+                continue;
+        }
         bool haveSolver = false;
         for (int i=0; i<j; i++) {
             if (solverConfigs[i].isBuiltin && solverConfigs[i].name==n.name+" "+n.version) {

@@ -1333,6 +1333,11 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveCompilerCheck = isMiniZinc;
 
     QStringList ret;
+    if (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) {
+        for (auto& a : currentSolver.defaultFlags) {
+            ret << a;
+        }
+    }
     if (confMode==CONF_COMPILE) {
         int optLevel = ui->conf_optlevel->currentIndex();
         if (optLevel < 6 && haveCompilerOpt[optLevel])
