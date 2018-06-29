@@ -41,6 +41,31 @@ stages:
     paths:
       - ide/
 
+
+build:linux:
+  stage: build
+  image: dekker1/qt:latest
+  variables:
+    QTDIR: "/usr/lib/x86_64-linux-gnu"
+  script:
+    - mkdir -p build; cd build
+    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - make -j4
+    - mkdir -p ../ide/{bin,lib}; cd ../ide
+    - cp ../build/MiniZincIDE bin/
+    - cp $QTDIR/libQt5*.so.5 $CI_PROJECT_DIR/ide/lib
+    - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
+  tags:
+     - linux
+     - docker
+  artifacts:
+    paths:
+      - ide/
+  cache:
+    key: "osx_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
+
 build:osx:
   stage: build
   variables:
