@@ -281,6 +281,21 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         mzn2fzn_executable = "minizinc";
     }
     mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
+    QRegExp reVersion("version ([0-9]+)\\.([0-9]+)\\.\\S+");
+    if (reVersion.indexIn(mzn2fzn_version_string)==-1) {
+        mzn2fzn_executable = "";
+        return;
+    } else {
+        bool ok;
+        int curVersionMajor = reVersion.cap(1).toInt(&ok);
+        if (ok) {
+            int curVersionMinor = reVersion.cap(2).toInt(&ok);
+            if (curVersionMajor<2 || (curVersionMajor<3 && curVersionMinor<2)) {
+                mzn2fzn_executable = "";
+                return;
+            }
+        }
+    }
     if (!mzn2fzn_executable.isEmpty()) {
         args.clear();
         args << "--config-dirs";
@@ -308,7 +323,14 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                     Solver s;
                     s.json = sj;
                     s.name = sj["name"].toString();
-                    s.configFile = sj["configFile"].toString("");
+                    QJsonObject extraInfo = sj["extraInfo"].toObject();
+                    s.configFile = extraInfo["configFile"].toString("");
+                    if (extraInfo["defaultFlags"].isArray()) {
+                        QJsonArray ei = extraInfo["defaultFlags"].toArray();
+                        for (auto df : ei) {
+                            s.defaultFlags.push_back(df.toString());
+                        }
+                    }
                     s.contact = sj["contact"].toString("");
                     s.website = sj["website"].toString("");
                     s.supportsFzn = sj["supportsFzn"].toBool(true);
