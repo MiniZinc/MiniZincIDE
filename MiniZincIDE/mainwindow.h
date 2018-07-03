@@ -340,6 +340,7 @@ private:
     bool darkMode;
     QVector<Solver> solvers;
     QString userSolverConfigDir;
+    QString userConfigFile;
     QString mznStdlibDir;
     int defaultSolverIdx;
     QString mznDistribPath;

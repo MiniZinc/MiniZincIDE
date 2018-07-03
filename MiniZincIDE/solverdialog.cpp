@@ -21,6 +21,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QGridLayout>
+#include <QLineEdit>
 
 #ifndef Q_OS_WIN
 #include <sys/types.h>
@@ -47,12 +49,13 @@
 
 SolverDialog::SolverDialog(QVector<Solver>& solvers0,
                            QString& userSolverConfigDir0,
+                           QString& userConfigFile0,
                            QString& mznStdlibDir0,
                            bool openAsAddNew,
                            const QString& mznPath, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog),
-    solvers(solvers0), userSolverConfigDir(userSolverConfigDir0), mznStdlibDir(mznStdlibDir0)
+    solvers(solvers0), userSolverConfigDir(userSolverConfigDir0), userConfigFile(userConfigFile0), mznStdlibDir(mznStdlibDir0)
 {
     ui->setupUi(this);
 
@@ -80,8 +83,33 @@ QString SolverDialog::mznPath()
     return ui->mznDistribPath->text();
 }
 
+namespace {
+
+    void clearRequiredFlagsLayout(QGridLayout* l) {
+        QVector<QLayoutItem*> items;
+        for (int i=0; i<l->rowCount(); i++) {
+            for (int j=0; j<l->columnCount(); j++) {
+                if (QLayoutItem* li = l->itemAtPosition(i,j)) {
+                    if (QWidget* w = li->widget()) {
+                        w->hide();
+                        w->deleteLater();
+                    }
+                    items.push_back(li);
+                }
+            }
+        }
+        for (auto i : items) {
+            l->removeItem(i);
+            delete i;
+        }
+    }
+
+}
+
 void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 {
+    QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
+    clearRequiredFlagsLayout(rfLayout);
     if (index<solvers.size()) {
         ui->name->setText(solvers[index].name);
         ui->solverId->setText(solvers[index].id);
@@ -91,7 +119,8 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->needs_mzn2fzn->setChecked(!solvers[index].supportsMzn);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->updateButton->setText("Update");
-        ui->deleteButton->setEnabled(true);
+        ui->updateButton->setEnabled(!solvers[index].configFile.isEmpty() || solvers[index].requiredFlags.size() != 0);
+        ui->deleteButton->setEnabled(!solvers[index].configFile.isEmpty());
         ui->solverFrame->setEnabled(!solvers[index].configFile.isEmpty());
 
         ui->has_stdflag_a->setChecked(solvers[index].stdFlags.contains("-a"));
@@ -100,6 +129,23 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_n->setChecked(solvers[index].stdFlags.contains("-n"));
         ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
         ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
+
+        if (solvers[index].requiredFlags.size()==0) {
+            ui->requiredFlags->hide();
+        } else {
+            ui->requiredFlags->show();
+            int row = 0;
+            for (auto& rf : solvers[index].requiredFlags) {
+                QString val;
+                int foundFlag = solvers[index].defaultFlags.indexOf(rf);
+                if (foundFlag != -1 && foundFlag < solvers[index].defaultFlags.size()-1) {
+                    val = solvers[index].defaultFlags[foundFlag+1];
+                }
+                rfLayout->addWidget(new QLabel(rf), row, 0);
+                rfLayout->addWidget(new QLineEdit(val), row, 1);
+                row++;
+            }
+        }
     } else {
         ui->name->setText("");
         ui->solverId->setText("");
@@ -117,98 +163,181 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_n->setChecked(false);
         ui->has_stdflag_s->setChecked(false);
         ui->has_stdflag_f->setChecked(false);
+        ui->requiredFlags->hide();
     }
 }
 
 void SolverDialog::on_updateButton_clicked()
 {
-    if (ui->name->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this,"MiniZinc IDE","You need to specify a name for the solver.",QMessageBox::Ok);
-        return;
-    }
-    if (ui->solverId->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this,"MiniZinc IDE","You need to specify a solver ID for the solver.",QMessageBox::Ok);
-        return;
-    }
-    if (ui->executable->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this,"MiniZinc IDE","You need to specify an executable for the solver.",QMessageBox::Ok);
-        return;
-    }
-    if (ui->version->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this,"MiniZinc IDE","You need to specify a version for the solver.",QMessageBox::Ok);
-        return;
-    }
-    int index = ui->solvers_combo->currentIndex();
-    for (int i=0; i<solvers.size(); i++) {
-        if (i != index && ui->solverId->text().trimmed()==solvers[i].id) {
-            QMessageBox::warning(this,"MiniZinc IDE","A solver with that solver ID already exists.",QMessageBox::Ok);
+    if (!ui->requiredFlags->isHidden()) {
+        // This is an internal solver, we are only updating the required flags
+
+        QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
+        QVector<QStringList> defaultFlags;
+        for (int row=0; row<rfLayout->rowCount(); row++) {
+            if (QLayoutItem* li = rfLayout->itemAtPosition(row, 0)) {
+                QString key = static_cast<QLabel*>(li->widget())->text();
+                QLayoutItem* li2 = rfLayout->itemAtPosition(row, 1);
+                QString val = static_cast<QLineEdit*>(li2->widget())->text();
+                if (!val.isEmpty()) {
+                    QStringList sl({ui->solverId->text(), key, val});
+                    defaultFlags.push_back(sl);
+                }
+            }
+
+        }
+
+        QFile uc(userConfigFile);
+        QJsonObject jo;
+        if (uc.exists()) {
+            if (uc.open(QFile::ReadOnly)) {
+                QJsonDocument doc = QJsonDocument::fromJson(uc.readAll());
+                jo = doc.object();
+                uc.close();
+            }
+        }
+        QJsonArray a0;
+        if (!jo.contains("solverDefaults")) {
+            // Fresh object, initialise
+            for (auto& df : defaultFlags) {
+                QJsonArray a1;
+                for (auto& f : df) {
+                    a1.append(f);
+                }
+                a0.append(a1);
+            }
+        } else {
+            QJsonArray previous = jo["solverDefaults"].toArray();
+            // First remove all entries for this solver
+            for (auto triple : previous) {
+                if (triple.isArray()) {
+                    QJsonArray previousA1 = triple.toArray();
+                    if (previousA1.size()==3) {
+                        if (previousA1[0]!=ui->solverId->text()) {
+                            a0.append(triple);
+                        }
+                    }
+                }
+            }
+            // Now add the new values
+            for (auto& df : defaultFlags) {
+                QJsonArray a1;
+                for (auto& f : df) {
+                    a1.append(f);
+                }
+                a0.append(a1);
+            }
+        }
+        jo["solverDefaults"] = a0;
+        QJsonDocument doc;
+        doc.setObject(jo);
+        QFileInfo uc_info(userConfigFile);
+        if (!QDir().mkpath(uc_info.absoluteDir().absolutePath())) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot create user configuration directory "+uc_info.absoluteDir().absolutePath(),QMessageBox::Ok);
             return;
         }
-    }
-    if (index==solvers.size()) {
-        Solver s;
-        s.configFile = userSolverConfigDir+"/"+ui->solverId->text().trimmed()+".msc";
-        solvers.append(s);
-    }
+        if (uc.open(QFile::ReadWrite | QIODevice::Truncate)) {
+            uc.write(doc.toJson());
+            uc.close();
+            editingFinished(false);
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot write user configuration file "+userConfigFile,QMessageBox::Ok);
+        }
 
-    solvers[index].executable = ui->executable->text().trimmed();
-    solvers[index].mznlib = ui->mznpath->text();
-    solvers[index].name = ui->name->text().trimmed();
-    solvers[index].id = ui->solverId->text().trimmed();
-    solvers[index].version = ui->version->text().trimmed();
-    solvers[index].isGUIApplication= ui->detach->isChecked();
-    solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
+    } else {
 
-    solvers[index].stdFlags.removeAll("-a");
-    if (ui->has_stdflag_a->isChecked()) {
-        solvers[index].stdFlags.push_back("-a");
-    }
-    solvers[index].stdFlags.removeAll("-n");
-    if (ui->has_stdflag_n->isChecked()) {
-        solvers[index].stdFlags.push_back("-n");
-    }
-    solvers[index].stdFlags.removeAll("-p");
-    if (ui->has_stdflag_p->isChecked()) {
-        solvers[index].stdFlags.push_back("-p");
-    }
-    solvers[index].stdFlags.removeAll("-s");
-    if (ui->has_stdflag_s->isChecked()) {
-        solvers[index].stdFlags.push_back("-s");
-    }
-    solvers[index].stdFlags.removeAll("-r");
-    if (ui->has_stdflag_r->isChecked()) {
-        solvers[index].stdFlags.push_back("-r");
-    }
-    solvers[index].stdFlags.removeAll("-f");
-    if (ui->has_stdflag_f->isChecked()) {
-        solvers[index].stdFlags.push_back("-f");
-    }
+        if (ui->name->text().trimmed().isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","You need to specify a name for the solver.",QMessageBox::Ok);
+            return;
+        }
+        if (ui->solverId->text().trimmed().isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","You need to specify a solver ID for the solver.",QMessageBox::Ok);
+            return;
+        }
+        if (ui->executable->text().trimmed().isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","You need to specify an executable for the solver.",QMessageBox::Ok);
+            return;
+        }
+        if (ui->version->text().trimmed().isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","You need to specify a version for the solver.",QMessageBox::Ok);
+            return;
+        }
+        int index = ui->solvers_combo->currentIndex();
+        for (int i=0; i<solvers.size(); i++) {
+            if (i != index && ui->solverId->text().trimmed()==solvers[i].id) {
+                QMessageBox::warning(this,"MiniZinc IDE","A solver with that solver ID already exists.",QMessageBox::Ok);
+                return;
+            }
+        }
+        if (index==solvers.size()) {
+            Solver s;
+            s.configFile = userSolverConfigDir+"/"+ui->solverId->text().trimmed()+".msc";
+            if (!QDir().mkpath(userSolverConfigDir)) {
+                QMessageBox::warning(this,"MiniZinc IDE","Cannot create user configuration directory "+userSolverConfigDir,QMessageBox::Ok);
+                return;
+            }
+            solvers.append(s);
+        }
 
-    QJsonObject json = solvers[index].json;
-    json.remove("configFile");
-    json["executable"] = ui->executable->text().trimmed();
-    json["mznlib"] = ui->mznpath->text();
-    json["name"] = ui->name->text().trimmed();
-    json["id"] = ui->solverId->text().trimmed();
-    json["version"] = ui->version->text().trimmed();
-    json["isGUIApplication"] = ui->detach->isChecked();
-    json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
-    json["stdFlags"] = QJsonArray::fromStringList(solvers[index].stdFlags);
-    QJsonDocument jdoc(json);
-    QFile jdocFile(solvers[index].configFile);
-    if (!jdocFile.open(QIODevice::ReadWrite)) {
-        QMessageBox::warning(this,"MiniZinc IDE","Cannot save configuration file "+solvers[index].configFile,QMessageBox::Ok);
-        return;
-    }
-    if (jdocFile.write(jdoc.toJson())==-1) {
-        QMessageBox::warning(this,"MiniZinc IDE","Cannot save configuration file "+solvers[index].configFile,QMessageBox::Ok);
-        return;
-    }
+        solvers[index].executable = ui->executable->text().trimmed();
+        solvers[index].mznlib = ui->mznpath->text();
+        solvers[index].name = ui->name->text().trimmed();
+        solvers[index].id = ui->solverId->text().trimmed();
+        solvers[index].version = ui->version->text().trimmed();
+        solvers[index].isGUIApplication= ui->detach->isChecked();
+        solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
 
-    if (index==solvers.size()-1) {
-        ui->solvers_combo->insertItem(index,ui->name->text()+" "+ui->version->text(),index);
+        solvers[index].stdFlags.removeAll("-a");
+        if (ui->has_stdflag_a->isChecked()) {
+            solvers[index].stdFlags.push_back("-a");
+        }
+        solvers[index].stdFlags.removeAll("-n");
+        if (ui->has_stdflag_n->isChecked()) {
+            solvers[index].stdFlags.push_back("-n");
+        }
+        solvers[index].stdFlags.removeAll("-p");
+        if (ui->has_stdflag_p->isChecked()) {
+            solvers[index].stdFlags.push_back("-p");
+        }
+        solvers[index].stdFlags.removeAll("-s");
+        if (ui->has_stdflag_s->isChecked()) {
+            solvers[index].stdFlags.push_back("-s");
+        }
+        solvers[index].stdFlags.removeAll("-r");
+        if (ui->has_stdflag_r->isChecked()) {
+            solvers[index].stdFlags.push_back("-r");
+        }
+        solvers[index].stdFlags.removeAll("-f");
+        if (ui->has_stdflag_f->isChecked()) {
+            solvers[index].stdFlags.push_back("-f");
+        }
+
+        QJsonObject json = solvers[index].json;
+        json.remove("configFile");
+        json["executable"] = ui->executable->text().trimmed();
+        json["mznlib"] = ui->mznpath->text();
+        json["name"] = ui->name->text().trimmed();
+        json["id"] = ui->solverId->text().trimmed();
+        json["version"] = ui->version->text().trimmed();
+        json["isGUIApplication"] = ui->detach->isChecked();
+        json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
+        json["stdFlags"] = QJsonArray::fromStringList(solvers[index].stdFlags);
+        QJsonDocument jdoc(json);
+        QFile jdocFile(solvers[index].configFile);
+        if (!jdocFile.open(QIODevice::ReadWrite)) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot save configuration file "+solvers[index].configFile,QMessageBox::Ok);
+            return;
+        }
+        if (jdocFile.write(jdoc.toJson())==-1) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot save configuration file "+solvers[index].configFile,QMessageBox::Ok);
+            return;
+        }
+
+        if (index==solvers.size()-1) {
+            ui->solvers_combo->insertItem(index,ui->name->text()+" "+ui->version->text(),index);
+        }
+        ui->solvers_combo->setCurrentIndex(index);
     }
-    ui->solvers_combo->setCurrentIndex(index);
 }
 
 void SolverDialog::on_deleteButton_clicked()
@@ -262,6 +391,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                                       QString& mzn2fzn_version_string,                                      
                                       QVector<Solver>& solvers,
                                       QString& userSolverConfigDir,
+                                      QString& userConfigFile,
                                       QString& mznStdlibDir)
 {
     MznProcess p;
@@ -306,6 +436,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
             if (!jd.isNull()) {
                 QJsonObject sj = jd.object();
                 userSolverConfigDir = sj["userSolverConfigDir"].toString();
+                userConfigFile = sj["userConfigFile"].toString();
                 mznStdlibDir = sj["mznStdlibDir"].toString();
             }
         }
@@ -366,7 +497,7 @@ void SolverDialog::editingFinished(bool showError)
 {
     QString mzn2fzn_executable;
     QString mzn2fzn_version;
-    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,mznStdlibDir);
+    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
     if (mzn2fzn_executable.isEmpty()) {
         if (showError) {
             QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",

@@ -2979,7 +2979,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,userSolverConfigDir,mznStdlibDir,addNew,mznDistribPath);
+    SolverDialog sd(solvers,userSolverConfigDir,userConfigFile,mznStdlibDir,addNew,mznDistribPath);
     sd.exec();
     mznDistribPath = sd.mznPath();
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
@@ -3071,7 +3071,7 @@ void MainWindow::on_actionGo_to_line_triggered()
 void MainWindow::checkMznPath()
 {
     QString ignoreVersionString;
-    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir,mznStdlibDir);
+    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
 
     if (mzn2fzn_executable.isEmpty()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
