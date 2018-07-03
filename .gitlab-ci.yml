@@ -1,0 +1,119 @@
+stages:
+  - build
+  - bundle
+
+.win_build_template: &win_build_definition
+  stage: build
+  script:
+    - if not exist "build" mkdir build
+    - if not exist "ide" mkdir ide
+    - cd build
+    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
+    - d2u build.sh
+    - bash build.sh
+    - cp release/MiniZincIDE.exe ../ide
+    - cd ../ide
+    - if not exist "platforms" mkdir platforms
+    - cp %QTDIR%/bin/Qt5Core.dll .
+    - cp %QTDIR%/bin/Qt5Gui.dll .
+    - cp %QTDIR%/bin/Qt5Multimedia.dll .
+    - cp %QTDIR%/bin/Qt5MultimediaWidgets.dll .
+    - cp %QTDIR%/bin/Qt5Network.dll .
+    - cp %QTDIR%/bin/Qt5OpenGL.dll .
+    - cp %QTDIR%/bin/Qt5Positioning.dll .
+    - cp %QTDIR%/bin/Qt5PrintSupport.dll .
+    - cp %QTDIR%/bin/Qt5Qml.dll .
+    - cp %QTDIR%/bin/Qt5Quick.dll .
+    - cp %QTDIR%/bin/Qt5Sensors.dll .
+    - cp %QTDIR%/bin/Qt5Sql.dll .
+    - cp %QTDIR%/bin/Qt5WebChannel.dll .
+    - cp %QTDIR%/bin/Qt5WebSockets.dll .
+    - cp %QTDIR%/bin/Qt5WebEngine.dll .
+    - cp %QTDIR%/bin/Qt5WebEngineWidgets.dll .
+    - cp %QTDIR%/bin/Qt5WebView.dll .
+    - cp %QTDIR%/bin/Qt5WebEngineCore.dll .
+    - cp %QTDIR%/bin/Qt5Widgets.dll .
+    - cp %QTDIR%/bin/QtWebEngineProcess.exe .
+    - cp %QTDIR%/resources/qtwebengine_resources*.pak .
+    - cp %QTDIR%/resources/icudtl.dat .
+    - cp %QTDIR%/plugins/platforms/qwindows.dll ./platforms
+  artifacts:
+    paths:
+      - ide/
+
+
+build:linux:
+  stage: build
+  image: dekker1/qt:latest
+  variables:
+    QTDIR: "/usr/lib/x86_64-linux-gnu"
+  script:
+    - mkdir -p build; cd build
+    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - make -j4
+    - mkdir -p ../ide/{bin,lib}; cd ../ide
+    - cp ../build/MiniZincIDE bin/
+    - cp $QTDIR/libQt5*.so.5 $CI_PROJECT_DIR/ide/lib
+    - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
+  tags:
+     - linux
+     - docker
+  artifacts:
+    paths:
+      - ide/
+  cache:
+    key: "osx_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
+
+build:osx:
+  stage: build
+  variables:
+    QTDIR: "/usr/local/opt/qt"
+  script:
+    - export PATH="$QTDIR/bin:$PATH"
+    - mkdir -p build; cd build
+    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - make -j4
+    - cp -r MiniZincIDE.app ..
+  tags:
+     - osx
+     - cpp
+     - qt
+  artifacts:
+    paths:
+      - MiniZincIDE.app
+  cache:
+    key: "osx_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
+
+build:win32:
+  <<: *win_build_definition
+  variables:
+    QTDIR: "C:/Qt/Qt5.7.0/5.7/msvc2015"
+  before_script:
+    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat"
+  tags:
+     - win32
+     - cpp
+     - qt
+  cache:
+    key: "win32_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
+
+build:win64:
+  <<: *win_build_definition
+  variables:
+    QTDIR: "C:/Qt/Qt5.7.0-64/5.7/msvc2015_64"
+  before_script:
+    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat" amd64
+  tags:
+     - win64
+     - cpp
+     - qt
+  cache:
+    key: "win64_$CI_COMMIT_REF_SLUG"
+    paths:
+      - build/
