@@ -403,8 +403,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>676</width>
-          <height>1108</height>
+          <width>661</width>
+          <height>1027</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -1547,7 +1547,7 @@
   <action name="actionEditSolverConfig">
    <property name="icon">
     <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/applications-system.svg</normaloff>:/icons/images/applications-system.svg</iconset>
+     <normaloff>:/icons/images/applications-system.png</normaloff>:/icons/images/applications-system.png</iconset>
    </property>
    <property name="text">
     <string>Show configuration editor...</string>
