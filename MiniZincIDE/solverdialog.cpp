@@ -130,7 +130,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
         ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
 
-        if (solvers[index].requiredFlags.size()==0) {
+        if (solvers[index].id=="org.minizinc.mzn-fzn" || solvers[index].id=="org.minizinc.mzn-mzn" || solvers[index].requiredFlags.size()==0) {
             ui->requiredFlags->hide();
         } else {
             ui->requiredFlags->show();
