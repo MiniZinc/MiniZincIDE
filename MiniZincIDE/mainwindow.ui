@@ -1219,7 +1219,7 @@
   <action name="actionRun">
    <property name="icon">
     <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/media-playback-start.svg</normaloff>:/icons/images/media-playback-start.svg</iconset>
+     <normaloff>:/icons/images/media-playback-start.png</normaloff>:/icons/images/media-playback-start.png</iconset>
    </property>
    <property name="text">
     <string>Run</string>
@@ -1239,7 +1239,7 @@
   <action name="actionStop">
    <property name="icon">
     <iconset resource="minizincide.qrc">
-     <normaloff>:/icons/images/media-playback-stop.svg</normaloff>:/icons/images/media-playback-stop.svg</iconset>
+     <normaloff>:/icons/images/media-playback-stop.png</normaloff>:/icons/images/media-playback-stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop</string>
