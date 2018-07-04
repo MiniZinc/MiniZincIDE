@@ -484,7 +484,7 @@
               <item>
                <widget class="QPushButton" name="saveSolverConfButton">
                 <property name="text">
-                 <string>Save as bookmark</string>
+                 <string>Save as favourite</string>
                 </property>
                </widget>
               </item>

@@ -784,7 +784,7 @@ void MainWindow::init(const QString& projectFile)
     QVector<SolverConfiguration> builtinConfigs;
     SolverConfiguration::defaultConfigs(solvers, builtinConfigs);
     for (int i=0; i<builtinConfigs.size(); i++)
-        bookmarkedSolverConfigs.push_back(builtinConfigs[i]);
+        favouriteSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
     setCurrentSolverConfig(defaultSolverIdx);
     connect(ui->menuSolver_configurations,SIGNAL(triggered(QAction*)),this,SLOT(on_solverConfigurationSelected(QAction*)));
@@ -2441,8 +2441,8 @@ void MainWindow::updateSolverConfigs()
         ui->conf_solver_conf->insertSeparator(projectSolverConfigs.size());
         ui->menuSolver_configurations->addSeparator();
     }
-    for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
-        QString scn = bookmarkedSolverConfigs[i].name+(bookmarkedSolverConfigs[i].isBuiltin ? " [built-in]" : " [bookmark]");
+    for (int i=0; i<favouriteSolverConfigs.size(); i++) {
+        QString scn = favouriteSolverConfigs[i].name+(favouriteSolverConfigs[i].isBuiltin ? " [built-in]" : " [favourite]");
         ui->conf_solver_conf->addItem(scn);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(scn);
         solverConfAction->setCheckable(true);
@@ -2458,7 +2458,7 @@ void MainWindow::updateSolverConfigs()
 
 void MainWindow::setCurrentSolverConfig(int idx)
 {
-    if (idx==-1 || idx >= projectSolverConfigs.size()+bookmarkedSolverConfigs.size())
+    if (idx==-1 || idx >= projectSolverConfigs.size()+favouriteSolverConfigs.size())
         return;
     int actionIdx = (projectSolverConfigs.size()!=0 && idx >= projectSolverConfigs.size()) ? idx+1 : idx;
     ui->conf_solver_conf->setCurrentIndex(actionIdx);
@@ -2468,8 +2468,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     }
 
     if (currentSolverConfig != -1) {
-        if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < bookmarkedSolverConfigs.size()) {
-            SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
+        if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < favouriteSolverConfigs.size()) {
+            SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : favouriteSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
             if (ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt() < solvers.size()) {
                 Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
                 oldConf.solverId = selectedSolver.id;
@@ -2493,13 +2493,13 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
             oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
-            if (oldConf.isBookmark && !oldConf.isBuiltin) {
+            if (oldConf.isFavourite && !oldConf.isBuiltin) {
                 saveSolverConfigsToSettings();
             }
         }
     }
     currentSolverConfig = idx;
-    SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
+    SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
 
     int solverIdx = -1;
     for (int i=solvers.size(); i--;) {
@@ -2569,8 +2569,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
 
     if (conf.isBuiltin)
         ui->solverConfType->setText("built-in configuration");
-    else if (conf.isBookmark)
-        ui->solverConfType->setText("bookmarked configuration");
+    else if (conf.isFavourite)
+        ui->solverConfType->setText("favourite configuration");
     else
         ui->solverConfType->setText("configuration in current project");
 
@@ -2587,10 +2587,10 @@ void MainWindow::setCurrentSolverConfig(int idx)
         ui->saveSolverConfButton->setEnabled(true);
         ui->renameSolverConfButton->show();
         ui->renameSolverConfButton->setEnabled(true);
-        if (conf.isBookmark) {
+        if (conf.isFavourite) {
             ui->saveSolverConfButton->hide();
         } else {
-            ui->saveSolverConfButton->setText("Save as bookmark");
+            ui->saveSolverConfButton->setText("Save as favourite");
             ui->saveSolverConfButton->show();
         }
     }
@@ -2602,8 +2602,8 @@ void MainWindow::saveSolverConfigsToSettings()
     QSettings settings;
     settings.beginWriteArray("solverConfigs");
 
-    for (int i=0, j=0; i<bookmarkedSolverConfigs.size(); i++) {
-        SolverConfiguration& sc = bookmarkedSolverConfigs[i];
+    for (int i=0, j=0; i<favouriteSolverConfigs.size(); i++) {
+        SolverConfiguration& sc = favouriteSolverConfigs[i];
         if (sc.isBuiltin)
             continue;
 
@@ -2636,14 +2636,14 @@ void MainWindow::saveSolverConfigsToSettings()
 
 void MainWindow::loadSolverConfigsFromSettings()
 {
-    QVector<SolverConfiguration> newBookmarks;
+    QVector<SolverConfiguration> newFavourites;
     QSettings settings;
     int nConfigs = settings.beginReadArray("solverConfigs");
     for (int i=0; i<nConfigs; i++) {
         settings.setArrayIndex(i);
         SolverConfiguration sc;
         sc.name = settings.value("name").toString();
-        sc.isBookmark = true;
+        sc.isFavourite = true;
         sc.isBuiltin = false;
         sc.solverId = settings.value("solverId").toString();
         sc.solverVersion = settings.value("solverVersion").toString();
@@ -2666,13 +2666,13 @@ void MainWindow::loadSolverConfigsFromSettings()
         sc.outputTiming = settings.value("outputTiming").toBool();
         sc.solvingStats = settings.value("solvingStats").toBool();
         sc.runSolutionChecker = settings.value("runSolutionChecker",true).toBool();
-        newBookmarks.push_back(sc);
+        newFavourites.push_back(sc);
     }
 
-    for (SolverConfiguration& s : bookmarkedSolverConfigs)
+    for (SolverConfiguration& s : favouriteSolverConfigs)
         if (s.isBuiltin)
-            newBookmarks.push_back(s);
-    bookmarkedSolverConfigs = newBookmarks;
+            newFavourites.push_back(s);
+    favouriteSolverConfigs = newFavourites;
 }
 
 void MainWindow::on_conf_solver_conf_currentIndexChanged(int index)
@@ -2697,7 +2697,7 @@ void MainWindow::on_solverConfigurationSelected(QAction* action)
 void MainWindow::on_cloneSolverConfButton_clicked()
 {
     QString cur = ui->conf_solver_conf->currentText();
-    cur = cur.replace(" [bookmark]","");
+    cur = cur.replace(" [favourite]","");
     cur = cur.replace(" [built-in]","");
     int clone = 1;
     QRegExp re("Clone (\\d+) of (.*)");
@@ -2725,7 +2725,7 @@ void MainWindow::on_cloneSolverConfButton_clicked()
 
 void MainWindow::on_deleteSolverConfButton_clicked()
 {
-    SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : bookmarkedSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
+    SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : favouriteSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
     if (oldConf.isBuiltin) {
         // reset builtin configuration to default values
         SolverConfiguration newConf = SolverConfiguration::defaultConfig();
@@ -2749,7 +2749,7 @@ void MainWindow::on_deleteSolverConfButton_clicked()
             } else {
                 if (projectSolverConfigs.size()!=0)
                     idx = idx-projectSolverConfigs.size()-1;
-                bookmarkedSolverConfigs.remove(idx);
+                favouriteSolverConfigs.remove(idx);
                 saveSolverConfigsToSettings();
             }
             updateSolverConfigs();
@@ -2762,15 +2762,15 @@ void MainWindow::on_saveSolverConfButton_clicked()
 {
     int idx = ui->conf_solver_conf->currentIndex();
     if (idx < projectSolverConfigs.size()) {
-        SolverConfiguration bookmark = projectSolverConfigs[idx];
-        bookmark.isBookmark = true;
-        QString curName = bookmark.name;
+        SolverConfiguration favourite = projectSolverConfigs[idx];
+        favourite.isFavourite = true;
+        QString curName = favourite.name;
         int i=1;
-        while (ui->conf_solver_conf->findText(bookmark.name+" [bookmark]") != -1) {
-            bookmark.name = curName+" "+QString().number(i);
+        while (ui->conf_solver_conf->findText(favourite.name+" [favourite]") != -1) {
+            favourite.name = curName+" "+QString().number(i);
             i++;
         }
-        bookmarkedSolverConfigs.push_front(bookmark);
+        favouriteSolverConfigs.push_front(favourite);
         currentSolverConfig = projectSolverConfigs.size();
         updateSolverConfigs();
         setCurrentSolverConfig(projectSolverConfigs.size());
@@ -2780,7 +2780,7 @@ void MainWindow::on_saveSolverConfButton_clicked()
 void MainWindow::on_renameSolverConfButton_clicked()
 {
     QString cur = ui->conf_solver_conf->currentText();
-    cur = cur.replace(" [bookmark]","");
+    cur = cur.replace(" [favourite]","");
     ui->solverConfNameEdit->setText(cur);
     ui->solverConfNameEdit->show();
     ui->solverConfNameEdit->setFocus();
@@ -2801,7 +2801,7 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
     QString newName = ui->solverConfNameEdit->text();
     if (renamingSolverConf) {
         QString prevName = ui->conf_solver_conf->currentText();
-        prevName = prevName.replace(" [bookmark]","");
+        prevName = prevName.replace(" [favourite]","");
         if (newName==prevName)
             on_solverConfNameEdit_escPressed();
         if (!newName.isEmpty() && ui->conf_solver_conf->findText(newName)==-1) {
@@ -2812,7 +2812,7 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
             int idx = ui->conf_solver_conf->currentIndex();
             if (projectSolverConfigs.size()!=0 && idx > projectSolverConfigs.size())
                 idx--;
-            SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
+            SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
             conf.name = newName;
             updateSolverConfigs();
             on_conf_solver_conf_currentIndexChanged(idx);
@@ -2829,10 +2829,10 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
             int idx = ui->conf_solver_conf->currentIndex();
             if (projectSolverConfigs.size()!=0 && idx > projectSolverConfigs.size())
                 idx--;
-            SolverConfiguration newConf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : bookmarkedSolverConfigs[idx-projectSolverConfigs.size()];
+            SolverConfiguration newConf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
             newConf.name = newName;
             newConf.isBuiltin = false;
-            newConf.isBookmark = false;
+            newConf.isFavourite = false;
             projectSolverConfigs.push_front(newConf);
             updateSolverConfigs();
             setCurrentSolverConfig(0);
@@ -2992,7 +2992,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     else
         ui->conf_solver->setCurrentIndex(0);
 
-    SolverConfiguration::defaultConfigs(solvers, bookmarkedSolverConfigs);
+    SolverConfiguration::defaultConfigs(solvers, favouriteSolverConfigs);
     updateSolverConfigs();
 
     settings.beginGroup("ide");
@@ -3262,7 +3262,7 @@ void MainWindow::saveProject(const QString& f)
             int scIdx = ui->conf_solver_conf->currentIndex();
             if (projectSolverConfigs.size()!=0 && scIdx>projectSolverConfigs.size())
                 scIdx--;
-            SolverConfiguration& curSc = scIdx < projectSolverConfigs.size() ? projectSolverConfigs[scIdx] : bookmarkedSolverConfigs[scIdx-projectSolverConfigs.size()];
+            SolverConfiguration& curSc = scIdx < projectSolverConfigs.size() ? projectSolverConfigs[scIdx] : favouriteSolverConfigs[scIdx-projectSolverConfigs.size()];
 
             out << QString(""); // Used to be additional include path
             out << (qint32)0; // Used to be additional dzn file
@@ -3380,7 +3380,7 @@ void MainWindow::loadProject(const QString& filepath)
 
     SolverConfiguration newConf;
     newConf.isBuiltin = false;
-    newConf.isBookmark = false;
+    newConf.isFavourite = false;
     newConf.runSolutionChecker = true;
 
     in >> p_s; // Used to be additional include path
@@ -3444,7 +3444,7 @@ void MainWindow::loadProject(const QString& filepath)
         for (int i=0; i<nSolverConfigs; i++) {
             SolverConfiguration sc;
             sc.isBuiltin = false;
-            sc.isBookmark = false;
+            sc.isFavourite = false;
             in >> sc.name;
             in >> sc.solverId;
             in >> sc.solverVersion;
@@ -3477,20 +3477,11 @@ void MainWindow::loadProject(const QString& filepath)
         updateSolverConfigs();
     } else {
         // create new solver configuration based on projet settings
-//        bool foundSolver = false;
-//        for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
-//            if (bookmarkedSolverConfigs[i].name==newConf.solverName) {
-//                foundSolver=true;
-//                break;
-//            }
-//        }
-//        if (!foundSolver)
-//            newConf.solverName=bookmarkedSolverConfigs[defaultSolverIdx].name;
-        newConf.solverId = bookmarkedSolverConfigs[defaultSolverIdx].solverId;
-        newConf.solverVersion = bookmarkedSolverConfigs[defaultSolverIdx].solverVersion;
+        newConf.solverId = favouriteSolverConfigs[defaultSolverIdx].solverId;
+        newConf.solverVersion = favouriteSolverConfigs[defaultSolverIdx].solverVersion;
         bool foundConfig = false;
-        for (int i=0; i<bookmarkedSolverConfigs.size(); i++) {
-            if (bookmarkedSolverConfigs[i]==newConf) {
+        for (int i=0; i<favouriteSolverConfigs.size(); i++) {
+            if (favouriteSolverConfigs[i]==newConf) {
                 setCurrentSolverConfig(i);
                 foundConfig = true;
                 break;

@@ -379,7 +379,7 @@ private:
 
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
-    QVector<SolverConfiguration> bookmarkedSolverConfigs;
+    QVector<SolverConfiguration> favouriteSolverConfigs;
     int currentSolverConfig;
     bool renamingSolverConf;
 
