@@ -25,7 +25,6 @@
 #include "fzndoc.h"
 #include "finddialog.h"
 #include "gotolinedialog.h"
-#include "help.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
 #include "moocsubmission.h"
@@ -204,7 +203,6 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     stats.init(settings.value("statistics"));
 
     lastDefaultProject = NULL;
-    helpWindow = new Help();
 
     { // Load cheat sheet
         QString fileContents;
@@ -413,9 +411,7 @@ void IDE::openFile()
 
 void IDE::help()
 {
-    helpWindow->show();
-    helpWindow->raise();
-    helpWindow->activateWindow();
+    QDesktopServices::openUrl(QUrl(QString("http://www.minizinc.org/doc-")+MINIZINC_IDE_VERSION+"/en/minizinc_ide.html"));
 }
 
 IDE::~IDE(void) {

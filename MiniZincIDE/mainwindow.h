@@ -36,7 +36,6 @@
 
 #include "codeeditor.h"
 #include "solverdialog.h"
-#include "help.h"
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
@@ -86,7 +85,6 @@ public:
     IDEStatistics stats;
 
     MainWindow* lastDefaultProject;
-    Help* helpWindow;
     QMainWindow* cheatSheet;
 
     QNetworkAccessManager* networkManager;

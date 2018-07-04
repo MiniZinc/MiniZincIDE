@@ -19,7 +19,7 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.7
+VERSION = 2.2.0
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -52,7 +52,6 @@ SOURCES += main.cpp\
     aboutdialog.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
-    help.cpp \
     finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
@@ -71,7 +70,6 @@ HEADERS  += mainwindow.h \
     aboutdialog.h \
     solverdialog.h \
     gotolinedialog.h \
-    help.h \
     finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
@@ -89,7 +87,6 @@ FORMS    += \
     aboutdialog.ui \
     solverdialog.ui \
     gotolinedialog.ui \
-    help.ui \
     finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
