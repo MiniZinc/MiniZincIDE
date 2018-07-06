@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>528</width>
-    <height>709</height>
+    <height>715</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -272,6 +272,13 @@
             <widget class="QCheckBox" name="has_stdflag_s">
              <property name="text">
               <string>-s</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="has_stdflag_v">
+             <property name="text">
+              <string>-v</string>
              </property>
             </widget>
            </item>

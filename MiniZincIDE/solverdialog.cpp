@@ -129,6 +129,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_n->setChecked(solvers[index].stdFlags.contains("-n"));
         ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
         ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
+        ui->has_stdflag_v->setChecked(solvers[index].stdFlags.contains("-v"));
 
         if (solvers[index].requiredFlags.size()==0) {
             ui->requiredFlags->hide();
@@ -162,6 +163,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_r->setChecked(false);
         ui->has_stdflag_n->setChecked(false);
         ui->has_stdflag_s->setChecked(false);
+        ui->has_stdflag_v->setChecked(false);
         ui->has_stdflag_f->setChecked(false);
         ui->requiredFlags->hide();
     }
@@ -302,6 +304,10 @@ void SolverDialog::on_updateButton_clicked()
         solvers[index].stdFlags.removeAll("-s");
         if (ui->has_stdflag_s->isChecked()) {
             solvers[index].stdFlags.push_back("-s");
+        }
+        solvers[index].stdFlags.removeAll("-v");
+        if (ui->has_stdflag_v->isChecked()) {
+            solvers[index].stdFlags.push_back("-v");
         }
         solvers[index].stdFlags.removeAll("-r");
         if (ui->has_stdflag_r->isChecked()) {

@@ -1315,9 +1315,10 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveAllSol = currentSolver.stdFlags.contains("-a");
     bool haveNSol = currentSolver.stdFlags.contains("-n");
     bool haveFreeSearch = currentSolver.stdFlags.contains("-f");
+    bool haveSolverVerbose = currentSolver.stdFlags.contains("-v");
 
     bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
-    bool haveCompilerVerbose =  isMiniZinc || currentSolver.stdFlags.contains("-v");
+    bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
     bool haveCompilerStats =  isMiniZinc || currentSolver.stdFlags.contains("-s");
     bool haveCompilerOpt[6];
     haveCompilerOpt[0] =  isMiniZinc || currentSolver.stdFlags.contains("-O0");
@@ -1340,7 +1341,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
             ret << "-O"+QString().number(optLevel);
     }
     if (confMode==CONF_COMPILE && ui->conf_verbose->isChecked() && haveCompilerVerbose)
-        ret << "-v";
+        ret << (isMiniZinc ? "--verbose-compilation" : "-v");
     if (confMode==CONF_COMPILE && ui->conf_flatten_stats->isChecked() && haveCompilerStats)
         ret << "-s";
     if ( (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_cmd_params->text().isEmpty())
@@ -1387,6 +1388,8 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
         ret << "-p" << QString::number(ui->conf_nthreads->value());
     if (confMode==CONF_RUN && ui->conf_have_seed->isChecked() && haveSeed)
         ret << "-r" << ui->conf_seed->text();
+    if (confMode==CONF_RUN && ui->conf_solver_verbose->isChecked() && haveSolverVerbose)
+        ret << (isMiniZinc ? "--verbose-solving" : "-v");
     if (confMode==CONF_RUN && !ui->conf_solverFlags->text().isEmpty()) {
         QStringList solverArgs =
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
@@ -2543,6 +2546,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
         ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
         ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
         ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
+        ui->conf_solver_verbose->setEnabled(currentSolver.stdFlags.contains("-v"));
     }
 
     if (idx < projectSolverConfigs.size()) {
