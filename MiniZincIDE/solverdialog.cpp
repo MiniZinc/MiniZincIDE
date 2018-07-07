@@ -119,9 +119,11 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->needs_mzn2fzn->setChecked(!solvers[index].supportsMzn);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->updateButton->setText("Update");
-        ui->updateButton->setEnabled(!solvers[index].configFile.isEmpty() || solvers[index].requiredFlags.size() != 0);
-        ui->deleteButton->setEnabled(!solvers[index].configFile.isEmpty());
-        ui->solverFrame->setEnabled(!solvers[index].configFile.isEmpty());
+        bool solverConfigIsUserEditable = !solvers[index].configFile.isEmpty() && solvers[index].configFile.startsWith(userSolverConfigDir);
+
+        ui->updateButton->setEnabled(solverConfigIsUserEditable || solvers[index].requiredFlags.size() != 0);
+        ui->deleteButton->setEnabled(solverConfigIsUserEditable);
+        ui->solverFrame->setEnabled(solverConfigIsUserEditable);
 
         ui->has_stdflag_a->setChecked(solvers[index].stdFlags.contains("-a"));
         ui->has_stdflag_p->setChecked(solvers[index].stdFlags.contains("-p"));
