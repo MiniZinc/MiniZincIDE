@@ -53,7 +53,7 @@ build:linux:
     - make -j4
     - mkdir -p ../ide/{bin,lib}; cd ../ide
     - cp ../build/MiniZincIDE bin/
-    - cp $QTDIR/{libQt5Widgets.so.5,libQt5WebEngineWidgets.so.5,libQt5WebEngineCore.so.5,libQt5Gui.so.5,libQt5Network.so.5,libQt5Core.so.5,libQt5PrintSupport.so.5,libQt5OpenGL.so.5,libQt5Quick.so.5,libQt5QuickWidgets.so.5,libQt5Qml.so.5,libQt5Sql.so.5,libQt5DBus.so.5,libQt5Svg.so.5,libQt5XcbQpa.so.5} $CI_PROJECT_DIR/ide/lib
+    - cp $QTDIR/{libQt5WebKitWidgets.so.5,libQt5Widgets.so.5,libQt5WebEngineWidgets.so.5,libQt5WebEngineCore.so.5,libQt5Gui.so.5,libQt5Network.so.5,libQt5Core.so.5,libQt5WebKit.so.5,libQt5PrintSupport.so.5,libQt5OpenGL.so.5,libQt5Quick.so.5,libQt5QuickWidgets.so.5,libQt5Qml.so.5,libQt5Sql.so.5,libQt5DBus.so.5,libQt5Svg.so.5,libQt5XcbQpa.so.5,libicui18n.so.55,libicuuc.so.55} $CI_PROJECT_DIR/ide/lib
     - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
   tags:
      - linux
