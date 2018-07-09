@@ -55,6 +55,7 @@ build:linux:
     - cp ../build/MiniZincIDE bin/
     - cp $QTDIR/libdouble-conversion.so.1 $CI_PROJECT_DIR/ide/lib
     - cp $QTDIR/libre2.so.4 $CI_PROJECT_DIR/ide/lib
+    - cp $QTDIR/libavcodec.so.57 $CI_PROJECT_DIR/ide/lib
     - cp $QTDIR/libQt5*.so.5 $CI_PROJECT_DIR/ide/lib
     - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
   tags:
