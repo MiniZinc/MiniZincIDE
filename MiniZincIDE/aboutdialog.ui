@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>540</width>
-    <height>345</height>
+    <width>575</width>
+    <height>253</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,11 +19,17 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>300</y>
+     <x>200</x>
+     <y>219</y>
      <width>341</width>
-     <height>30</height>
+     <height>31</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
@@ -35,10 +41,10 @@
   <widget class="QTextBrowser" name="textBrowser">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>511</width>
-     <height>281</height>
+     <x>160</x>
+     <y>30</y>
+     <width>381</width>
+     <height>181</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -52,11 +58,9 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:30px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;http://www.minizinc.org&quot;&gt;&lt;img src=&quot;:/images/mznicon.png&quot; width=&quot;108&quot; height=&quot;108&quot; /&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt; &lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:14px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; font-size:large; font-weight:600;&quot;&gt;The MiniZinc IDE&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Version $VERSION&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;Author: Guido Tack&lt;br /&gt;Copyright Monash University and NICTA 2013, 2014, 2015 &lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;Copyright Monash University, NICTA, Data61 2013-2018&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'.Lucida Grande UI';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;This program is provided under the terms of the &lt;/span&gt;&lt;a href=&quot;http://www.minizinc.org/2.0/LICENSE.txt&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; text-decoration: underline; color:#0000ff;&quot;&gt;Mozilla Public License Version 2.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;. It uses the Qt toolkit, available from &lt;/span&gt;&lt;a href=&quot;http://qt-project.org&quot;&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI'; text-decoration: underline; color:#0000ff;&quot;&gt;qt-project.org&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'.Lucida Grande UI';&quot;&gt;. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
@@ -64,8 +68,29 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>30</y>
+     <width>111</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="minizincide.qrc">:/images/mznicon.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="minizincide.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

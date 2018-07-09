@@ -36,7 +36,6 @@
 
 #include "codeeditor.h"
 #include "solverdialog.h"
-#include "help.h"
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
@@ -86,7 +85,6 @@ public:
     IDEStatistics stats;
 
     MainWindow* lastDefaultProject;
-    Help* helpWindow;
     QMainWindow* cheatSheet;
 
     QNetworkAccessManager* networkManager;
@@ -340,6 +338,7 @@ private:
     bool darkMode;
     QVector<Solver> solvers;
     QString userSolverConfigDir;
+    QString userConfigFile;
     QString mznStdlibDir;
     int defaultSolverIdx;
     QString mznDistribPath;
@@ -380,7 +379,7 @@ private:
 
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
-    QVector<SolverConfiguration> bookmarkedSolverConfigs;
+    QVector<SolverConfiguration> favouriteSolverConfigs;
     int currentSolverConfig;
     bool renamingSolverConf;
 

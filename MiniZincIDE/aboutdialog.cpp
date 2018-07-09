@@ -21,6 +21,7 @@ AboutDialog::AboutDialog(QString version, QWidget *parent) :
     QTextDocument* doc = ui->textBrowser->document();
     QTextCursor cursor = doc->find("$VERSION");
     cursor.insertText(version);
+    ui->textBrowser->viewport()->setAutoFillBackground(false);
 }
 
 AboutDialog::~AboutDialog()

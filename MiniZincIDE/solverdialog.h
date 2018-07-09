@@ -76,6 +76,7 @@ class SolverDialog : public QDialog
 public:
     explicit SolverDialog(QVector<Solver>& solvers,
                           QString& userSolverConfigDir,
+                          QString& userConfigFile,
                           QString& mznStdlibDir,
                           bool openAsAddNew,
                           const QString& mznPath,
@@ -87,6 +88,7 @@ public:
                                    QString& mzn_version_string,
                                    QVector<Solver>& solvers,
                                    QString& userSolverConfigDir,
+                                   QString& userConfigFile,
                                    QString& mznStdlibDir);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
@@ -109,6 +111,7 @@ private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;
     QString& userSolverConfigDir;
+    QString& userConfigFile;
     QString& mznStdlibDir;
     void editingFinished(bool showError);
 };
