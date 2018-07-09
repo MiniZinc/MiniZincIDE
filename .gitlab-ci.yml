@@ -54,7 +54,7 @@ build:linux:
     - mkdir -p ../ide/{bin,lib}; cd ../ide
     - cp ../build/MiniZincIDE bin/
     - cp $QTDIR/{libQt5Widgets.so.5,libQt5WebEngineWidgets.so.5,libQt5WebChannel.so.5,libQt5WebEngineCore.so.5,libQt5Gui.so.5,libQt5Network.so.5,libQt5Core.so.5,libQt5PrintSupport.so.5,libQt5OpenGL.so.5,libQt5Positioning.so.5,libQt5Quick.so.5,libQt5QuickWidgets.so.5,libQt5Qml.so.5,libQt5Sql.so.5,libQt5DBus.so.5,libQt5Svg.so.5,libQt5XcbQpa.so.5} $CI_PROJECT_DIR/ide/lib
-    - cp $QTDIR/{libdouble-conversion.so.1,libre2.so.4,libavcodec.so.57,libavformat.so.57,libavutil.so.55,libsnappy.so.1,libminizip.so.1,libswresample.so.2,libcrystalhd.so.3,libva.so.2,libzvbi.so.0,libxvidcore.so.4,libx265.so.146,libx264.so.152,libshine.so.3,libopenjp2.so.7,libgsm.so.1,libssh-gcrypt.so.4,libopenmpt.so.0,libbluray.so.2,libchromaprint.so.1,libvdpau.so.1,libva-x11.so.2,libva-drm.so.2,libsoxr.so.0,libgme.so.0} $CI_PROJECT_DIR/ide/lib
+    - cp $QTDIR/{libdouble-conversion.so.1,libre2.so.4,libavcodec.so.57,libavformat.so.57,libavutil.so.55,libsnappy.so.1,libminizip.so.1,libswresample.so.2,libcrystalhd.so.3,libva.so.2,libzvbi.so.0,libxvidcore.so.4,libx265.so.146,libx264.so.152,libshine.so.3,libopenjp2.so.7,libgsm.so.1,libssh-gcrypt.so.4,libopenmpt.so.0,libbluray.so.2,libchromaprint.so.1,libvdpau.so.1,libva-x11.so.2,libva-drm.so.2,libsoxr.so.0,libgme.so.0,libxcb-xinerama.so.0} $CI_PROJECT_DIR/ide/lib
     - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
 
   tags:
