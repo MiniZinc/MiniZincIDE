@@ -53,11 +53,9 @@ build:linux:
     - make -j4
     - mkdir -p ../ide/{bin,lib}; cd ../ide
     - cp ../build/MiniZincIDE bin/
-    - cp $QTDIR/libdouble-conversion.so.1 $CI_PROJECT_DIR/ide/lib
-    - cp $QTDIR/libre2.so.4 $CI_PROJECT_DIR/ide/lib
-    - cp $QTDIR/libavcodec.so.57 $CI_PROJECT_DIR/ide/lib
-    - cp $QTDIR/libQt5*.so.5 $CI_PROJECT_DIR/ide/lib
+    - cp $QTDIR/{libQt5Widgets.so.5,libQt5Gui.so.5,libQt5Network.so.5,libQt5Core.so.5,libQt5PrintSupport.so.5,libQt5OpenGL.so.5,libQt5Positioning.so.5,libQt5Quick.so.5,libQt5Qml.so.5,libQt5Sql.so.5,libQt5DBus.so.5,libQt5Svg.so.5,libQt5XcbQpa.so.5} $CI_PROJECT_DIR/ide/lib
     - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
+
   tags:
      - linux
      - docker
