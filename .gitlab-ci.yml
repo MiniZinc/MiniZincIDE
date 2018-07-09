@@ -53,6 +53,7 @@ build:linux:
     - make -j4
     - mkdir -p ../ide/{bin,lib}; cd ../ide
     - cp ../build/MiniZincIDE bin/
+    - cp $QTDIR/libdouble-conversion.so.1 $CI_PROJECT_DIR/ide/lib
     - cp $QTDIR/libQt5*.so.5 $CI_PROJECT_DIR/ide/lib
     - cp -r $QTDIR/qt5/plugins $CI_PROJECT_DIR/ide/lib
   tags:
