@@ -137,7 +137,6 @@ void Highlighter::highlightBlock(const QString &text)
       if(fb.sl <= blockNumber && fb.el >= blockNumber) {
         int index = 0;
         int length = block.length();
-        int endpos = index + length;
 
         if(fb.sl == blockNumber) {
           index = fb.sc - 1;
@@ -148,6 +147,7 @@ void Highlighter::highlightBlock(const QString &text)
           length = fb.ec;
         }
 
+        int endpos = index + length;
         foreach(const QTextLayout::FormatRange& fr, block.textFormats()) {
           //if(index >= fr.start && index <= fr.start + length) {
             int local_index = fr.start < index ? index : fr.start;

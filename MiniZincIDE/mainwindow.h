@@ -33,6 +33,7 @@
 #include <QNetworkAccessManager>
 #include <QSortFilterProxyModel>
 #include <QToolButton>
+#include <QProgressBar>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -333,6 +334,7 @@ private:
     QTimer* solverTimeout;
     int time;
     QElapsedTimer elapsedTime;
+    QProgressBar* progressBar;
     QLabel* statusLabel;
     QFont editorFont;
     bool darkMode;

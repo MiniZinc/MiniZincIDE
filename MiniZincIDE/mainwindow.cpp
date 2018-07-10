@@ -729,8 +729,12 @@ void MainWindow::init(const QString& projectFile)
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
+    progressBar = new QProgressBar;
+    progressBar->setRange(0, 100);
+    progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
     statusLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
+    ui->statusbar->addPermanentWidget(progressBar);
     ui->statusbar->showMessage("Ready.");
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
@@ -1316,6 +1320,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveNSol = currentSolver.stdFlags.contains("-n");
     bool haveFreeSearch = currentSolver.stdFlags.contains("-f");
     bool haveSolverVerbose = currentSolver.stdFlags.contains("-v");
+    bool haveOutputHtml = currentSolver.stdFlags.contains("--output-html");
 
     bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
     bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
@@ -1330,6 +1335,9 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveCompilerCheck = isMiniZinc;
 
     QStringList ret;
+    if (confMode==CONF_COMPILE && haveOutputHtml) {
+        ret << "--output-html";
+    }
     if (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) {
         for (auto& a : currentSolver.defaultFlags) {
             ret << a;
@@ -1497,7 +1505,7 @@ void MainWindow::checkArgs(QString filepath)
         QStringList args = parseConf(CONF_CHECKARGS, "", false);
         args << "--model-interface-only";
         for (QString dzn: currentAdditionalDataFiles)
-            args << "-d" << dzn;
+            args << dzn;
         args << filepath;
         elapsedTime.start();
         process->start(mzn2fzn_executable,args,getMznDistribPath());
@@ -1676,6 +1684,9 @@ void MainWindow::readOutput()
                     addOutput(htmlBuffer.join(""), true);
                     htmlBuffer.clear();
                     inHTMLHandler = false;
+                } else if (l.trimmed().startsWith("%%%mzn-progress")) {
+                    float value = l.split(" ")[1].toFloat();
+                    progressBar->setValue(std::lround(value));
                 } else {
                     if (l.trimmed() == "----------") {
                         solutionCount++;
@@ -1866,7 +1877,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
     if (!additionalDataFiles.isEmpty()) {
         for (auto df: additionalDataFiles)
-            args << "-d" << df;
+            args << df;
     }
 
     solutionCount = 0;
@@ -1987,6 +1998,7 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     timer->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
+    progressBar->reset();
     process = NULL;
     outputProcess = NULL;
     finishJSONViewer();
