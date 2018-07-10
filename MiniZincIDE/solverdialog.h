@@ -30,7 +30,9 @@ struct Solver {
     QString id;
     QString name;
     QString executable;
+    QString executable_resolved;
     QString mznlib;
+    QString mznlib_resolved;
     QString version;
     int mznLibVersion;
     QString description;

@@ -115,6 +115,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->solverId->setText(solvers[index].id);
         ui->version->setText(solvers[index].version);
         ui->executable->setText(solvers[index].executable);
+        ui->exeNotFoundLabel->setVisible(!solvers[index].executable.isEmpty() && solvers[index].executable_resolved.isEmpty());
         ui->detach->setChecked(solvers[index].isGUIApplication);
         ui->needs_mzn2fzn->setChecked(!solvers[index].supportsMzn);
         ui->mznpath->setText(solvers[index].mznlib);
@@ -321,7 +322,7 @@ void SolverDialog::on_updateButton_clicked()
         }
 
         QJsonObject json = solvers[index].json;
-        json.remove("configFile");
+        json.remove("extraInfo");
         json["executable"] = ui->executable->text().trimmed();
         json["mznlib"] = ui->mznpath->text();
         json["name"] = ui->name->text().trimmed();
@@ -346,6 +347,10 @@ void SolverDialog::on_updateButton_clicked()
         }
         ui->solvers_combo->setCurrentIndex(index);
     }
+    QString mzn2fzn_executable;
+    QString mzn2fzn_version;
+    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
+    on_solvers_combo_currentIndexChanged(ui->solvers_combo->currentIndex());
 }
 
 void SolverDialog::on_deleteButton_clicked()
@@ -463,6 +468,8 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                     s.json = sj;
                     s.name = sj["name"].toString();
                     QJsonObject extraInfo = sj["extraInfo"].toObject();
+                    s.executable_resolved = extraInfo["executable"].toString("");
+                    s.mznlib_resolved = extraInfo["mznlib"].toString("");
                     s.configFile = extraInfo["configFile"].toString("");
                     if (extraInfo["defaultFlags"].isArray()) {
                         QJsonArray ei = extraInfo["defaultFlags"].toArray();

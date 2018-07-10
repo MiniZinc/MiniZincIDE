@@ -2254,7 +2254,14 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         readOutput();
         QStringList args = parseConf(CONF_RUN,"",isOptimisation);
         Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
-
+        if (!s.executable.isEmpty() && s.executable_resolved.isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","The solver "+s.executable+" cannot be executed.",
+                                 QMessageBox::Ok);
+            delete tmpDir;
+            tmpDir = NULL;
+            procFinished(exitcode);
+            return;
+        }
         args << currentFznTarget;
 
         if (s.isGUIApplication) {
@@ -2263,7 +2270,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             MznProcess* detached_process = new MznProcess(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
-            QString executable = s.executable;
+            QString executable = s.executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
                 addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
@@ -2291,7 +2298,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                         this, SLOT(outputProcError(QProcess::ProcessError)));
             }
             process = new MznProcess(this);
-            processName = s.executable;
+            processName = s.executable_resolved;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
             if (runSolns2Out) {
@@ -2310,7 +2317,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
             elapsedTime.start();
             addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
-            QString executable = s.executable;
+            QString executable = s.executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
                 addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
