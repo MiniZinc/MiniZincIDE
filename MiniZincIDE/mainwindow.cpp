@@ -732,6 +732,7 @@ void MainWindow::init(const QString& projectFile)
     progressBar = new QProgressBar;
     progressBar->setRange(0, 100);
     progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
+    progressBar->setHidden(true);
     statusLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
     ui->statusbar->addPermanentWidget(progressBar);
@@ -1686,6 +1687,7 @@ void MainWindow::readOutput()
                     inHTMLHandler = false;
                 } else if (l.trimmed().startsWith("%%%mzn-progress")) {
                     float value = l.split(" ")[1].toFloat();
+                    progressBar->setHidden(false);
                     progressBar->setValue(std::lround(value));
                 } else {
                     if (l.trimmed() == "----------") {
@@ -1843,6 +1845,7 @@ void MainWindow::finishJSONViewer(void)
 
 void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles)
 {
+    progressBar->setHidden(true);
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
 
@@ -2357,6 +2360,7 @@ void MainWindow::on_actionCompile_triggered()
 
 void MainWindow::on_actionClear_output_triggered()
 {
+    progressBar->setHidden(true);
     ui->outputConsole->document()->clear();
 }
 
