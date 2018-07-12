@@ -1504,7 +1504,7 @@ void MainWindow::checkArgs(QString filepath)
                 this, SLOT(checkArgsError(QProcess::ProcessError)));
 
         QStringList args = parseConf(CONF_CHECKARGS, "", false);
-        args << "--model-interface-only";
+        args << "-c" << "--model-interface-only";
         for (QString dzn: currentAdditionalDataFiles)
             args << dzn;
         args << filepath;
