@@ -88,7 +88,7 @@ build:osx:
     paths:
       - build/
 
-build:win32:
+.build:win32:
   <<: *win_build_definition
   variables:
     QTDIR: "C:/Qt/Qt5.7.0/5.7/msvc2015"
