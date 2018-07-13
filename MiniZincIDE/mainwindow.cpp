@@ -1322,6 +1322,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveFreeSearch = currentSolver.stdFlags.contains("-f");
     bool haveSolverVerbose = currentSolver.stdFlags.contains("-v");
     bool haveOutputHtml = currentSolver.stdFlags.contains("--output-html");
+    bool haveNeedsPaths = currentSolver.needsPathsFile;
 
     bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
     bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
@@ -1336,8 +1337,12 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveCompilerCheck = isMiniZinc;
 
     QStringList ret;
-    if (confMode==CONF_COMPILE && haveOutputHtml) {
+    if (confMode!=CONF_CHECKARGS && haveOutputHtml) {
         ret << "--output-html";
+    }
+    if (confMode==CONF_COMPILE && haveNeedsPaths) {
+        ret << "--paths";
+        ret << currentPathsTarget;
     }
     if (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) {
         for (auto& a : currentSolver.defaultFlags) {
@@ -1845,6 +1850,7 @@ void MainWindow::finishJSONViewer(void)
 
 void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles)
 {
+    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
     progressBar->setHidden(true);
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
@@ -1860,7 +1866,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 
     curFilePath = modelPath;
     processWasStopped = false;
-    runSolns2Out = true;
+    runSolns2Out = currentSolver.needsSolns2Out;
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
@@ -1917,6 +1923,11 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             currentFznTarget = tmpDir->path()+"/"+fi.baseName()+".fzn";
             args << "-o" << currentFznTarget;
             args << "--output-ozn-to-file" << tmpDir->path()+"/"+fi.baseName()+".ozn";
+            if(currentSolver.needsPathsFile) {
+                currentPathsTarget = tmpDir->path()+"/"+fi.baseName()+".paths";
+                args << "--output-paths-to-file";
+                args << currentPathsTarget;
+            }
         }
         args << modelPath;
         QString compiling = (standalone ? "Running " : "Compiling ") + fi.fileName();

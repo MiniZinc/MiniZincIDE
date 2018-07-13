@@ -44,6 +44,7 @@ struct Solver {
     bool isGUIApplication;
     bool needsMznExecutable;
     bool needsStdlibDir;
+    bool needsPathsFile;
     QStringList stdFlags;
     QStringList extraFlags;
     QStringList requiredFlags;

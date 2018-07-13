@@ -496,6 +496,8 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                     s.isGUIApplication = sj["isGUIApplication"].toBool(false);
                     s.needsMznExecutable = sj["needsMznExecutable"].toBool(false);
                     s.needsStdlibDir = sj["needsStdlibDir"].toBool(false);
+                    s.needsPathsFile = sj["needsPathsFile"].toBool(false);
+                    s.needsSolns2Out = sj["needsSolns2Out"].toBool(true);
                     s.executable = sj["executable"].toString("");
                     s.id = sj["id"].toString();
                     s.version = sj["version"].toString();

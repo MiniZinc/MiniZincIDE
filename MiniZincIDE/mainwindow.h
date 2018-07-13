@@ -346,6 +346,7 @@ private:
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
+    QString currentPathsTarget;
     bool isOptimisation;
     QStringList currentAdditionalDataFiles;
     bool runSolns2Out;
