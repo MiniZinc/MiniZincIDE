@@ -7,7 +7,6 @@ SolverConfiguration::SolverConfiguration()
 SolverConfiguration SolverConfiguration::defaultConfig() {
     SolverConfiguration def;
     def.isBuiltin = true;
-    def.isFavourite = true;
     def.timeLimit = 0;
     def.defaultBehaviour = true;
     def.printIntermediate = false;

@@ -12,7 +12,6 @@ class SolverConfiguration
 public:
     SolverConfiguration();
     QString name;
-    bool isFavourite;
     bool isBuiltin;
     QString solverId;
     QString solverVersion;

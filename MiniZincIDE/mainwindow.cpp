@@ -780,16 +780,11 @@ void MainWindow::init(const QString& projectFile)
     defaultSolverIdx = settings.value("defaultSolverIdx",0).toInt();
     settings.endGroup();
     checkMznPath();
-    for (int i=0; i<solvers.size(); i++) {
-        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,i);
-    }
-    ui->conf_solver->addItem("Add new solver...");
 
-    loadSolverConfigsFromSettings();
     QVector<SolverConfiguration> builtinConfigs;
     SolverConfiguration::defaultConfigs(solvers, builtinConfigs);
     for (int i=0; i<builtinConfigs.size(); i++)
-        favouriteSolverConfigs.push_back(builtinConfigs[i]);
+        builtinSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
     setCurrentSolverConfig(defaultSolverIdx);
     connect(ui->menuSolver_configurations,SIGNAL(triggered(QAction*)),this,SLOT(on_solverConfigurationSelected(QAction*)));
@@ -1313,7 +1308,7 @@ void MainWindow::on_actionOpen_triggered()
 
 QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation)
 {
-    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+    Solver& currentSolver = *getCurrentSolver();
     bool haveThreads = currentSolver.stdFlags.contains("-p");
     bool haveSeed = currentSolver.stdFlags.contains("-r");
     bool haveStats = currentSolver.stdFlags.contains("-s");
@@ -1848,9 +1843,30 @@ void MainWindow::finishJSONViewer(void)
     }
 }
 
+SolverConfiguration* MainWindow::getCurrentSolverConfig(void) {
+    int idx = ui->conf_solver_conf->currentIndex();
+    if (projectSolverConfigs.size()!=0 && idx > projectSolverConfigs.size())
+        idx--;
+    SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : builtinSolverConfigs[idx-projectSolverConfigs.size()];
+    return &conf;
+}
+
+Solver* MainWindow::getCurrentSolver(void) {
+    SolverConfiguration* conf = getCurrentSolverConfig();
+    Solver* s = NULL;
+    for (int i=0; i<solvers.size(); i++) {
+        if (conf->solverId==solvers[i].id) {
+            s = &solvers[i];
+            if (conf->solverVersion==solvers[i].version)
+                break;
+        }
+    }
+    return s;
+}
+
 void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles)
 {
-    Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+    Solver& currentSolver = *getCurrentSolver();
     progressBar->setHidden(true);
     process = new MznProcess(this);
     processName = mzn2fzn_executable;
@@ -1858,8 +1874,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     bool standalone = false;
     if (!compileOnly) {
         // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
-        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-        if (s.supportsMzn) {
+        if (currentSolver.supportsMzn) {
             standalone = true;
         }
     }
@@ -1989,7 +2004,7 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
 
 QString MainWindow::currentSolver() const
 {
-    return ui->conf_solver->currentText();
+    return ui->conf_solver->text();
 }
 
 void MainWindow::closeHTMLWindow(void)
@@ -2267,9 +2282,9 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
     if (exitcode==0 && exitstatus==QProcess::NormalExit) {
         readOutput();
         QStringList args = parseConf(CONF_RUN,"",isOptimisation);
-        Solver s = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];        
-        if (!s.executable.isEmpty() && s.executable_resolved.isEmpty()) {
-            QMessageBox::warning(this,"MiniZinc IDE","The solver "+s.executable+" cannot be executed.",
+        Solver* s = getCurrentSolver();
+        if (!s->executable.isEmpty() && s->executable_resolved.isEmpty()) {
+            QMessageBox::warning(this,"MiniZinc IDE","The solver "+s->executable+" cannot be executed.",
                                  QMessageBox::Ok);
             delete tmpDir;
             tmpDir = NULL;
@@ -2278,13 +2293,13 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         }
         args << currentFznTarget;
 
-        if (s.isGUIApplication) {
+        if (s->isGUIApplication) {
             addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
 
             MznProcess* detached_process = new MznProcess(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
-            QString executable = s.executable_resolved;
+            QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
                 addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
@@ -2312,7 +2327,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                         this, SLOT(outputProcError(QProcess::ProcessError)));
             }
             process = new MznProcess(this);
-            processName = s.executable_resolved;
+            processName = s->executable_resolved;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
             if (runSolns2Out) {
@@ -2331,7 +2346,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
             elapsedTime.start();
             addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
-            QString executable = s.executable_resolved;
+            QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
                 addOutput("<div style='color:blue;'>Command line:</div>");
                 QString cmdline = executable;
@@ -2478,8 +2493,8 @@ void MainWindow::updateSolverConfigs()
         ui->conf_solver_conf->insertSeparator(projectSolverConfigs.size());
         ui->menuSolver_configurations->addSeparator();
     }
-    for (int i=0; i<favouriteSolverConfigs.size(); i++) {
-        QString scn = favouriteSolverConfigs[i].name+(favouriteSolverConfigs[i].isBuiltin ? " [built-in]" : " [favourite]");
+    for (int i=0; i<builtinSolverConfigs.size(); i++) {
+        QString scn = builtinSolverConfigs[i].name+(" [built-in]");
         ui->conf_solver_conf->addItem(scn);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(scn);
         solverConfAction->setCheckable(true);
@@ -2495,7 +2510,7 @@ void MainWindow::updateSolverConfigs()
 
 void MainWindow::setCurrentSolverConfig(int idx)
 {
-    if (idx==-1 || idx >= projectSolverConfigs.size()+favouriteSolverConfigs.size())
+    if (idx==-1 || idx >= projectSolverConfigs.size()+builtinSolverConfigs.size())
         return;
     int actionIdx = (projectSolverConfigs.size()!=0 && idx >= projectSolverConfigs.size()) ? idx+1 : idx;
     ui->conf_solver_conf->setCurrentIndex(actionIdx);
@@ -2505,13 +2520,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     }
 
     if (currentSolverConfig != -1) {
-        if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < favouriteSolverConfigs.size()) {
-            SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : favouriteSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
-            if (ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt() < solvers.size()) {
-                Solver& selectedSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
-                oldConf.solverId = selectedSolver.id;
-                oldConf.solverVersion = selectedSolver.version;
-            }
+        if (currentSolverConfig < projectSolverConfigs.size() || currentSolverConfig-projectSolverConfigs.size() < builtinSolverConfigs.size()) {
+            SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : builtinSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
             oldConf.timeLimit = ui->conf_timeLimit->value();
             oldConf.defaultBehaviour = ui->defaultBehaviourButton->isChecked();
             oldConf.printIntermediate = ui->conf_printall->isChecked();
@@ -2530,15 +2540,12 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
             oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
-            if (oldConf.isFavourite && !oldConf.isBuiltin) {
-                saveSolverConfigsToSettings();
-            }
         }
     }
     currentSolverConfig = idx;
-    SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
+    SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : builtinSolverConfigs[idx-projectSolverConfigs.size()];
 
-    int solverIdx = -1;
+    int solverIdx = 0;
     for (int i=solvers.size(); i--;) {
         Solver& s = solvers[i];
         if (s.id==conf.solverId) {
@@ -2547,7 +2554,9 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 break;
         }
     }
-    ui->conf_solver->setCurrentIndex(solverIdx==-1 ? 0 : solverIdx);
+    if (solverIdx < solvers.size()) {
+        ui->conf_solver->setText(solvers[solverIdx].name+" "+solvers[solverIdx].version);
+    }
     ui->conf_timeLimit->setValue(conf.timeLimit);
     ui->defaultBehaviourButton->setChecked(conf.defaultBehaviour);
     ui->userBehaviourButton->setChecked(!conf.defaultBehaviour);
@@ -2568,8 +2577,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
 
-    if (ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt() < solvers.size()) {
-        Solver& currentSolver = solvers[ui->conf_solver->itemData(ui->conf_solver->currentIndex()).toInt()];
+    if (solverIdx < solvers.size()) {
+        Solver& currentSolver = solvers[solverIdx];
         ui->conf_nthreads->setEnabled(currentSolver.stdFlags.contains("-p"));
         ui->nthreads_label->setEnabled(currentSolver.stdFlags.contains("-p"));
         ui->conf_seed->setEnabled(currentSolver.stdFlags.contains("-r"));
@@ -2607,8 +2616,6 @@ void MainWindow::setCurrentSolverConfig(int idx)
 
     if (conf.isBuiltin)
         ui->solverConfType->setText("built-in configuration");
-    else if (conf.isFavourite)
-        ui->solverConfType->setText("favourite configuration");
     else
         ui->solverConfType->setText("configuration in current project");
 
@@ -2618,99 +2625,12 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->deleteSolverConfButton->setEnabled(true);
     ui->deleteSolverConfButton->setText(conf.isBuiltin ? "Reset to defaults" : "Delete");
     if (conf.isBuiltin) {
-        ui->saveSolverConfButton->hide();
         ui->renameSolverConfButton->hide();
     } else {
-        ui->saveSolverConfButton->show();
-        ui->saveSolverConfButton->setEnabled(true);
         ui->renameSolverConfButton->show();
         ui->renameSolverConfButton->setEnabled(true);
-        if (conf.isFavourite) {
-            ui->saveSolverConfButton->hide();
-        } else {
-            ui->saveSolverConfButton->setText("Save as favourite");
-            ui->saveSolverConfButton->show();
-        }
     }
     project.solverConfigs(projectSolverConfigs,false);
-}
-
-void MainWindow::saveSolverConfigsToSettings()
-{
-    QSettings settings;
-    settings.beginWriteArray("solverConfigs");
-
-    for (int i=0, j=0; i<favouriteSolverConfigs.size(); i++) {
-        SolverConfiguration& sc = favouriteSolverConfigs[i];
-        if (sc.isBuiltin)
-            continue;
-
-        settings.setArrayIndex(j++);
-        settings.setValue("name", sc.name);
-        settings.setValue("solverId", sc.solverId);
-        settings.setValue("solverVersion", sc.solverVersion);
-        settings.setValue("timeLimit", sc.timeLimit);
-        settings.setValue("defaultBehaviour", sc.defaultBehaviour);
-        settings.setValue("printIntermediate", sc.printIntermediate);
-        settings.setValue("stopAfter", sc.stopAfter);
-        settings.setValue("compressSolutionOutput", sc.compressSolutionOutput);
-        settings.setValue("clearOutputWindow", sc.clearOutputWindow);
-        settings.setValue("verboseFlattening", sc.verboseFlattening);
-        settings.setValue("flatteningStats", sc.flatteningStats);
-        settings.setValue("optimizationLevel", sc.optimizationLevel);
-        settings.setValue("additionalData", sc.additionalData);
-        settings.setValue("additionalCompilerCommandline", sc.additionalCompilerCommandline);
-        settings.setValue("nThreads", sc.nThreads);
-        settings.setValue("randomSeed", sc.randomSeed);
-        settings.setValue("solverFlags", sc.solverFlags);
-        settings.setValue("freeSearch", sc.freeSearch);
-        settings.setValue("verboseSolving", sc.verboseSolving);
-        settings.setValue("outputTiming", sc.outputTiming);
-        settings.setValue("solvingStats", sc.solvingStats);
-        settings.setValue("runSolutionChecker", sc.runSolutionChecker);
-    }
-    settings.endArray();
-}
-
-void MainWindow::loadSolverConfigsFromSettings()
-{
-    QVector<SolverConfiguration> newFavourites;
-    QSettings settings;
-    int nConfigs = settings.beginReadArray("solverConfigs");
-    for (int i=0; i<nConfigs; i++) {
-        settings.setArrayIndex(i);
-        SolverConfiguration sc;
-        sc.name = settings.value("name").toString();
-        sc.isFavourite = true;
-        sc.isBuiltin = false;
-        sc.solverId = settings.value("solverId").toString();
-        sc.solverVersion = settings.value("solverVersion").toString();
-        sc.timeLimit = settings.value("timeLimit").toInt();
-        sc.defaultBehaviour = settings.value("defaultBehaviour").toBool();
-        sc.printIntermediate = settings.value("printIntermediate").toBool();
-        sc.stopAfter = settings.value("stopAfter").toInt();
-        sc.compressSolutionOutput = settings.value("compressSolutionOutput").toInt();
-        sc.clearOutputWindow = settings.value("clearOutputWindow").toBool();
-        sc.verboseFlattening = settings.value("verboseFlattening").toBool();
-        sc.flatteningStats = settings.value("flatteningStats").toBool();
-        sc.optimizationLevel = settings.value("optimizationLevel", settings.value("optimizedFlattening", true).toBool() ? 1 : 0).toInt();
-        sc.additionalData = settings.value("additionalData").toString();
-        sc.additionalCompilerCommandline = settings.value("additionalCompilerCommandline").toString();
-        sc.nThreads = settings.value("nThreads").toInt();
-        sc.randomSeed = settings.value("randomSeed");
-        sc.solverFlags = settings.value("solverFlags").toString();
-        sc.freeSearch = settings.value("freeSearch",false).toBool();
-        sc.verboseSolving = settings.value("verboseSolving").toBool();
-        sc.outputTiming = settings.value("outputTiming").toBool();
-        sc.solvingStats = settings.value("solvingStats").toBool();
-        sc.runSolutionChecker = settings.value("runSolutionChecker",true).toBool();
-        newFavourites.push_back(sc);
-    }
-
-    for (SolverConfiguration& s : favouriteSolverConfigs)
-        if (s.isBuiltin)
-            newFavourites.push_back(s);
-    favouriteSolverConfigs = newFavourites;
 }
 
 void MainWindow::on_conf_solver_conf_currentIndexChanged(int index)
@@ -2735,7 +2655,6 @@ void MainWindow::on_solverConfigurationSelected(QAction* action)
 void MainWindow::on_cloneSolverConfButton_clicked()
 {
     QString cur = ui->conf_solver_conf->currentText();
-    cur = cur.replace(" [favourite]","");
     cur = cur.replace(" [built-in]","");
     int clone = 1;
     QRegExp re("Clone (\\d+) of (.*)");
@@ -2755,7 +2674,6 @@ void MainWindow::on_cloneSolverConfButton_clicked()
     ui->groupBox_2->setEnabled(false);
     ui->groupBox_3->setEnabled(false);
     ui->deleteSolverConfButton->setEnabled(false);
-    ui->saveSolverConfButton->setEnabled(false);
     ui->cloneSolverConfButton->setEnabled(false);
     ui->renameSolverConfButton->setEnabled(false);
     renamingSolverConf = false;
@@ -2763,7 +2681,7 @@ void MainWindow::on_cloneSolverConfButton_clicked()
 
 void MainWindow::on_deleteSolverConfButton_clicked()
 {
-    SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : favouriteSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
+    SolverConfiguration& oldConf = currentSolverConfig < projectSolverConfigs.size() ? projectSolverConfigs[currentSolverConfig] : builtinSolverConfigs[currentSolverConfig-projectSolverConfigs.size()];
     if (oldConf.isBuiltin) {
         // reset builtin configuration to default values
         SolverConfiguration newConf = SolverConfiguration::defaultConfig();
@@ -2784,11 +2702,6 @@ void MainWindow::on_deleteSolverConfButton_clicked()
             int idx = ui->conf_solver_conf->currentIndex();
             if (idx<projectSolverConfigs.size()) {
                 projectSolverConfigs.remove(idx);
-            } else {
-                if (projectSolverConfigs.size()!=0)
-                    idx = idx-projectSolverConfigs.size()-1;
-                favouriteSolverConfigs.remove(idx);
-                saveSolverConfigsToSettings();
             }
             updateSolverConfigs();
             setCurrentSolverConfig(0);
@@ -2796,29 +2709,9 @@ void MainWindow::on_deleteSolverConfButton_clicked()
     }
 }
 
-void MainWindow::on_saveSolverConfButton_clicked()
-{
-    int idx = ui->conf_solver_conf->currentIndex();
-    if (idx < projectSolverConfigs.size()) {
-        SolverConfiguration favourite = projectSolverConfigs[idx];
-        favourite.isFavourite = true;
-        QString curName = favourite.name;
-        int i=1;
-        while (ui->conf_solver_conf->findText(favourite.name+" [favourite]") != -1) {
-            favourite.name = curName+" "+QString().number(i);
-            i++;
-        }
-        favouriteSolverConfigs.push_front(favourite);
-        currentSolverConfig = projectSolverConfigs.size();
-        updateSolverConfigs();
-        setCurrentSolverConfig(projectSolverConfigs.size());
-    }
-}
-
 void MainWindow::on_renameSolverConfButton_clicked()
 {
     QString cur = ui->conf_solver_conf->currentText();
-    cur = cur.replace(" [favourite]","");
     ui->solverConfNameEdit->setText(cur);
     ui->solverConfNameEdit->show();
     ui->solverConfNameEdit->setFocus();
@@ -2828,7 +2721,6 @@ void MainWindow::on_renameSolverConfButton_clicked()
     ui->groupBox_2->setEnabled(false);
     ui->groupBox_3->setEnabled(false);
     ui->deleteSolverConfButton->setEnabled(false);
-    ui->saveSolverConfButton->setEnabled(false);
     ui->cloneSolverConfButton->setEnabled(false);
     ui->renameSolverConfButton->setEnabled(false);
     renamingSolverConf = true;
@@ -2839,7 +2731,6 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
     QString newName = ui->solverConfNameEdit->text();
     if (renamingSolverConf) {
         QString prevName = ui->conf_solver_conf->currentText();
-        prevName = prevName.replace(" [favourite]","");
         if (newName==prevName)
             on_solverConfNameEdit_escPressed();
         if (!newName.isEmpty() && ui->conf_solver_conf->findText(newName)==-1) {
@@ -2850,7 +2741,7 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
             int idx = ui->conf_solver_conf->currentIndex();
             if (projectSolverConfigs.size()!=0 && idx > projectSolverConfigs.size())
                 idx--;
-            SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
+            SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : builtinSolverConfigs[idx-projectSolverConfigs.size()];
             conf.name = newName;
             updateSolverConfigs();
             on_conf_solver_conf_currentIndexChanged(idx);
@@ -2867,10 +2758,9 @@ void MainWindow::on_solverConfNameEdit_returnPressed()
             int idx = ui->conf_solver_conf->currentIndex();
             if (projectSolverConfigs.size()!=0 && idx > projectSolverConfigs.size())
                 idx--;
-            SolverConfiguration newConf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : favouriteSolverConfigs[idx-projectSolverConfigs.size()];
+            SolverConfiguration newConf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : builtinSolverConfigs[idx-projectSolverConfigs.size()];
             newConf.name = newName;
             newConf.isBuiltin = false;
-            newConf.isFavourite = false;
             projectSolverConfigs.push_front(newConf);
             updateSolverConfigs();
             setCurrentSolverConfig(0);
@@ -3019,18 +2909,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
     checkMznPath();
-    QString curSelection = ui->conf_solver->currentText();
-    ui->conf_solver->clear();
-    for (int i=0; i<solvers.size(); i++)
-        ui->conf_solver->addItem(solvers[i].name+" "+solvers[i].version,i);
-    ui->conf_solver->addItem("Add new solver...",solvers.size());
-    int idx = ui->conf_solver->findText(curSelection);
-    if (!addNew && idx!=-1)
-        ui->conf_solver->setCurrentIndex(idx);
-    else
-        ui->conf_solver->setCurrentIndex(0);
-
-    SolverConfiguration::defaultConfigs(solvers, favouriteSolverConfigs);
+    SolverConfiguration::defaultConfigs(solvers, builtinSolverConfigs);
     updateSolverConfigs();
 
     settings.beginGroup("ide");
@@ -3284,10 +3163,11 @@ void MainWindow::saveProject(const QString& f)
             }
             updateRecentProjects(projectPath);
             tabChange(ui->tabWidget->currentIndex());
-            QDataStream out(&file);
-            out << (quint32)0xD539EA12;
-            out << (quint32)104;
-            out.setVersion(QDataStream::Qt_5_0);
+
+            QJsonObject confObject;
+
+            confObject["version"] = 105;
+
             QStringList openFiles;
             QDir projectDir = QFileInfo(filepath).absoluteDir();
             for (int i=0; i<ui->tabWidget->count(); i++) {
@@ -3295,80 +3175,183 @@ void MainWindow::saveProject(const QString& f)
                 if (!ce->filepath.isEmpty())
                     openFiles << projectDir.relativeFilePath(ce->filepath);
             }
-            out << openFiles;
+            confObject["openFiles"] = QJsonArray::fromStringList(openFiles);
+            confObject["openTab"] = ui->tabWidget->currentIndex();
 
-            int scIdx = ui->conf_solver_conf->currentIndex();
-            if (projectSolverConfigs.size()!=0 && scIdx>projectSolverConfigs.size())
-                scIdx--;
-            SolverConfiguration& curSc = scIdx < projectSolverConfigs.size() ? projectSolverConfigs[scIdx] : favouriteSolverConfigs[scIdx-projectSolverConfigs.size()];
-
-            out << QString(""); // Used to be additional include path
-            out << (qint32)0; // Used to be additional dzn file
-            out << !curSc.additionalData.isEmpty();
-            out << curSc.additionalData;
-            out << !curSc.additionalCompilerCommandline.isEmpty();
-            out << curSc.additionalCompilerCommandline;
-            out << curSc.clearOutputWindow;
-            out << curSc.verboseFlattening;
-            out << (curSc.optimizationLevel > 0 ? true : false);
-            out << QString(""); // Used to be solver name
-            out << (qint32)curSc.stopAfter;
-            out << curSc.printIntermediate;
-            out << curSc.solvingStats;
-            out << !curSc.solverFlags.isEmpty();
-            out << curSc.solverFlags;
-            out << (qint32)curSc.nThreads;
-            out << curSc.randomSeed.isValid();
-            out << (curSc.randomSeed.isValid() ? QString().number(curSc.randomSeed.toInt()) : "");
-            out << false; // used to be whether time limit is checked
-            out << (qint32)curSc.timeLimit;
-            out << curSc.verboseSolving;
-            out << (qint32)ui->tabWidget->currentIndex();
             QStringList projectFilesRelPath;
             QStringList projectFiles = project.files();
             for (QList<QString>::const_iterator it = projectFiles.begin();
                  it != projectFiles.end(); ++it) {
                 projectFilesRelPath << projectDir.relativeFilePath(*it);
             }
-            out << projectFilesRelPath;
-            out << curSc.defaultBehaviour;
-            out << curSc.flatteningStats;
-            out << curSc.compressSolutionOutput;
-            out << curSc.outputTiming;
+            confObject["projectFiles"] = QJsonArray::fromStringList(projectFilesRelPath);
 
-            out << projectSolverConfigs.size();
+            // Make sure any configuration changes have been updated
+            on_conf_solver_conf_currentIndexChanged(ui->conf_solver_conf->currentIndex());
+
+            // Save all project solver configurations
+            QJsonArray projectConfigs;
             for (int i=0; i<projectSolverConfigs.size(); i++) {
                 SolverConfiguration& sc = projectSolverConfigs[i];
-                out << sc.name;
-                out << sc.solverId;
-                out << sc.solverVersion;
-                out << sc.timeLimit;
-                out << sc.defaultBehaviour;
-                out << sc.printIntermediate;
-                out << sc.stopAfter;
-                out << sc.compressSolutionOutput;
-                out << sc.clearOutputWindow;
-                out << sc.verboseFlattening;
-                out << sc.flatteningStats;
-                out << sc.optimizationLevel;
-                out << sc.additionalData;
-                out << sc.additionalCompilerCommandline;
-                out << sc.nThreads;
-                out << sc.randomSeed.isValid();
-                if (sc.randomSeed.isValid())
-                    out << sc.randomSeed.toInt();
-                out << sc.solverFlags;
-                out << sc.freeSearch;
-                out << sc.verboseSolving;
-                out << sc.outputTiming;
-                out << sc.solvingStats;
-                out << sc.runSolutionChecker;
+                QJsonObject projConf;
+                projConf["name"] = sc.name;
+                projConf["id"] = sc.solverId;
+                projConf["version"] = sc.solverVersion;
+                projConf["timeLimit"] = sc.timeLimit;
+                projConf["defaultBehavior"] = sc.defaultBehaviour;
+                projConf["printIntermediate"] = sc.printIntermediate;
+                projConf["stopAfter"] = sc.stopAfter;
+                projConf["compressSolutionOutput"] = sc.compressSolutionOutput;
+                projConf["clearOutputWindow"] = sc.clearOutputWindow;
+                projConf["verboseFlattening"] = sc.verboseFlattening;
+                projConf["flatteningStats"] = sc.flatteningStats;
+                projConf["optimizationLevel"] = sc.optimizationLevel;
+                projConf["additionalData"] = sc.additionalData;
+                projConf["additionalCompilerCommandline"] = sc.additionalCompilerCommandline;
+                projConf["nThreads"] = sc.nThreads;
+                if (sc.randomSeed.isValid()) {
+                    projConf["randomSeed"] = sc.randomSeed.toInt();
+                }
+                projConf["solverFlags"] = sc.solverFlags;
+                projConf["freeSearch"] = sc.freeSearch;
+                projConf["verboseSolving"] = sc.verboseSolving;
+                projConf["outputTiming"] = sc.outputTiming;
+                projConf["solvingStats"] = sc.solvingStats;
+                projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                projectConfigs.append(projConf);
             }
-            project.setModified(false, true);
+            confObject["projectSolverConfigs"] = projectConfigs;
+            // Save all modified built-in solver configurations
+            QJsonArray builtinConfigs;
+            for (int i=0; i<builtinSolverConfigs.size(); i++) {
+                SolverConfiguration& sc = builtinSolverConfigs[i];
 
+                SolverConfiguration defConf = SolverConfiguration::defaultConfig();
+                defConf.name = sc.name;
+                defConf.solverId = sc.solverId;
+                defConf.solverVersion = sc.solverVersion;
+                if (!(defConf==sc)) {
+                    QJsonObject projConf;
+                    projConf["name"] = sc.name;
+                    projConf["id"] = sc.solverId;
+                    projConf["version"] = sc.solverVersion;
+                    projConf["timeLimit"] = sc.timeLimit;
+                    projConf["defaultBehavior"] = sc.defaultBehaviour;
+                    projConf["printIntermediate"] = sc.printIntermediate;
+                    projConf["stopAfter"] = sc.stopAfter;
+                    projConf["compressSolutionOutput"] = sc.compressSolutionOutput;
+                    projConf["clearOutputWindow"] = sc.clearOutputWindow;
+                    projConf["verboseFlattening"] = sc.verboseFlattening;
+                    projConf["flatteningStats"] = sc.flatteningStats;
+                    projConf["optimizationLevel"] = sc.optimizationLevel;
+                    projConf["additionalData"] = sc.additionalData;
+                    projConf["additionalCompilerCommandline"] = sc.additionalCompilerCommandline;
+                    projConf["nThreads"] = sc.nThreads;
+                    if (sc.randomSeed.isValid()) {
+                        projConf["randomSeed"] = sc.randomSeed.toInt();
+                    }
+                    projConf["solverFlags"] = sc.solverFlags;
+                    projConf["freeSearch"] = sc.freeSearch;
+                    projConf["verboseSolving"] = sc.verboseSolving;
+                    projConf["outputTiming"] = sc.outputTiming;
+                    projConf["solvingStats"] = sc.solvingStats;
+                    projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                    builtinConfigs.append(projConf);
+                }
+            }
+            confObject["builtinSolverConfigs"] = builtinConfigs;
+
+            int scIdx = ui->conf_solver_conf->currentIndex();
+            if (scIdx < projectSolverConfigs.size()) {
+                // currently selected config has been saved to the project
+                confObject["selectedProjectConfig"] = scIdx;
+            } else {
+                if (projectSolverConfigs.size()!=0)
+                    scIdx--;
+                SolverConfiguration& curSc = builtinSolverConfigs[scIdx-projectSolverConfigs.size()];
+                confObject["selectedBuiltinConfigId"] = curSc.solverId;
+                confObject["selectedBuiltinConfigVersion"] = curSc.solverVersion;
+            }
+
+            QJsonDocument jdoc(confObject);
+            file.write(jdoc.toJson());
+            file.close();
         } else {
             QMessageBox::warning(this,"MiniZinc IDE","Could not save project");
         }
+    }
+}
+
+namespace {
+    SolverConfiguration scFromJson(QJsonObject sco) {
+        SolverConfiguration newSc;
+        if (sco["name"].isString()) {
+            newSc.name = sco["name"].toString();
+        }
+        if (sco["id"].isString()) {
+            newSc.solverId = sco["id"].toString();
+        }
+        if (sco["version"].isString()) {
+            newSc.solverVersion = sco["version"].toString();
+        }
+        if (sco["timeLimit"].isDouble()) {
+            newSc.timeLimit = sco["timeLimit"].toDouble();
+        }
+        if (sco["defaultBehavior"].isBool()) {
+            newSc.defaultBehaviour = sco["defaultBehavior"].toBool();
+        }
+        if (sco["printIntermediate"].isBool()) {
+            newSc.printIntermediate = sco["printIntermediate"].toBool();
+        }
+        if (sco["stopAfter"].isDouble()) {
+            newSc.stopAfter = sco["stopAfter"].toDouble();
+        }
+        if (sco["compressSolutionOutput"].isDouble()) {
+            newSc.compressSolutionOutput = sco["compressSolutionOutput"].toDouble();
+        }
+        if (sco["clearOutputWindow"].isBool()) {
+            newSc.clearOutputWindow = sco["clearOutputWindow"].toBool();
+        }
+        if (sco["verboseFlattening"].isBool()) {
+            newSc.verboseFlattening = sco["verboseFlattening"].toBool();
+        }
+        if (sco["flatteningStats"].isBool()) {
+            newSc.flatteningStats = sco["flatteningStats"].toBool();
+        }
+        if (sco["optimizationLevel"].isDouble()) {
+            newSc.optimizationLevel = sco["optimizationLevel"].toDouble();
+        }
+        if (sco["additionalData"].isString()) {
+            newSc.additionalData = sco["additionalData"].toString();
+        }
+        if (sco["additionalCompilerCommandline"].isString()) {
+            newSc.additionalCompilerCommandline = sco["additionalCompilerCommandline"].toString();
+        }
+        if (sco["nThreads"].isDouble()) {
+            newSc.nThreads = sco["nThreads"].toDouble();
+        }
+        if (sco["randomSeed"].isDouble()) {
+            newSc.randomSeed = sco["randomSeed"].toDouble();
+        }
+        if (sco["solverFlags"].isString()) {
+            newSc.solverFlags = sco["solverFlags"].toString();
+        }
+        if (sco["freeSearch"].isBool()) {
+            newSc.freeSearch = sco["freeSearch"].toBool();
+        }
+        if (sco["verboseSolving"].isBool()) {
+            newSc.verboseSolving = sco["verboseSolving"].toBool();
+        }
+        if (sco["outputTiming"].isBool()) {
+            newSc.outputTiming = sco["outputTiming"].toBool();
+        }
+        if (sco["solvingStats"].isBool()) {
+            newSc.solvingStats = sco["solvingStats"].toBool();
+        }
+        if (sco["runSolutionChecker"].toBool()) {
+            newSc.runSolutionChecker = sco["runSolutionChecker"].toBool();
+        }
+        return newSc;
     }
 }
 
@@ -3381,145 +3364,247 @@ void MainWindow::loadProject(const QString& filepath)
                              "Could not open project file");
         return;
     }
-    QDataStream in(&pfile);
-    quint32 magic;
-    in >> magic;
-    if (magic != 0xD539EA12) {
-        QMessageBox::warning(this, "MiniZinc IDE",
-                             "Could not open project file");
-        close();
-        return;
-    }
-    quint32 version;
-    in >> version;
-    if (version != 101 && version != 102 && version != 103 && version != 104) {
-        QMessageBox::warning(this, "MiniZinc IDE",
-                             "Could not open project file (version mismatch)");
-        close();
-        return;
-    }
-    in.setVersion(QDataStream::Qt_5_0);
-
-    projectPath = filepath;
-    updateRecentProjects(projectPath);
-    project.setRoot(ui->projectView, projectSort, projectPath);
-    QString basePath;
-    if (version==103 || version==104) {
-        basePath = QFileInfo(filepath).absolutePath()+"/";
-    }
-
-    QStringList openFiles;
-    in >> openFiles;
-    QString p_s;
-    qint32 p_i;
-    bool p_b;
-
-    int dataFileIndex;
-
-    SolverConfiguration newConf;
-    newConf.isBuiltin = false;
-    newConf.isFavourite = false;
-    newConf.runSolutionChecker = true;
-
-    in >> p_s; // Used to be additional include path
-    in >> dataFileIndex;
-    in >> p_b;
-    // Ignore, not used any longer
-//    project.haveExtraArgs(p_b, true);
-    in >> newConf.additionalData;
-    in >> p_b;
-    // Ignore, not used any longer
-    in >> newConf.additionalCompilerCommandline;
-    if (version==104) {
-        in >> newConf.clearOutputWindow;
-    } else {
-        newConf.clearOutputWindow = false;
-    }
-    in >> newConf.verboseFlattening;
-    in >> p_b;
-    newConf.optimizationLevel = p_b ? 1 : 0;
-    in >> p_s; // Used to be solver name
-    in >> newConf.stopAfter;
-    in >> newConf.printIntermediate;
-    in >> newConf.solvingStats;
-    in >> p_b;
-    // Ignore
-    in >> newConf.solverFlags;
-    in >> newConf.nThreads;
-    in >> p_b;
-    in >> p_s;
-    newConf.randomSeed = p_b ? QVariant::fromValue(p_s.toInt()) : QVariant();
-    in >> p_b; // used to be whether time limit is checked
-    in >> newConf.timeLimit;
-    if (version==102 || version==103 || version==104) {
-        in >> newConf.verboseSolving;
-        in >> p_i;
-        ui->tabWidget->setCurrentIndex(p_i);
-    }
-    QStringList projectFilesRelPath;
-    if (version==103 || version==104) {
-        in >> projectFilesRelPath;
-    } else {
-        projectFilesRelPath = openFiles;
-    }
-    if ( (version==103 || version==104) && !in.atEnd()) {
-        in >> newConf.defaultBehaviour;
-    } else {
-        newConf.defaultBehaviour = (newConf.stopAfter == 1 && !newConf.printIntermediate);
-    }
-    if (version==104 && !in.atEnd()) {
-        in >> newConf.flatteningStats;
-    }
-    if (version==104 && !in.atEnd()) {
-        in >> newConf.compressSolutionOutput;
-    }
-    if (version==104 && !in.atEnd()) {
-        in >> newConf.outputTiming;
-    }
-    if (version==104 && !in.atEnd()) {
-        in >> p_i;
-        int nSolverConfigs = p_i;
-        for (int i=0; i<nSolverConfigs; i++) {
-            SolverConfiguration sc;
-            sc.isBuiltin = false;
-            sc.isFavourite = false;
-            in >> sc.name;
-            in >> sc.solverId;
-            in >> sc.solverVersion;
-            in >> sc.timeLimit;
-            in >> sc.defaultBehaviour;
-            in >> sc.printIntermediate;
-            in >> sc.stopAfter;
-            in >> sc.compressSolutionOutput;
-            in >> sc.clearOutputWindow;
-            in >> sc.verboseFlattening;
-            in >> sc.flatteningStats;
-            in >> sc.optimizationLevel;
-            in >> sc.additionalData;
-            in >> sc.additionalCompilerCommandline;
-            in >> sc.nThreads;
-            in >> p_b;
-            if (p_b) {
-                in >> p_i;
-                sc.randomSeed.setValue(p_i);
+    QByteArray jsonData = pfile.readAll();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    bool jsonError = false;
+    if (!jsonDoc.isNull()) {
+        QStringList projectFilesRelPath;
+        QString basePath = QFileInfo(filepath).absolutePath()+"/";
+        QStringList openFiles;
+        int openTab = -1;
+        if (jsonDoc.isObject()) {
+            QJsonObject confObject(jsonDoc.object());
+            projectPath = filepath;
+            updateRecentProjects(projectPath);
+            project.setRoot(ui->projectView, projectSort, projectPath);
+            if (confObject["openFiles"].isArray()) {
+                QJsonArray openFilesA(confObject["openFiles"].toArray());
+                for (auto f : openFilesA) {
+                    if (f.isString()) {
+                        openFiles.append(f.toString());
+                    } else {
+                        jsonError = true;
+                        goto errorInJsonConfig;
+                    }
+                }
             }
-            in >> sc.solverFlags;
-            in >> sc.freeSearch;
-            in >> sc.verboseSolving;
-            in >> sc.outputTiming;
-            in >> sc.solvingStats;
-            in >> sc.runSolutionChecker;
-            projectSolverConfigs.push_back(sc);
+            openTab = confObject["openTab"].isDouble() ? confObject["openTab"].toDouble() : -1;
+            if (confObject["projectFiles"].isArray()) {
+                QJsonArray projectFilesA(confObject["projectFiles"].toArray());
+                for (auto f : projectFilesA) {
+                    if (f.isString()) {
+                        projectFilesRelPath.append(f.toString());
+                    } else {
+                        jsonError = true;
+                        goto errorInJsonConfig;
+                    }
+                }
+            }
+            // Load project solver configurations
+            if (confObject["projectSolverConfigs"].isArray()) {
+                QJsonArray solverConfA(confObject["projectSolverConfigs"].toArray());
+                for (auto sc : solverConfA) {
+                    if (sc.isObject()) {
+                        QJsonObject sco(sc.toObject());
+                        SolverConfiguration newSc = scFromJson(sco);
+                        projectSolverConfigs.push_back(newSc);
+                    } else {
+                        jsonError = true;
+                        goto errorInJsonConfig;
+                    }
+                }
+            }
+            project.solverConfigs(projectSolverConfigs,true);
+            // Load built-in solver configurations
+            if (confObject["builtinSolverConfigs"].isArray()) {
+                QJsonArray solverConfA(confObject["builtinSolverConfigs"].toArray());
+                for (auto sc : solverConfA) {
+                    if (sc.isObject()) {
+                        QJsonObject sco(sc.toObject());
+                        SolverConfiguration newSc = scFromJson(sco);
+                        int updateSc = -1;
+                        for (int i=0; i<builtinSolverConfigs.size(); i++) {
+                            if (newSc.solverId==builtinSolverConfigs[i].solverId) {
+                                updateSc = i;
+                                if (newSc.solverVersion==builtinSolverConfigs[i].solverVersion) {
+                                    builtinSolverConfigs[i] = newSc;
+                                    updateSc = -1;
+                                    break;
+                                }
+                            }
+                        }
+                        if (updateSc != -1) {
+                            builtinSolverConfigs[updateSc] = newSc;
+                        }
+                    } else {
+                        jsonError = true;
+                        goto errorInJsonConfig;
+                    }
+                }
+            }
+            updateSolverConfigs();
+            if (confObject["selectedProjectConfig"].isDouble()) {
+                int selected = confObject["selectedProjectConfig"].toDouble();
+                if (selected < projectSolverConfigs.size())
+                    setCurrentSolverConfig(selected);
+            } else {
+                if (confObject["selectedBuiltinConfigId"].isString() && confObject["selectedBuiltinConfigVersion"].isString()) {
+                    int selectConfig = 0;
+                    QString selId = confObject["selectedBuiltinConfigId"].toString();
+                    QString selVer = confObject["selectedBuiltinConfigVersion"].toString();
+                    for (int i=0; i<builtinSolverConfigs.size(); i++) {
+                        if (selId==builtinSolverConfigs[i].solverId) {
+                            selectConfig = i;
+                            if (selVer==builtinSolverConfigs[i].solverVersion)
+                                break;
+                        }
+                    }
+                    setCurrentSolverConfig(projectSolverConfigs.size()+selectConfig);
+                } else {
+                    jsonError = true;
+                }
+            }
+        } else {
+            jsonError = true;
         }
-        project.solverConfigs(projectSolverConfigs,true);
-        updateSolverConfigs();
+      errorInJsonConfig:
+        if (jsonError) {
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Error in project file");
+        } else {
+            QStringList missingFiles;
+            for (int i=0; i<projectFilesRelPath.size(); i++) {
+                QFileInfo fi(basePath+projectFilesRelPath[i]);
+                if (fi.exists()) {
+                    project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+                } else {
+                    missingFiles.append(basePath+projectFilesRelPath[i]);
+                }
+            }
+            if (!missingFiles.empty()) {
+                QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
+            }
+
+            for (int i=0; i<openFiles.size(); i++) {
+                QFileInfo fi(basePath+openFiles[i]);
+                if (fi.exists()) {
+                    openFile(basePath+openFiles[i],false);
+                }
+            }
+
+            project.setModified(false, true);
+
+            IDE::instance()->projects.insert(projectPath, this);
+            ui->tabWidget->setCurrentIndex(openTab != -1 ? openTab : ui->tabWidget->currentIndex());
+            if (ui->projectExplorerDockWidget->isHidden()) {
+                on_actionShow_project_explorer_triggered();
+            }
+
+        }
+        return;
+
     } else {
+        pfile.reset();
+        QDataStream in(&pfile);
+        quint32 magic;
+        in >> magic;
+        if (magic != 0xD539EA12) {
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Could not open project file");
+            close();
+            return;
+        }
+        quint32 version;
+        in >> version;
+        if (version != 101 && version != 102 && version != 103 && version != 104) {
+            QMessageBox::warning(this, "MiniZinc IDE",
+                                 "Could not open project file (version mismatch)");
+            close();
+            return;
+        }
+        in.setVersion(QDataStream::Qt_5_0);
+
+        projectPath = filepath;
+        updateRecentProjects(projectPath);
+        project.setRoot(ui->projectView, projectSort, projectPath);
+        QString basePath;
+        if (version==103 || version==104) {
+            basePath = QFileInfo(filepath).absolutePath()+"/";
+        }
+
+        QStringList openFiles;
+        in >> openFiles;
+        QString p_s;
+        qint32 p_i;
+        bool p_b;
+
+        int dataFileIndex;
+
+        SolverConfiguration newConf;
+        newConf.isBuiltin = false;
+        newConf.runSolutionChecker = true;
+
+        in >> p_s; // Used to be additional include path
+        in >> dataFileIndex;
+        in >> p_b;
+        // Ignore, not used any longer
+    //    project.haveExtraArgs(p_b, true);
+        in >> newConf.additionalData;
+        in >> p_b;
+        // Ignore, not used any longer
+        in >> newConf.additionalCompilerCommandline;
+        if (version==104) {
+            in >> newConf.clearOutputWindow;
+        } else {
+            newConf.clearOutputWindow = false;
+        }
+        in >> newConf.verboseFlattening;
+        in >> p_b;
+        newConf.optimizationLevel = p_b ? 1 : 0;
+        in >> p_s; // Used to be solver name
+        in >> newConf.stopAfter;
+        in >> newConf.printIntermediate;
+        in >> newConf.solvingStats;
+        in >> p_b;
+        // Ignore
+        in >> newConf.solverFlags;
+        in >> newConf.nThreads;
+        in >> p_b;
+        in >> p_s;
+        newConf.randomSeed = p_b ? QVariant::fromValue(p_s.toInt()) : QVariant();
+        in >> p_b; // used to be whether time limit is checked
+        in >> newConf.timeLimit;
+        int openTab = -1;
+        if (version==102 || version==103 || version==104) {
+            in >> newConf.verboseSolving;
+            in >> openTab;
+        }
+        QStringList projectFilesRelPath;
+        if (version==103 || version==104) {
+            in >> projectFilesRelPath;
+        } else {
+            projectFilesRelPath = openFiles;
+        }
+        if ( (version==103 || version==104) && !in.atEnd()) {
+            in >> newConf.defaultBehaviour;
+        } else {
+            newConf.defaultBehaviour = (newConf.stopAfter == 1 && !newConf.printIntermediate);
+        }
+        if (version==104 && !in.atEnd()) {
+            in >> newConf.flatteningStats;
+        }
+        if (version==104 && !in.atEnd()) {
+            in >> newConf.compressSolutionOutput;
+        }
+        if (version==104 && !in.atEnd()) {
+            in >> newConf.outputTiming;
+        }
         // create new solver configuration based on projet settings
-        newConf.solverId = favouriteSolverConfigs[defaultSolverIdx].solverId;
-        newConf.solverVersion = favouriteSolverConfigs[defaultSolverIdx].solverVersion;
+        newConf.solverId = builtinSolverConfigs[defaultSolverIdx].solverId;
+        newConf.solverVersion = builtinSolverConfigs[defaultSolverIdx].solverVersion;
         bool foundConfig = false;
-        for (int i=0; i<favouriteSolverConfigs.size(); i++) {
-            if (favouriteSolverConfigs[i]==newConf) {
+        for (int i=0; i<builtinSolverConfigs.size(); i++) {
+            if (builtinSolverConfigs[i]==newConf) {
                 setCurrentSolverConfig(i);
                 foundConfig = true;
                 break;
@@ -3533,33 +3618,32 @@ void MainWindow::loadProject(const QString& filepath)
             updateSolverConfigs();
             setCurrentSolverConfig(0);
         }
-    }
-    QStringList missingFiles;
-    for (int i=0; i<projectFilesRelPath.size(); i++) {
-        QFileInfo fi(basePath+projectFilesRelPath[i]);
-        if (fi.exists()) {
-            project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
-        } else {
-            missingFiles.append(basePath+projectFilesRelPath[i]);
+        QStringList missingFiles;
+        for (int i=0; i<projectFilesRelPath.size(); i++) {
+            QFileInfo fi(basePath+projectFilesRelPath[i]);
+            if (fi.exists()) {
+                project.addFile(ui->projectView, projectSort, basePath+projectFilesRelPath[i]);
+            } else {
+                missingFiles.append(basePath+projectFilesRelPath[i]);
+            }
         }
-    }
-    if (!missingFiles.empty()) {
-        QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
-    }
-
-    for (int i=0; i<openFiles.size(); i++) {
-        QFileInfo fi(basePath+openFiles[i]);
-        if (fi.exists()) {
-            openFile(basePath+openFiles[i],false);
+        if (!missingFiles.empty()) {
+            QMessageBox::warning(this, "MiniZinc IDE", "Could not find files in project:\n"+missingFiles.join("\n"));
         }
-    }
 
-    project.setModified(false, true);
+        for (int i=0; i<openFiles.size(); i++) {
+            QFileInfo fi(basePath+openFiles[i]);
+            if (fi.exists()) {
+                openFile(basePath+openFiles[i],false);
+            }
+        }
 
-    IDE::instance()->projects.insert(projectPath, this);
-    tabChange(ui->tabWidget->currentIndex());
-    if (ui->projectExplorerDockWidget->isHidden()) {
-        on_actionShow_project_explorer_triggered();
+        project.setModified(false, true);
+        ui->tabWidget->setCurrentIndex(openTab != -1 ? openTab : ui->tabWidget->currentIndex());
+        IDE::instance()->projects.insert(projectPath, this);
+        if (ui->projectExplorerDockWidget->isHidden()) {
+            on_actionShow_project_explorer_triggered();
+        }
     }
 }
 
@@ -3699,13 +3783,6 @@ void MainWindow::on_conf_timeLimit_valueChanged(int arg1)
         ui->conf_timeLimit_label->setText("seconds (disabled)");
     } else {
         ui->conf_timeLimit_label->setText("seconds");
-    }
-}
-
-void MainWindow::on_conf_solver_activated(const QString &arg1)
-{
-    if (arg1=="Add new solver...") {
-        on_actionManage_solvers_triggered(true);
     }
 }
 

@@ -267,8 +267,6 @@ private slots:
 
     void on_conf_timeLimit_valueChanged(int arg1);
 
-    void on_conf_solver_activated(const QString &arg1);
-
     void onClipboardChanged();
 
     void showWindowMenu(void);
@@ -290,7 +288,6 @@ private slots:
 
     void on_cloneSolverConfButton_clicked();
     void on_deleteSolverConfButton_clicked();
-    void on_saveSolverConfButton_clicked();
     void on_renameSolverConfButton_clicked();
 
     void on_solverConfNameEdit_returnPressed();
@@ -306,6 +303,10 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
+
+    SolverConfiguration* getCurrentSolverConfig(void);
+    Solver* getCurrentSolver(void);
+
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
@@ -382,7 +383,7 @@ private:
 
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
-    QVector<SolverConfiguration> favouriteSolverConfigs;
+    QVector<SolverConfiguration> builtinSolverConfigs;
     int currentSolverConfig;
     bool renamingSolverConf;
 
@@ -405,8 +406,6 @@ private:
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
     void updateSolverConfigs(void);
     void setCurrentSolverConfig(int idx);
-    void saveSolverConfigsToSettings(void);
-    void loadSolverConfigsFromSettings(void);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
