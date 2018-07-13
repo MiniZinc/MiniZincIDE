@@ -404,7 +404,7 @@
           <x>0</x>
           <y>0</y>
           <width>661</width>
-          <height>1027</height>
+          <height>1019</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -453,7 +453,7 @@
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_2_2" stretch="0,0,0,0,0,0,0">
+             <layout class="QHBoxLayout" name="horizontalLayout_2_2" stretch="0,0,0,0,0,0">
               <property name="spacing">
                <number>-1</number>
               </property>
@@ -478,13 +478,6 @@
                <widget class="QPushButton" name="deleteSolverConfButton">
                 <property name="text">
                  <string>Delete</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="saveSolverConfButton">
-                <property name="text">
-                 <string>Save as favourite</string>
                 </property>
                </widget>
               </item>
@@ -550,7 +543,11 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="conf_solver"/>
+                 <widget class="QLabel" name="conf_solver">
+                  <property name="text">
+                   <string>selected solver</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>
@@ -1581,9 +1578,7 @@
   <tabstop>cloneSolverConfButton</tabstop>
   <tabstop>renameSolverConfButton</tabstop>
   <tabstop>deleteSolverConfButton</tabstop>
-  <tabstop>saveSolverConfButton</tabstop>
   <tabstop>conf_default</tabstop>
-  <tabstop>conf_solver</tabstop>
   <tabstop>conf_timeLimit</tabstop>
   <tabstop>defaultBehaviourButton</tabstop>
   <tabstop>userBehaviourButton</tabstop>
