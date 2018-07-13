@@ -1337,7 +1337,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveCompilerCheck = isMiniZinc;
 
     QStringList ret;
-    if (confMode!=CONF_CHECKARGS && haveOutputHtml) {
+    if (confMode==CONF_RUN && haveOutputHtml) {
         ret << "--output-html";
     }
     if (confMode==CONF_COMPILE && haveNeedsPaths) {
