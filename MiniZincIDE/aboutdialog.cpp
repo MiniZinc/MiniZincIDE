@@ -13,6 +13,10 @@
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
 
+#ifndef MINIZINC_IDE_BUILD
+#define MINIZINC_IDE_BUILD "from source"
+#endif
+
 AboutDialog::AboutDialog(QString version, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AboutDialog)
@@ -21,6 +25,8 @@ AboutDialog::AboutDialog(QString version, QWidget *parent) :
     QTextDocument* doc = ui->textBrowser->document();
     QTextCursor cursor = doc->find("$VERSION");
     cursor.insertText(version);
+    cursor = doc->find("$BUILD");
+    cursor.insertText(QString(MINIZINC_IDE_BUILD));
     ui->textBrowser->viewport()->setAutoFillBackground(false);
 }
 

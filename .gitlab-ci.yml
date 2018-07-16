@@ -8,7 +8,7 @@ stages:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
     - cd build
-    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
+    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
     - d2u build.sh
     - bash build.sh
     - cp release/MiniZincIDE.exe ../ide
@@ -49,7 +49,7 @@ build:linux:
     QTDIR: "/usr/lib/x86_64-linux-gnu"
   script:
     - mkdir -p build; cd build
-    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
     - mkdir -p ../ide/{bin,lib}; cd ../ide
     - cp ../build/MiniZincIDE bin/
@@ -73,7 +73,7 @@ build:osx:
   script:
     - export PATH="$QTDIR/bin:$PATH"
     - mkdir -p build; cd build
-    - qmake -makefile "CONFIG+=bundled" ../MiniZincIDE/MiniZincIDE.pro
+    - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
     - cp -r MiniZincIDE.app ..
   tags:
