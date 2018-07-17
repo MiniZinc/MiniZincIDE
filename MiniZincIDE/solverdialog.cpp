@@ -160,6 +160,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->mznpath->setText("");
         ui->solverFrame->setEnabled(true);
         ui->updateButton->setText("Add");
+        ui->updateButton->setEnabled(true);
         ui->deleteButton->setEnabled(false);
         ui->has_stdflag_a->setChecked(false);
         ui->has_stdflag_p->setChecked(false);
