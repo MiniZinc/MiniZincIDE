@@ -144,7 +144,7 @@ void MOOCSubmission::solveNext() {
 
         MOOCAssignmentItem& item = project.problems[_current_model];
         connect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
-        ui->textBrowser->insertPlainText("Running "+item.name+"\n");
+        ui->textBrowser->insertPlainText("Running "+item.name+" with time out " + QString().setNum(item.timeout)+ "s\n");
         _cur_phase = S_WAIT_SOLVE;
         _output_string = "";
         mw->addOutput("<div style='color:orange;'>Running "+project.moocName+" submission "+item.name+"</div><br>\n");
