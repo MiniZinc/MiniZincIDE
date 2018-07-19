@@ -25,7 +25,7 @@ MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
     ui->loginTokenLabel->setText(cp.moocPasswordString+":");
     ui->courseraTokenWarningLabel->setHidden(cp.moocName!="Coursera");
 
-    ui->selectedSolver->setText(mw->currentSolver());
+    ui->selectedSolver->setText(mw->currentSolverConfigName());
 
     QVBoxLayout* modelLayout = new QVBoxLayout;
     ui->modelBox->setLayout(modelLayout);

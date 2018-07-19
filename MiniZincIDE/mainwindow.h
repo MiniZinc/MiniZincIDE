@@ -311,6 +311,7 @@ protected:
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
     QString currentSolver(void) const;
+    QString currentSolverConfigName(void);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

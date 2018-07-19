@@ -2007,6 +2007,11 @@ QString MainWindow::currentSolver() const
     return ui->conf_solver->text();
 }
 
+QString MainWindow::currentSolverConfigName(void) {
+    SolverConfiguration* sc = getCurrentSolverConfig();
+    return sc ? sc->name : "None";
+}
+
 void MainWindow::closeHTMLWindow(void)
 {
     on_actionStop_triggered();
