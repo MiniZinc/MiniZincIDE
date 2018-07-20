@@ -156,6 +156,7 @@ void IDE::checkUpdate(void) {
             gaQuery.addQueryItem("ea","checkUpdate"); // event action
             gaQuery.addQueryItem("el",applicationVersion()); // event label (IDE version)
             QNetworkRequest gaRequest(QUrl("http://www.google-analytics.com/collect"));
+            gaRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
             networkManager->post(gaRequest, gaQuery.toString().toLocal8Bit());
 
             // Check if an update is available
@@ -3505,7 +3506,6 @@ void MainWindow::loadProject(const QString& filepath)
         QStringList openFiles;
         in >> openFiles;
         QString p_s;
-        qint32 p_i;
         bool p_b;
 
         int dataFileIndex;
