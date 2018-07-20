@@ -181,6 +181,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     networkManager = new QNetworkAccessManager(this);
 
+    setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     QSettings settings;
     settings.sync();
     settings.beginGroup("ide");
