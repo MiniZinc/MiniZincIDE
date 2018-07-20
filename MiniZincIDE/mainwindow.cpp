@@ -250,43 +250,6 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
     connect(this, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(handleFocusChange(QWidget*,QWidget*)));
     connect(&modifiedTimer, SIGNAL(timeout()), this, SLOT(fileModifiedTimeout()));
-
-#ifdef Q_OS_MAC
-    MainWindow* mw = new MainWindow(QString());
-    const QMenuBar* mwb = mw->ui->menubar;
-    defaultMenuBar = new QMenuBar(0);
-
-    QList<QObject*> lst = mwb->children();
-    foreach (QObject* mo, lst) {
-        if (QMenu* m = qobject_cast<QMenu*>(mo)) {
-            if (m->title()=="&File" || m->title()=="Help") {
-                QMenu* nm = defaultMenuBar->addMenu(m->title());
-                foreach (QAction* a, m->actions()) {
-                    if (a->isSeparator()) {
-                        nm->addSeparator();
-                    } else {
-                        QAction* na = nm->addAction(a->text());
-                        na->setShortcut(a->shortcut());
-                        if (a==mw->ui->actionQuit) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(quit()));
-                        } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
-                        } else if (a==mw->ui->actionOpen) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
-                        } else if (a==mw->ui->actionHelp) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(help()));
-                        } else {
-                            na->setEnabled(false);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    mainWindows.remove(mw);
-    delete mw;
-#endif
-
     checkUpdate();
 }
 

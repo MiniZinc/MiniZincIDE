@@ -31,8 +31,5 @@ int main(int argc, char *argv[])
         MainWindow* w = new MainWindow(files);
         w->show();
     }
-#ifdef Q_OS_MAC
-    a.setQuitOnLastWindowClosed(false);
-#endif
     return a.exec();
 }
