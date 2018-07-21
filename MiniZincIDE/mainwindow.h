@@ -93,6 +93,12 @@ public:
 
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
+    QMenu* recentFilesMenu;
+    QMenu* recentProjectsMenu;
+public slots:
+    void recentFileMenuAction(QAction*);
+    void recentProjectMenuAction(QAction*);
+public:
 #endif
 
     QFileSystemWatcher fsWatch;
@@ -109,12 +115,14 @@ public:
     QString getLastPath(void);
     void setLastPath(const QString& path);
     void setEditorFont(QFont font);
+    void addRecentFile(const QString& file);
+    void addRecentProject(const QString& file);
 protected:
     bool event(QEvent *);
 protected slots:
     void versionCheckFinished(void);
     void newProject(void);
-    void openFile(void);
+    void openFile(const QString& filename = QString(""));
     void fileModified(const QString&);
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);

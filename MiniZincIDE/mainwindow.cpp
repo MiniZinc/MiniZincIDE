@@ -256,6 +256,12 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     MainWindow* mw = new MainWindow(QString());
     const QMenuBar* mwb = mw->ui->menubar;
     defaultMenuBar = new QMenuBar(0);
+    recentFilesMenu = new QMenu("Recent files");
+    recentProjectsMenu = new QMenu("Recent projects");
+    connect(recentFilesMenu, SIGNAL(triggered(QAction*)), this, SLOT(recentFileMenuAction(QAction*)));
+    connect(recentProjectsMenu, SIGNAL(triggered(QAction*)), this, SLOT(recentProjectMenuAction(QAction*)));
+    addRecentFile("");
+    addRecentProject("");
 
     QList<QObject*> lst = mwb->children();
     foreach (QObject* mo, lst) {
@@ -266,18 +272,24 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
                     if (a->isSeparator()) {
                         nm->addSeparator();
                     } else {
-                        QAction* na = nm->addAction(a->text());
-                        na->setShortcut(a->shortcut());
-                        if (a==mw->ui->actionQuit) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(quit()));
-                        } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
-                        } else if (a==mw->ui->actionOpen) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
-                        } else if (a==mw->ui->actionHelp) {
-                            connect(na,SIGNAL(triggered()),this,SLOT(help()));
+                        if (a->text()=="Recent Files") {
+                            nm->addMenu(recentFilesMenu);
+                        } else if (a->text()=="Recent Projects") {
+                            nm->addMenu(recentProjectsMenu);
                         } else {
-                            na->setEnabled(false);
+                            QAction* na = nm->addAction(a->text());
+                            na->setShortcut(a->shortcut());
+                            if (a==mw->ui->actionQuit) {
+                                connect(na,SIGNAL(triggered()),this,SLOT(quit()));
+                            } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
+                                connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
+                            } else if (a==mw->ui->actionOpen) {
+                                connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
+                            } else if (a==mw->ui->actionHelp) {
+                                connect(na,SIGNAL(triggered()),this,SLOT(help()));
+                            } else {
+                                na->setEnabled(false);
+                            }
                         }
                     }
                 }
@@ -290,6 +302,32 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     checkUpdate();
 }
+
+#ifdef Q_OS_MAC
+
+void IDE::recentFileMenuAction(QAction* a) {
+    if (a->text()=="Clear Menu") {
+        recentFiles.clear();
+        recentFilesMenu->clear();
+        recentFilesMenu->addSeparator();
+        recentFilesMenu->addAction("Clear Menu");
+    } else {
+        openFile(a->data().toString());
+    }
+}
+
+void IDE::recentProjectMenuAction(QAction* a) {
+    if (a->text()=="Clear Menu") {
+        IDE::instance()->recentProjects.clear();
+        recentProjectsMenu->clear();
+        recentProjectsMenu->addSeparator();
+        recentProjectsMenu->addAction("Clear Menu");
+    } else {
+        openFile(a->data().toString());
+    }
+}
+
+#endif
 
 void IDE::handleFocusChange(QWidget *old, QWidget *newW)
 {
@@ -363,6 +401,42 @@ void IDE::fileModified(const QString &f)
     }
 }
 
+void IDE::addRecentProject(const QString& p) {
+    if (p != "") {
+        recentProjects.removeAll(p);
+        recentProjects.insert(0,p);
+        while (recentProjects.size() > 12)
+            recentProjects.pop_back();
+    }
+#ifdef Q_OS_MAC
+    recentProjectsMenu->clear();
+    for (int i=0; i<recentProjects.size(); i++) {
+        QAction* na = recentProjectsMenu->addAction(recentProjects[i]);
+        na->setData(recentProjects[i]);
+    }
+    recentProjectsMenu->addSeparator();
+    recentProjectsMenu->addAction("Clear Menu");
+#endif
+}
+
+void IDE::addRecentFile(const QString& f) {
+    if (f != "") {
+        recentFiles.removeAll(f);
+        recentFiles.insert(0,f);
+        while (recentFiles.size() > 12)
+            recentFiles.pop_back();
+    }
+#ifdef Q_OS_MAC
+    recentFilesMenu->clear();
+    for (int i=0; i<recentFiles.size(); i++) {
+        QAction* na = recentFilesMenu->addAction(recentFiles[i]);
+        na->setData(recentFiles[i]);
+    }
+    recentFilesMenu->addSeparator();
+    recentFilesMenu->addAction("Clear Menu");
+#endif
+}
+
 void IDE::newProject()
 {
     MainWindow* mw = new MainWindow(QString());
@@ -394,13 +468,15 @@ void IDE::setEditorFont(QFont font)
     }
 }
 
-void IDE::openFile()
+void IDE::openFile(const QString& fileName0)
 {
-    QString fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
-    if (!fileName.isNull()) {
-        setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
+    QString fileName = fileName0;
+    if (fileName.isEmpty()) {
+        fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
+        if (!fileName.isNull()) {
+            setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
+        }
     }
-
     if (!fileName.isEmpty()) {
         MainWindow* mw = new MainWindow(QString());
         if (fileName.endsWith(".mzp")) {
@@ -3099,10 +3175,7 @@ void MainWindow::openProject(const QString& fileName)
 
 void MainWindow::updateRecentProjects(const QString& p) {
     if (!p.isEmpty()) {
-        IDE::instance()->recentProjects.removeAll(p);
-        IDE::instance()->recentProjects.insert(0,p);
-        while (IDE::instance()->recentProjects.size() > 7)
-            IDE::instance()->recentProjects.pop_back();
+        IDE::instance()->addRecentProject(p);
     }
     ui->menuRecent_Projects->clear();
     for (int i=0; i<IDE::instance()->recentProjects.size(); i++) {
@@ -3114,10 +3187,7 @@ void MainWindow::updateRecentProjects(const QString& p) {
 }
 void MainWindow::updateRecentFiles(const QString& p) {
     if (!p.isEmpty()) {
-        IDE::instance()->recentFiles.removeAll(p);
-        IDE::instance()->recentFiles.insert(0,p);
-        while (IDE::instance()->recentFiles.size() > 7)
-            IDE::instance()->recentFiles.pop_back();
+        IDE::instance()->addRecentFile(p);
     }
     ui->menuRecent_Files->clear();
     for (int i=0; i<IDE::instance()->recentFiles.size(); i++) {
