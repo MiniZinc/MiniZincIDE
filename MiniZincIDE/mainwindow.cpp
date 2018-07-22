@@ -3125,6 +3125,7 @@ void MainWindow::checkMznPath()
     ui->actionRun->setEnabled(haveMzn);
     ui->actionCompile->setEnabled(haveMzn);
     ui->actionEditSolverConfig->setEnabled(haveMzn);
+    ui->actionSubmit_to_MOOC->setEnabled(haveMzn);
     if (!haveMzn)
         ui->conf_dock_widget->hide();
 }
