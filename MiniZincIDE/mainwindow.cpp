@@ -2717,7 +2717,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
         ui->nsol_label_1->setEnabled(currentSolver.stdFlags.contains("-n"));
         ui->nsol_label_2->setEnabled(currentSolver.stdFlags.contains("-n"));
         ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
-        ui->conf_solver_verbose->setEnabled(currentSolver.stdFlags.contains("-v"));
+        ui->conf_solver_verbose->setEnabled((!currentSolver.supportsMzn && !currentSolver.executable.isEmpty()) ||
+                                            currentSolver.stdFlags.contains("-v"));
     }
 
     if (idx < projectSolverConfigs.size()) {
