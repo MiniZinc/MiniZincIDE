@@ -71,6 +71,7 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0,
     if (openAsAddNew)
         ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
     editingFinished(false);
+    on_solvers_combo_currentIndexChanged(0);
 }
 
 SolverDialog::~SolverDialog()
@@ -118,6 +119,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->exeNotFoundLabel->setVisible(!solvers[index].executable.isEmpty() && solvers[index].executable_resolved.isEmpty());
         ui->detach->setChecked(solvers[index].isGUIApplication);
         ui->needs_mzn2fzn->setChecked(!solvers[index].supportsMzn);
+        ui->needs_solns2out->setChecked(solvers[index].needsSolns2Out);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->updateButton->setText("Update");
         bool solverConfigIsUserEditable = !solvers[index].configFile.isEmpty() && solvers[index].configFile.startsWith(userSolverConfigDir);
@@ -133,6 +135,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
         ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
         ui->has_stdflag_v->setChecked(solvers[index].stdFlags.contains("-v"));
+        ui->has_stdflag_t->setChecked(solvers[index].stdFlags.contains("-t"));
 
         if (solvers[index].requiredFlags.size()==0) {
             ui->requiredFlags->hide();
@@ -157,6 +160,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->executable->setText("");
         ui->detach->setChecked(false);
         ui->needs_mzn2fzn->setChecked(true);
+        ui->needs_solns2out->setChecked(true);
         ui->mznpath->setText("");
         ui->solverFrame->setEnabled(true);
         ui->updateButton->setText("Add");
@@ -169,6 +173,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_s->setChecked(false);
         ui->has_stdflag_v->setChecked(false);
         ui->has_stdflag_f->setChecked(false);
+        ui->has_stdflag_t->setChecked(false);
         ui->requiredFlags->hide();
     }
 }
@@ -292,6 +297,7 @@ void SolverDialog::on_updateButton_clicked()
         solvers[index].version = ui->version->text().trimmed();
         solvers[index].isGUIApplication= ui->detach->isChecked();
         solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
+        solvers[index].needsSolns2Out = ui->needs_solns2out->isChecked();
 
         solvers[index].stdFlags.removeAll("-a");
         if (ui->has_stdflag_a->isChecked()) {
@@ -321,6 +327,10 @@ void SolverDialog::on_updateButton_clicked()
         if (ui->has_stdflag_f->isChecked()) {
             solvers[index].stdFlags.push_back("-f");
         }
+        solvers[index].stdFlags.removeAll("-t");
+        if (ui->has_stdflag_t->isChecked()) {
+            solvers[index].stdFlags.push_back("-t");
+        }
 
         QJsonObject json = solvers[index].json;
         json.remove("extraInfo");
@@ -331,6 +341,7 @@ void SolverDialog::on_updateButton_clicked()
         json["version"] = ui->version->text().trimmed();
         json["isGUIApplication"] = ui->detach->isChecked();
         json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
+        json["needsSolns2Out"] = ui->needs_solns2out->isChecked();
         json["stdFlags"] = QJsonArray::fromStringList(solvers[index].stdFlags);
         QJsonDocument jdoc(json);
         QFile jdocFile(solvers[index].configFile);
@@ -515,6 +526,10 @@ void SolverDialog::editingFinished(bool showError)
 {
     QString mzn2fzn_executable;
     QString mzn2fzn_version;
+    for (int i=0; i<solvers.size(); i++) {
+        ui->solvers_combo->removeItem(0);
+    }
+    solvers.clear();
     checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
     if (mzn2fzn_executable.isEmpty()) {
         if (showError) {
@@ -528,6 +543,10 @@ void SolverDialog::editingFinished(bool showError)
         }
     } else {
         ui->mzn2fzn_version->setText(mzn2fzn_version);
+        for (int i=solvers.size(); i--;) {
+            ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
+        }
+        ui->solvers_combo->setCurrentIndex(0);
     }
 }
 
@@ -603,4 +622,17 @@ void MznProcess::attachJob()
 void SolverDialog::on_check_solver_clicked()
 {
     editingFinished(true);
+}
+
+void SolverDialog::on_mznlib_select_clicked()
+{
+    QFileDialog fd(this,"Select solver library path");
+    QDir dir(ui->mznpath->text());
+    fd.setDirectory(dir);
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setOption(QFileDialog::ShowDirsOnly, true);
+    if (fd.exec()) {
+        ui->mznpath->setText(fd.selectedFiles().first());
+    }
+
 }

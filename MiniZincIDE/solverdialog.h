@@ -110,6 +110,8 @@ private slots:
 
     void on_check_solver_clicked();
 
+    void on_mznlib_select_clicked();
+
 private:
     Ui::SolverDialog *ui;
     QVector<Solver>& solvers;

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>528</width>
-    <height>715</height>
+    <height>739</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -228,14 +228,21 @@
            <item>
             <widget class="QCheckBox" name="detach">
              <property name="text">
-              <string>Run solver detached from IDE</string>
+              <string>Detach from IDE</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QCheckBox" name="needs_mzn2fzn">
              <property name="text">
-              <string>Run with mzn2fzn and solns2out</string>
+              <string>Run with mzn2fzn</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="needs_solns2out">
+             <property name="text">
+              <string>Run with solns2out</string>
              </property>
             </widget>
            </item>
@@ -246,12 +253,19 @@
            <item>
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>MiniZinc library path</string>
+              <string>Solver library path</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QLineEdit" name="mznpath"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="mznlib_select">
+             <property name="text">
+              <string>Select</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -310,6 +324,13 @@
             <widget class="QCheckBox" name="has_stdflag_f">
              <property name="text">
               <string>-f</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="has_stdflag_t">
+             <property name="text">
+              <string>-t</string>
              </property>
             </widget>
            </item>
@@ -384,6 +405,7 @@
   <tabstop>mznDistribPath</tabstop>
   <tabstop>mznpath_select</tabstop>
   <tabstop>check_solver</tabstop>
+  <tabstop>check_updates</tabstop>
   <tabstop>solvers_combo</tabstop>
   <tabstop>name</tabstop>
   <tabstop>solverId</tabstop>
@@ -392,7 +414,17 @@
   <tabstop>exec_select</tabstop>
   <tabstop>detach</tabstop>
   <tabstop>needs_mzn2fzn</tabstop>
+  <tabstop>needs_solns2out</tabstop>
   <tabstop>mznpath</tabstop>
+  <tabstop>mznlib_select</tabstop>
+  <tabstop>has_stdflag_a</tabstop>
+  <tabstop>has_stdflag_n</tabstop>
+  <tabstop>has_stdflag_s</tabstop>
+  <tabstop>has_stdflag_v</tabstop>
+  <tabstop>has_stdflag_p</tabstop>
+  <tabstop>has_stdflag_r</tabstop>
+  <tabstop>has_stdflag_f</tabstop>
+  <tabstop>has_stdflag_t</tabstop>
   <tabstop>deleteButton</tabstop>
   <tabstop>updateButton</tabstop>
  </tabstops>
