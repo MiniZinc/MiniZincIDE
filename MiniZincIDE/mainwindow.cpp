@@ -1662,10 +1662,27 @@ void MainWindow::compileOrRun()
                 on_actionSplit_triggered();
                 IDE::instance()->stats.modelsRun++;
                 if (filepath.endsWith(".fzn")) {
+                    processWasStopped = false;
                     currentFznTarget = filepath;
                     runSolns2Out = false;
                     runTimeout = ui->conf_timeLimit->value();
+                    if (runTimeout > 0) {
+                        solverTimeout->start(runTimeout*1000);
+                    }
                     isOptimisation = true;
+                    solutionCount = 0;
+                    solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
+                    hiddenSolutions.clear();
+                    inJSONHandler = false;
+                    curJSONHandler = 0;
+                    JSONOutput.clear();
+                    if (curHtmlWindow) {
+                        disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
+                        curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+                        curHtmlWindow = NULL;
+                    }
+                    hadNonJSONOutput = false;
+
                     if (!currentFznTarget.isEmpty()) {
                         QFile fznFile(currentFznTarget);
                         if (fznFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -1678,7 +1695,9 @@ void MainWindow::compileOrRun()
                             }
                         }
                     }
+                    elapsedTime.start();
                     runCompiledFzn(0,QProcess::NormalExit);
+                    return;
                 }
             }
             checkArgs(filepath);
@@ -2039,6 +2058,26 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         time = 0;
         timer->start(500);
         elapsedTime.start();
+        if (runTimeout != 0) {
+            if (standalone) {
+                if (currentSolver.executable.isEmpty()) {
+                    args.push_front(QString().number(runTimeout*1000));
+                    args.push_front("--time-limit");
+                    solverTimeout->start((runTimeout+1)*1000);
+                } else if (currentSolver.stdFlags.contains("-t")) {
+                    args.push_front(QString().number(runTimeout*1000));
+                    args.push_front("-t");
+                    solverTimeout->start((runTimeout+1)*1000);
+                } else {
+                    solverTimeout->start(runTimeout*1000);
+                }
+            } else {
+                args.push_front(QString().number(runTimeout*1000));
+                args.push_front("--time-limit");
+                solverTimeout->start((runTimeout+1)*1000);
+            }
+        }
+
         process->start(processName,args,getMznDistribPath());
     }
 }
@@ -2145,6 +2184,7 @@ void MainWindow::procFinished(int, bool showTime) {
     }
     updateUiProcessRunning(false);
     timer->stop();
+    solverTimeout->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->showMessage("Ready.");
     process = NULL;
@@ -2423,12 +2463,16 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
             connect(process, SIGNAL(error(QProcess::ProcessError)),
                     this, SLOT(procError(QProcess::ProcessError)));
-
-            if (runTimeout != 0) {
-                solverTimeout->start(runTimeout*1000);
+            int remainingTime = solverTimeout->remainingTime();
+            if (remainingTime > 0) {
+                if (s->stdFlags.contains("-t")) {
+                    args.push_front(QString().number(remainingTime));
+                    args.push_front("-t");
+                    // add one second to give solver a chance to quit
+                    solverTimeout->start(remainingTime+1000);
+                }
             }
 
-            elapsedTime.start();
             addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
             QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
