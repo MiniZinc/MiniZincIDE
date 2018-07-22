@@ -3120,8 +3120,13 @@ void MainWindow::checkMznPath()
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
-        return;
     }
+    bool haveMzn = (!mzn2fzn_executable.isEmpty() && solvers.size() > 0);
+    ui->actionRun->setEnabled(haveMzn);
+    ui->actionCompile->setEnabled(haveMzn);
+    ui->actionEditSolverConfig->setEnabled(haveMzn);
+    if (!haveMzn)
+        ui->conf_dock_widget->hide();
 }
 
 void MainWindow::on_actionShift_left_triggered()
