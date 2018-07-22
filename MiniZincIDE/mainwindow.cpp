@@ -15,6 +15,7 @@
 #include <QSet>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QBoxLayout>
 #include <csignal>
 #include <sstream>
 
@@ -749,12 +750,24 @@ void MainWindow::init(const QString& projectFile)
     ui->setupUi(this);
     ui->tabWidget->removeTab(0);
 
+    QWidget* solverConfFrame = new QWidget;
+    QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;
+
+    solverConfCombo = new QComboBox;
+    solverConfCombo->setMaximumWidth(140);
+    QLabel* solverConfLabel = new QLabel("Solver configuration:");
+    QFont solverConfLabelFont = solverConfLabel->font();
+    solverConfLabelFont.setPointSizeF(solverConfLabelFont.pointSizeF()*0.9);
+    solverConfLabel->setFont(solverConfLabelFont);
+    solverConfFrameLayout->addWidget(solverConfLabel);
+    solverConfFrameLayout->addWidget(solverConfCombo);
+    solverConfFrame->setLayout(solverConfFrameLayout);
+    QAction* solverConfComboAction = ui->toolBar->insertWidget(ui->actionSubmit_to_MOOC, solverConfFrame);
+
     runButton = new QToolButton;
     runButton->setDefaultAction(ui->actionRun);
-    runButton->setMenu(ui->menuSolver_configurations);
     runButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    runButton->setPopupMode(QToolButton::MenuButtonPopup);
-    ui->toolBar->insertWidget(ui->actionStop, runButton);
+    ui->toolBar->insertWidget(solverConfComboAction, runButton);
 
     ui->outputConsole->installEventFilter(this);
     setAcceptDrops(true);
@@ -867,6 +880,7 @@ void MainWindow::init(const QString& projectFile)
     updateSolverConfigs();
     setCurrentSolverConfig(defaultSolverIdx);
     connect(ui->menuSolver_configurations,SIGNAL(triggered(QAction*)),this,SLOT(on_solverConfigurationSelected(QAction*)));
+    connect(solverConfCombo,SIGNAL(currentIndexChanged(int)),this,SLOT(on_conf_solver_conf_currentIndexChanged(int)));
     ui->solverConfNameEdit->hide();
     ui->nameAlreadyUsedLabel->hide();
 
@@ -964,6 +978,8 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
         ui->actionStop->setEnabled(true);
+        runButton->removeAction(ui->actionRun);
+        runButton->setDefaultAction(ui->actionStop);
         ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
         bool isMzn = false;
@@ -978,6 +994,8 @@ void MainWindow::updateUiProcessRunning(bool pr)
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
+        runButton->removeAction(ui->actionStop);
+        runButton->setDefaultAction(ui->actionRun);
         ui->actionSubmit_to_MOOC->setEnabled(true);
     }
 }
@@ -2607,9 +2625,11 @@ void MainWindow::updateSolverConfigs()
     QString curText = ui->conf_solver_conf->currentText();
     ui->conf_solver_conf->clear();
     ui->menuSolver_configurations->clear();
+    solverConfCombo->clear();
     int idx = -1;
     for (int i=0; i<projectSolverConfigs.size(); i++) {
         ui->conf_solver_conf->addItem(projectSolverConfigs[i].name);
+        solverConfCombo->addItem(projectSolverConfigs[i].name);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(projectSolverConfigs[i].name);
         solverConfAction->setCheckable(true);
         if (projectSolverConfigs[i].name==curText) {
@@ -2619,11 +2639,13 @@ void MainWindow::updateSolverConfigs()
     }
     if (!projectSolverConfigs.empty()) {
         ui->conf_solver_conf->insertSeparator(projectSolverConfigs.size());
+        solverConfCombo->insertSeparator(projectSolverConfigs.size());
         ui->menuSolver_configurations->addSeparator();
     }
     for (int i=0; i<builtinSolverConfigs.size(); i++) {
         QString scn = builtinSolverConfigs[i].name+(" [built-in]");
         ui->conf_solver_conf->addItem(scn);
+        solverConfCombo->addItem(scn);
         QAction* solverConfAction = ui->menuSolver_configurations->addAction(scn);
         solverConfAction->setCheckable(true);
         if (scn==curText) {
@@ -2642,6 +2664,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
         return;
     int actionIdx = (projectSolverConfigs.size()!=0 && idx >= projectSolverConfigs.size()) ? idx+1 : idx;
     ui->conf_solver_conf->setCurrentIndex(actionIdx);
+    solverConfCombo->setCurrentIndex(actionIdx);
     QList<QAction*> actions = ui->menuSolver_configurations->actions();
     for (int i=0; i<actions.size(); i++) {
         actions[i]->setChecked(i==actionIdx);

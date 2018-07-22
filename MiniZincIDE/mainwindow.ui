@@ -294,7 +294,6 @@
    <addaction name="actionShift_left"/>
    <addaction name="actionShift_right"/>
    <addaction name="separator"/>
-   <addaction name="actionStop"/>
    <addaction name="actionSubmit_to_MOOC"/>
    <addaction name="actionEditSolverConfig"/>
    <addaction name="actionShow_project_explorer"/>
@@ -403,7 +402,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>661</width>
+          <width>676</width>
           <height>1019</height>
          </rect>
         </property>

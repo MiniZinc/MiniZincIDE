@@ -34,6 +34,7 @@
 #include <QSortFilterProxyModel>
 #include <QToolButton>
 #include <QProgressBar>
+#include <QComboBox>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -382,6 +383,7 @@ private:
     QString projectSelectedFile;
     QModelIndex projectSelectedIndex;
     int newFileCounter;
+    QComboBox* solverConfCombo;
     QAction* fakeRunAction;
     QAction* fakeStopAction;
     QAction* fakeCompileAction;
