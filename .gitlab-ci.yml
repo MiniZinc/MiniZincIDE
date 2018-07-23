@@ -88,7 +88,7 @@ build:osx:
     paths:
       - build/
 
-.build:win32:
+.build:win32: #DISABLED
   <<: *win_build_definition
   variables:
     QTDIR: "$WINQTDIR"
@@ -106,7 +106,7 @@ build:osx:
 build:win64:
   <<: *win_build_definition
   variables:
-    QTDIR: "C:/Qt/Qt5.7.0-64/5.7/msvc2015_64"
+    QTDIR: "$WINQTDIR"
   before_script:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat" amd64
   tags:
