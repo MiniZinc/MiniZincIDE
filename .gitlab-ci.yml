@@ -69,7 +69,7 @@ build:linux:
 build:osx:
   stage: build
   variables:
-    QTDIR: "/usr/local/opt/qt"
+    QTDIR: "$OSXQTDIR"
   script:
     - export PATH="$QTDIR/bin:$PATH"
     - mkdir -p build; cd build
@@ -91,7 +91,7 @@ build:osx:
 .build:win32:
   <<: *win_build_definition
   variables:
-    QTDIR: "C:/Qt/Qt5.7.0/5.7/msvc2015"
+    QTDIR: "$WINQTDIR"
   before_script:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat"
   tags:
