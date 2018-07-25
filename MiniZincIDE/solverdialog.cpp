@@ -586,7 +586,7 @@ void MznProcess::terminate()
         SetConsoleCtrlHandler(NULL, TRUE);
         GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
 #else
-        ::kill(processId(), SIGINT);
+        ::killpg(processId(), SIGINT);
 #endif
         if (!waitForFinished(500)) {
             if (state() != QProcess::NotRunning) {
