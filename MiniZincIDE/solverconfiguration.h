@@ -35,7 +35,7 @@ public:
     bool solvingStats;
     bool runSolutionChecker;
 
-    static void defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs);
+    static void defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs, int& defaultSolverIdx);
     static SolverConfiguration defaultConfig(void);
 
     bool operator==(const SolverConfiguration& sc) const;

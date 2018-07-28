@@ -51,6 +51,7 @@ struct Solver {
     QStringList defaultFlags;
     QStringList tags;
     QJsonObject json;
+    bool isDefaultSolver;
     Solver(void) {}
 };
 

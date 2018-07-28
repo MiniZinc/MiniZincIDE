@@ -29,7 +29,9 @@ SolverConfiguration SolverConfiguration::defaultConfig() {
     return def;
 }
 
-void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs)
+void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers,
+                                         QVector<SolverConfiguration>& solverConfigs,
+                                         int& defaultSolverIdx)
 {
     SolverConfiguration def = defaultConfig();
     int j = 0;
@@ -70,6 +72,8 @@ void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers, QVector
             def.name = n.name+" "+n.version;
             def.solverId = n.id;
             def.solverVersion = n.version;
+            if (n.isDefaultSolver)
+                defaultSolverIdx = solverConfigs.size();
             solverConfigs.push_back(def);
         }
     }

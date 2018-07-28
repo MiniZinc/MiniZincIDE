@@ -869,12 +869,11 @@ void MainWindow::init(const QString& projectFile)
 
     settings.beginGroup("minizinc");
     mznDistribPath = settings.value("mznpath","").toString();
-    defaultSolverIdx = settings.value("defaultSolverIdx",0).toInt();
     settings.endGroup();
     checkMznPath();
 
     QVector<SolverConfiguration> builtinConfigs;
-    SolverConfiguration::defaultConfigs(solvers, builtinConfigs);
+    SolverConfiguration::defaultConfigs(solvers, builtinConfigs, defaultSolverIdx);
     for (int i=0; i<builtinConfigs.size(); i++)
         builtinSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
@@ -3061,7 +3060,7 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
         mznDistribPath += "/";
     checkMznPath();
-    SolverConfiguration::defaultConfigs(solvers, builtinSolverConfigs);
+    SolverConfiguration::defaultConfigs(solvers, builtinSolverConfigs, defaultSolverIdx);
     updateSolverConfigs();
 
     settings.beginGroup("ide");
@@ -3082,11 +3081,56 @@ void MainWindow::on_conf_default_toggled(bool checked)
 {
     if (checked) {
         ui->conf_default->setEnabled(false);
-        defaultSolverIdx = projectSolverConfigs.size()==0 ? ui->conf_solver_conf->currentIndex() : ui->conf_solver_conf->currentIndex()-projectSolverConfigs.size()-1;
-        QSettings settings;
-        settings.beginGroup("minizinc");
-        settings.setValue("defaultSolverIdx",defaultSolverIdx);
-        settings.endGroup();
+        int newDefaultSolverIdx = projectSolverConfigs.size()==0 ? ui->conf_solver_conf->currentIndex() : ui->conf_solver_conf->currentIndex()-projectSolverConfigs.size()-1;
+        if (newDefaultSolverIdx==defaultSolverIdx)
+            return;
+        QString newDefaultSolver = builtinSolverConfigs[newDefaultSolverIdx].solverId;
+        QFile uc(userConfigFile);
+        QJsonObject jo;
+        if (uc.exists()) {
+            if (uc.open(QFile::ReadOnly)) {
+                QJsonDocument doc = QJsonDocument::fromJson(uc.readAll());
+                if (doc.isNull()) {
+                    QMessageBox::warning(this,"MiniZinc IDE","Cannot modify user configuration file "+userConfigFile,QMessageBox::Ok);
+                    return;
+                }
+                jo = doc.object();
+                uc.close();
+            }
+        }
+        QJsonArray tagdefs = jo.contains("tagDefaults") ? jo["tagDefaults"].toArray() : QJsonArray();
+        bool hadDefault = false;
+        for (int i=0; i<tagdefs.size(); i++) {
+            if (tagdefs[i].isArray() && tagdefs[i].toArray()[0].isString() && tagdefs[i].toArray()[0].toString().isEmpty()) {
+                QJsonArray def = tagdefs[i].toArray();
+                def[1] = newDefaultSolver;
+                tagdefs[i] = def;
+                hadDefault = true;
+                break;
+            }
+        }
+        if (!hadDefault) {
+            QJsonArray def;
+            def.append("");
+            def.append(newDefaultSolver);
+            tagdefs.append(def);
+        }
+        jo["tagDefaults"] = tagdefs;
+        QJsonDocument doc;
+        doc.setObject(jo);
+        QFileInfo uc_info(userConfigFile);
+        if (!QDir().mkpath(uc_info.absoluteDir().absolutePath())) {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot create user configuration directory "+uc_info.absoluteDir().absolutePath(),QMessageBox::Ok);
+            return;
+        }
+        if (uc.open(QFile::ReadWrite | QIODevice::Truncate)) {
+            uc.write(doc.toJson());
+            uc.close();
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot write user configuration file "+userConfigFile,QMessageBox::Ok);
+            return;
+        }
+        defaultSolverIdx = newDefaultSolverIdx;
     }
 }
 

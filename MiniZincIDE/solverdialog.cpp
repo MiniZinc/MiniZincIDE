@@ -489,6 +489,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                             s.defaultFlags.push_back(df.toString());
                         }
                     }
+                    s.isDefaultSolver = (extraInfo["isDefault"].isBool() && extraInfo["isDefault"].toBool());
                     s.contact = sj["contact"].toString("");
                     s.website = sj["website"].toString("");
                     s.supportsFzn = sj["supportsFzn"].toBool(true);
