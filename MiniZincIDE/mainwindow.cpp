@@ -1534,35 +1534,40 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
         return;
     QString additionalCmdlineParams;
     QStringList additionalDataFiles;
-    checkArgsOutput();
+    if (process) {
+        checkArgsOutput();
+    }
     if (exitcode==0) {
-        QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
-        compileErrors = "";
-        if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
-            isOptimisation = (jdoc.object()["method"].toString() != "sat");
-            QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
-            if (undefinedArgs.size() > 0) {
-                QStringList params;
-                paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
-                if (additionalDataFiles.isEmpty()) {
-                    if (params.size()==0) {
-                        procFinished(0,false);
-                        return;
-                    }
-                    for (int i=0; i<undefinedArgs.size(); i++) {
-                        if (params[i].isEmpty()) {
-                            QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                            procFinished(0);
+        if (!compileErrors.isEmpty()) {
+            QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
+            compileErrors = "";
+            if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+                isOptimisation = (jdoc.object()["method"].toString() != "sat");
+                QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
+                if (undefinedArgs.size() > 0) {
+                    QStringList params;
+                    paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
+                    if (additionalDataFiles.isEmpty()) {
+                        if (params.size()==0) {
+                            procFinished(0,false);
                             return;
                         }
-                        additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                        for (int i=0; i<undefinedArgs.size(); i++) {
+                            if (params[i].isEmpty()) {
+                                QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                                procFinished(0);
+                                return;
+                            }
+                            additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
+                        }
                     }
                 }
+            } else {
+                qDebug() << compileErrors;
+                QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
+                procFinished(0);
+                return;
             }
-        } else {
-            QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
-            procFinished(0);
-            return;
         }
     }
 
@@ -1582,16 +1587,16 @@ void MainWindow::checkArgs(QString filepath)
             on_actionManage_solvers_triggered();
         return;
     }
-    process = new MznProcess(this);
     processName = mzn2fzn_executable;
     curModelFilepath = filepath;
     processWasStopped = false;
     compileErrors = "";
-
-    if (filepath.endsWith(".mzc.mzn")) {
+    if (compileOnly && filepath.endsWith(".mzc.mzn")) {
         // We are compiling a solution checker
+        process = NULL;
         checkArgsFinished(0, QProcess::NormalExit);
     } else {
+        process = new MznProcess(this);
         process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
         process->setProcessChannelMode(QProcess::MergedChannels);
         connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
