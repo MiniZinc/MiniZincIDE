@@ -45,8 +45,6 @@ stages:
 build:linux:
   stage: build
   image: dekker1/qt:latest
-  variables:
-    QTDIR: "/usr/lib/x86_64-linux-gnu"
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
@@ -62,7 +60,7 @@ build:linux:
     paths:
       - ide/
   cache:
-    key: "osx_$CI_COMMIT_REF_SLUG"
+    key: "linux_$CI_COMMIT_REF_SLUG"
     paths:
       - build/
 
