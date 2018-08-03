@@ -8,7 +8,7 @@ stages:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
     - cd build
-    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt MiniZincIDE.exe > build.sh
+    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe > build.sh
     - d2u build.sh
     - bash build.sh
   artifacts:
