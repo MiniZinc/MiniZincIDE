@@ -8,35 +8,9 @@ stages:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
     - cd build
-    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake > build.sh
+    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt MiniZincIDE.exe > build.sh
     - d2u build.sh
     - bash build.sh
-    - cp release/MiniZincIDE.exe ../ide
-    - cd ../ide
-    - if not exist "platforms" mkdir platforms
-    - cp %QTDIR%/bin/Qt5Core.dll .
-    - cp %QTDIR%/bin/Qt5Gui.dll .
-    - cp %QTDIR%/bin/Qt5Multimedia.dll .
-    - cp %QTDIR%/bin/Qt5MultimediaWidgets.dll .
-    - cp %QTDIR%/bin/Qt5Network.dll .
-    - cp %QTDIR%/bin/Qt5OpenGL.dll .
-    - cp %QTDIR%/bin/Qt5Positioning.dll .
-    - cp %QTDIR%/bin/Qt5PrintSupport.dll .
-    - cp %QTDIR%/bin/Qt5Qml.dll .
-    - cp %QTDIR%/bin/Qt5Quick.dll .
-    - cp %QTDIR%/bin/Qt5Sensors.dll .
-    - cp %QTDIR%/bin/Qt5Sql.dll .
-    - cp %QTDIR%/bin/Qt5WebChannel.dll .
-    - cp %QTDIR%/bin/Qt5WebSockets.dll .
-    - cp %QTDIR%/bin/Qt5WebEngine.dll .
-    - cp %QTDIR%/bin/Qt5WebEngineWidgets.dll .
-    - cp %QTDIR%/bin/Qt5WebView.dll .
-    - cp %QTDIR%/bin/Qt5WebEngineCore.dll .
-    - cp %QTDIR%/bin/Qt5Widgets.dll .
-    - cp %QTDIR%/bin/QtWebEngineProcess.exe .
-    - cp %QTDIR%/resources/qtwebengine_resources*.pak .
-    - cp %QTDIR%/resources/icudtl.dat .
-    - cp %QTDIR%/plugins/platforms/qwindows.dll ./platforms
   artifacts:
     paths:
       - ide/
