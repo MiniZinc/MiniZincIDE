@@ -1415,7 +1415,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveOutputHtml = currentSolver.stdFlags.contains("--output-html");
     bool haveNeedsPaths = currentSolver.needsPathsFile;
 
-    bool isMiniZinc = !currentSolver.supportsMzn || currentSolver.executable.isEmpty();
+    bool isMiniZinc = (confMode!=CONF_RUN && !currentSolver.supportsMzn) || currentSolver.executable.isEmpty();
     bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
     bool haveCompilerStats =  isMiniZinc || currentSolver.stdFlags.contains("-s");
     bool haveCompilerOpt[6];
@@ -2166,7 +2166,10 @@ void MainWindow::selectJSONSolution(HTMLPage* source, int n)
     }
 }
 
-void MainWindow::outputProcFinished(int, bool showTime) {
+void MainWindow::outputProcFinished(int exitCode, bool showTime) {
+    if (exitCode != 0) {
+        addOutput("<div style='color:red;'>Solutions processor finished with non-zero exit code "+QString().number(exitCode)+"</div>");
+    }
     readOutput();
     updateUiProcessRunning(false);
     timer->stop();
@@ -2197,7 +2200,10 @@ void MainWindow::outputProcFinished(int, bool showTime) {
     emit(finished());
 }
 
-void MainWindow::procFinished(int, bool showTime) {
+void MainWindow::procFinished(int exitCode, bool showTime) {
+    if (exitCode != 0) {
+        addOutput("<div style='color:red;'>Process finished with non-zero exit code "+QString().number(exitCode)+"</div>");
+    }
     if (outputProcess && outputProcess->state()!=QProcess::NotRunning) {
         connect(outputProcess, SIGNAL(finished(int)), this, SLOT(outputProcFinished(int)));
         outputProcess->closeWriteChannel();
@@ -2228,7 +2234,7 @@ void MainWindow::procError(QProcess::ProcessError e) {
     if (!compileErrors.isEmpty()) {
         addOutput(compileErrors,false);
     }
-    procFinished(1);
+    procFinished(0);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
@@ -2241,7 +2247,7 @@ void MainWindow::checkArgsError(QProcess::ProcessError e) {
     if (!compileErrors.isEmpty()) {
         addOutput(compileErrors,false);
     }
-    procFinished(1);
+    procFinished(0);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start '"+processName+"'. Check your path settings.");
     } else {
@@ -2250,7 +2256,7 @@ void MainWindow::checkArgsError(QProcess::ProcessError e) {
 }
 
 void MainWindow::outputProcError(QProcess::ProcessError e) {
-    procFinished(1);
+    procFinished(0);
     if (e==QProcess::FailedToStart) {
         QMessageBox::critical(this, "MiniZinc IDE", "Failed to start 'solns2out'. Check your path settings.");
     } else {
