@@ -96,5 +96,5 @@ FORMS    += \
 RESOURCES += \
     minizincide.qrc
 
-target.path = /bin
+target.path = $$PREFIX/bin
 INSTALLS += target
