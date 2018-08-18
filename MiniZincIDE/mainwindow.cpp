@@ -873,6 +873,7 @@ void MainWindow::init(const QString& projectFile)
     checkMznPath();
 
     QVector<SolverConfiguration> builtinConfigs;
+    defaultSolverIdx = 0;
     SolverConfiguration::defaultConfigs(solvers, builtinConfigs, defaultSolverIdx);
     for (int i=0; i<builtinConfigs.size(); i++)
         builtinSolverConfigs.push_back(builtinConfigs[i]);
