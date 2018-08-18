@@ -23,8 +23,17 @@
    <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="sizeConstraint">
+    <enum>QLayout::SetFixedSize</enum>
+   </property>
    <item>
     <widget class="QGroupBox" name="groupBox_3">
+     <property name="minimumSize">
+      <size>
+       <width>510</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="title">
       <string>MiniZinc</string>
      </property>
