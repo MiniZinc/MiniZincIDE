@@ -111,6 +111,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 {
     QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
     clearRequiredFlagsLayout(rfLayout);
+    QString userSolverConfigCanonical = QFileInfo(userSolverConfigDir).canonicalPath();
     if (index<solvers.size()) {
         ui->name->setText(solvers[index].name);
         ui->solverId->setText(solvers[index].id);
@@ -122,7 +123,13 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->needs_solns2out->setChecked(solvers[index].needsSolns2Out);
         ui->mznpath->setText(solvers[index].mznlib);
         ui->updateButton->setText("Update");
-        bool solverConfigIsUserEditable = !solvers[index].configFile.isEmpty() && solvers[index].configFile.startsWith(userSolverConfigDir);
+        bool solverConfigIsUserEditable = false;
+        if (!solvers[index].configFile.isEmpty()) {
+            QFileInfo configFileInfo(solvers[index].configFile);
+            if (configFileInfo.canonicalPath().startsWith(userSolverConfigCanonical)) {
+                solverConfigIsUserEditable = true;
+            }
+        }
 
         ui->updateButton->setEnabled(solverConfigIsUserEditable || solvers[index].requiredFlags.size() != 0);
         ui->deleteButton->setEnabled(solverConfigIsUserEditable);
@@ -361,8 +368,7 @@ void SolverDialog::on_updateButton_clicked()
     }
     QString mzn2fzn_executable;
     QString mzn2fzn_version;
-    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
-    on_solvers_combo_currentIndexChanged(ui->solvers_combo->currentIndex());
+    editingFinished(false);
 }
 
 void SolverDialog::on_deleteButton_clicked()
