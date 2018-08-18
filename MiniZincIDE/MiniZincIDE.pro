@@ -49,7 +49,6 @@ SOURCES += main.cpp\
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
-    aboutdialog.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
     finddialog.cpp \
@@ -67,7 +66,6 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
-    aboutdialog.h \
     solverdialog.h \
     gotolinedialog.h \
     finddialog.h \
@@ -84,7 +82,6 @@ HEADERS  += mainwindow.h \
 
 FORMS    += \
     mainwindow.ui \
-    aboutdialog.ui \
     solverdialog.ui \
     gotolinedialog.ui \
     finddialog.ui \

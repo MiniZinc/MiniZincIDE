@@ -21,7 +21,6 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "aboutdialog.h"
 #include "codeeditor.h"
 #include "fzndoc.h"
 #include "finddialog.h"
@@ -2581,9 +2580,19 @@ void MainWindow::on_actionDefault_font_size_triggered()
     IDE::instance()->setEditorFont(editorFont);
 }
 
+#ifndef MINIZINC_IDE_BUILD
+#define MINIZINC_IDE_BUILD ""
+#endif
+
 void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
 {
-    AboutDialog(IDE::instance()->applicationVersion()).exec();
+    QString buildString(MINIZINC_IDE_BUILD);
+    if (!buildString.isEmpty())
+        buildString += "\n";
+    QMessageBox::about(this, "The MiniZinc IDE", QString("The MiniZinc IDE\n\nVersion ")+IDE::instance()->applicationVersion()+"\n"+
+                       buildString+"\n"
+                       "Copyright Monash University, NICTA, Data61 2013-2018\n\n"+
+                       "This program is provided under the terms of the Mozilla Public License Version 2.0. It uses the Qt toolkit, available from qt-project.org.");
 }
 
 QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) {
