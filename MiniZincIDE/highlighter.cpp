@@ -81,8 +81,38 @@ void Highlighter::setEditorFont(QFont& font)
     }
 }
 
+bool fg_contains(const FixedBg& a, const FixedBg& b) {
+  return (a.sl < b.sl || (a.sl == b.sl && a.sc <= b.sc))
+      && (a.el > b.el || (a.el == b.el && a.ec >= b.ec));
+}
+
+void Highlighter::addFixedBg(
+    unsigned int sl, unsigned int sc, unsigned int el, unsigned ec,
+    QColor colour, QString tip) {
+
+  FixedBg ifb {sl, sc, el, ec};
+
+  for(BgMap::iterator it = fixedBg.begin();
+      it != fixedBg.end();) {
+    const FixedBg& fb = it.key();
+
+    if (fg_contains(fb, ifb)) {
+      it = fixedBg.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  fixedBg.insert(ifb, QPair<QColor, QString>(colour, tip));
+
+}
+
+void Highlighter::clearFixedBg() {
+    fixedBg.clear();
+}
+
 void Highlighter::highlightBlock(const QString &text)
 {
+    QTextBlock block = currentBlock();
     for (int i=0; i<rules.size(); i++) {
         const Rule& rule = rules[i];
         QRegExp expression(rule.pattern);
@@ -94,6 +124,42 @@ void Highlighter::highlightBlock(const QString &text)
             }
             index = expression.indexIn(text, index + length);
         }
+    }
+
+    for(QMap<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
+        it != fixedBg.end(); ++it) {
+      const FixedBg& fb = it.key();
+      QPair<QColor, QString> val = it.value();
+      QColor colour = val.first;
+      QString tip = val.second;
+
+      unsigned int blockNumber = block.blockNumber() + 1;
+      if(fb.sl <= blockNumber && fb.el >= blockNumber) {
+        int index = 0;
+        int length = block.length();
+
+        if(fb.sl == blockNumber) {
+          index = fb.sc - 1;
+          if(fb.sl == fb.el) {
+            length = fb.ec - index;
+          }
+        } else if(fb.el == blockNumber) {
+          length = fb.ec;
+        }
+
+        int endpos = index + length;
+        foreach(const QTextLayout::FormatRange& fr, block.textFormats()) {
+          //if(index >= fr.start && index <= fr.start + length) {
+            int local_index = fr.start < index ? index : fr.start;
+            int fr_endpos = fr.start + fr.length;
+            int local_len = (fr_endpos < endpos ? fr_endpos : endpos) - local_index;
+            QTextCharFormat fmt = fr.format;
+            fmt.setBackground(colour);
+            fmt.setToolTip(tip);
+            setFormat(local_index, local_len, fmt);
+          //}
+        }
+      }
     }
 
     BracketData* bd = new BracketData;

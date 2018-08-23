@@ -394,6 +394,11 @@ void Project::removeFile(const QString &fileName)
     }
 }
 
+bool Project::containsFile(const QString &fileName)
+{
+    return _files.contains(fileName);
+}
+
 void Project::setModified(bool flag, bool files)
 {
     if (!projectRoot.isEmpty()) {
@@ -404,25 +409,7 @@ void Project::setModified(bool flag, bool files)
                 _filesModified = _isModified;
             }
             if (!_isModified) {
-                currentDataFileIndex(currentDataFileIndex(),true);
-                haveExtraArgs(haveExtraArgs(),true);
-                extraArgs(extraArgs(),true);
-                mzn2fznVerbose(mzn2fznVerbose(),true);
-                mzn2fznPrintStats(mzn2fznPrintStats(),true);
-                mzn2fznOptimize(mzn2fznOptimize(),true);
-                currentSolver(currentSolver(),true);
-                n_solutions(n_solutions(),true);
-                n_compress_solutions(n_compress_solutions(),true);
-                printAll(printAll(),true);
-                defaultBehaviour(defaultBehaviour(),true);
-                printStats(printStats(),true);
-                haveSolverFlags(haveSolverFlags(),true);
-                solverFlags(solverFlags(),true);
-                n_threads(n_threads(),true);
-                haveSeed(haveSeed(),true);
-                seed(seed(),true);
-                timeLimit(timeLimit(),true);
-                solverVerbose(solverVerbose(),true);
+                solverConfigs(solverConfigs(),true);
             }
         }
     }
@@ -446,94 +433,8 @@ bool Project::setData(const QModelIndex& index, const QVariant& value, int role)
     }
 }
 
-bool Project::haveExtraArgs(void) const
-{
-    return ui->conf_have_cmd_params->isChecked();
-}
-QString Project::extraArgs(void) const
-{
-    return ui->conf_cmd_params->text();
-}
-bool Project::haveExtraMzn2FznArgs(void) const
-{
-    return ui->conf_have_mzn2fzn_params->isChecked();
-}
-QString Project::extraMzn2FznArgs(void) const
-{
-    return ui->conf_mzn2fzn_params->text();
-}
-bool Project::autoClearOutput(void) const
-{
-    return ui->autoclear_output->isChecked();
-}
-bool Project::mzn2fznVerbose(void) const
-{
-    return ui->conf_verbose->isChecked();
-}
-
-bool Project::mzn2fznPrintStats() const
-{
-    return ui->conf_flatten_stats->isChecked();
-}
-bool Project::mzn2fznOptimize(void) const
-{
-    return ui->conf_optimize->isChecked();
-}
-QString Project::currentSolver(void) const
-{
-    return ui->conf_solver->currentText();
-}
-int Project::n_solutions(void) const
-{
-    return ui->conf_nsol->value();
-}
-int Project::n_compress_solutions(void) const
-{
-    return ui->conf_compressSolutionLimit->value();
-}
-bool Project::printAll(void) const
-{
-    return ui->conf_printall->isChecked();
-}
-bool Project::defaultBehaviour(void) const
-{
-    return ui->defaultBehaviourButton->isChecked();
-}
-bool Project::printStats(void) const
-{
-    return ui->conf_stats->isChecked();
-}
-bool Project::printTiming(void) const
-{
-    return ui->conf_solver_timing->isChecked();
-}
-bool Project::haveSolverFlags(void) const
-{
-    return ui->conf_have_solverFlags->isChecked();
-}
-QString Project::solverFlags(void) const
-{
-    return ui->conf_solverFlags->text();
-}
-int Project::n_threads(void) const
-{
-    return ui->conf_nthreads->value();
-}
-bool Project::haveSeed(void) const
-{
-    return ui->conf_have_seed->isChecked();
-}
-QString Project::seed(void) const
-{
-    return ui->conf_seed->text();
-}
-int Project::timeLimit(void) const
-{
-    return ui->conf_timeLimit->value();
-}
-bool Project::solverVerbose(void) const
-{
-    return ui->conf_solver_verbose->isChecked();
+const QVector<SolverConfiguration>& Project::solverConfigs(void) const {
+    return _solverConfigs;
 }
 
 bool Project::isUndefined() const
@@ -541,330 +442,22 @@ bool Project::isUndefined() const
     return projectRoot.isEmpty();
 }
 
-void Project::currentDataFileIndex(int i, bool init)
+void Project::solverConfigs(const QVector<SolverConfiguration> &sc, bool init)
 {
     if (init) {
-        _currentDatafileIndex = i;
-        ui->conf_data_file->setCurrentIndex(i);
+        _solverConfigs = sc;
     } else {
-        if (i < ui->conf_data_file->count()-1)
-            checkModified();
+        if (sc.size() != _solverConfigs.size()) {
+            setModified(true);
+        } else {
+            bool modified = false;
+            for (int i=0; i<sc.size(); i++) {
+                if (!(sc[i]==_solverConfigs[i])) {
+                    modified = true;
+                    _solverConfigs[i] = sc[i];
+                }
+            }
+            setModified(modified);
+        }
     }
-}
-
-void Project::haveExtraArgs(bool b, bool init)
-{
-    if (init) {
-        _haveExtraArgs = b;
-        ui->conf_have_cmd_params->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::extraArgs(const QString& a, bool init)
-{
-    if (init) {
-        _extraArgs = a;
-        ui->conf_cmd_params->setText(a);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveExtraMzn2FznArgs(bool b, bool init)
-{
-    if (init) {
-        _haveExtraMzn2FznArgs = b;
-        ui->conf_have_mzn2fzn_params->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::extraMzn2FznArgs(const QString& a, bool init)
-{
-    if (init) {
-        _extraMzn2FznArgs = a;
-        ui->conf_mzn2fzn_params->setText(a);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::autoClearOutput(bool b, bool init)
-{
-    if (init) {
-        _autoclear_output= b;
-        ui->autoclear_output->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznVerbose(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_verbose= b;
-        ui->conf_verbose->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznPrintStats(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_printStats = b;
-        ui->conf_flatten_stats->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::mzn2fznOptimize(bool b, bool init)
-{
-    if (init) {
-        _mzn2fzn_optimize = b;
-        ui->conf_optimize->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::currentSolver(const QString& s, bool init)
-{
-    if (init) {
-        _currentSolver = s;
-        ui->conf_solver->setCurrentText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_solutions(int n, bool init)
-{
-    if (init) {
-        _n_solutions = n;
-        ui->conf_nsol->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_compress_solutions(int n, bool init)
-{
-    if (init) {
-        _compressSolutionLimit = n;
-        ui->conf_compressSolutionLimit->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::printAll(bool b, bool init)
-{
-    if (init) {
-        _printAll = b;
-        ui->conf_printall->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::defaultBehaviour(bool b, bool init)
-{
-    if (init) {
-        _defaultBehaviour = b;
-        ui->defaultBehaviourButton->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::printStats(bool b, bool init)
-{
-    if (init) {
-        _printStats = b;
-        ui->conf_stats->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::printTiming(bool b, bool init)
-{
-    if (init) {
-        _printTiming = b;
-        ui->conf_solver_timing->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveSolverFlags(bool b, bool init)
-{
-    if (init) {
-        _haveSolverFlags = b;
-        ui->conf_have_solverFlags->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::solverFlags(const QString& s, bool init)
-{
-    if (init) {
-        _solverFlags = s;
-        ui->conf_solverFlags->setText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::n_threads(int n, bool init)
-{
-    if (init) {
-        _n_threads = n;
-        ui->conf_nthreads->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::haveSeed(bool b, bool init)
-{
-    if (init) {
-        _haveSeed = b;
-        ui->conf_have_seed->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::seed(const QString& s, bool init)
-{
-    if (init) {
-        _seed = s;
-        ui->conf_seed->setText(s);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::timeLimit(int n, bool init)
-{
-    if (init) {
-        _timeLimit = n;
-        ui->conf_timeLimit->setValue(n);
-    } else {
-        checkModified();
-    }
-}
-
-void Project::solverVerbose(bool b, bool init)
-{
-    if (init) {
-        _solverVerbose = b;
-        ui->conf_solver_verbose->setChecked(b);
-    } else {
-        checkModified();
-    }
-}
-
-int Project::currentDataFileIndex(void) const
-{
-    return ui->conf_data_file->currentIndex();
-}
-
-QString Project::currentDataFile(void) const
-{
-    return ui->conf_data_file->currentText();
-}
-
-void Project::checkModified()
-{
-    if (projectRoot.isEmpty() || _filesModified)
-        return;
-    if (currentDataFileIndex() != _currentDatafileIndex) {
-        setModified(true);
-        return;
-    }
-    if (haveExtraArgs() != _haveExtraArgs) {
-        setModified(true);
-        return;
-    }
-    if (extraArgs() != _extraArgs) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznVerbose() != _mzn2fzn_verbose) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznPrintStats() != _mzn2fzn_printStats) {
-        setModified(true);
-        return;
-    }
-    if (mzn2fznOptimize() != _mzn2fzn_optimize) {
-        setModified(true);
-        return;
-    }
-    if (currentSolver() != _currentSolver) {
-        setModified(true);
-        return;
-    }
-    if (n_solutions() != _n_solutions) {
-        setModified(true);
-        return;
-    }
-    if (n_compress_solutions() != _compressSolutionLimit) {
-        setModified(true);
-        return;
-    }
-    if (printAll() != _printAll) {
-        setModified(true);
-        return;
-    }
-    if (defaultBehaviour() != _defaultBehaviour) {
-        setModified(true);
-        return;
-    }
-    if (printStats() != _printStats) {
-        setModified(true);
-        return;
-    }
-    if (printTiming() != _printTiming) {
-        setModified(true);
-        return;
-    }
-    if (haveSolverFlags() != _haveSolverFlags) {
-        setModified(true);
-        return;
-    }
-    if (solverFlags() != _solverFlags) {
-        setModified(true);
-        return;
-    }
-    if (n_threads() != _n_threads) {
-        setModified(true);
-        return;
-    }
-    if (haveSeed() != _haveSeed) {
-        setModified(true);
-        return;
-    }
-    if (seed() != _seed) {
-        setModified(true);
-        return;
-    }
-    if (timeLimit() != _timeLimit) {
-        setModified(true);
-        return;
-    }
-    if (solverVerbose() != _solverVerbose) {
-        setModified(true);
-        return;
-    }
-    setModified(false);
 }

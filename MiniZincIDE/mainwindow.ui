@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>982</height>
+    <width>1087</width>
+    <height>1609</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -73,557 +73,6 @@
        <attribute name="title">
         <string>Configuration</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QScrollArea" name="scrollArea">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>-306</y>
-             <width>608</width>
-             <height>899</height>
-            </rect>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QGroupBox" name="groupBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="title">
-               <string>Translation (MiniZinc to FlatZinc)</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                 <item>
-                  <widget class="QLabel" name="label_5">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="text">
-                    <string>Data file:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="conf_data_file">
-                   <item>
-                    <property name="text">
-                     <string>None</string>
-                    </property>
-                   </item>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="groupBox_2">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="title">
-               <string>Solving</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_3">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_6">
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_4">
-                   <item>
-                    <widget class="QLabel" name="label_2">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="text">
-                      <string>Solver:</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="conf_solver"/>
-                   </item>
-                  </layout>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_11">
-                 <item>
-                  <widget class="QLabel" name="label_8">
-                   <property name="text">
-                    <string>Time limit:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QSpinBox" name="conf_timeLimit">
-                   <property name="alignment">
-                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::UpDownArrows</enum>
-                   </property>
-                   <property name="maximum">
-                    <number>3600</number>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="conf_timeLimit_label">
-                   <property name="text">
-                    <string>seconds (disabled)</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_2">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_10">
-                 <item>
-                  <widget class="QRadioButton" name="defaultBehaviourButton">
-                   <property name="text">
-                    <string>Default behaviour</string>
-                   </property>
-                   <property name="checked">
-                    <bool>true</bool>
-                   </property>
-                   <attribute name="buttonGroup">
-                    <string notr="true">buttonGroup</string>
-                   </attribute>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QFrame" name="defaultBehaviourFrame">
-                   <property name="frameShape">
-                    <enum>QFrame::Panel</enum>
-                   </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
-                   </property>
-                   <property name="lineWidth">
-                    <number>1</number>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_8">
-                    <item>
-                     <widget class="QLabel" name="label_9">
-                      <property name="enabled">
-                       <bool>true</bool>
-                      </property>
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="minimumSize">
-                       <size>
-                        <width>300</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimization problems: print all intermediate solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="textFormat">
-                       <enum>Qt::RichText</enum>
-                      </property>
-                      <property name="scaledContents">
-                       <bool>false</bool>
-                      </property>
-                      <property name="wordWrap">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_10">
-                      <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Satisfaction problems: stop after first solution&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_12">
-                      <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Compress solution output after 100 solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_11">
-                 <item>
-                  <widget class="QRadioButton" name="userBehaviourButton">
-                   <property name="text">
-                    <string>User-defined behavior</string>
-                   </property>
-                   <attribute name="buttonGroup">
-                    <string notr="true">buttonGroup</string>
-                   </attribute>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QFrame" name="userBehaviourFrame">
-                   <property name="enabled">
-                    <bool>false</bool>
-                   </property>
-                   <property name="frameShape">
-                    <enum>QFrame::Panel</enum>
-                   </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_7">
-                    <item>
-                     <widget class="QCheckBox" name="conf_printall">
-                      <property name="text">
-                       <string>Print intermediate solutions (for optimization problems)</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_7">
-                      <item>
-                       <widget class="QLabel" name="label_3">
-                        <property name="text">
-                         <string>Stop after this many solutions (0 means &quot;all&quot;):</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QSpinBox" name="conf_nsol">
-                        <property name="maximum">
-                         <number>10000</number>
-                        </property>
-                        <property name="value">
-                         <number>1</number>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="label_6">
-                        <property name="text">
-                         <string>(for satisfaction problems)</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <spacer name="horizontalSpacer_6">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>40</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                     </layout>
-                    </item>
-                    <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_5">
-                      <item>
-                       <widget class="QLabel" name="label_11">
-                        <property name="text">
-                         <string>Compress solution output after this many solutions:</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QSpinBox" name="conf_compressSolutionLimit">
-                        <property name="minimum">
-                         <number>100</number>
-                        </property>
-                        <property name="maximum">
-                         <number>2000</number>
-                        </property>
-                        <property name="singleStep">
-                         <number>100</number>
-                        </property>
-                        <property name="value">
-                         <number>100</number>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <spacer name="horizontalSpacer">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>40</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                     </layout>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="groupBox_3">
-              <property name="title">
-               <string>Advanced options</string>
-              </property>
-              <property name="checkable">
-               <bool>false</bool>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_5">
-               <item>
-                <widget class="QCheckBox" name="autoclear_output">
-                 <property name="text">
-                  <string>Clear output window before each run</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>Translation options:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_verbose">
-                 <property name="text">
-                  <string>Verbose flattening</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_flatten_stats">
-                 <property name="text">
-                  <string>Output statistics for flattening</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_optimize">
-                 <property name="text">
-                  <string>Produce optimized FlatZinc (disable if flattening takes too long)</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
-                 <item>
-                  <widget class="QCheckBox" name="conf_have_cmd_params">
-                   <property name="text">
-                    <string>Additional data:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="conf_cmd_params"/>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_9">
-                 <item>
-                  <widget class="QCheckBox" name="conf_have_mzn2fzn_params">
-                   <property name="text">
-                    <string>Additional mzn2fzn arguments:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="conf_mzn2fzn_params"/>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Solver options:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_13">
-                 <item>
-                  <widget class="QLabel" name="label_4">
-                   <property name="text">
-                    <string>Number of threads:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QSpinBox" name="conf_nthreads">
-                   <property name="minimum">
-                    <number>1</number>
-                   </property>
-                   <property name="value">
-                    <number>1</number>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_14">
-                 <item>
-                  <widget class="QCheckBox" name="conf_have_seed">
-                   <property name="text">
-                    <string>Random seed:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="conf_seed">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_4">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_10">
-                 <item>
-                  <widget class="QCheckBox" name="conf_have_solverFlags">
-                   <property name="text">
-                    <string>Solver flags:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="conf_solverFlags"/>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_solver_verbose">
-                 <property name="text">
-                  <string>Verbose solving</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_solver_timing">
-                 <property name="text">
-                  <string>Output timing information</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="conf_stats">
-                 <property name="text">
-                  <string>Output statistics for solving</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-              <zorder>conf_stats</zorder>
-              <zorder>conf_solver_verbose</zorder>
-              <zorder>label</zorder>
-              <zorder>label_7</zorder>
-              <zorder>conf_verbose</zorder>
-              <zorder>conf_optimize</zorder>
-              <zorder>autoclear_output</zorder>
-              <zorder>conf_flatten_stats</zorder>
-              <zorder>conf_solver_timing</zorder>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
       </widget>
      </widget>
     </item>
@@ -634,7 +83,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1087</width>
      <height>22</height>
     </rect>
    </property>
@@ -710,11 +159,19 @@
     <property name="title">
      <string>MiniZinc</string>
     </property>
+    <widget class="QMenu" name="menuSolver_configurations">
+     <property name="title">
+      <string>Solver configurations</string>
+     </property>
+     <addaction name="actionDefaultSolverConfig"/>
+     <addaction name="actionEditSolverConfig"/>
+    </widget>
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
     <addaction name="actionSubmit_to_MOOC"/>
     <addaction name="separator"/>
+    <addaction name="menuSolver_configurations"/>
     <addaction name="actionManage_solvers"/>
     <addaction name="separator"/>
    </widget>
@@ -761,6 +218,9 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="OutputDockWidget" name="outputDockWidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
      <horstretch>0</horstretch>
@@ -834,9 +294,8 @@
    <addaction name="actionShift_left"/>
    <addaction name="actionShift_right"/>
    <addaction name="separator"/>
-   <addaction name="actionRun"/>
-   <addaction name="actionStop"/>
    <addaction name="actionSubmit_to_MOOC"/>
+   <addaction name="actionEditSolverConfig"/>
    <addaction name="actionShow_project_explorer"/>
   </widget>
   <widget class="QDockWidget" name="projectExplorerDockWidget">
@@ -895,6 +354,719 @@
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="conf_dock_widget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>700</width>
+     <height>132</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>Configuration</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QVBoxLayout" name="verticalLayout_12">
+     <item>
+      <widget class="QScrollArea" name="scrollArea">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>676</width>
+          <height>1019</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QGroupBox" name="groupBox_4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_4_1">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2_1">
+              <item>
+               <widget class="EscLineEdit" name="solverConfNameEdit"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="nameAlreadyUsedLabel">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#fc0107;&quot;&gt;Name already used!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="conf_solver_conf">
+                <item>
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2_2" stretch="0,0,0,0,0,0">
+              <property name="spacing">
+               <number>-1</number>
+              </property>
+              <property name="sizeConstraint">
+               <enum>QLayout::SetMinimumSize</enum>
+              </property>
+              <item>
+               <widget class="QPushButton" name="cloneSolverConfButton">
+                <property name="text">
+                 <string>Clone</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="renameSolverConfButton">
+                <property name="text">
+                 <string>Rename</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="deleteSolverConfButton">
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="conf_default">
+                <property name="text">
+                 <string>default</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="solverConfType">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Solving</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QLabel" name="label_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Solver:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="conf_solver">
+                  <property name="text">
+                   <string>selected solver</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>Time limit:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="conf_timeLimit">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::UpDownArrows</enum>
+                </property>
+                <property name="maximum">
+                 <number>3600</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="conf_timeLimit_label">
+                <property name="text">
+                 <string>seconds (disabled)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_10">
+              <item>
+               <widget class="QRadioButton" name="defaultBehaviourButton">
+                <property name="text">
+                 <string>Default behavior</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+                <attribute name="buttonGroup">
+                 <string notr="true">buttonGroup</string>
+                </attribute>
+               </widget>
+              </item>
+              <item>
+               <widget class="QFrame" name="defaultBehaviourFrame">
+                <property name="frameShape">
+                 <enum>QFrame::Panel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <property name="lineWidth">
+                 <number>1</number>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <widget class="QLabel" name="label_9">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>300</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Optimization problems: print all intermediate solutions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="textFormat">
+                    <enum>Qt::RichText</enum>
+                   </property>
+                   <property name="scaledContents">
+                    <bool>false</bool>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_10">
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Satisfaction problems: stop after first solution&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_11">
+              <item>
+               <widget class="QRadioButton" name="userBehaviourButton">
+                <property name="text">
+                 <string>User-defined behavior</string>
+                </property>
+                <attribute name="buttonGroup">
+                 <string notr="true">buttonGroup</string>
+                </attribute>
+               </widget>
+              </item>
+              <item>
+               <widget class="QFrame" name="userBehaviourFrame">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Panel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_7">
+                 <item>
+                  <widget class="QCheckBox" name="conf_printall">
+                   <property name="text">
+                    <string>Print intermediate solutions (for optimization problems)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="nsol_layout">
+                   <item>
+                    <widget class="QLabel" name="nsol_label_1">
+                     <property name="text">
+                      <string>Stop after this many solutions (0 means &quot;all&quot;):</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QSpinBox" name="conf_nsol">
+                     <property name="maximum">
+                      <number>10000</number>
+                     </property>
+                     <property name="value">
+                      <number>1</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="nsol_label_2">
+                     <property name="text">
+                      <string>(for satisfaction problems)</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="title">
+            <string>Compiler options</string>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QCheckBox" name="conf_verbose">
+              <property name="text">
+               <string>Verbose compilation</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_flatten_stats">
+              <property name="text">
+               <string>Output statistics for compilation</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>Compiler optimisation level:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="conf_optlevel">
+                <property name="currentText">
+                 <string>-O1 (default)</string>
+                </property>
+                <property name="currentIndex">
+                 <number>1</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>-O0 (no optimization)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>-O1 (default)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>-O2 (two-pass compilation)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>-O3 (two-pass compilation with Gecode)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>-O4 (as -O3 + shaving)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>-O5 (as -O3 + singleton arc consistency)</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>Additional data:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_cmd_params"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Additional compiler arguments:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_mzn2fzn_params"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_5">
+           <property name="title">
+            <string>Solver options</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_13">
+              <item>
+               <widget class="QLabel" name="nthreads_label">
+                <property name="text">
+                 <string>Number of threads:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="conf_nthreads">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_14">
+              <item>
+               <widget class="QCheckBox" name="conf_have_seed">
+                <property name="text">
+                 <string>Random seed:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_seed">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <item>
+               <widget class="QLabel" name="label_15">
+                <property name="text">
+                 <string>Additional solver command line arguments:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="conf_solverFlags"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_solver_free">
+              <property name="text">
+               <string>Free search</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_solver_verbose">
+              <property name="text">
+               <string>Verbose solving</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_stats">
+              <property name="text">
+               <string>Output statistics for solving</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+           <zorder>conf_stats</zorder>
+           <zorder>conf_solver_verbose</zorder>
+           <zorder>conf_solver_free</zorder>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox">
+           <property name="title">
+            <string>Output options</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_output">
+            <item>
+             <widget class="QCheckBox" name="autoclear_output">
+              <property name="text">
+               <string>Clear output window before each run</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_solver_timing">
+              <property name="text">
+               <string>Output timing information</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="conf_check_solutions">
+              <property name="text">
+               <string>Check solutions (if solution checker model is present in project)</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <item>
+               <widget class="QLabel" name="label_11">
+                <property name="text">
+                 <string>Compress solution output after this many solutions (0 means &quot;never&quot;):</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="conf_compressSolutionLimit">
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>1000000</number>
+                </property>
+                <property name="singleStep">
+                 <number>100</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
@@ -1046,6 +1218,9 @@
      <normaloff>:/icons/images/media-playback-start.png</normaloff>:/icons/images/media-playback-start.png</iconset>
    </property>
    <property name="text">
+    <string>Run</string>
+   </property>
+   <property name="toolTip">
     <string>Run</string>
    </property>
    <property name="shortcut">
@@ -1266,16 +1441,10 @@
    <property name="text">
     <string>Previous tab</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+{</string>
-   </property>
   </action>
   <action name="actionNext_tab">
    <property name="text">
     <string>Next tab</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+}</string>
    </property>
   </action>
   <action name="actionClear_menu">
@@ -1363,6 +1532,29 @@
     <string>Dark mode</string>
    </property>
   </action>
+  <action name="actionDefaultSolverConfig">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>default</string>
+   </property>
+  </action>
+  <action name="actionEditSolverConfig">
+   <property name="icon">
+    <iconset resource="minizincide.qrc">
+     <normaloff>:/icons/images/applications-system.png</normaloff>:/icons/images/applications-system.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show configuration editor...</string>
+   </property>
+   <property name="toolTip">
+    <string>Show solver configuration editor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1371,7 +1563,45 @@
    <header>outputdockwidget.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>EscLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>esclineedit.h</header>
+  </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>conf_solver_conf</tabstop>
+  <tabstop>solverConfNameEdit</tabstop>
+  <tabstop>cloneSolverConfButton</tabstop>
+  <tabstop>renameSolverConfButton</tabstop>
+  <tabstop>deleteSolverConfButton</tabstop>
+  <tabstop>conf_default</tabstop>
+  <tabstop>conf_timeLimit</tabstop>
+  <tabstop>defaultBehaviourButton</tabstop>
+  <tabstop>userBehaviourButton</tabstop>
+  <tabstop>conf_printall</tabstop>
+  <tabstop>conf_nsol</tabstop>
+  <tabstop>conf_verbose</tabstop>
+  <tabstop>conf_flatten_stats</tabstop>
+  <tabstop>conf_optlevel</tabstop>
+  <tabstop>conf_cmd_params</tabstop>
+  <tabstop>conf_mzn2fzn_params</tabstop>
+  <tabstop>conf_nthreads</tabstop>
+  <tabstop>conf_have_seed</tabstop>
+  <tabstop>conf_seed</tabstop>
+  <tabstop>conf_solverFlags</tabstop>
+  <tabstop>conf_solver_free</tabstop>
+  <tabstop>conf_solver_verbose</tabstop>
+  <tabstop>conf_stats</tabstop>
+  <tabstop>autoclear_output</tabstop>
+  <tabstop>conf_solver_timing</tabstop>
+  <tabstop>conf_check_solutions</tabstop>
+  <tabstop>conf_compressSolutionLimit</tabstop>
+  <tabstop>projectView</tabstop>
+  <tabstop>outputConsole</tabstop>
+ </tabstops>
  <resources>
   <include location="minizincide.qrc"/>
  </resources>

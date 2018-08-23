@@ -32,14 +32,17 @@
 #include <QFileSystemWatcher>
 #include <QNetworkAccessManager>
 #include <QSortFilterProxyModel>
+#include <QToolButton>
+#include <QProgressBar>
+#include <QComboBox>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
-#include "help.h"
 #include "paramdialog.h"
 #include "project.h"
 #include "htmlwindow.h"
 #include "moocsubmission.h"
+#include "solverconfiguration.h"
 
 namespace Ui {
 class MainWindow;
@@ -84,7 +87,6 @@ public:
     IDEStatistics stats;
 
     MainWindow* lastDefaultProject;
-    Help* helpWindow;
     QMainWindow* cheatSheet;
 
     QNetworkAccessManager* networkManager;
@@ -92,6 +94,12 @@ public:
 
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
+    QMenu* recentFilesMenu;
+    QMenu* recentProjectsMenu;
+public slots:
+    void recentFileMenuAction(QAction*);
+    void recentProjectMenuAction(QAction*);
+public:
 #endif
 
     QFileSystemWatcher fsWatch;
@@ -108,12 +116,14 @@ public:
     QString getLastPath(void);
     void setLastPath(const QString& path);
     void setEditorFont(QFont font);
+    void addRecentFile(const QString& file);
+    void addRecentProject(const QString& file);
 protected:
     bool event(QEvent *);
 protected slots:
     void versionCheckFinished(void);
     void newProject(void);
-    void openFile(void);
+    void openFile(const QString& filename = QString(""));
     void fileModified(const QString&);
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);
@@ -133,14 +143,14 @@ public:
 
 private:
     void init(const QString& project);
-
+    void compileOrRun();
 signals:
     /// emitted when compilation and running of a model has finished
     void finished();
 
 public slots:
 
-    void openFile(const QString &path = QString(), bool openAsModified=false);
+    void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
     void on_actionStop_triggered();
 
 private slots:
@@ -266,11 +276,7 @@ private slots:
 
     void on_conf_timeLimit_valueChanged(int arg1);
 
-    void on_conf_solver_activated(const QString &arg1);
-
     void onClipboardChanged();
-
-    void on_conf_data_file_activated(const QString &arg1);
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
@@ -283,6 +289,22 @@ private slots:
 
     void on_defaultBehaviourButton_toggled(bool checked);
 
+    void on_actionEditSolverConfig_triggered();
+
+    void on_conf_solver_conf_currentIndexChanged(int index);
+
+    void on_solverConfigurationSelected(QAction*);
+
+    void on_cloneSolverConfButton_clicked();
+    void on_deleteSolverConfButton_clicked();
+    void on_renameSolverConfButton_clicked();
+
+    void on_solverConfNameEdit_returnPressed();
+    void on_solverConfNameEdit_escPressed();
+
+    void on_conf_default_toggled(bool checked);
+    void on_conf_dock_widget_visibilityChanged(bool visible);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -290,9 +312,15 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
-    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QString& additionalDataFile);
+
+    SolverConfiguration* getCurrentSolverConfig(void);
+    Solver* getCurrentSolver(void);
+
+    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
+    QString currentSolver(void) const;
+    QString currentSolverConfigName(void);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -300,6 +328,7 @@ private:
     HTMLWindow* curHtmlWindow;
     MznProcess* process;
     QString processName;
+    QString curModelFilepath;
     MznProcess* outputProcess;
     bool processWasStopped;
     int solutionCount;
@@ -308,20 +337,29 @@ private:
     QVector<QString> hiddenSolutions;
     int curJSONHandler;
     bool inJSONHandler;
+    QStringList htmlBuffer;
+    bool inHTMLHandler {false};
     bool hadNonJSONOutput;
     QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
     int time;
     QElapsedTimer elapsedTime;
+    QProgressBar* progressBar;
     QLabel* statusLabel;
     QFont editorFont;
     bool darkMode;
     QVector<Solver> solvers;
-    QString defaultSolver;
+    QString userSolverConfigDir;
+    QString userConfigFile;
+    QString mznStdlibDir;
+    int defaultSolverIdx;
     QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
+    QString currentPathsTarget;
+    bool isOptimisation;
+    QStringList currentAdditionalDataFiles;
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
@@ -332,6 +370,7 @@ private:
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
+    int runTimeout;
     QString mzn2fzn_executable;
     Project project;
     QSortFilterProxyModel* projectSort;
@@ -344,6 +383,7 @@ private:
     QString projectSelectedFile;
     QModelIndex projectSelectedIndex;
     int newFileCounter;
+    QComboBox* solverConfCombo;
     QAction* fakeRunAction;
     QAction* fakeStopAction;
     QAction* fakeCompileAction;
@@ -352,8 +392,15 @@ private:
     MOOCSubmission* moocSubmission;
     bool processRunning;
 
-    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false);
-    QStringList parseConf(bool compileOnly, bool useDataFile);
+    QToolButton* runButton;
+    QVector<SolverConfiguration> projectSolverConfigs;
+    QVector<SolverConfiguration> builtinSolverConfigs;
+    int currentSolverConfig;
+    bool renamingSolverConf;
+
+    void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
+    enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };
+    QStringList parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
@@ -361,12 +408,15 @@ private:
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime();
-    void setupDznMenu();
     void checkMznPath();
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);
     void updateUiProcessRunning(bool pr);
+    void highlightPath(QString& path, int index);
+    QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
+    void updateSolverConfigs(void);
+    void setCurrentSolverConfig(int idx);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

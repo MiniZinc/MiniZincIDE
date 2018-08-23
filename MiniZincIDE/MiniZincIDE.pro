@@ -19,7 +19,7 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.7
+VERSION = 2.2.0
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -49,10 +49,8 @@ SOURCES += main.cpp\
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
-    aboutdialog.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
-    help.cpp \
     finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
@@ -60,16 +58,16 @@ SOURCES += main.cpp\
     project.cpp \
     htmlwindow.cpp \
     htmlpage.cpp \
-    moocsubmission.cpp
+    moocsubmission.cpp \
+    solverconfiguration.cpp \
+    esclineedit.cpp
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
-    aboutdialog.h \
     solverdialog.h \
     gotolinedialog.h \
-    help.h \
     finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
@@ -78,14 +76,14 @@ HEADERS  += mainwindow.h \
     rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
-    moocsubmission.h
+    moocsubmission.h \
+    solverconfiguration.h \
+    esclineedit.h
 
 FORMS    += \
     mainwindow.ui \
-    aboutdialog.ui \
     solverdialog.ui \
     gotolinedialog.ui \
-    help.ui \
     finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
@@ -95,5 +93,5 @@ FORMS    += \
 RESOURCES += \
     minizincide.qrc
 
-target.path = /bin
+target.path = $$PREFIX/bin
 INSTALLS += target

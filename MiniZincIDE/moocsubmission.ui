@@ -37,7 +37,7 @@
    <item>
     <widget class="QGroupBox" name="loginGroup">
      <property name="title">
-      <string>Coursera login information</string>
+      <string>Login information</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -130,7 +130,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Selected solver for running models (change in Configuration tab)</string>
+      <string>Selected solver configuration for running models</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
