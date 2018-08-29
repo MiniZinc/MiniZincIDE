@@ -323,6 +323,19 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
 
 void CodeEditor::paintLineNumbers(QPaintEvent *event)
 {
+    QColor backgroundColor;
+    QColor foregroundActiveColor;
+    QColor foregroundInactiveColor;
+    if (darkMode) {
+        backgroundColor = QColor(0x26, 0x26, 0x26);
+        foregroundActiveColor = Qt::white;
+        foregroundInactiveColor = Qt::darkGray;
+    } else {
+        backgroundColor = QColor(Qt::lightGray).lighter(120);
+        foregroundActiveColor = Qt::black;
+        foregroundInactiveColor = Qt::gray;
+    }
+
     QPainter painter(lineNumbers);
     QFont lineNoFont = font();
     QFontMetrics fm(lineNoFont);
@@ -331,7 +344,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     QFontMetrics fm2(lineNoFont);
     int heightDiff = (origFontHeight-fm2.height());
     painter.setFont(lineNoFont);
-    painter.fillRect(event->rect(), QColor(Qt::lightGray).lighter(120));
+    painter.fillRect(event->rect(), backgroundColor);
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -344,9 +357,9 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
             if (blockNumber == curLine)
-                painter.setPen(Qt::black);
+                painter.setPen(foregroundActiveColor);
             else
-                painter.setPen(Qt::gray);
+                painter.setPen(foregroundInactiveColor);
             int textTop = top+fontMetrics().leading()+heightDiff;
             painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
                              Qt::AlignRight, number);
