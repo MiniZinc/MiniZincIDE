@@ -1693,7 +1693,7 @@ void MainWindow::compileOrRun()
                     }
                     isOptimisation = true;
                     solutionCount = 0;
-                    solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
+                    solutionLimit = ui->conf_compressSolutionLimit->value();
                     hiddenSolutions.clear();
                     inJSONHandler = false;
                     curJSONHandler = 0;
@@ -2025,7 +2025,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
 
     solutionCount = 0;
-    solutionLimit = ui->defaultBehaviourButton->isChecked() ? 100 : ui->conf_compressSolutionLimit->value();
+    solutionLimit = ui->conf_compressSolutionLimit->value();
     hiddenSolutions.clear();
     inJSONHandler = false;
     curJSONHandler = 0;
