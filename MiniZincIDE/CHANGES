@@ -2,6 +2,8 @@
   v2.2.1
   - Improve dark mode by changing line numbers to dark background.
   - Make parameter input dialog scrollable.
+  - Fix solution compression limit, and output one solution per
+    block of compressed solutions.
   v2.2.0
   - Update to MiniZinc 2.2.0.
   - Change solver configuration interface to work with new MiniZinc 2.2.0
