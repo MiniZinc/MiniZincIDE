@@ -18,6 +18,7 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QDebug>
+#include <QScrollArea>
 
 ParamDialog::ParamDialog(QWidget *parent) :
     QDialog(parent),
@@ -37,12 +38,18 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
 
     QWidget* manual = new QWidget;
     manual->setLayout(formLayout);
-
-    tw->addTab(manual, "Enter parameters");
+    bool fillPrevious = previousParams == params;
+    for (int i=0; i<params.size(); i++) {
+        QLineEdit* e = new QLineEdit(fillPrevious ? previousValues[i] : "");
+        le.append(e);
+        formLayout->addRow(new QLabel(params[i]+" ="), le.back());
+    }
+    QScrollArea* scrollArea = new QScrollArea;
+    scrollArea->setWidget(manual);
+    tw->addTab(scrollArea, "Enter parameters");
 
     selectedFiles = NULL;
 
-    bool fillPrevious = previousParams == params;
     if (dataFiles.size() > 0) {
         selectedFiles = new QListWidget(this);
         selectedFiles->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -56,11 +63,6 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
         tw->addTab(selectedFiles, "Select data file");
         if (!fillPrevious || !previousWasManual)
             tw->setCurrentIndex(1);
-    }
-    for (int i=0; i<params.size(); i++) {
-        QLineEdit* e = new QLineEdit(fillPrevious ? previousValues[i] : "");
-        le.append(e);
-        formLayout->addRow(new QLabel(params[i]+" ="), le.back());
     }
     mainLayout->addRow(tw);
     ui->frame->setLayout(mainLayout);

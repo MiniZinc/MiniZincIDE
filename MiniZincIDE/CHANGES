@@ -1,4 +1,20 @@
 2017-05-17
+  v2.2.1
+  - Improve dark mode by changing line numbers to dark background.
+  - Make parameter input dialog scrollable.
+  - Fix solution compression limit, and output one solution per
+    block of compressed solutions.
+  v2.2.0
+  - Update to MiniZinc 2.2.0.
+  - Change solver configuration interface to work with new MiniZinc 2.2.0
+    solver configurations.
+  - Add support for solution checker models.
+  - Better process management (to make sure solvers are terminated).
+  - Change project files to be based on JSON format.
+  - Better support for solver HTML output (used e.g. for Globalizer and FindMUS).
+  - Fix shift left/shift right functionality.
+  - Support for running models without saving them first.
+  - Fix file dialogs to use correct file extensions.
   v2.1.7
   - Update to MiniZinc 2.1.7.
   - Fix problem where files with a . in the filename could not be run (bug #44).
