@@ -1949,6 +1949,7 @@ void MainWindow::openJSONViewer(void)
             specs.append(VisWindowSpec(url,area));
         }
         curHtmlWindow = new HTMLWindow(specs, this);
+        curHtmlWindow->init();
         connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
         curHtmlWindow->show();
     }

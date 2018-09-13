@@ -25,7 +25,12 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
         addDockWidget(specs[i].area,dw);
     }
 
-    if (specs.size() > 0) {
+}
+
+void
+HTMLWindow::init(void)
+{
+    if (loadQueue.size() > 0) {
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
         MznIdeWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;

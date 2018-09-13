@@ -33,6 +33,7 @@ public:
     explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent = 0);
     ~HTMLWindow();
 
+    void init(void);
     void addSolution(int nVis, const QString& json);
     void selectSolution(HTMLPage* source, int n);
     void finish(qint64 runtime);
