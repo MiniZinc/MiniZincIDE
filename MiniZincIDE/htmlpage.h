@@ -34,6 +34,7 @@ public:
     explicit HTMLPage(MainWindow* mw, QWidget *parent = 0);
     virtual void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber, const QString &sourceID);
     void addSolution(const QString& json);
+    void initJSON(const QString& json);
     void showSolution(int n);
     void finish(qint64 runtime);
 public slots:

@@ -35,6 +35,7 @@ public:
 
     void init(void);
     void addSolution(int nVis, const QString& json);
+    void initJSON(int nVis, const QString& json);
     void selectSolution(HTMLPage* source, int n);
     void finish(qint64 runtime);
 private:

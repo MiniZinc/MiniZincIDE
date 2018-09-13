@@ -337,6 +337,7 @@ private:
     QVector<QString> hiddenSolutions;
     int curJSONHandler;
     bool inJSONHandler;
+    bool isJSONinitHandler;
     QStringList htmlBuffer;
     bool inHTMLHandler {false};
     bool hadNonJSONOutput;

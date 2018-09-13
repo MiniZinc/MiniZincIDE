@@ -48,6 +48,11 @@ void HTMLWindow::addSolution(int nVis, const QString &json)
     pages[nVis]->addSolution(json);
 }
 
+void HTMLWindow::initJSON(int nVis, const QString &json)
+{
+    pages[nVis]->initJSON(json);
+}
+
 void HTMLWindow::selectSolution(HTMLPage *source, int n)
 {
     for (int i=0; i<pages.size(); i++) {

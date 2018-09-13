@@ -118,6 +118,20 @@ HTMLPage::addSolution(const QString &json0)
 }
 
 void
+HTMLPage::initJSON(const QString &json0)
+{
+    QString j = json0;
+    j.replace("'","\\'");
+    j.replace("\"","\\\"");
+    j.replace("\n"," ");
+    if (loadFinished) {
+        runJs("initJSON('"+j+"')");
+    } else {
+        json.push_back("initJSON('"+j+"')");
+    }
+}
+
+void
 HTMLPage::finish(qint64 runtime)
 {
     QString jscall = "if (typeof finish == 'function') { finish("+QString().number(runtime)+"); }";

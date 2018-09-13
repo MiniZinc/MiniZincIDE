@@ -1780,19 +1780,27 @@ void MainWindow::readOutput()
                 if (l.startsWith("%%%mzn-json-time")) {
                     JSONOutput[curJSONHandler].insert(2, "[");
                     JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
-                } else
-                    if (l.startsWith("%%%mzn-json-end")) {
+                } else if (l.startsWith("%%%mzn-json-end")) {
                     curJSONHandler++;
                     inJSONHandler = false;
+                } else if (l.startsWith("%%%mzn-json-init-end")) {
+                    curJSONHandler++;
+                    inJSONHandler = false;
+                    openJSONViewer();
+                    JSONOutput.clear();
+                    curJSONHandler = 0;
+                    if (hadNonJSONOutput)
+                        addOutput(l,false);
                 } else {
                     JSONOutput[curJSONHandler].append(l);
                 }
             } else {
-                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
+                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json(-init)?:(.*)");
                 if (pattern.exactMatch(l.trimmed())) {
                     inJSONHandler = true;
+                    isJSONinitHandler = (pattern.capturedTexts()[2]=="-init");
                     QStringList sl;
-                    sl.append(pattern.capturedTexts()[2]);
+                    sl.append(pattern.capturedTexts()[3]);
                     if (pattern.capturedTexts()[1].isEmpty()) {
                         sl.append("top");
                     } else {
@@ -1956,7 +1964,11 @@ void MainWindow::openJSONViewer(void)
     for (int i=0; i<JSONOutput.size(); i++) {
         JSONOutput[i].pop_front();
         JSONOutput[i].pop_front();
-        curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+        if (isJSONinitHandler) {
+            curHtmlWindow->initJSON(i, JSONOutput[i].join(' '));
+        } else {
+            curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+        }
     }
 }
 
