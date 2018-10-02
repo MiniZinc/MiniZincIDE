@@ -31,13 +31,7 @@ macx {
     OBJECTIVE_SOURCES += rtfexporter.mm
     QT += macextras
     LIBS += -framework Cocoa
-}
-
-macx:bundled {
-    QMAKE_INFO_PLIST = mznide-bundled.plist
-}
-macx:!bundled {
-    QMAKE_INFO_PLIST = mznide.plist
+	QMAKE_INFO_PLIST = mznide.plist
 }
 
 RC_ICONS = mznide.ico
