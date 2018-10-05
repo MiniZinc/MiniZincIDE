@@ -8,7 +8,7 @@
 #include <QDockWidget>
 #include <QCloseEvent>
 
-HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent) :
+HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, const QString& title, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::HTMLWindow)
 {
@@ -26,7 +26,7 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
         dw->setWidget(wv);
         addDockWidget(specs[i].area,dw);
     }
-
+    setWindowTitle("MiniZinc visualisation for "+title);
 }
 
 void

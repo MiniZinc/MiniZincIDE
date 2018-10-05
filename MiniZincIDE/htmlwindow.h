@@ -30,7 +30,7 @@ class HTMLWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent = 0);
+    explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, const QString& title, QWidget *parent = 0);
     ~HTMLWindow();
 
     void init(void);

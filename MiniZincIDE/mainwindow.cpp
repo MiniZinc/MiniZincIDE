@@ -1955,7 +1955,8 @@ void MainWindow::openJSONViewer(void)
             url.remove(QRegExp("[\\n\\t\\r]"));
             specs.append(VisWindowSpec(url,area));
         }
-        HTMLWindow* htmlWindow = new HTMLWindow(specs, this);
+        QFileInfo htmlWindowTitleFile(curFilePath);
+        HTMLWindow* htmlWindow = new HTMLWindow(specs, this, htmlWindowTitleFile.fileName());
         curHtmlWindow = htmlWindow->getId();
         htmlWindow->init();
         connect(htmlWindow, SIGNAL(closeWindow(int)), this, SLOT(closeHTMLWindow(int)));
