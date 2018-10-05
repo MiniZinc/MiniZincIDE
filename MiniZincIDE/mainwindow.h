@@ -280,7 +280,7 @@ private slots:
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
-    void closeHTMLWindow(void);
+    void closeHTMLWindow(int);
     void on_actionCheat_Sheet_triggered();
 
     void on_actionDark_mode_toggled(bool arg1);
@@ -319,13 +319,17 @@ protected:
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles);
 public:
     bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
+    void resolve(int htmlWindowIdentifier, const QString &data);
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
+    int addHtmlWindow(HTMLWindow* w);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
     QString curFilePath;
-    HTMLWindow* curHtmlWindow;
+    int curHtmlWindow;
+    QVector<HTMLWindow*> htmlWindows;
+    QVector<QString> htmlWindowModels;
     MznProcess* process;
     QString processName;
     QString curModelFilepath;

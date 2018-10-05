@@ -38,6 +38,7 @@ public:
     void initJSON(int nVis, const QString& json);
     void selectSolution(HTMLPage* source, int n);
     void finish(qint64 runtime);
+    int getId(void) const { return identifier; }
 private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;
@@ -47,12 +48,13 @@ private:
     typedef QWebView MznIdeWebView;
 #endif
     QVector<QPair<MznIdeWebView*,QString> > loadQueue;
+    int identifier;
 protected:
     void closeEvent(QCloseEvent *);
 private slots:
     void loadFinished(bool);
 signals:
-    void closeWindow(void);
+    void closeWindow(int);
 };
 
 #endif // HTMLWINDOW_H

@@ -1,6 +1,7 @@
 #include "htmlwindow.h"
 #include "ui_htmlwindow.h"
 #include "htmlpage.h"
+#include "mainwindow.h"
 
 #include <QMdiSubWindow>
 #include <QDebug>
@@ -12,10 +13,11 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
     ui(new Ui::HTMLWindow)
 {
     ui->setupUi(this);
+    identifier = mw->addHtmlWindow(this);
 
     for (int i=0; i<specs.size(); i++) {
         MznIdeWebView* wv = new MznIdeWebView;
-        HTMLPage* p = new HTMLPage(mw,wv);
+        HTMLPage* p = new HTMLPage(mw,identifier,wv);
         pages.append(p);
         wv->setPage(p);
         loadQueue.append(QPair<MznIdeWebView*,QString>(wv,specs[i].url));
@@ -82,6 +84,6 @@ void HTMLWindow::loadFinished(bool)
 
 void HTMLWindow::closeEvent(QCloseEvent * event)
 {
-    emit closeWindow();
+    emit closeWindow(identifier);
     event->accept();
 }
