@@ -2174,6 +2174,13 @@ void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
             QStringList dataFiles;
             dataFiles.push_back(filepath);
             curHtmlWindow = htmlWindowIdentifier;
+            if (outputProcess) {
+                outputProcess->disconnect();
+                outputProcess->terminate();
+                delete outputProcess;
+                outputProcess = NULL;
+            }
+            on_actionStop_triggered();
             compileAndRun(htmlWindowModels[htmlWindowIdentifier],"",dataFiles);
         } else {
             QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
