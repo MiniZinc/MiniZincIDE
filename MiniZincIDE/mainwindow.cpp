@@ -1543,7 +1543,8 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             compileErrors = "";
             if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
                 isOptimisation = (jdoc.object()["method"].toString() != "sat");
-                QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
+                QJsonObject inputArgs = jdoc.object()["input"].toObject();
+                QStringList undefinedArgs = inputArgs.keys();
                 if (undefinedArgs.size() > 0) {
                     QStringList params;
                     paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
@@ -1554,11 +1555,14 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                         }
                         for (int i=0; i<undefinedArgs.size(); i++) {
                             if (params[i].isEmpty()) {
-                                QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                                procFinished(0);
-                                return;
+                                if (! (inputArgs[undefinedArgs[i]].isObject() && inputArgs[undefinedArgs[i]].toObject().contains("optional")) ) {
+                                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                                    procFinished(0);
+                                    return;
+                                }
+                            } else {
+                                additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
                             }
-                            additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
                         }
                     }
                 }
