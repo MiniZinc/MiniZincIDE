@@ -278,6 +278,8 @@ private slots:
 
     void onClipboardChanged();
 
+    void editor_cursor_position_changed();
+
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(int);
@@ -352,6 +354,7 @@ private:
     QElapsedTimer elapsedTime;
     QProgressBar* progressBar;
     QLabel* statusLabel;
+    QLabel* statusLineColLabel;
     QFont editorFont;
     bool darkMode;
     QVector<Solver> solvers;

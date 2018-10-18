@@ -825,9 +825,10 @@ void MainWindow::init(const QString& projectFile)
     progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
     progressBar->setHidden(true);
     statusLabel = new QLabel("");
+    statusLineColLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
     ui->statusbar->addPermanentWidget(progressBar);
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->addWidget(statusLineColLabel);
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
@@ -1322,6 +1323,7 @@ void MainWindow::tabChange(int tab) {
                    ui->actionUndo, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                    ui->actionRedo, SLOT(setEnabled(bool)));
+        disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
     }
     if (tab==-1) {
         curEditor = NULL;
@@ -1342,6 +1344,7 @@ void MainWindow::tabChange(int tab) {
                 ui->actionUndo, SLOT(setEnabled(bool)));
         connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                 ui->actionRedo, SLOT(setEnabled(bool)));
+        connect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
         setWindowModified(curEditor->document()->isModified());
         QString p;
         p += " ";
@@ -2235,7 +2238,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->clearMessage();
     progressBar->reset();
     process = NULL;
     outputProcess = NULL;
@@ -2275,7 +2278,7 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
     timer->stop();
     solverTimeout->stop();
     QString elapsedTime = setElapsedTime();
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->clearMessage();
     process = NULL;
     outputProcess = NULL;
     finishJSONViewer();
@@ -4066,6 +4069,13 @@ void MainWindow::on_conf_timeLimit_valueChanged(int arg1)
 void MainWindow::onClipboardChanged()
 {
     ui->actionPaste->setEnabled(!QApplication::clipboard()->text().isEmpty());
+}
+
+void MainWindow::editor_cursor_position_changed()
+{
+    if (curEditor) {
+        statusLineColLabel->setText(QString("Line: ")+QString().number(curEditor->textCursor().blockNumber()+1)+", Col: "+QString().number(curEditor->textCursor().columnNumber()+1));
+    }
 }
 
 void MainWindow::on_actionSubmit_to_MOOC_triggered()
