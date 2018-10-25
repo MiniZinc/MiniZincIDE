@@ -19,7 +19,7 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.2.1
+VERSION = 2.2.2
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -31,13 +31,11 @@ macx {
     OBJECTIVE_SOURCES += rtfexporter.mm
     QT += macextras
     LIBS += -framework Cocoa
-}
-
-macx:bundled {
-    QMAKE_INFO_PLIST = mznide-bundled.plist
-}
-macx:!bundled {
-    QMAKE_INFO_PLIST = mznide.plist
+    macx-xcode {
+      QMAKE_INFO_PLIST = mznide-xcode.plist
+    } else {
+      QMAKE_INFO_PLIST = mznide-makefile.plist
+    }
 }
 
 RC_ICONS = mznide.ico

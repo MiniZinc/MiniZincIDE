@@ -682,7 +682,7 @@ IDE* IDE::instance(void) {
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
-    curHtmlWindow(NULL),
+    curHtmlWindow(-1),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -698,7 +698,7 @@ MainWindow::MainWindow(const QString& project) :
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(NULL),
-    curHtmlWindow(NULL),
+    curHtmlWindow(-1),
     process(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
@@ -825,9 +825,10 @@ void MainWindow::init(const QString& projectFile)
     progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
     progressBar->setHidden(true);
     statusLabel = new QLabel("");
+    statusLineColLabel = new QLabel("");
     ui->statusbar->addPermanentWidget(statusLabel);
     ui->statusbar->addPermanentWidget(progressBar);
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->addWidget(statusLineColLabel);
     ui->actionStop->setEnabled(false);
     QTabBar* tb = ui->tabWidget->findChild<QTabBar*>();
     tb->setTabButton(0, QTabBar::RightSide, 0);
@@ -1322,6 +1323,7 @@ void MainWindow::tabChange(int tab) {
                    ui->actionUndo, SLOT(setEnabled(bool)));
         disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                    ui->actionRedo, SLOT(setEnabled(bool)));
+        disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
     }
     if (tab==-1) {
         curEditor = NULL;
@@ -1342,6 +1344,7 @@ void MainWindow::tabChange(int tab) {
                 ui->actionUndo, SLOT(setEnabled(bool)));
         connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                 ui->actionRedo, SLOT(setEnabled(bool)));
+        connect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
         setWindowModified(curEditor->document()->isModified());
         QString p;
         p += " ";
@@ -1543,7 +1546,8 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
             compileErrors = "";
             if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
                 isOptimisation = (jdoc.object()["method"].toString() != "sat");
-                QStringList undefinedArgs = jdoc.object()["input"].toObject().keys();
+                QJsonObject inputArgs = jdoc.object()["input"].toObject();
+                QStringList undefinedArgs = inputArgs.keys();
                 if (undefinedArgs.size() > 0) {
                     QStringList params;
                     paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
@@ -1554,11 +1558,14 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                         }
                         for (int i=0; i<undefinedArgs.size(); i++) {
                             if (params[i].isEmpty()) {
-                                QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
-                                procFinished(0);
-                                return;
+                                if (! (inputArgs[undefinedArgs[i]].isObject() && inputArgs[undefinedArgs[i]].toObject().contains("optional")) ) {
+                                    QMessageBox::critical(this, "Undefined parameter","The parameter `"+undefinedArgs[i]+"' is undefined.");
+                                    procFinished(0);
+                                    return;
+                                }
+                            } else {
+                                additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
                             }
-                            additionalCmdlineParams += undefinedArgs[i]+"="+params[i]+"; ";
                         }
                     }
                 }
@@ -1617,6 +1624,7 @@ void MainWindow::checkArgs(QString filepath)
 void MainWindow::on_actionRun_triggered()
 {
     compileOnly = false;
+    curHtmlWindow = -1;
     compileOrRun();
 }
 
@@ -1698,10 +1706,8 @@ void MainWindow::compileOrRun()
                     inJSONHandler = false;
                     curJSONHandler = 0;
                     JSONOutput.clear();
-                    if (curHtmlWindow) {
-                        disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
-                        curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-                        curHtmlWindow = NULL;
+                    if (curHtmlWindow >= 0) {
+                        curHtmlWindow = -1;
                     }
                     hadNonJSONOutput = false;
 
@@ -1780,19 +1786,27 @@ void MainWindow::readOutput()
                 if (l.startsWith("%%%mzn-json-time")) {
                     JSONOutput[curJSONHandler].insert(2, "[");
                     JSONOutput[curJSONHandler].append(","+ QString().number(elapsedTime.elapsed()) +"]\n");
-                } else
-                    if (l.startsWith("%%%mzn-json-end")) {
+                } else if (l.startsWith("%%%mzn-json-end")) {
                     curJSONHandler++;
                     inJSONHandler = false;
+                } else if (l.startsWith("%%%mzn-json-init-end")) {
+                    curJSONHandler++;
+                    inJSONHandler = false;
+                    openJSONViewer();
+                    JSONOutput.clear();
+                    curJSONHandler = 0;
+                    if (hadNonJSONOutput)
+                        addOutput(l,false);
                 } else {
                     JSONOutput[curJSONHandler].append(l);
                 }
             } else {
-                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json:(.*)");
+                QRegExp pattern("^(?:%%%(top|bottom))?%%%mzn-json(-init)?:(.*)");
                 if (pattern.exactMatch(l.trimmed())) {
                     inJSONHandler = true;
+                    isJSONinitHandler = (pattern.capturedTexts()[2]=="-init");
                     QStringList sl;
-                    sl.append(pattern.capturedTexts()[2]);
+                    sl.append(pattern.capturedTexts()[3]);
                     if (pattern.capturedTexts()[1].isEmpty()) {
                         sl.append("top");
                     } else {
@@ -1829,7 +1843,7 @@ void MainWindow::readOutput()
                         curJSONHandler = 0;
                         if (hadNonJSONOutput)
                             addOutput(l,false);
-                    } else if (curHtmlWindow && l.trimmed() == "==========") {
+                    } else if (curHtmlWindow>=0 && l.trimmed() == "==========") {
                         finishJSONViewer();
                         if (hadNonJSONOutput)
                             addOutput(l,false);
@@ -1935,7 +1949,7 @@ void MainWindow::readOutput()
 
 void MainWindow::openJSONViewer(void)
 {
-    if (curHtmlWindow==NULL) {
+    if (curHtmlWindow==-1) {
         QVector<VisWindowSpec> specs;
         for (int i=0; i<JSONOutput.size(); i++) {
             QString url = JSONOutput[i].first();
@@ -1948,21 +1962,30 @@ void MainWindow::openJSONViewer(void)
             url.remove(QRegExp("[\\n\\t\\r]"));
             specs.append(VisWindowSpec(url,area));
         }
-        curHtmlWindow = new HTMLWindow(specs, this);
-        connect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
-        curHtmlWindow->show();
+        QFileInfo htmlWindowTitleFile(curFilePath);
+        HTMLWindow* htmlWindow = new HTMLWindow(specs, this, htmlWindowTitleFile.fileName());
+        curHtmlWindow = htmlWindow->getId();
+        htmlWindow->init();
+        connect(htmlWindow, SIGNAL(closeWindow(int)), this, SLOT(closeHTMLWindow(int)));
+        htmlWindow->show();
     }
     for (int i=0; i<JSONOutput.size(); i++) {
         JSONOutput[i].pop_front();
         JSONOutput[i].pop_front();
-        curHtmlWindow->addSolution(i, JSONOutput[i].join(' '));
+        if (htmlWindows[curHtmlWindow]) {
+            if (isJSONinitHandler) {
+                htmlWindows[curHtmlWindow]->initJSON(i, JSONOutput[i].join(' '));
+            } else {
+                htmlWindows[curHtmlWindow]->addSolution(i, JSONOutput[i].join(' '));
+            }
+        }
     }
 }
 
 void MainWindow::finishJSONViewer(void)
 {
-    if (curHtmlWindow) {
-        curHtmlWindow->finish(elapsedTime.elapsed());
+    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
+        htmlWindows[curHtmlWindow]->finish(elapsedTime.elapsed());
     }
 }
 
@@ -2033,11 +2056,6 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     inJSONHandler = false;
     curJSONHandler = 0;
     JSONOutput.clear();
-    if (curHtmlWindow) {
-        disconnect(curHtmlWindow, SIGNAL(closeWindow()), this, SLOT(closeHTMLWindow()));
-        curHtmlWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-        curHtmlWindow = NULL;
-    }
     hadNonJSONOutput = false;
 
     if (standalone) {
@@ -2137,12 +2155,45 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     outputBuffer = &outstream;
     compileOnly = false;
     runTimeout = timeout;
+    curHtmlWindow = -1;
     updateUiProcessRunning(true);
     on_actionSplit_triggered();
     QStringList dataFiles;
     dataFiles.push_back(dataFilePath);
     compileAndRun(modelFilePath,"",dataFiles);
     return true;
+}
+
+void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
+{
+    QTemporaryDir* dataTmpDir = new QTemporaryDir;
+    if (!dataTmpDir->isValid()) {
+        QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
+        return;
+    } else {
+        cleanupTmpDirs.append(dataTmpDir);
+        QString filepath = dataTmpDir->path()+"/untitled_data.json";
+        QFile dataFile(filepath);
+        if (dataFile.open(QIODevice::ReadWrite)) {
+            QTextStream ts(&dataFile);
+            ts << data;
+            dataFile.close();
+            QStringList dataFiles;
+            dataFiles.push_back(filepath);
+            curHtmlWindow = htmlWindowIdentifier;
+            if (outputProcess) {
+                outputProcess->disconnect();
+                outputProcess->terminate();
+                delete outputProcess;
+                outputProcess = NULL;
+            }
+            on_actionStop_triggered();
+            compileAndRun(htmlWindowModels[htmlWindowIdentifier],"",dataFiles);
+        } else {
+            QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
+        }
+    }
+
 }
 
 QString MainWindow::currentSolver() const
@@ -2155,17 +2206,27 @@ QString MainWindow::currentSolverConfigName(void) {
     return sc ? sc->name : "None";
 }
 
-void MainWindow::closeHTMLWindow(void)
+int MainWindow::addHtmlWindow(HTMLWindow *w)
+{
+    htmlWindows.push_back(w);
+    htmlWindowModels.push_back(curFilePath);
+    return htmlWindows.size()-1;
+}
+
+void MainWindow::closeHTMLWindow(int identifier)
 {
     on_actionStop_triggered();
-    delete curHtmlWindow;
-    curHtmlWindow = NULL;
+    if (identifier==curHtmlWindow) {
+        curHtmlWindow = -1;
+    }
+    delete htmlWindows[identifier];
+    htmlWindows[identifier] = NULL;
 }
 
 void MainWindow::selectJSONSolution(HTMLPage* source, int n)
 {
-    if (curHtmlWindow!=NULL) {
-        curHtmlWindow->selectSolution(source,n);
+    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
+        htmlWindows[curHtmlWindow]->selectSolution(source,n);
     }
 }
 
@@ -2177,7 +2238,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     updateUiProcessRunning(false);
     timer->stop();
     QString elapsedTime = setElapsedTime();
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->clearMessage();
     progressBar->reset();
     process = NULL;
     outputProcess = NULL;
@@ -2217,7 +2278,7 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
     timer->stop();
     solverTimeout->stop();
     QString elapsedTime = setElapsedTime();
-    ui->statusbar->showMessage("Ready.");
+    ui->statusbar->clearMessage();
     process = NULL;
     outputProcess = NULL;
     finishJSONViewer();
@@ -4008,6 +4069,13 @@ void MainWindow::on_conf_timeLimit_valueChanged(int arg1)
 void MainWindow::onClipboardChanged()
 {
     ui->actionPaste->setEnabled(!QApplication::clipboard()->text().isEmpty());
+}
+
+void MainWindow::editor_cursor_position_changed()
+{
+    if (curEditor) {
+        statusLineColLabel->setText(QString("Line: ")+QString().number(curEditor->textCursor().blockNumber()+1)+", Col: "+QString().number(curEditor->textCursor().columnNumber()+1));
+    }
 }
 
 void MainWindow::on_actionSubmit_to_MOOC_triggered()

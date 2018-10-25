@@ -18,7 +18,7 @@ stages:
 
 build:linux:
   stage: build
-  image: dekker1/qt:latest
+  image: dekker1/minibuild:Qt
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" PREFIX=/usr ../MiniZincIDE/MiniZincIDE.pro

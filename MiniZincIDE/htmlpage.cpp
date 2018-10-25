@@ -2,10 +2,8 @@
 #include "mainwindow.h"
 #include "QDebug"
 
-#ifdef MINIZINC_IDE_HAVE_WEBENGINE
-
-HTMLPage::HTMLPage(MainWindow* mw, QWidget *parent) :
-    QWebEnginePage(parent), _mw(mw), _webChannel(new QWebChannel(this)), _mznide(new MiniZincIDEJS(this)),
+HTMLPage::HTMLPage(MainWindow* mw, int htmlWindowIdentifier, QWidget *parent) :
+    QWebEnginePage(parent), _mw(mw), _webChannel(new QWebChannel(this)), _mznide(new MiniZincIDEJS(this)), _htmlWindowIdentifier(htmlWindowIdentifier),
     loadFinished(false)
 {
     connect(this, SIGNAL(loadFinished(bool)), this, SLOT(pageLoadFinished(bool)));
@@ -35,42 +33,21 @@ void MiniZincIDEJS::selectSolution(int n)
     _htmlPage->selectSolution(n);
 }
 
-#else
-
-#include <QWebFrame>
-
-HTMLPage::HTMLPage(MainWindow* mw, QWidget *parent) :
-    QWebPage(parent), _mw(mw),
-    loadFinished(false)
+void MiniZincIDEJS::solve(const QString& data)
 {
-    connect(this, SIGNAL(loadFinished(bool)), this, SLOT(pageLoadFinished(bool)));
-    connect(mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(jsCleared()));
+    _htmlPage->solve(data);
 }
-
-void
-HTMLPage::javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID)
-{
-    _mw->addOutput("<div style='color:red;'>JavaScript message: source " +sourceID + ", line no. " + QString().number(lineNumber) + ": " + message + "</div><br>\n");
-}
-
-void
-HTMLPage::jsCleared()
-{
-    mainFrame()->addToJavaScriptWindowObject("mznide", this);
-}
-
-void HTMLPage::runJs(QString js)
-{
-    mainFrame()->evaluateJavaScript(js);
-}
-
-#endif
 
 void
 HTMLPage::selectSolution(int n)
 {
-    qDebug() << "select " << n;
     _mw->selectJSONSolution(this,n);
+}
+
+void
+HTMLPage::solve(const QString& data)
+{
+    _mw->resolve(_htmlWindowIdentifier,data);
 }
 
 void
@@ -79,7 +56,6 @@ HTMLPage::pageLoadFinished(bool ok)
     if (ok) {
         loadFinished = true;
 
-#ifdef MINIZINC_IDE_HAVE_WEBENGINE
         // Load qwebchannel javascript
         QFile qwebchanneljs(":/qtwebchannel/qwebchannel.js");
         if (!qwebchanneljs.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -95,7 +71,7 @@ HTMLPage::pageLoadFinished(bool ok)
                              "});"
                              );
         runJs(setup_object);
-#endif
+
         for (int i=0; i<json.size(); i++) {
             runJs(json[i]);
         }
@@ -114,6 +90,20 @@ HTMLPage::addSolution(const QString &json0)
         runJs("addSolution('"+j+"')");
     } else {
         json.push_back("addSolution('"+j+"')");
+    }
+}
+
+void
+HTMLPage::initJSON(const QString &json0)
+{
+    QString j = json0;
+    j.replace("'","\\'");
+    j.replace("\"","\\\"");
+    j.replace("\n"," ");
+    if (loadFinished) {
+        runJs("initJSON('"+j+"')");
+    } else {
+        json.push_back("initJSON('"+j+"')");
     }
 }
 
