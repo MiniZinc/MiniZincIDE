@@ -31,7 +31,11 @@ macx {
     OBJECTIVE_SOURCES += rtfexporter.mm
     QT += macextras
     LIBS += -framework Cocoa
-	QMAKE_INFO_PLIST = mznide.plist
+    macx-xcode {
+      QMAKE_INFO_PLIST = mznide-xcode.plist
+    } else {
+      QMAKE_INFO_PLIST = mznide-makefile.plist
+    }
 }
 
 RC_ICONS = mznide.ico

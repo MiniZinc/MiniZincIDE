@@ -15,13 +15,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>MiniZincIDE</string>
     <key>CFBundleVersion</key>
-    <string>${QMAKE_FULL_VERSION}</string>
+    <string>${DYLIB_CURRENT_VERSION}</string>
     <key>CFBundleShortVersionString</key>
-    <string>${QMAKE_FULL_VERSION}</string>
+    <string>${DYLIB_CURRENT_VERSION}</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.minizinc.MiniZincIDE</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>${MACOSX_DEPLOYMENT_TARGET}.0</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
