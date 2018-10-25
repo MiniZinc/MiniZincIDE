@@ -1,4 +1,14 @@
 2017-05-17
+  v2.2.2
+  - Add line/column display in status bar. Fixes #65.
+  - Optional parameters don't have to be defined in input dialog.
+  - Fix race condition in constructor of HTMLWindow. Fixes #64.
+  - Provide mzn-json-init / mzn-json-init-end handlers to initialise HTML window
+    before first solution is produced.
+  - Add version information and minimum system version into Info.plist on macOS.
+    Fixes #66.
+  - Manage multiple open visualisation windows, and implement re-solve function
+    that can be initiated from a visualisation.
   v2.2.1
   - Improve dark mode by changing line numbers to dark background.
   - Make parameter input dialog scrollable.
