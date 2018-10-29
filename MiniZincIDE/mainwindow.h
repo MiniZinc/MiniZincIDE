@@ -307,6 +307,8 @@ private slots:
     void on_conf_default_toggled(bool checked);
     void on_conf_dock_widget_visibilityChanged(bool visible);
 
+    void on_conf_check_solutions_toggled(bool checked);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
