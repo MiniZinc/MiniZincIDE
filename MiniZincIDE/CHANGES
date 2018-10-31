@@ -1,4 +1,5 @@
-2017-05-17
+  v2.2.3
+  - Only run solution checker if it is enabled in the solver configuration dialog.
   v2.2.2
   - Add line/column display in status bar. Fixes #65.
   - Optional parameters don't have to be defined in input dialog.
