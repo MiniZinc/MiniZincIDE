@@ -1369,7 +1369,7 @@ void MainWindow::tabChange(int tab) {
                 checkFile.replace(checkFile.length()-1,1,"c");
                 haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
             }
-            if (haveChecker && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked())) {
+            if (haveChecker && ui->conf_check_solutions->isChecked()) {
                 ui->actionRun->setText("Run + check");
             } else {
                 ui->actionRun->setText("Run");
@@ -1454,7 +1454,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
         ret << "-s";
     if ( (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_cmd_params->text().isEmpty())
         ret << "-D" << ui->conf_cmd_params->text();
-    if (confMode==CONF_COMPILE && (ui->defaultBehaviourButton->isChecked() || ui->conf_check_solutions->isChecked()) && haveCompilerCheck) {
+    if (confMode==CONF_COMPILE && ui->conf_check_solutions->isChecked() && haveCompilerCheck) {
         if (modelFile.endsWith(".mzn")) {
             QString checkFile = modelFile;
             checkFile.replace(checkFile.length()-1,1,"c");
@@ -4147,4 +4147,9 @@ void MainWindow::on_conf_dock_widget_visibilityChanged(bool visible)
     } else {
         ui->actionEditSolverConfig->setText("Show configuration editor...");
     }
+}
+
+void MainWindow::on_conf_check_solutions_toggled(bool checked)
+{
+    tabChange(ui->tabWidget->currentIndex());
 }
