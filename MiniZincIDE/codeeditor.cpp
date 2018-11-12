@@ -135,6 +135,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
+        ensureCursorVisible();
     } else if (e->key() == Qt::Key_Return) {
         e->accept();
         QTextCursor cursor(textCursor());
@@ -144,6 +145,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         if (leadingWhitespace.indexIn(curLine) != -1) {
             cursor.insertText(leadingWhitespace.cap(1));
         }
+        ensureCursorVisible();
     } else {
         QPlainTextEdit::keyPressEvent(e);
     }
