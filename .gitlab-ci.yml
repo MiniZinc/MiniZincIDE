@@ -18,10 +18,6 @@ build:linux:
   artifacts:
     paths:
       - ide/
-  cache:
-    key: "linux_$CI_COMMIT_REF_SLUG"
-    paths:
-      - build/
 
 build:osx:
   stage: build
@@ -40,10 +36,6 @@ build:osx:
   artifacts:
     paths:
       - MiniZincIDE.app
-  cache:
-    key: "osx_$CI_COMMIT_REF_SLUG"
-    paths:
-      - build/
 
 build:win64:
   stage: build
@@ -65,7 +57,3 @@ build:win64:
   artifacts:
     paths:
       - ide/
-  cache:
-    key: "win64_$CI_COMMIT_REF_SLUG"
-    paths:
-      - build/
