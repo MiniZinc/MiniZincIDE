@@ -2,20 +2,6 @@ stages:
   - build
   - bundle
 
-.win_build_template: &win_build_definition
-  stage: build
-  script:
-    - if not exist "build" mkdir build
-    - if not exist "ide" mkdir ide
-    - cd build
-    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe > build.sh
-    - d2u build.sh
-    - bash build.sh
-  artifacts:
-    paths:
-      - ide/
-
-
 build:linux:
   stage: build
   image: dekker1/minibuild:Qt
@@ -59,31 +45,26 @@ build:osx:
     paths:
       - build/
 
-.build:win32: #DISABLED
-  <<: *win_build_definition
-  variables:
-    QTDIR: "$WINQTDIR"
-  before_script:
-    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat"
-  tags:
-    - win32
-    - cpp
-    - qt
-  cache:
-    key: "win32_$CI_COMMIT_REF_SLUG"
-    paths:
-      - build/
-
 build:win64:
-  <<: *win_build_definition
+  stage: build
   variables:
     QTDIR: "$WINQTDIR"
   before_script:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat" amd64
+  script:
+    - if not exist "build" mkdir build
+    - if not exist "ide" mkdir ide
+    - cd build
+    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe > build.sh
+    - d2u build.sh
+    - bash build.sh
   tags:
     - win64
     - cpp
     - qt
+  artifacts:
+    paths:
+      - ide/
   cache:
     key: "win64_$CI_COMMIT_REF_SLUG"
     paths:
