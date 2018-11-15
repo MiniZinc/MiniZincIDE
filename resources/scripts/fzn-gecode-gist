@@ -1,3 +1,7 @@
 #!/bin/bash
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-exec "$DIR"/fzn-gecode -mode gist "$@"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	exec "$DIR"/gecode/fzn-gecode -mode gist "$@"
+else
+	exec "$DIR"/fzn-gecode -mode gist "$@"
+fi

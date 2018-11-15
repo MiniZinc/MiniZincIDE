@@ -26,7 +26,6 @@ build:osx:
   variables:
     QTDIR: "$OSXQTDIR"
   script:
-    - export PATH="$QTDIR/bin:$PATH"
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
@@ -125,3 +124,51 @@ package:linux:
   tags:
     - linux
     - docker
+
+package:osx:
+  stage: package
+  variables:
+    MZNARCH: "osx"
+    DOWNLOAD_GLOBALIZER: 1
+    DOWNLOAD_FINDMUS: 1
+  <<: *packaging_setup
+  script:
+    - "DIR=MiniZincIDE.app/Contents/Resources; MZNDIR=$DIR/share/minizinc"
+    - mkdir -p $MZNDIR/solvers
+    ### Package MiniZinc
+    - mv minizinc/bin/* $DIR/
+    - mv minizinc/share/minizinc/* $MZNDIR/
+    ### Replace mzn2fzn and solns2out by symlinks to reduce package size
+    - rm $DIR/{mzn2fzn,solns2out}
+    - (cd $DIR; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
+    ### Package vendor solvers
+    - mkdir -p $DIR/gecode
+    - mv vendor/gecode/bin/fzn-gecode $DIR/gecode/
+    - (cd $DIR; ln -s gecode/fzn-gecode)
+    - mv vendor/gecode/share/gecode/mznlib $MZNDIR/gecode
+    - mv vendor/chuffed/bin/fzn-chuffed $DIR/
+    - mv vendor/chuffed/share/chuffed/mznlib $MZNDIR/chuffed
+    ### Package Globalizer
+    - mv globalizer/bin/minizinc-globalizer $DIR/
+    - mv globalizer/share/globalizer/mznlib $MZNDIR/globalizer
+    ### Package findMUS
+    - mv findMUS/bin/findMUS $DIR/
+    ### Package solver scripts
+    - cp resources/scripts/fzn-gecode-gist $DIR/
+    ### Package default settings
+    - cp resources/solvers/*.msc $MZNDIR/solvers
+    - cp resources/Preferences.json $MZNDIR/
+    ### Run automated Qt deployment tool
+    - macdeployqt ./MiniZincIDE.app -executable=$DIR/gecode/fzn-gecode
+    ###### TODO: Fix is not necessary with Qt 5.11.1
+    - GECODERPATHS=`otool -L ./MiniZincIDE.app/Contents/Resources/gecode/fzn-gecode | grep -o "@rpath\S*"`
+    - for r in $GECODERPATHS; do LPATH=`sed -e 's|@rpath|@loader_path/../../Frameworks|' <<<"$r"`; install_name_tool -change $r $LPATH ./MiniZincIDE.app/Contents/Resources/gecode/fzn-gecode; done
+  artifacts:
+    name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
+    paths:
+      - MiniZincIDE.app
+  dependencies:
+    - build:osx
+  tags:
+     - osx
+     - qt
