@@ -172,3 +172,36 @@ package:osx:
   tags:
      - osx
      - qt
+
+package:win64:
+  stage: package
+  variables:
+    MZNARCH: "win64"
+    MSVCREDIST: "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/redist/x64/Microsoft.VC140.CRT"
+    UCRTREDIST: "C:/Program Files (x86)/Windows Kits/10/Redist/ucrt/DLLs/x64"
+    ISSARCH: "x64"
+    ISSARCHALLOWED: "x64"
+  before_script:
+    ### Set the MZNVERSION variable
+    - if defined CI_COMMIT_TAG (set MZNVERSION=%CI_COMMIT_TAG%) else (set MZNVERSION=%CI_PIPELINE_ID%)
+    ### Choose the MiniZinc compiler branch
+    - if defined CI_COMMIT_TAG (set MZNREF=%CI_COMMIT_TAG%) else if %CI_COMMIT_REF_NAME%==master (set MZNREF=master) else (set MZNREF=develop)
+    ### Download Dependencies
+    - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
+    - unzip -q minizinc.zip
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fvendor/jobs/artifacts/master/download?job=solvers:%MZNARCH%"
+    - unzip -q vendor.zip
+    - curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fglobalizer/jobs/artifacts/master/download?job=build:%MZNARCH%"
+    - unzip -q globalizer.zip
+    - curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2FFindMus/jobs/artifacts/master/download?job=build:%MZNARCH%"
+    - unzip -q findmus.zip
+  script:
+    - "\"C:/Program Files (x86)/Inno Setup 5/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/MiniZincIDE-bundle.iss"
+  artifacts:
+    name: "minizinc_bundle_windows_%CI_PIPELINE_ID%"
+    paths:
+      - MiniZincIDE*.exe
+  dependencies:
+    - build:win64
+  tags:
+     - win64
