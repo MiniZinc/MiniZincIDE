@@ -206,6 +206,59 @@ package:win64:
   tags:
      - win64
 
+package:appimage:
+  stage: package
+  image: dekker1/minibuild:appimage
+  variables:
+    MZNARCH: "linux"
+    DOWNLOAD_GLOBALIZER: 1
+    DOWNLOAD_FINDMUS: 1
+    PACKAGE: "MiniZinc.AppDir"
+  <<: *packaging_setup
+  script:
+    - mkdir -p $PACKAGE/usr/
+    ### Package IDE
+    - mv ide/usr/* $PACKAGE/usr/
+    ### Package MiniZinc
+    - mv minizinc/bin/* $PACKAGE/usr/bin/
+    - mv minizinc/share $PACKAGE/usr/share
+    ### Replace mzn2fzn and solns2out by symlinks to reduce package size
+    - rm $PACKAGE/usr/bin/mzn2fzn $PACKAGE/usr/bin/solns2out
+    - (cd $PACKAGE/usr/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
+    ### Package vendor solvers
+    - mv vendor/gecode/bin/fzn-gecode $PACKAGE/usr/bin/
+    - mv vendor/gecode/share/gecode/mznlib $PACKAGE/usr/share/minizinc/gecode
+    - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
+    - mv vendor/chuffed/share/chuffed/mznlib $PACKAGE/usr/share/minizinc/chuffed
+    ### Package Globalizer
+    - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
+    - mv globalizer/share/globalizer/mznlib $PACKAGE/usr/share/minizinc/globalizer
+    ### Package findMUS
+    - mv findMUS/bin/findMUS $PACKAGE/usr/bin/
+    ### Package solver scripts
+    - cp resources/scripts/fzn-gecode-gist $PACKAGE/usr/bin/
+    ### Package default settings
+    - mkdir -p $PACKAGE/usr/share/minizinc/solvers/
+    - cp resources/solvers/*.msc $PACKAGE/usr/share/minizinc/solvers/
+    - cp resources/Preferences.json $PACKAGE/usr/share/minizinc/
+    ### Strip included binaries
+    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - cp resources/misc/README $PACKAGE
+    ### Assemble AppImage
+    - cp resources/scripts/AppRun $PACKAGE
+    - cp resources/misc/minizinc.desktop $PACKAGE/minizinc.desktop
+    - cp resources/icon.png $PACKAGE/minizinc.png
+    - ARCH=x86_64 appimagetool $PACKAGE MiniZincIDE-${MZNVERSION}-x86_64.AppImage
+  artifacts:
+    name: "minizinc_appimage_${CI_PIPELINE_ID}"
+    paths:
+      - MiniZincIDE*.AppImage
+  dependencies:
+    - build:linux
+  tags:
+    - linux
+    - docker
+
 package:docker_alpine:
   stage: package
   variables:
