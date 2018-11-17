@@ -1,0 +1,72 @@
+name: minizinc
+version: latest
+version-script: cat version.txt
+summary: The MiniZinc bundle
+icon: resources/icon.png
+description: |
+  MiniZinc is a free and open-source constraint modeling language. You can
+  use MiniZinc to model constraint satisfaction and optimization problems in
+  a high-level, solver-independent way, taking advantage of a large library
+  of pre-defined constraints. Your model is then compiled into FlatZinc, a
+  solver input language that is understood by a wide range of solvers.
+
+confinement: classic
+
+apps:
+  minizinc:
+    command: usr/bin/minizinc
+  ide:
+    command: usr/MiniZincIDE.sh
+    # command: desktop-launch usr/bin/MiniZincIDE
+    desktop: usr/share/applications/MiniZincIDE.desktop
+
+parts:
+  ide:
+    plugin: dump
+    source: ide/
+    stage: [usr/]
+  # TODO: USE QMake plugin
+  # ide:
+  #   plugin: qmake
+  #   source: MiniZincIDE/
+  #   qt-version: qt5
+  #   after: [desktop-qt5]
+  minizinc:
+    plugin: dump
+    source: minizinc/
+    organize:
+      bin/*: usr/bin/
+      share/minizinc/*: usr/share/minizinc/
+    stage: [usr/]
+  vendor:
+    plugin: dump
+    source: vendor/
+    organize:
+      gecode/bin/fzn-gecode: usr/bin/
+      gecode/share/gecode/mznlib: usr/share/minizinc/gecode
+      chuffed/bin/fzn-chuffed: usr/bin/
+      chuffed/share/chuffed/mznlib: usr/share/minizinc/chuffed
+    stage: [usr/]
+  globalizer:
+    plugin: dump
+    source: globalizer/
+    organize:
+      bin/minizinc-globalizer: usr/bin/
+      share/globalizer/mznlib: usr/share/minizinc/globalizer
+    stage: [usr/]
+  findmus:
+    plugin: dump
+    source: findMUS/
+    organize:
+      bin/findMUS: usr/bin/
+    stage: [usr/]
+  resources:
+    plugin: dump
+    source: resources/
+    organize:
+      scripts/fzn-gecode-gist: usr/bin/
+      solvers/*.msc: usr/share/minizinc/solvers/
+      Preferences.json: usr/share/minizinc/
+      misc/MiniZincIDE.desktop: usr/share/applications/
+      scripts/MiniZincIDE.sh: usr/
+    stage: [usr/]

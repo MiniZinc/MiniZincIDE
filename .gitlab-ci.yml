@@ -294,3 +294,32 @@ package:docker_ubuntu:
     - tags
   tags:
      - docker-cli
+
+package:snap:
+  stage: package
+  image: dekker1/minibuild:snap
+  variables:
+    MZNARCH: "linux"
+    DOWNLOAD_GLOBALIZER: 1
+    DOWNLOAD_FINDMUS: 1
+  <<: *packaging_setup
+  script:
+    - rm minizinc/bin/mzn2fzn minizinc/bin/solns2out
+    - (cd minizinc/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
+    - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
+    - cp resources/pkg_config/snapcraft.yaml .
+    - echo "$MZNVERSION" > version.txt
+    # - apt-get update -y
+    - snapcraft
+    # - echo "$SNAPLOGIN" > login.pass
+    # - snapcraft login --with login.pass
+    # - snapcraft push --release=edge minizinc*.snap
+  artifacts:
+    name: "minizinc_snap_${CI_PIPELINE_ID}"
+    paths:
+      - minizinc*.snap
+  dependencies:
+    - build:linux
+  tags:
+    - linux
+    - docker
