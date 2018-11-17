@@ -71,8 +71,8 @@ build:win64:
     - unzip -q minizinc.zip
     - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=solvers:$MZNARCH"
     - unzip -q vendor.zip
-    - "[ $DOWNLOAD_GLOBALIZER -eq 1 ] && curl --silent -o globalizer.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q globalizer.zip"
-    - "[ $DOWNLOAD_FINDMUS -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
+    - "[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q globalizer.zip"
+    - "[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
 
 package:linux:
   stage: package
@@ -205,3 +205,39 @@ package:win64:
     - build:win64
   tags:
      - win64
+
+package:docker_alpine:
+  stage: package
+  variables:
+    MZNARCH: "musl"
+  <<: *packaging_setup
+  script:
+    - docker build -f resources/pkg_config/Dockerfile.alpine -t minizinc_alpine .
+    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag minizinc_alpine minizinc/minizinc:$CI_COMMIT_TAG && docker push minizinc/minizinc:$CI_COMMIT_TAG; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag minizinc_alpine minizinc/minizinc:latest && docker push minizinc/minizinc:latest; fi
+    - docker tag minizinc_alpine minizinc/minizinc:edge && docker push minizinc/minizinc:edge 
+  dependencies: []
+  only:
+    - master
+    - develop
+    - tags
+  tags:
+     - docker-cli
+
+package:docker_ubuntu:
+  stage: package
+  variables:
+    MZNARCH: "linux"
+  <<: *packaging_setup
+  script:
+    - docker build -f resources/pkg_config/Dockerfile.ubuntu -t minizinc_ubuntu .
+    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_$CI_COMMIT_TAG && docker push minizinc/minizinc:ubuntu_$CI_COMMIT_TAG; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_latest && docker push minizinc/minizinc:ubuntu_latest; fi
+    - docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_edge && docker push minizinc/minizinc:ubuntu_edge 
+  dependencies: []
+  only:
+    - master
+    - develop
+    - tags
+  tags:
+     - docker-cli
