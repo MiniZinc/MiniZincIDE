@@ -311,9 +311,9 @@ package:snap:
     - echo "$MZNVERSION" > version.txt
     # - apt-get update -y
     - snapcraft
-    # - echo "$SNAPLOGIN" > login.pass
-    # - snapcraft login --with login.pass
-    # - snapcraft push --release=edge minizinc*.snap
+    - echo "$SNAPLOGIN" > login.pass
+    - snapcraft login --with login.pass
+    - snapcraft push --release=edge minizinc*.snap
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths:
