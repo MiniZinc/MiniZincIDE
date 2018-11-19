@@ -14,12 +14,9 @@ build:linux:
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
     - linuxdeployqt ide/usr/bin/MiniZincIDE -bundle-non-qt-libs -no-translations -no-copy-copyright-files
-  tags:
-    - linux
-    - docker
+  tags: [linux, docker]
   artifacts:
-    paths:
-      - ide/
+    paths: [ide/]
 
 build:osx:
   stage: build
@@ -30,13 +27,9 @@ build:osx:
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
     - cp -r MiniZincIDE.app ..
-  tags:
-    - osx
-    - cpp
-    - qt
+  tags: [osx, cpp, qt]
   artifacts:
-    paths:
-      - MiniZincIDE.app
+    paths: [MiniZincIDE.app]
 
 build:win64:
   stage: build
@@ -51,13 +44,9 @@ build:win64:
     - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe > build.sh
     - d2u build.sh
     - bash build.sh
-  tags:
-    - win64
-    - cpp
-    - qt
+  tags: [win64, cpp, qt]
   artifacts:
-    paths:
-      - ide/
+    paths: [ide/]
 
 # ----------- MiniZinc Packaging -----------
 .packaging_setup: &packaging_setup
@@ -117,13 +106,9 @@ package:linux:
     - tar -czf $PACKAGE.tgz $PACKAGE
   artifacts:
     name: "minizinc_bundle_linux_${CI_PIPELINE_ID}"
-    paths:
-      - MiniZincIDE*.tgz
-  dependencies:
-    - build:linux
-  tags:
-    - linux
-    - docker
+    paths: [MiniZincIDE*.tgz]
+  dependencies: ["build:linux"]
+  tags: [linux, docker]
 
 package:osx:
   stage: package
@@ -165,13 +150,9 @@ package:osx:
     - for r in $GECODERPATHS; do LPATH=`sed -e 's|@rpath|@loader_path/../../Frameworks|' <<<"$r"`; install_name_tool -change $r $LPATH ./MiniZincIDE.app/Contents/Resources/gecode/fzn-gecode; done
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
-    paths:
-      - MiniZincIDE.app
-  dependencies:
-    - build:osx
-  tags:
-     - osx
-     - qt
+    paths: [MiniZincIDE.app]
+  dependencies: ["build:osx"]
+  tags: [osx, qt]
 
 package:win64:
   stage: package
@@ -199,12 +180,9 @@ package:win64:
     - "\"C:/Program Files (x86)/Inno Setup 5/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/MiniZincIDE-bundle.iss"
   artifacts:
     name: "minizinc_bundle_windows_%CI_PIPELINE_ID%"
-    paths:
-      - MiniZincIDE*.exe
-  dependencies:
-    - build:win64
-  tags:
-     - win64
+    paths: [MiniZincIDE*.exe]
+  dependencies: ["build:win64"]
+  tags: [win64]
 
 package:appimage:
   stage: package
@@ -251,13 +229,9 @@ package:appimage:
     - ARCH=x86_64 appimagetool $PACKAGE MiniZincIDE-${MZNVERSION}-x86_64.AppImage
   artifacts:
     name: "minizinc_appimage_${CI_PIPELINE_ID}"
-    paths:
-      - MiniZincIDE*.AppImage
-  dependencies:
-    - build:linux
-  tags:
-    - linux
-    - docker
+    paths: [MiniZincIDE*.AppImage]
+  dependencies: ["build:linux"]
+  tags: [linux, docker]
 
 package:docker_alpine:
   stage: package
@@ -270,12 +244,8 @@ package:docker_alpine:
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag minizinc_alpine minizinc/minizinc:latest && docker push minizinc/minizinc:latest; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag minizinc_alpine minizinc/minizinc:edge && docker push minizinc/minizinc:edge; fi
   dependencies: []
-  only:
-    - master
-    - develop
-    - tags
-  tags:
-     - docker-cli
+  only: [tags, master, develop]
+  tags: [docker-cli]
 
 package:docker_ubuntu:
   stage: package
@@ -288,12 +258,8 @@ package:docker_ubuntu:
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_latest && docker push minizinc/minizinc:ubuntu_latest; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_edge && docker push minizinc/minizinc:ubuntu_edge; fi
   dependencies: []
-  only:
-    - master
-    - develop
-    - tags
-  tags:
-     - docker-cli
+  only: [tags, master, develop]
+  tags: [docker-cli]
 
 package:snap:
   stage: package
@@ -316,10 +282,6 @@ package:snap:
     - snapcraft push --release=edge minizinc*.snap
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
-    paths:
-      - minizinc*.snap
-  dependencies:
-    - build:linux
-  tags:
-    - linux
-    - docker
+    paths: [minizinc*.snap]
+  dependencies: ["build:linux"]
+  tags: [linux, docker]
