@@ -284,4 +284,5 @@ package:snap:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
   dependencies: ["build:linux"]
+  only: [tags, develop]
   tags: [linux, docker]
