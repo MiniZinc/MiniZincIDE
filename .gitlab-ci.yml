@@ -14,8 +14,6 @@ build:linux:
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
     - linuxdeployqt ide/usr/bin/MiniZincIDE -bundle-non-qt-libs -no-translations -no-copy-copyright-files
-    # TODO: Temporary fix for compatibility (https://github.com/probonopd/linuxdeployqt/issues/331)
-    - find ide/ -iname '*libxcb-dri*' -delete
   tags: [linux, docker]
   artifacts:
     paths: [ide/]
