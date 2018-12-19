@@ -20,8 +20,6 @@ build:linux:
 
 build:osx:
   stage: build
-  variables:
-    QTDIR: "$OSXQTDIR"
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
@@ -33,10 +31,6 @@ build:osx:
 
 build:win64:
   stage: build
-  variables:
-    QTDIR: "$WINQTDIR"
-  before_script:
-    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0/VC/vcvarsall.bat" amd64
   script:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
