@@ -35,9 +35,11 @@ build:win64:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
     - cd build
-    - echo set -x; export PATH=`cygpath -u %QTDIR%/bin`:$PATH; qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro; nmake; cp release/MiniZincIDE.exe ../ide; cd ../ide; windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe > build.sh
-    - d2u build.sh
-    - bash build.sh
+    - qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"%CI_PIPELINE_ID%\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
+    - nmake
+    - cp release/MiniZincIDE.exe ../ide
+    - cd ../ide
+    - windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe
   tags: [win64, cpp, qt]
   artifacts:
     paths: [ide/]
@@ -152,7 +154,7 @@ package:win64:
   stage: package
   variables:
     MZNARCH: "win64"
-    MSVCREDIST: "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/redist/x64/Microsoft.VC140.CRT"
+    MSVCREDIST: "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Redist/MSVC/14.16.27012/x64/Microsoft.VC141.CRT"
     UCRTREDIST: "C:/Program Files (x86)/Windows Kits/10/Redist/ucrt/DLLs/x64"
     ISSARCH: "x64"
     ISSARCHALLOWED: "x64"
