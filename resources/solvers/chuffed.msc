@@ -4,7 +4,7 @@
   "description": "Chuffed FlatZinc executable",
   "version": "0.10.3",
   "mznlib": "-Gchuffed",
-  "executable": "fzn-chuffed",
+  "executable": "../../../bin/fzn-chuffed",
   "tags": ["cp","lcg","int"],
   "stdFlags": ["-a","-f","-n","-r","-s","-t","-v"],
   "supportsMzn": false,

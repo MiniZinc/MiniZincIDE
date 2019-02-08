@@ -4,7 +4,7 @@
   "description": "Gecode FlatZinc executable",
   "version": "6.1.0",
   "mznlib": "-Ggecode",
-  "executable": "fzn-gecode",
+  "executable": "../../../bin/fzn-gecode",
   "tags": ["cp","int", "float", "set", "restart"],
   "stdFlags": ["-a","-f","-n","-p","-r","-s","-t"],
   "supportsMzn": false,

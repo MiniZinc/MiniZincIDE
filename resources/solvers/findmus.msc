@@ -1,5 +1,5 @@
 {
-    "executable": "findMUS",
+    "executable": "../../../bin/findMUS",
     "id": "org.minizinc.findmus",
     "isGUIApplication": false,
     "mznlib": "-Ggecode",
