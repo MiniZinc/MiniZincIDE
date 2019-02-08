@@ -39,23 +39,23 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyAppDirectory}\ide\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\vendor\openssl\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\resources\scripts\fzn-gecode-gist.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\resources\scripts\fzn-gecode-gist.bat"; DestDir: "{app}\bin"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\minizinc\bin\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\minizinc\share\minizinc\*"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppDirectory}\resources\solvers\*.msc"; DestDir: "{app}\share\minizinc\solvers"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\resources\Preferences.json"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\vendor\gecode\bin\*"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\gecode\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\gecode\share\gecode\mznlib\*"; DestDir: "{app}\share\minizinc\gecode"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\chuffed\share\chuffed\mznlib\*"; DestDir: "{app}\share\minizinc\chuffed"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\globalizer\share\globalizer\mznlib\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 
 Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion

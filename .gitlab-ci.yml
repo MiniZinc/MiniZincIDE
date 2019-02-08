@@ -123,27 +123,27 @@ package:osx:
     - rm $DIR/{mzn2fzn,solns2out}
     - (cd $DIR; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
     ### Package vendor solvers
-    - mkdir -p $DIR/gecode
-    - mv vendor/gecode/bin/fzn-gecode $DIR/gecode/
+    - mkdir -p $DIR/bin/
+    - mv vendor/gecode/bin/fzn-gecode $DIR/bin/
     - (cd $DIR; ln -s gecode/fzn-gecode)
     - mv vendor/gecode/share/gecode/mznlib $MZNDIR/gecode
-    - mv vendor/chuffed/bin/fzn-chuffed $DIR/
+    - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - mv vendor/chuffed/share/chuffed/mznlib $MZNDIR/chuffed
     ### Package Globalizer
-    - mv globalizer/bin/minizinc-globalizer $DIR/
+    - mv globalizer/bin/minizinc-globalizer $DIR/bin/
     - mv globalizer/share/globalizer/mznlib $MZNDIR/globalizer
     ### Package findMUS
-    - mv findMUS/bin/findMUS $DIR/
+    - mv findMUS/bin/findMUS $DIR/bin/
     ### Package solver scripts
-    - cp resources/scripts/fzn-gecode-gist $DIR/
+    - cp resources/scripts/fzn-gecode-gist $DIR/bin/
     ### Package default settings
     - cp resources/solvers/*.msc $MZNDIR/solvers
     - cp resources/Preferences.json $MZNDIR/
     ### Run automated Qt deployment tool
-    - macdeployqt ./MiniZincIDE.app -executable=$DIR/gecode/fzn-gecode
+    - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
     ###### TODO: Fix is not necessary with Qt 5.11.1
-    - GECODERPATHS=`otool -L ./MiniZincIDE.app/Contents/Resources/gecode/fzn-gecode | grep -o "@rpath\S*"`
-    - for r in $GECODERPATHS; do LPATH=`sed -e 's|@rpath|@loader_path/../../Frameworks|' <<<"$r"`; install_name_tool -change $r $LPATH ./MiniZincIDE.app/Contents/Resources/gecode/fzn-gecode; done
+    - GECODERPATHS=`otool -L ./MiniZincIDE.app/Contents/Resources/bin/fzn-gecode | grep -o "@rpath\S*"`
+    - for r in $GECODERPATHS; do LPATH=`sed -e 's|@rpath|@loader_path/../../Frameworks|' <<<"$r"`; install_name_tool -change $r $LPATH ./MiniZincIDE.app/Contents/Resources/bin/fzn-gecode; done
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE.app]
