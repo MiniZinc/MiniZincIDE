@@ -2,7 +2,7 @@
   "id": "org.gecode.gecode",
   "name": "Gecode",
   "description": "Gecode FlatZinc executable",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "mznlib": "-Ggecode",
   "executable": "../../../bin/fzn-gecode",
   "tags": ["cp","int", "float", "set", "restart"],
