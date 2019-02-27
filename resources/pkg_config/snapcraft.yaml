@@ -11,26 +11,27 @@ description: |
   solver input language that is understood by a wide range of solvers.
 
 confinement: classic
+base: core18
 
 apps:
   minizinc:
     command: usr/bin/minizinc
   ide:
-    command: usr/MiniZincIDE.sh
-    # command: desktop-launch usr/bin/MiniZincIDE
+    command: bin/desktop-launch $SNAP/usr/bin/MiniZincIDE
     desktop: usr/share/applications/MiniZincIDE.desktop
 
 parts:
   ide:
-    plugin: dump
-    source: ide/
-    stage: [usr/]
-  # TODO: USE QMake plugin
-  # ide:
-  #   plugin: qmake
-  #   source: MiniZincIDE/
-  #   qt-version: qt5
-  #   after: [desktop-qt5]
+    plugin: qmake
+    source: MiniZincIDE/
+    qt-version: qt5
+    after: [desktop-qt5]
+    build-packages:
+      - qtwebengine5-dev
+    stage-packages:
+      - qtwebengine5-dev
+    organize:
+      bin/*: usr/bin/
   minizinc:
     plugin: dump
     source: minizinc/

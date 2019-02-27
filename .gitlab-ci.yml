@@ -271,7 +271,7 @@ package:snap:
     - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - echo "$MZNVERSION" > version.txt
-    # - apt-get update -y
+    - apt-get update -y
     - snapcraft
     - echo "$SNAPLOGIN" > login.pass
     - snapcraft login --with login.pass
@@ -279,6 +279,6 @@ package:snap:
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
-  dependencies: ["build:linux"]
+  dependencies: []
   only: [tags, develop]
   tags: [linux, docker]
