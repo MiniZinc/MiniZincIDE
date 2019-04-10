@@ -21,7 +21,7 @@ if [ ! -z $APPIMAGE ]; then
     fi
     echo "Installing minizinc and MiniZincIDE binaries to $BIN_LOCATION (set BIN_LOCATION)."
     echo "Installing MiniZinc desktop file and icon in $DESKTOP_LOCATION/{applications,icons} (set DESKTOP_LOCATION)."
-    echo "Files with the same may be overwritten."
+    echo "Files with the same name may be overwritten."
     if [ ! -z $PS1 ] || [ "${NONINTERACTIVE:-0}" -eq "1" ]; then
       echo -n "Do you want to continue? [Y/n] "
       read answer
