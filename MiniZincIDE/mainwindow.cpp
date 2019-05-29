@@ -748,6 +748,9 @@ void MainWindow::init(const QString& projectFile)
     IDE::instance()->mainWindows.insert(this);
     ui->setupUi(this);
     ui->tabWidget->removeTab(0);
+#ifndef Q_OS_MAC
+    ui->menuFile->addAction(ui->actionQuit);
+#endif
 
     QWidget* solverConfFrame = new QWidget;
     QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;

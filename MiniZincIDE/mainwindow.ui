@@ -125,7 +125,6 @@
     <addaction name="actionSave_project_as"/>
     <addaction name="actionClose_project"/>
     <addaction name="separator"/>
-    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
