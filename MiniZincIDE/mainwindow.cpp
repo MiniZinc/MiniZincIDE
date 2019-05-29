@@ -40,7 +40,7 @@
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
 #define MZNOS "mac"
-#include "rtfexporter.h"
+#include "macos_extras.h"
 #else
 #define fileDialogSuffix "/"
 #define MZNOS "linux"
@@ -750,6 +750,9 @@ void MainWindow::init(const QString& projectFile)
     ui->tabWidget->removeTab(0);
 #ifndef Q_OS_MAC
     ui->menuFile->addAction(ui->actionQuit);
+    if (hasDarkMode()) {
+        ui->menuView->removeAction(ui->actionDark_mode);
+    }
 #endif
 
     QWidget* solverConfFrame = new QWidget;
@@ -1310,6 +1313,17 @@ void MainWindow::dropEvent(QDropEvent* event) {
     }
     event->acceptProposedAction();
 }
+
+#ifdef Q_OS_MAC
+void MainWindow::paintEvent(QPaintEvent *) {
+    if (hasDarkMode()) {
+        bool newDark = isDark();
+        if (newDark != darkMode) {
+            on_actionDark_mode_toggled(newDark);
+        }
+    }
+}
+#endif
 
 void MainWindow::tabChange(int tab) {
     if (curEditor) {

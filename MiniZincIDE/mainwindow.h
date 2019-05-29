@@ -313,6 +313,9 @@ protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
+#ifdef Q_OS_MAC
+    virtual void paintEvent(QPaintEvent *);
+#endif
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);

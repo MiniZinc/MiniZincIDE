@@ -28,7 +28,7 @@ bundled {
 
 macx {
     ICON = mznide.icns
-    OBJECTIVE_SOURCES += rtfexporter.mm
+    OBJECTIVE_SOURCES += macos_extras.mm
     QT += macextras
     LIBS += -framework Cocoa
     macx-xcode {
@@ -43,7 +43,7 @@ RC_ICONS = mznide.ico
 CONFIG += embed_manifest_exe
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
@@ -64,6 +64,7 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
+    macos_extras.h \
     solverdialog.h \
     gotolinedialog.h \
     finddialog.h \
@@ -71,7 +72,6 @@ HEADERS  += mainwindow.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
     moocsubmission.h \
