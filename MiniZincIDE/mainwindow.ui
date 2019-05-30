@@ -368,7 +368,7 @@
    <property name="minimumSize">
     <size>
      <width>700</width>
-     <height>132</height>
+     <height>147</height>
     </size>
    </property>
    <property name="features">
@@ -400,9 +400,9 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
-          <width>676</width>
-          <height>1019</height>
+          <y>-272</y>
+          <width>661</width>
+          <height>1067</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -864,11 +864,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_5">
+          <widget class="QGroupBox" name="solverOptionsBox">
            <property name="title">
             <string>Solver options</string>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_9">
+           <layout class="QVBoxLayout" name="solverOptionsLayout">
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_13">
               <item>
@@ -976,6 +976,14 @@
            <zorder>conf_stats</zorder>
            <zorder>conf_solver_verbose</zorder>
            <zorder>conf_solver_free</zorder>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="extraOptionsBox">
+           <property name="title">
+            <string>Extra solver options</string>
+           </property>
+           <layout class="QVBoxLayout" name="extraOptionsLayout"/>
           </widget>
          </item>
          <item>

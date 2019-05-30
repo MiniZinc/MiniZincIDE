@@ -1521,6 +1521,36 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                 ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
         ret << solverArgs;
     }
+    if (confMode==CONF_RUN) {
+        for (auto& ef : extraSolverFlags) {
+            if (ef.first.t==SolverFlag::T_SOLVER) {
+
+            } else {
+                switch (ef.first.t) {
+                case SolverFlag::T_BOOL:
+                    if (static_cast<QCheckBox*>(ef.second)->isChecked()) {
+                        ret << ef.first.name;
+                    }
+                    break;
+                case SolverFlag::T_OPT:
+                case SolverFlag::T_SOLVER:
+                    ret << ef.first.name << static_cast<QComboBox*>(ef.second)->currentText();
+                    break;
+                case SolverFlag::T_INT:
+                case SolverFlag::T_FLOAT:
+                case SolverFlag::T_STRING:
+                {
+                    QString s = static_cast<QLineEdit*>(ef.second)->text();
+                    if (!s.isEmpty() && s!=ef.first.def) {
+                        ret << ef.first.name << s;
+                    }
+                }
+                    break;
+                }
+
+            }
+        }
+    }
     if (confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) {
         ret << "--solver" << currentSolver.id+(currentSolver.version.startsWith("<unknown") ? "" : ("@"+currentSolver.version));
     }
@@ -2729,6 +2759,7 @@ void MainWindow::updateSolverConfigs()
     ui->menuSolver_configurations->clear();
     solverConfCombo->clear();
     int idx = -1;
+    currentSolverConfig = -1;
     for (int i=0; i<projectSolverConfigs.size(); i++) {
         ui->conf_solver_conf->addItem(projectSolverConfigs[i].name);
         solverConfCombo->addItem(projectSolverConfigs[i].name);
@@ -2758,6 +2789,17 @@ void MainWindow::updateSolverConfigs()
     ui->menuSolver_configurations->addSeparator();
     ui->menuSolver_configurations->addAction(ui->actionEditSolverConfig);
     setCurrentSolverConfig(idx);
+}
+
+void clearLayout(QLayout* l) {
+    QLayoutItem *toRemove;
+    while ((toRemove = l->takeAt(0)) != 0) {
+        if (toRemove->layout())
+            clearLayout(toRemove->layout());
+        delete toRemove->widget();
+        delete toRemove;
+    }
+
 }
 
 void MainWindow::setCurrentSolverConfig(int idx)
@@ -2793,6 +2835,23 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
             oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
+            oldConf.extraOptions.clear();
+            for (auto& ef : extraSolverFlags) {
+                switch (ef.first.t) {
+                case SolverFlag::T_BOOL:
+                    oldConf.extraOptions[ef.first.name] = static_cast<QCheckBox*>(ef.second)->isChecked() ? "true" : "false";
+                    break;
+                case SolverFlag::T_OPT:
+                case SolverFlag::T_SOLVER:
+                    oldConf.extraOptions[ef.first.name] = static_cast<QComboBox*>(ef.second)->currentText();
+                    break;
+                case SolverFlag::T_INT:
+                case SolverFlag::T_FLOAT:
+                case SolverFlag::T_STRING:
+                    oldConf.extraOptions[ef.first.name] = static_cast<QLineEdit*>(ef.second)->text();
+                    break;
+                }
+            }
         }
     }
     currentSolverConfig = idx;
@@ -2830,6 +2889,8 @@ void MainWindow::setCurrentSolverConfig(int idx)
     ui->conf_stats->setChecked(conf.solvingStats);
     ui->conf_check_solutions->setChecked(conf.runSolutionChecker);
 
+    // Remove all extra options
+    clearLayout(ui->extraOptionsLayout);
     if (solverIdx < solvers.size()) {
         Solver& currentSolver = solvers[solverIdx];
         ui->conf_nthreads->setEnabled(currentSolver.stdFlags.contains("-p"));
@@ -2844,6 +2905,89 @@ void MainWindow::setCurrentSolverConfig(int idx)
         ui->conf_solver_free->setEnabled(currentSolver.stdFlags.contains("-f"));
         ui->conf_solver_verbose->setEnabled((!currentSolver.supportsMzn && !currentSolver.executable.isEmpty()) ||
                                             currentSolver.stdFlags.contains("-v"));
+
+        ui->extraOptionsBox->setVisible(!currentSolver.extraFlags.empty());
+        extraSolverFlags.clear();
+        for (auto f : currentSolver.extraFlags) {
+            switch (f.t) {
+            case SolverFlag::T_INT:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QLineEdit* le = new QLineEdit(this);
+                le->setText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
+                le->setValidator(new QIntValidator(this));
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(le);
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,le));
+            }
+                break;
+            case SolverFlag::T_BOOL:
+            {
+                QCheckBox* cb = new QCheckBox(f.description,this);
+                cb->setChecked(conf.extraOptions.contains(f.name) ? (conf.extraOptions[f.name]=="true") : (f.def=="true"));
+                ui->extraOptionsLayout->addWidget(cb);
+                extraSolverFlags.push_back(qMakePair(f,cb));
+            }
+                break;
+            case SolverFlag::T_FLOAT:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QLineEdit* le = new QLineEdit(this);
+                le->setText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
+                le->setValidator(new QDoubleValidator(this));
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(le);
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,le));
+            }
+                break;
+            case SolverFlag::T_STRING:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QLineEdit* le = new QLineEdit(this);
+                le->setText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(le);
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,le));
+            }
+                break;
+            case SolverFlag::T_OPT:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QComboBox* cb = new QComboBox(this);
+                for (auto o : f.options) {
+                    cb->addItem(o);
+                }
+                cb->setCurrentText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(cb);
+                hb->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding));
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,cb));
+            }
+                break;
+            case SolverFlag::T_SOLVER:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QComboBox* cb = new QComboBox(this);
+                for (auto s : projectSolverConfigs) {
+                    cb->addItem(s.name);
+                }
+                for (auto s : builtinSolverConfigs) {
+                    cb->addItem(s.name);
+                }
+                cb->setCurrentText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(cb);
+                hb->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding));
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,cb));
+            }
+                break;
+            }
+        }
     }
 
     if (idx < projectSolverConfigs.size()) {
@@ -3517,6 +3661,13 @@ void MainWindow::saveProject(const QString& f)
                 projConf["outputTiming"] = sc.outputTiming;
                 projConf["solvingStats"] = sc.solvingStats;
                 projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                if (!sc.extraOptions.empty()) {
+                    QJsonObject extraOptions;
+                    for (auto& k : sc.extraOptions.keys()) {
+                        extraOptions[k] = sc.extraOptions[k];
+                    }
+                    projConf["extraOptions"] = extraOptions;
+                }
                 projectConfigs.append(projConf);
             }
             confObject["projectSolverConfigs"] = projectConfigs;
@@ -3555,6 +3706,13 @@ void MainWindow::saveProject(const QString& f)
                     projConf["outputTiming"] = sc.outputTiming;
                     projConf["solvingStats"] = sc.solvingStats;
                     projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                    if (!sc.extraOptions.empty()) {
+                        QJsonObject extraOptions;
+                        for (auto& k : sc.extraOptions.keys()) {
+                            extraOptions[k] = sc.extraOptions[k];
+                        }
+                        projConf["extraOptions"] = extraOptions;
+                    }
                     builtinConfigs.append(projConf);
                 }
             }
@@ -3649,6 +3807,12 @@ namespace {
         }
         if (sco["runSolutionChecker"].toBool()) {
             newSc.runSolutionChecker = sco["runSolutionChecker"].toBool();
+        }
+        if (sco["extraOptions"].isObject()) {
+            QJsonObject extraOptions = sco["extraOptions"].toObject();
+            for (auto& k : extraOptions.keys()) {
+                newSc.extraOptions[k] = extraOptions[k].toString();
+            }
         }
         return newSc;
     }

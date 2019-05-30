@@ -408,6 +408,7 @@ private:
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
     QVector<SolverConfiguration> builtinSolverConfigs;
+    QVector<QPair<SolverFlag,QWidget*>> extraSolverFlags;
     int currentSolverConfig;
     bool renamingSolverConf;
 

@@ -512,6 +512,39 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                             s.stdFlags.push_back(sf.toString());
                         }
                     }
+                    if (sj["extraFlags"].isArray()) {
+                        QJsonArray sfs = sj["extraFlags"].toArray();
+                        for (auto sf : sfs) {
+                            if (sf.isArray()) {
+                                QJsonArray extraFlagA = sf.toArray();
+                                if (extraFlagA.size()==4) {
+                                    SolverFlag extraFlag;
+                                    extraFlag.min=1.0;
+                                    extraFlag.max=0.0;
+                                    extraFlag.name = extraFlagA[0].toString();
+                                    if (extraFlagA[2].toString().startsWith("int")) {
+                                        extraFlag.t = SolverFlag::T_INT;
+                                    } else if (extraFlagA[2].toString()=="bool") {
+                                        extraFlag.t = SolverFlag::T_BOOL;
+                                    } else if (extraFlagA[2].toString().startsWith("float")) {
+                                        extraFlag.t = SolverFlag::T_FLOAT;
+                                    } else if (extraFlagA[2].toString()=="string") {
+                                        extraFlag.t = SolverFlag::T_STRING;
+                                    } else if (extraFlagA[2].toString().startsWith("opt:")) {
+                                        extraFlag.t = SolverFlag::T_OPT;
+                                        extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
+                                    } else if (extraFlagA[2].toString()=="solver") {
+                                        extraFlag.t = SolverFlag::T_SOLVER;
+                                    } else {
+                                        continue;
+                                    }
+                                    extraFlag.description = extraFlagA[1].toString();
+                                    extraFlag.def = extraFlagA[3].toString();
+                                    s.extraFlags.push_back(extraFlag);
+                                }
+                            }
+                        }
+                    }
                     s.isGUIApplication = sj["isGUIApplication"].toBool(false);
                     s.needsMznExecutable = sj["needsMznExecutable"].toBool(false);
                     s.needsStdlibDir = sj["needsStdlibDir"].toBool(false);

@@ -72,8 +72,12 @@ void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers,
             def.name = n.name+" "+n.version;
             def.solverId = n.id;
             def.solverVersion = n.version;
+            def.extraOptions.clear();
             if (n.isDefaultSolver)
                 defaultSolverIdx = solverConfigs.size();
+            for (auto ef : n.extraFlags) {
+                def.extraOptions[ef.name] = ef.def;
+            }
             solverConfigs.push_back(def);
         }
     }

@@ -34,6 +34,7 @@ public:
     bool outputTiming;
     bool solvingStats;
     bool runSolutionChecker;
+    QMap<QString,QString> extraOptions;
 
     static void defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs, int& defaultSolverIdx);
     static SolverConfiguration defaultConfig(void);

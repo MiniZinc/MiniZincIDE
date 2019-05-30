@@ -25,6 +25,16 @@ namespace Ui {
 class SolverDialog;
 }
 
+struct SolverFlag {
+    QString name;
+    QString description;
+    enum { T_INT, T_BOOL, T_FLOAT, T_STRING, T_OPT, T_SOLVER } t;
+    double min;
+    double max;
+    QStringList options;
+    QString def;
+};
+
 struct Solver {
     QString configFile;
     QString id;
@@ -46,7 +56,7 @@ struct Solver {
     bool needsStdlibDir;
     bool needsPathsFile;
     QStringList stdFlags;
-    QStringList extraFlags;
+    QList<SolverFlag> extraFlags;
     QStringList requiredFlags;
     QStringList defaultFlags;
     QStringList tags;
