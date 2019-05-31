@@ -76,9 +76,6 @@ package:linux:
     ### Package MiniZinc
     - mv minizinc/bin/* $PACKAGE/bin/
     - mv minizinc/share $PACKAGE/share
-    ### Replace mzn2fzn and solns2out by symlinks to reduce package size
-    - rm $PACKAGE/bin/mzn2fzn $PACKAGE/bin/solns2out
-    - (cd $PACKAGE/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
     ### Package vendor solvers
     - mv vendor/gecode/bin/fzn-gecode $PACKAGE/bin/
     - mv vendor/gecode/share/gecode/mznlib $PACKAGE/share/minizinc/gecode
@@ -119,9 +116,6 @@ package:osx:
     ### Package MiniZinc
     - mv minizinc/bin/* $DIR/
     - mv minizinc/share/minizinc/* $MZNDIR/
-    ### Replace mzn2fzn and solns2out by symlinks to reduce package size
-    - rm $DIR/{mzn2fzn,solns2out}
-    - (cd $DIR; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
     ### Package vendor solvers
     - mkdir -p $DIR/bin/
     - mv vendor/gecode/bin/fzn-gecode $DIR/bin/
@@ -196,9 +190,6 @@ package:appimage:
     ### Package MiniZinc
     - mv minizinc/bin/* $PACKAGE/usr/bin/
     - mv minizinc/share $PACKAGE/usr/share
-    ### Replace mzn2fzn and solns2out by symlinks to reduce package size
-    - rm $PACKAGE/usr/bin/mzn2fzn $PACKAGE/usr/bin/solns2out
-    - (cd $PACKAGE/usr/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
     ### Package vendor solvers
     - mv vendor/gecode/bin/fzn-gecode $PACKAGE/usr/bin/
     - mv vendor/gecode/share/gecode/mznlib $PACKAGE/usr/share/minizinc/gecode
@@ -266,8 +257,6 @@ package:snap:
     DOWNLOAD_FINDMUS: 1
   <<: *packaging_setup
   script:
-    - rm minizinc/bin/mzn2fzn minizinc/bin/solns2out
-    - (cd minizinc/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
     - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - echo "$MZNVERSION" > version.txt

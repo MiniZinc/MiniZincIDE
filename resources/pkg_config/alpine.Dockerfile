@@ -4,9 +4,6 @@ FROM alpine:latest AS composer
 COPY minizinc/bin/* /usr/local/bin/
 COPY minizinc/share/minizinc /usr/local/share/minizinc
 
-# Use symlinks to reduce package size
-RUN rm /usr/local/bin/mzn2fzn /usr/local/bin/solns2out && (cd usr/local/bin; ln -s minizinc mzn2fzn; ln -s minizinc solns2out)
-
 # Install vendor solvers
 COPY vendor/gecode/bin/fzn-gecode /usr/local/bin/
 COPY vendor/gecode/share/gecode/mznlib /usr/local/share/minizinc/gecode
