@@ -97,9 +97,11 @@ package:linux:
     - cp resources/misc/README $PACKAGE
     ### Compress package
     - tar -czf $PACKAGE.tgz $PACKAGE
+    ### Generate checksum
+    - sha256sum $PACKAGE.tgz > $PACKAGE.sha256
   artifacts:
     name: "minizinc_bundle_linux_${CI_PIPELINE_ID}"
-    paths: [MiniZincIDE*.tgz]
+    paths: [MiniZincIDE*.tgz, MiniZincIDE*.sha256]
   dependencies: ["build:linux"]
   tags: [linux, docker]
 
@@ -168,9 +170,11 @@ package:win64:
     - unzip -q findmus.zip
   script:
     - "\"C:/Program Files (x86)/Inno Setup 5/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/MiniZincIDE-bundle.iss"
+    ### Generate checksum
+    - certutil -hashfile MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.exe SHA256 > MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.sha256
   artifacts:
     name: "minizinc_bundle_windows_%CI_PIPELINE_ID%"
-    paths: [MiniZincIDE*.exe]
+    paths: [MiniZincIDE*.exe, MiniZincIDE*.sha256]
   dependencies: ["build:win64"]
   tags: [win64]
 
@@ -214,9 +218,11 @@ package:appimage:
     - cp resources/misc/minizinc.desktop $PACKAGE/minizinc.desktop
     - cp resources/icon.png $PACKAGE/minizinc.png
     - ARCH=x86_64 appimagetool $PACKAGE MiniZincIDE-${MZNVERSION}-x86_64.AppImage
+    ### Generate checksum
+    - sha256sum MiniZincIDE*.AppImage > MiniZincIDE-${MZNVERSION}-x86_64.sha256
   artifacts:
     name: "minizinc_appimage_${CI_PIPELINE_ID}"
-    paths: [MiniZincIDE*.AppImage]
+    paths: [MiniZincIDE*.AppImage, MiniZincIDE*.sha256]
   dependencies: ["build:linux"]
   tags: [linux, docker]
 
