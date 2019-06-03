@@ -384,7 +384,7 @@ private:
     ParamDialog* paramDialog;
     bool compileOnly;
     int runTimeout;
-    QString mzn2fzn_executable;
+    QString minizinc_executable;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;

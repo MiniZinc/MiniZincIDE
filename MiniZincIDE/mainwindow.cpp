@@ -1635,14 +1635,14 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
 
 void MainWindow::checkArgs(QString filepath)
 {
-    if (mzn2fzn_executable=="") {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
+    if (minizinc_executable=="") {
+        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
         return;
     }
-    processName = mzn2fzn_executable;
+    processName = minizinc_executable;
     curModelFilepath = filepath;
     processWasStopped = false;
     compileErrors = "";
@@ -1665,7 +1665,7 @@ void MainWindow::checkArgs(QString filepath)
             args << dzn;
         args << filepath;
         elapsedTime.start();
-        process->start(mzn2fzn_executable,args,getMznDistribPath());
+        process->start(minizinc_executable,args,getMznDistribPath());
     }
 }
 
@@ -1678,7 +1678,7 @@ void MainWindow::on_actionRun_triggered()
 
 void MainWindow::compileOrRun()
 {
-    if (mzn2fzn_executable=="") {
+    if (minizinc_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
@@ -2063,7 +2063,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     Solver& currentSolver = *getCurrentSolver();
     progressBar->setHidden(true);
     process = new MznProcess(this);
-    processName = mzn2fzn_executable;
+    processName = minizinc_executable;
 
     bool standalone = false;
     if (!compileOnly) {
@@ -2633,8 +2633,8 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 if (ui->conf_solver_timing->isChecked()) {
                     outargs << "--output-time";
                 }
-                outargs << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start("solns2out",outargs,getMznDistribPath());
+                outargs << "--ozn-file" << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
+                outputProcess->start(minizinc_executable,outargs,getMznDistribPath());
             }
             time = 0;
             timer->start(500);
@@ -3427,15 +3427,15 @@ void MainWindow::on_actionGo_to_line_triggered()
 void MainWindow::checkMznPath()
 {
     QString ignoreVersionString;
-    SolverDialog::checkMznExecutable(mznDistribPath,mzn2fzn_executable,ignoreVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
+    SolverDialog::checkMznExecutable(mznDistribPath,minizinc_executable,ignoreVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
 
-    if (mzn2fzn_executable.isEmpty()) {
+    if (minizinc_executable.isEmpty()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
     }
-    bool haveMzn = (!mzn2fzn_executable.isEmpty() && solvers.size() > 0);
+    bool haveMzn = (!minizinc_executable.isEmpty() && solvers.size() > 0);
     ui->actionRun->setEnabled(haveMzn);
     ui->actionCompile->setEnabled(haveMzn);
     ui->actionEditSolverConfig->setEnabled(haveMzn);

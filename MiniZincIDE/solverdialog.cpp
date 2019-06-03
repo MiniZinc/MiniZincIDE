@@ -418,8 +418,8 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
 }
 
 void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
-                                      QString& mzn2fzn_executable,
-                                      QString& mzn2fzn_version_string,                                      
+                                      QString& minizinc_executable,
+                                      QString& minizinc_version_string,
                                       QVector<Solver>& solvers,
                                       QString& userSolverConfigDir,
                                       QString& userConfigFile,
@@ -428,23 +428,18 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
     MznProcess p;
     QStringList args;
     args << "--version";
-    mzn2fzn_executable = "";
-    mzn2fzn_version_string = "";
+    minizinc_executable = "";
+    minizinc_version_string = "";
     p.start("minizinc", args, mznDistribPath);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        p.start("mzn2fzn.bat", args, mznDistribPath);
-        if (!p.waitForStarted() || !p.waitForFinished()) {
-            return;
-        } else {
-            mzn2fzn_executable = "mzn2fzn.bat";
-        }
+        return;
     } else {
-        mzn2fzn_executable = "minizinc";
+        minizinc_executable = "minizinc";
     }
-    mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
+    minizinc_version_string = p.readAllStandardOutput()+p.readAllStandardError();
     QRegExp reVersion("version ([0-9]+)\\.([0-9]+)\\.\\S+");
-    if (reVersion.indexIn(mzn2fzn_version_string)==-1) {
-        mzn2fzn_executable = "";
+    if (reVersion.indexIn(minizinc_version_string)==-1) {
+        minizinc_executable = "";
         return;
     } else {
         bool ok;
@@ -452,15 +447,15 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         if (ok) {
             int curVersionMinor = reVersion.cap(2).toInt(&ok);
             if (curVersionMajor<2 || (curVersionMajor<3 && curVersionMinor<2)) {
-                mzn2fzn_executable = "";
+                minizinc_executable = "";
                 return;
             }
         }
     }
-    if (!mzn2fzn_executable.isEmpty()) {
+    if (!minizinc_executable.isEmpty()) {
         args.clear();
         args << "--config-dirs";
-        p.start(mzn2fzn_executable, args, mznDistribPath);
+        p.start(minizinc_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
             QString allOutput = p.readAllStandardOutput();
             QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
@@ -473,7 +468,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         }
         args.clear();
         args << "--solvers-json";
-        p.start(mzn2fzn_executable, args, mznDistribPath);
+        p.start(minizinc_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
             QString allOutput = p.readAllStandardOutput();
             QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
