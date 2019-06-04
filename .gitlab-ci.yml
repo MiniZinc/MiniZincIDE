@@ -137,9 +137,6 @@ package:osx:
     - cp resources/Preferences.json $MZNDIR/
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
-    ###### TODO: Fix is not necessary with Qt 5.11.1
-    - GECODERPATHS=`otool -L ./MiniZincIDE.app/Contents/Resources/bin/fzn-gecode | grep -o "@rpath\S*"`
-    - for r in $GECODERPATHS; do LPATH=`sed -e 's|@rpath|@loader_path/../../Frameworks|' <<<"$r"`; install_name_tool -change $r $LPATH ./MiniZincIDE.app/Contents/Resources/bin/fzn-gecode; done
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE.app]
