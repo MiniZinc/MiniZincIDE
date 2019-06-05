@@ -193,6 +193,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
+        ensureCursorVisible();
     } else if (e->key() == Qt::Key_Return) {
         e->accept();
         QTextCursor cursor(textCursor());
@@ -202,6 +203,7 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         if (leadingWhitespace.indexIn(curLine) != -1) {
             cursor.insertText(leadingWhitespace.cap(1));
         }
+        ensureCursorVisible();
     } else {
         bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
         if (!isShortcut) // do not process the shortcut when we have a completer
@@ -412,6 +414,19 @@ int CodeEditor::matchRight(QTextBlock block, QChar b, int i, int nRight)
 
 void CodeEditor::paintLineNumbers(QPaintEvent *event)
 {
+    QColor backgroundColor;
+    QColor foregroundActiveColor;
+    QColor foregroundInactiveColor;
+    if (darkMode) {
+        backgroundColor = QColor(0x26, 0x26, 0x26);
+        foregroundActiveColor = Qt::white;
+        foregroundInactiveColor = Qt::darkGray;
+    } else {
+        backgroundColor = QColor(Qt::lightGray).lighter(120);
+        foregroundActiveColor = Qt::black;
+        foregroundInactiveColor = Qt::gray;
+    }
+
     QPainter painter(lineNumbers);
     QFont lineNoFont = font();
     QFontMetrics fm(lineNoFont);
@@ -420,7 +435,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     QFontMetrics fm2(lineNoFont);
     int heightDiff = (origFontHeight-fm2.height());
     painter.setFont(lineNoFont);
-    painter.fillRect(event->rect(), QColor(Qt::lightGray).lighter(120));
+    painter.fillRect(event->rect(), backgroundColor);
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -435,9 +450,9 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
             if (errorLines.contains(blockNumber)) {
                 painter.setPen(Qt::red);
             } else if (blockNumber == curLine) {
-                painter.setPen(Qt::black);
+                painter.setPen(foregroundActiveColor);
             } else {
-                painter.setPen(Qt::gray);
+                painter.setPen(foregroundInactiveColor);
             }
             int textTop = top+fontMetrics().leading()+heightDiff;
             painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
@@ -597,7 +612,7 @@ void CodeEditor::checkFile()
         }
     }
 
-    if (filename.endsWith(".mzn")) {
+    if (filename.endsWith(".mzn") || filename=="Playground") {
         MiniZinc::GCLock lock;
         MiniZinc::Model* m;
         std::vector<std::pair<MiniZinc::Location,std::string> > mznErrors;
@@ -607,7 +622,8 @@ void CodeEditor::checkFile()
             std::vector<std::string> includePaths;
             includePaths.push_back("/Users/tack/Programming/MiniZinc/libmzn/share/minizinc/std/");
             std::vector<MiniZinc::SyntaxError> se;
-            m = MiniZinc::parseFromString(input,filename.toStdString(),includePaths,false,false,false,errstream,se);
+            MiniZinc::Env env;
+            m = MiniZinc::parseFromString(env,input,filename.toStdString(),includePaths,false,false,false,errstream,se);
             if (se.size() != 0) {
                 for (unsigned int i=0; i<se.size(); i++) {
                     mznErrors.push_back(std::make_pair(se[i].loc(),se[i].msg()));
@@ -644,7 +660,6 @@ void CodeEditor::checkFile()
         } catch (std::exception& e) {
           qDebug() << "unhandled exception" << e.what();
         }
-        delete m;
         errors.clear();
         errorLines.clear();
         for (unsigned int i=0; i<mznErrors.size(); i++) {

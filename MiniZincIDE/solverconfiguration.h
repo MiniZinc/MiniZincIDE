@@ -1,6 +1,8 @@
 #ifndef SOLVERCONFIGURATION_H
 #define SOLVERCONFIGURATION_H
 
+#include "solverdialog.h"
+
 #include <QString>
 #include <QVariant>
 #include <QVector>
@@ -10,10 +12,9 @@ class SolverConfiguration
 public:
     SolverConfiguration();
     QString name;
-    bool isBookmark;
     bool isBuiltin;
-    QString solverName;
-    QString datafile;
+    QString solverId;
+    QString solverVersion;
     int timeLimit;
     bool defaultBehaviour;
     bool printIntermediate;
@@ -22,18 +23,21 @@ public:
     bool clearOutputWindow;
     bool verboseFlattening;
     bool flatteningStats;
-    bool optimizedFlattening;
+    int optimizationLevel;
     QString additionalData;
     QString additionalCompilerCommandline;
     int nThreads;
     QVariant randomSeed;
     QString solverFlags;
+    bool freeSearch;
     bool verboseSolving;
     bool outputTiming;
     bool solvingStats;
     bool runSolutionChecker;
+    QMap<QString,QString> extraOptions;
 
-    static QVector<SolverConfiguration> defaultConfigs(const QStringList& solverNames);
+    static void defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs, int& defaultSolverIdx);
+    static SolverConfiguration defaultConfig(void);
 
     bool operator==(const SolverConfiguration& sc) const;
 };

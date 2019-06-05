@@ -16,9 +16,9 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QComboBox>
-#include <QFormLayout>
 #include <QFileInfo>
 #include <QDebug>
+#include <QScrollArea>
 
 ParamDialog::ParamDialog(QWidget *parent) :
     QDialog(parent),
@@ -27,46 +27,64 @@ ParamDialog::ParamDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
-void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QStringList &values, QString &dataFile)
+void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QStringList &values, QStringList &additionalDataFiles)
 {
     QVector<QLineEdit*> le;
-    QFormLayout* formLayout = new QFormLayout;
-    ui->frame->setLayout(formLayout);
-    QComboBox* cb = NULL;
-    if (dataFiles.size() > 0) {
-        cb = new QComboBox();
-        connect(cb, SIGNAL(currentIndexChanged(int)), this, SLOT(dataFileChanged(int)));
-        cb->addItem("Select data file or input values");
-        int selectItem = 0;
-        for (int i=0; i<dataFiles.size(); i++) {
-            QFileInfo fi(dataFiles[i]);
-            cb->addItem(fi.fileName(),dataFiles[i]);
-            if (previousDataFile==dataFiles[i])
-                selectItem = i+1;
-        }
-        cb->setCurrentIndex(selectItem);
-        formLayout->addRow(cb);
-    }
+    formLayout = new QFormLayout;
+
+    QFormLayout* mainLayout = new QFormLayout;
+
+    QTabWidget* tw = new QTabWidget(this);
+
+    QWidget* manual = new QWidget;
+    manual->setLayout(formLayout);
     bool fillPrevious = previousParams == params;
     for (int i=0; i<params.size(); i++) {
         QLineEdit* e = new QLineEdit(fillPrevious ? previousValues[i] : "");
-        if (cb && cb->currentIndex()!=0)
-            e->setEnabled(false);
         le.append(e);
         formLayout->addRow(new QLabel(params[i]+" ="), le.back());
     }
-    if (cb==NULL || cb->currentIndex()==0)
+    QScrollArea* scrollArea = new QScrollArea;
+    scrollArea->setWidget(manual);
+    tw->addTab(scrollArea, "Enter parameters");
+
+    selectedFiles = NULL;
+
+    if (dataFiles.size() > 0) {
+        selectedFiles = new QListWidget(this);
+        selectedFiles->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        for (int i=0; i<dataFiles.size(); i++) {
+            QFileInfo fi(dataFiles[i]);
+            QListWidgetItem* lwi = new QListWidgetItem(fi.fileName());
+            selectedFiles->addItem(lwi);
+            if (previousDataFiles.contains(dataFiles[i]))
+                lwi->setSelected(true);
+        }
+        tw->addTab(selectedFiles, "Select data file");
+        if (!fillPrevious || !previousWasManual)
+            tw->setCurrentIndex(1);
+    }
+    mainLayout->addRow(tw);
+    ui->frame->setLayout(mainLayout);
+    if (selectedFiles==NULL || selectedFiles->selectedItems().size()==0)
         le[0]->setFocus();
     if (QDialog::exec()==QDialog::Accepted) {
-        if (cb && cb->currentIndex() != 0) {
-            dataFile = cb->currentData().toString();
-            previousDataFile = dataFile;
+        additionalDataFiles.clear();
+        previousWasManual = (tw->currentIndex()==0);
+        if (tw->currentIndex()==1) {
+            previousDataFiles.clear();
+            for (int i=0; i<dataFiles.size(); i++) {
+                QListWidgetItem* lwi = selectedFiles->item(i);
+                if (lwi && lwi->isSelected()) {
+                    additionalDataFiles.append(dataFiles[i]);
+                    previousDataFiles.append(dataFiles[i]);
+                }
+            }
         } else {
             for (int i=0; i<le.size(); i++)
                 values << le[i]->text();
             previousParams = params;
             previousValues = values;
-            previousDataFile = "";
         }
     }
     delete ui->frame;
@@ -74,16 +92,6 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
     ui->frame->setFrameShape(QFrame::StyledPanel);
     ui->frame->setFrameShadow(QFrame::Raised);
     ui->verticalLayout->insertWidget(0, ui->frame);
-}
-
-void ParamDialog::dataFileChanged(int i)
-{
-    bool disable = (i>0);
-    QFormLayout* l = static_cast<QFormLayout*>(ui->frame->layout());
-    for (int i=1; i<l->rowCount(); i++) {
-        QWidget* w = l->itemAt(i,QFormLayout::FieldRole)->widget();
-        w->setDisabled(disable);
-    }
 }
 
 ParamDialog::~ParamDialog()

@@ -25,5 +25,7 @@ public:
     QList<QByteArray> convertFromMime(const QString &mime, QVariant data, QString flav);
 };
 
+int hasDarkMode(void);
+int isDark(void);
 
 #endif // RTFEXPORTER_H

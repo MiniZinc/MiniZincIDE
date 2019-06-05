@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=MiniZincIDE
+Exec=minizinc
+Icon=minizinc
+Type=Application
+Categories=Science;Development;Education;
+Terminal=false

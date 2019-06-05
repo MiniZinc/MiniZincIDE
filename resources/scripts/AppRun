@@ -1,0 +1,53 @@
+#!/bin/sh
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+export PATH=$HERE/usr/bin:$PATH
+export LD_LIBRARY_PATH=$HERE/usr/lib:$LD_LIBRARY_PATH
+export QT_PLUGIN_PATH=$HERE/usr/plugins
+
+if [ ! -z $APPIMAGE ]; then
+  BINARY_NAME=$(basename "$ARGV0")
+  if [ -e "$HERE/usr/bin/$BINARY_NAME" ]; then
+    exec "$HERE/usr/bin/$BINARY_NAME" "$@"
+  elif [ "$1" = "install" ]; then
+
+    set -e
+    if [ -z $BIN_LOCATION ]; then
+      BIN_LOCATION="/usr/local/bin"
+    fi
+    if [ -z $DESKTOP_LOCATION ]; then
+      DESKTOP_LOCATION="$HOME/.local/share"
+    fi
+    echo "Installing minizinc and MiniZincIDE binaries to $BIN_LOCATION (set BIN_LOCATION)."
+    echo "Installing MiniZinc desktop file and icon in $DESKTOP_LOCATION/{applications,icons} (set DESKTOP_LOCATION)."
+    echo "Files with the same name may be overwritten."
+    if [ ! -z $PS1 ] || [ "${NONINTERACTIVE:-0}" -eq "1" ]; then
+      echo -n "Do you want to continue? [Y/n] "
+      read answer
+      if [ "${answer#[Yy]}" != "" ] ;then
+        exit 1
+      fi
+    fi
+
+    BPERM=""
+    if [ ! -w "$BIN_LOCATION" ]; then
+      BPERM="sudo"
+    fi
+    eval $BPERM ln -sf $APPIMAGE $BIN_LOCATION/minizinc
+    eval $BPERM ln -sf $APPIMAGE $BIN_LOCATION/MiniZincIDE
+
+    DPERM=""
+    if [ ! -w "$DESKTOP_LOCATION" ]; then
+      DPERM="sudo"
+    fi
+    eval $DPERM sed 's/Exec=.*/Exec=MiniZincIDE/g' $HERE/minizinc.desktop > $DESKTOP_LOCATION/applications/MiniZincIDE.desktop
+    eval $DPERM mkdir -p $DESKTOP_LOCATION/icons/hicolor/256x256/apps
+    eval $DPERM cp $HERE/minizinc.png $DESKTOP_LOCATION/icons/hicolor/256x256/apps/minizinc.png
+
+  else
+    exec "$HERE/usr/bin/MiniZincIDE" "$@"
+  fi
+else
+  exec "$HERE/usr/bin/MiniZincIDE" "$@"
+fi

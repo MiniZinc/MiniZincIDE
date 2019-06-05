@@ -1,0 +1,16 @@
+{
+  "id": "org.chuffed.chuffed",
+  "name": "Chuffed",
+  "description": "Chuffed FlatZinc executable",
+  "version": "0.10.3",
+  "mznlib": "-Gchuffed",
+  "executable": "../../../bin/fzn-chuffed",
+  "tags": ["cp","lcg","int"],
+  "stdFlags": ["-a","-f","-n","-r","-s","-t","-v"],
+  "supportsMzn": false,
+  "supportsFzn": true,
+  "needsSolns2Out": true,
+  "needsMznExecutable": false,
+  "needsStdlibDir": false,
+  "isGUIApplication": false
+}

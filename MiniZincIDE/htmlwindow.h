@@ -30,12 +30,15 @@ class HTMLWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent = 0);
+    explicit HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, const QString& title, QWidget *parent = 0);
     ~HTMLWindow();
 
+    void init(void);
     void addSolution(int nVis, const QString& json);
+    void initJSON(int nVis, const QString& json);
     void selectSolution(HTMLPage* source, int n);
     void finish(qint64 runtime);
+    int getId(void) const { return identifier; }
 private:
     Ui::HTMLWindow *ui;
     QVector<HTMLPage*> pages;
@@ -45,12 +48,13 @@ private:
     typedef QWebView MznIdeWebView;
 #endif
     QVector<QPair<MznIdeWebView*,QString> > loadQueue;
+    int identifier;
 protected:
     void closeEvent(QCloseEvent *);
 private slots:
     void loadFinished(bool);
 signals:
-    void closeWindow(void);
+    void closeWindow(int);
 };
 
 #endif // HTMLWINDOW_H

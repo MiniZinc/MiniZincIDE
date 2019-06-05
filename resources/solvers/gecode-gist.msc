@@ -1,0 +1,16 @@
+{
+  "id": "org.gecode.gist",
+  "name": "Gecode Gist",
+  "description": "Gecode Gist FlatZinc executable",
+  "version": "6.1.1",
+  "mznlib": "-Ggecode",
+  "executable": "../../../bin/fzn-gecode-gist",
+  "tags": ["cp","int", "float", "set", "restart"],
+  "stdFlags": ["-a","-n","-s","-p","-r","-f"],
+  "supportsMzn": false,
+  "supportsFzn": true,
+  "needsSolns2Out": true,
+  "needsMznExecutable": false,
+  "needsStdlibDir": false,
+  "isGUIApplication": true
+}

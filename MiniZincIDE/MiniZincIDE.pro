@@ -19,7 +19,7 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.1.7
+VERSION = 2.2.3
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
@@ -30,41 +30,31 @@ CONFIG += c++11
 
 macx {
     ICON = mznide.icns
-    OBJECTIVE_SOURCES += rtfexporter.mm
+    OBJECTIVE_SOURCES += macos_extras.mm
     QT += macextras
     LIBS += -framework Cocoa
-}
-
-macx:bundled {
-    QMAKE_INFO_PLIST = mznide-bundled.plist
-}
-macx:!bundled {
-    QMAKE_INFO_PLIST = mznide.plist
+    macx-xcode {
+      QMAKE_INFO_PLIST = mznide-xcode.plist
+    } else {
+      QMAKE_INFO_PLIST = mznide-makefile.plist
+    }
 }
 
 RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
 
-#exists($$OUT_PWD/../libminizinc) {
-#  LIBS += -L$$OUT_PWD/../libminizinc -lminizinc
-#  INCLUDEPATH += ../libminizinc_src/include ../libminizinc_src/lib/cached ../libminizinc
-#  DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
-#}
-
-LIBS += -L/Users/tack/Programming/MiniZinc/libmzn/build_xcode/Debug -lminizinc
-INCLUDEPATH += /Users/tack/Programming/MiniZinc/libmzn/include /Users/tack/Programming/MiniZinc/libmzn/build_xcode
-DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
+#LIBS += -L/Users/tack/Programming/MiniZinc/libmzn/build_xcode/Debug -lminizinc_compiler -lminizinc_fzn -lminizinc_cplex -lminizinc_nl -lminizinc_gurobi -lminizinc_osicbc
+#INCLUDEPATH += /Users/tack/Programming/MiniZinc/libmzn/include /Users/tack/Programming/MiniZinc/libmzn/build_xcode/include
+#DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
-    aboutdialog.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
-    help.cpp \
     finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
@@ -80,16 +70,14 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
-    aboutdialog.h \
+    macos_extras.h \
     solverdialog.h \
     gotolinedialog.h \
-    help.h \
     finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
     moocsubmission.h \
@@ -98,10 +86,8 @@ HEADERS  += mainwindow.h \
 
 FORMS    += \
     mainwindow.ui \
-    aboutdialog.ui \
     solverdialog.ui \
     gotolinedialog.ui \
-    help.ui \
     finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
@@ -111,5 +97,5 @@ FORMS    += \
 RESOURCES += \
     minizincide.qrc
 
-target.path = /bin
+target.path = $$PREFIX/bin
 INSTALLS += target

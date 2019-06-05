@@ -1,21 +1,23 @@
 #include "htmlwindow.h"
 #include "ui_htmlwindow.h"
 #include "htmlpage.h"
+#include "mainwindow.h"
 
 #include <QMdiSubWindow>
 #include <QDebug>
 #include <QDockWidget>
 #include <QCloseEvent>
 
-HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWidget *parent) :
+HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, const QString& title, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::HTMLWindow)
 {
     ui->setupUi(this);
+    identifier = mw->addHtmlWindow(this);
 
     for (int i=0; i<specs.size(); i++) {
         MznIdeWebView* wv = new MznIdeWebView;
-        HTMLPage* p = new HTMLPage(mw,wv);
+        HTMLPage* p = new HTMLPage(mw,identifier,wv);
         pages.append(p);
         wv->setPage(p);
         loadQueue.append(QPair<MznIdeWebView*,QString>(wv,specs[i].url));
@@ -24,8 +26,13 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, QWid
         dw->setWidget(wv);
         addDockWidget(specs[i].area,dw);
     }
+    setWindowTitle("MiniZinc visualisation for "+title);
+}
 
-    if (specs.size() > 0) {
+void
+HTMLWindow::init(void)
+{
+    if (loadQueue.size() > 0) {
         connect(loadQueue[0].first, SIGNAL(loadFinished(bool)), this, SLOT(loadFinished(bool)));
         MznIdeWebView* wv0 = loadQueue[0].first;
         QString url0 = loadQueue[0].second;
@@ -41,6 +48,11 @@ HTMLWindow::~HTMLWindow()
 void HTMLWindow::addSolution(int nVis, const QString &json)
 {
     pages[nVis]->addSolution(json);
+}
+
+void HTMLWindow::initJSON(int nVis, const QString &json)
+{
+    pages[nVis]->initJSON(json);
 }
 
 void HTMLWindow::selectSolution(HTMLPage *source, int n)
@@ -72,6 +84,6 @@ void HTMLWindow::loadFinished(bool)
 
 void HTMLWindow::closeEvent(QCloseEvent * event)
 {
-    emit closeWindow();
+    emit closeWindow(identifier);
     event->accept();
 }

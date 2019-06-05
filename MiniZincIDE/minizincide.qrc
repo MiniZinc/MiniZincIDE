@@ -23,8 +23,8 @@
         <file>images/coursera.png</file>
         <file>images/coursera@2x.png</file>
         <file>images/application-certificate.png</file>
-        <file>images/media-playback-start.svg</file>
-        <file>images/media-playback-stop.svg</file>
-        <file>images/applications-system.svg</file>
+        <file>images/media-playback-start.png</file>
+        <file>images/media-playback-stop.png</file>
+        <file>images/applications-system.png</file>
     </qresource>
 </RCC>

@@ -447,17 +447,17 @@ void Project::solverConfigs(const QVector<SolverConfiguration> &sc, bool init)
     if (init) {
         _solverConfigs = sc;
     } else {
-        bool equal = true;
         if (sc.size() != _solverConfigs.size()) {
             setModified(true);
         } else {
+            bool modified = false;
             for (int i=0; i<sc.size(); i++) {
                 if (!(sc[i]==_solverConfigs[i])) {
-                    setModified(true);
-                    return;
+                    modified = true;
+                    _solverConfigs[i] = sc[i];
                 }
             }
-            setModified(false);
+            setModified(modified);
         }
     }
 }
