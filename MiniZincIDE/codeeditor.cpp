@@ -652,13 +652,13 @@ void CodeEditor::checkFile()
                 completionList.sort();
                 completionModel.setStringList(completionList);
             } else {
-                qDebug() << "didn't get model\n";
-                qDebug() << errstream.str().c_str();
+//                qDebug() << "didn't get model\n";
+//                qDebug() << errstream.str().c_str();
             }
         } catch (MiniZinc::LocationException& e) {
              mznErrors.push_back(std::make_pair(e.loc(),e.msg()));
         } catch (std::exception& e) {
-          qDebug() << "unhandled exception" << e.what();
+//          qDebug() << "unhandled exception" << e.what();
         }
         errors.clear();
         errorLines.clear();
