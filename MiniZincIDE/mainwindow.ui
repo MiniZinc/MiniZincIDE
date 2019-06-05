@@ -358,7 +358,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="conf_dock_widget">
+  <widget class="OutputDockWidget" name="conf_dock_widget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
      <horstretch>0</horstretch>
@@ -400,7 +400,7 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-272</y>
+          <y>0</y>
           <width>661</width>
           <height>1067</height>
          </rect>
