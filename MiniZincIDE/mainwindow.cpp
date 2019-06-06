@@ -861,6 +861,7 @@ void MainWindow::init(const QString& projectFile)
     editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
+    on_actionDark_mode_toggled(darkMode);
     ui->outputConsole->setFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
@@ -1903,7 +1904,7 @@ void MainWindow::readOutput()
                                 hiddenSolutions.back() += l;
                             }
                             if (solutionLimit != 0 && solutionCount == solutionLimit) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit-1)+" more solutions ]</div>");
+                                addOutput("<div class='mznnotice'>[ "+QString().number(solutionLimit-1)+" more solutions ]</div>");
                                 for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                     addOutput(hiddenSolutions[i], false);
                                 }
@@ -1917,7 +1918,7 @@ void MainWindow::readOutput()
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
+                                addOutput("<div class='mznnotice'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
                             for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
@@ -2145,7 +2146,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
-        addOutput("<div style='color:blue;'>"+compiling+"</div>");
+        addOutput("<div class='mznnotice'>"+compiling+"</div>");
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -2295,7 +2296,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     JSONOutput.clear();
     if (!hiddenSolutions.isEmpty()) {
         if (solutionLimit != 0 && solutionCount!=solutionLimit && solutionCount > 1) {
-            addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
+            addOutput("<div class='mznnotice'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
         }
         for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
             addOutput(hiddenSolutions[i], false);
@@ -2303,7 +2304,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     }
 
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
+        addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
@@ -2333,7 +2334,7 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
     inJSONHandler = false;
     JSONOutput.clear();
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
+        addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
@@ -2487,7 +2488,7 @@ void MainWindow::on_actionStop_triggered()
         process->terminate();
         delete process;
         process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div>");
+        addOutput("<div class='mznnotice'>Stopped.</div>");
         procFinished(0);
     }
 }
@@ -2558,14 +2559,14 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         args << currentFznTarget;
 
         if (s->isGUIApplication) {
-            addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
+            addOutput("<div class='mznnotice'>Running "+curEditor->filename+" (detached)</div>");
 
             MznProcess* detached_process = new MznProcess(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
             QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
-                addOutput("<div style='color:blue;'>Command line:</div>");
+                addOutput("<div class='mznnotice'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -2613,10 +2614,10 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 }
             }
 
-            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
+            addOutput("<div class='mznnotice'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
             QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
-                addOutput("<div style='color:blue;'>Command line:</div>");
+                addOutput("<div class='mznnotice'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -4311,6 +4312,12 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         ce->setDarkMode(darkMode);
     }
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
+
+    if (darkMode) {
+        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : green }");
+    } else {
+        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
+    }
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
