@@ -54,7 +54,7 @@ build:win64:
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
     - unzip -q minizinc.zip
-    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=solvers:$MZNARCH"
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=bundle:$MZNARCH"
     - unzip -q vendor.zip
     - "[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q globalizer.zip"
     - "[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
@@ -159,7 +159,7 @@ package:win64:
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
     - unzip -q minizinc.zip
-    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fvendor/jobs/artifacts/master/download?job=solvers:%MZNARCH%"
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fvendor/jobs/artifacts/master/download?job=bundle:%MZNARCH%"
     - unzip -q vendor.zip
     - curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fglobalizer/jobs/artifacts/master/download?job=build:%MZNARCH%"
     - unzip -q globalizer.zip
