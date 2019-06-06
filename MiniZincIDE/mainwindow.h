@@ -309,6 +309,20 @@ private slots:
 
     void on_conf_check_solutions_toggled(bool checked);
 
+    void on_b_next_clicked();
+
+    void on_b_prev_clicked();
+
+    void on_b_replacefind_clicked();
+
+    void on_b_replace_clicked();
+
+    void on_b_replaceall_clicked();
+
+    void on_closeFindWidget_clicked();
+
+    void on_find_textEdited(const QString &arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -377,7 +391,7 @@ private:
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     QVector<MznProcess*> cleanupProcesses;
-    FindDialog* findDialog;
+    QTextCursor incrementalFindCursor;
     QString projectPath;
     bool saveBeforeRunning;
     QString compileErrors;
@@ -431,6 +445,7 @@ private:
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
     void updateSolverConfigs(void);
     void setCurrentSolverConfig(int idx);
+    void find(bool fwd);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

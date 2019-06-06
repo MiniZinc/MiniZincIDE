@@ -23,7 +23,6 @@
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
 #include "fzndoc.h"
-#include "finddialog.h"
 #include "gotolinedialog.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
@@ -756,6 +755,11 @@ void MainWindow::init(const QString& projectFile)
     }
 #endif
 
+    // initialise find widget
+    ui->findFrame->hide();
+    connect(ui->find, SIGNAL(escPressed(void)), this, SLOT(on_closeFindWidget_clicked()));
+
+
     QWidget* solverConfFrame = new QWidget;
     QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;
 
@@ -794,9 +798,6 @@ void MainWindow::init(const QString& projectFile)
     ui->toolBar->insertWidget(ui->actionEditSolverConfig, toolBarSpacer);
 
     newFileCounter = 1;
-
-    findDialog = new FindDialog(this);
-    findDialog->setModal(false);
 
     paramDialog = new ParamDialog(this);
 
@@ -1402,7 +1403,6 @@ void MainWindow::tabChange(int tab) {
         ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
         updateUiProcessRunning(processRunning);
 
-        findDialog->setEditor(curEditor);
         ui->actionFind->setEnabled(true);
         ui->actionFind_next->setEnabled(true);
         ui->actionFind_previous->setEnabled(true);
@@ -3032,6 +3032,50 @@ void MainWindow::setCurrentSolverConfig(int idx)
     project.solverConfigs(projectSolverConfigs,false);
 }
 
+void MainWindow::find(bool fwd)
+{
+    const QString& toFind = ui->find->text();
+    QTextDocument::FindFlags flags;
+    if (!fwd)
+        flags |= QTextDocument::FindBackward;
+    bool ignoreCase = ui->check_case->isChecked();
+    if (!ignoreCase)
+        flags |= QTextDocument::FindCaseSensitively;
+    bool wrap = ui->check_wrap->isChecked();
+
+    QTextCursor cursor(curEditor->textCursor());
+    int hasWrapped = wrap ? 0 : 1;
+    while (hasWrapped < 2) {
+        if (ui->check_re->isChecked()) {
+            QRegExp re(toFind, ignoreCase ? Qt::CaseInsensitive : Qt::CaseSensitive);
+            if (!re.isValid()) {
+                ui->not_found->setText("invalid");
+                return;
+            }
+            cursor = curEditor->document()->find(re,cursor,flags);
+        } else {
+            cursor = curEditor->document()->find(toFind,cursor,flags);
+        }
+        if (cursor.isNull()) {
+            hasWrapped++;
+            cursor = curEditor->textCursor();
+            if (fwd) {
+                cursor.setPosition(0);
+            } else {
+                cursor.movePosition(QTextCursor::End);
+            }
+        } else {
+            ui->not_found->setText("");
+            curEditor->setTextCursor(cursor);
+            break;
+        }
+    }
+    if (hasWrapped==2) {
+        ui->not_found->setText("not found");
+    }
+
+}
+
 void MainWindow::on_conf_solver_conf_currentIndexChanged(int index)
 {
     if (projectSolverConfigs.size() != 0 && index >= projectSolverConfigs.size())
@@ -3384,16 +3428,27 @@ void MainWindow::on_conf_default_toggled(bool checked)
 
 void MainWindow::on_actionFind_triggered()
 {
-    findDialog->raise();
-    findDialog->show();
-    findDialog->activateWindow();
+    incrementalFindCursor = curEditor->textCursor();
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+    if (curEditor->textCursor().hasSelection()) {
+        ui->find->setText(curEditor->textCursor().selectedText());
+    }
+    ui->not_found->setText("");
+    ui->findFrame->raise();
+    ui->findFrame->show();
+    ui->find->setFocus();
 }
 
 void MainWindow::on_actionReplace_triggered()
 {
-    findDialog->raise();
-    findDialog->show();
-    findDialog->activateWindow();
+    incrementalFindCursor = curEditor->textCursor();
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+    if (curEditor->textCursor().hasSelection()) {
+        ui->find->setText(curEditor->textCursor().selectedText());
+    }
+    ui->not_found->setText("");
+    ui->findFrame->raise();
+    ui->findFrame->show();
 }
 
 void MainWindow::on_actionSelect_font_triggered()
@@ -4127,12 +4182,12 @@ void MainWindow::on_actionClose_project_triggered()
 
 void MainWindow::on_actionFind_next_triggered()
 {
-    findDialog->on_b_next_clicked();
+    on_b_next_clicked();
 }
 
 void MainWindow::on_actionFind_previous_triggered()
 {
-    findDialog->on_b_prev_clicked();
+    on_b_prev_clicked();
 }
 
 void MainWindow::on_actionSave_all_triggered()
@@ -4338,7 +4393,70 @@ void MainWindow::on_conf_dock_widget_visibilityChanged(bool visible)
     }
 }
 
-void MainWindow::on_conf_check_solutions_toggled(bool checked)
+void MainWindow::on_conf_check_solutions_toggled(bool)
 {
     tabChange(ui->tabWidget->currentIndex());
+}
+
+
+
+void MainWindow::on_b_next_clicked()
+{
+    find(true);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_prev_clicked()
+{
+    find(false);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_replacefind_clicked()
+{
+    on_b_replace_clicked();
+    find(true);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_replace_clicked()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    if (cursor.hasSelection()) {
+        cursor.insertText(ui->replace->text());
+    }
+}
+
+void MainWindow::on_b_replaceall_clicked()
+{
+    int counter = 0;
+    QTextCursor cursor = curEditor->textCursor();
+    if (!cursor.hasSelection()) {
+        find(true);
+        cursor = curEditor->textCursor();
+    }
+    cursor.beginEditBlock();
+    while (cursor.hasSelection()) {
+        counter++;
+        cursor.insertText(ui->replace->text());
+        find(true);
+        cursor = curEditor->textCursor();
+    }
+    cursor.endEditBlock();
+    if (counter > 0) {
+        ui->not_found->setText(QString().number(counter)+" replaced");
+    }
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_closeFindWidget_clicked()
+{
+    ui->findFrame->hide();
+    curEditor->setFocus();
+}
+
+void MainWindow::on_find_textEdited(const QString &)
+{
+    curEditor->setTextCursor(incrementalFindCursor);
+    find(true);
 }
