@@ -1424,6 +1424,55 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
+QStringList parseArgList(const QString& s) {
+    QStringList ret;
+    bool hadEscape = false;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+    QString currentArg;
+    foreach (const QChar c, s) {
+        if (hadEscape) {
+            currentArg += c;
+            hadEscape = false;
+        } else {
+            if (c=='\\') {
+                hadEscape = true;
+            } else if (c=='"') {
+                if (inDoubleQuote) {
+                    inDoubleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inSingleQuote) {
+                    currentArg += c;
+                } else {
+                    inDoubleQuote = true;
+                }
+            } else if (c=='\'') {
+                if (inSingleQuote) {
+                    inSingleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inDoubleQuote) {
+                    currentArg += c;
+                } else {
+                    inSingleQuote = true;
+                }
+            } else if (!inSingleQuote && !inDoubleQuote && c==' ') {
+                if (currentArg.size() > 0) {
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                }
+            } else {
+                currentArg += c;
+            }
+        }
+    }
+    if (currentArg.size() > 0) {
+        ret.push_back(currentArg);
+    }
+    return ret;
+}
+
 QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation)
 {
     Solver& currentSolver = *getCurrentSolver();
@@ -1485,8 +1534,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     }
 
     if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_mzn2fzn_params->text().isEmpty()) {
-        QStringList compilerArgs =
-                ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
+        QStringList compilerArgs = parseArgList(ui->conf_mzn2fzn_params->text());
         ret << compilerArgs;
     }
 
@@ -1518,8 +1566,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     if (confMode==CONF_RUN && ui->conf_solver_verbose->isChecked() && haveSolverVerbose)
         ret << (isMiniZinc ? "--verbose-solving" : "-v");
     if (confMode==CONF_RUN && !ui->conf_solverFlags->text().isEmpty()) {
-        QStringList solverArgs =
-                ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
+        QStringList solverArgs = parseArgList(ui->conf_solverFlags->text());
         ret << solverArgs;
     }
     if (confMode==CONF_RUN) {
