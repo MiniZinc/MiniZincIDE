@@ -4450,6 +4450,7 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
 void MainWindow::check_code()
 {
     if (check_process==NULL && curCheckFile==NULL && minizinc_executable!="" &&
+        ui->actionRun->isEnabled() &&
         curEditor && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
         curCheckFile = new QTemporaryFile(QDir::tempPath()+"mzncheckXXXXXX.mzn");
