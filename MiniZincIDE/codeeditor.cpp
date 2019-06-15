@@ -521,68 +521,6 @@ void CodeEditor::cut()
     textCursor().removeSelectedText();
 }
 
-#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
-
-class CollectIds : public MiniZinc::EVisitor {
-public:
-    QHash<QString,QString>& ids;
-    QSet<QString> functionIds;
-    MiniZinc::EnvI& env;
-    CollectIds(QHash<QString,QString>& ids0, MiniZinc::EnvI& env0)
-        : ids(ids0), env(env0) {}
-    void vId(const MiniZinc::Id& id) {
-        QString loc = QString::fromStdString(id.loc().filename().str()+":");
-        loc += QString().number(id.loc().first_line())+"."+QString().number(id.loc().first_column());
-        std::ostringstream oss;
-        oss << *id.decl();
-        ids.insert(loc,QString::fromStdString(oss.str()));
-    }
-    void vCall(const MiniZinc::Call& call) {
-        QString loc = QString::fromStdString(call.loc().filename().str()+":");
-        loc += QString().number(call.loc().first_line())+"."+QString().number(call.loc().first_column());
-        if (call.decl()) {
-            std::ostringstream oss;
-            oss << *call.decl();
-            ids.insert(loc,QString::fromStdString(oss.str()));
-        } else {
-            ids.insert(loc,QString::fromStdString(call.id().str()+" is "+call.type().nonEnumToString()));
-        }
-    }
-
-};
-
-class IterCollectIds : public MiniZinc::ItemVisitor {
-public:
-    CollectIds& cids;
-    IterCollectIds(CollectIds& cids0) : cids(cids0) {}
-
-    /// Visit variable declaration
-    void vVarDeclI(MiniZinc::VarDeclI* i) {
-        MiniZinc::bottomUp<CollectIds>(cids,i->e()->id());
-        MiniZinc::bottomUp<CollectIds>(cids,i->e());
-    }
-    /// Visit assign item
-    void vAssignI(MiniZinc::AssignI* ai) { MiniZinc::bottomUp<CollectIds>(cids, ai->e()); }
-    /// Visit constraint item
-    void vConstraintI(MiniZinc::ConstraintI* ci) { MiniZinc::bottomUp<CollectIds>(cids, ci->e()); }
-    /// Visit solve item
-    void vSolveI(MiniZinc::SolveI* si) {
-        for (MiniZinc::ExpressionSetIter it = si->ann().begin(); it != si->ann().end(); ++it) {
-            MiniZinc::bottomUp<CollectIds>(cids, *it);
-        }
-        MiniZinc::bottomUp<CollectIds>(cids, si->e());
-    }
-    /// Visit output item
-    void vOutputI(MiniZinc::OutputI* oi) { MiniZinc::bottomUp<CollectIds>(cids, oi->e()); }
-    /// Visit function item
-    void vFunctionI(MiniZinc::FunctionI* fi) {
-        cids.functionIds.insert(fi->id().c_str());
-        MiniZinc::bottomUp<CollectIds>(cids, fi->e());
-    }
-};
-
-#endif
-
 void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
 {
     QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
