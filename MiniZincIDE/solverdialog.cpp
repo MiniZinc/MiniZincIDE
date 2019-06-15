@@ -366,8 +366,6 @@ void SolverDialog::on_updateButton_clicked()
         }
         ui->solvers_combo->setCurrentIndex(index);
     }
-    QString mzn2fzn_executable;
-    QString mzn2fzn_version;
     editingFinished(false);
 }
 
@@ -559,25 +557,25 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
 
 void SolverDialog::editingFinished(bool showError)
 {
-    QString mzn2fzn_executable;
-    QString mzn2fzn_version;
+    QString minizinc_executable;
+    QString minizinc_version;
     for (int i=0; i<solvers.size(); i++) {
         ui->solvers_combo->removeItem(0);
     }
     solvers.clear();
-    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
-    if (mzn2fzn_executable.isEmpty()) {
+    checkMznExecutable(ui->mznDistribPath->text(),minizinc_executable,minizinc_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
+    if (minizinc_executable.isEmpty()) {
         if (showError) {
-            QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",
+            QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.",
                                  QMessageBox::Ok);
         }
-        if (mzn2fzn_version.isEmpty()) {
+        if (minizinc_version.isEmpty()) {
             ui->mzn2fzn_version->setText("None");
         } else {
-            ui->mzn2fzn_version->setText("None. Error message:\n"+mzn2fzn_version);
+            ui->mzn2fzn_version->setText("None. Error message:\n"+minizinc_version);
         }
     } else {
-        ui->mzn2fzn_version->setText(mzn2fzn_version);
+        ui->mzn2fzn_version->setText(minizinc_version);
         for (int i=solvers.size(); i--;) {
             ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
         }

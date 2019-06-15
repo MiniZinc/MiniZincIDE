@@ -23,7 +23,6 @@
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
 #include "fzndoc.h"
-#include "finddialog.h"
 #include "gotolinedialog.h"
 #include "paramdialog.h"
 #include "checkupdatedialog.h"
@@ -756,6 +755,11 @@ void MainWindow::init(const QString& projectFile)
     }
 #endif
 
+    // initialise find widget
+    ui->findFrame->hide();
+    connect(ui->find, SIGNAL(escPressed(void)), this, SLOT(on_closeFindWidget_clicked()));
+
+
     QWidget* solverConfFrame = new QWidget;
     QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;
 
@@ -794,9 +798,6 @@ void MainWindow::init(const QString& projectFile)
     ui->toolBar->insertWidget(ui->actionEditSolverConfig, toolBarSpacer);
 
     newFileCounter = 1;
-
-    findDialog = new FindDialog(this);
-    findDialog->setModal(false);
 
     paramDialog = new ParamDialog(this);
 
@@ -864,6 +865,7 @@ void MainWindow::init(const QString& projectFile)
     editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
+    on_actionDark_mode_toggled(darkMode);
     ui->outputConsole->setFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
@@ -1404,7 +1406,6 @@ void MainWindow::tabChange(int tab) {
         ui->actionRedo->setEnabled(curEditor->document()->isRedoAvailable());
         updateUiProcessRunning(processRunning);
 
-        findDialog->setEditor(curEditor);
         ui->actionFind->setEnabled(true);
         ui->actionFind_next->setEnabled(true);
         ui->actionFind_previous->setEnabled(true);
@@ -1426,6 +1427,55 @@ void MainWindow::on_actionOpen_triggered()
     openFile(QString());
 }
 
+QStringList parseArgList(const QString& s) {
+    QStringList ret;
+    bool hadEscape = false;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+    QString currentArg;
+    foreach (const QChar c, s) {
+        if (hadEscape) {
+            currentArg += c;
+            hadEscape = false;
+        } else {
+            if (c=='\\') {
+                hadEscape = true;
+            } else if (c=='"') {
+                if (inDoubleQuote) {
+                    inDoubleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inSingleQuote) {
+                    currentArg += c;
+                } else {
+                    inDoubleQuote = true;
+                }
+            } else if (c=='\'') {
+                if (inSingleQuote) {
+                    inSingleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inDoubleQuote) {
+                    currentArg += c;
+                } else {
+                    inSingleQuote = true;
+                }
+            } else if (!inSingleQuote && !inDoubleQuote && c==' ') {
+                if (currentArg.size() > 0) {
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                }
+            } else {
+                currentArg += c;
+            }
+        }
+    }
+    if (currentArg.size() > 0) {
+        ret.push_back(currentArg);
+    }
+    return ret;
+}
+
 QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation)
 {
     Solver& currentSolver = *getCurrentSolver();
@@ -1439,7 +1489,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveOutputHtml = currentSolver.stdFlags.contains("--output-html");
     bool haveNeedsPaths = currentSolver.needsPathsFile;
 
-    bool isMiniZinc = (confMode!=CONF_RUN && !currentSolver.supportsMzn) || currentSolver.executable.isEmpty();
+    bool isMiniZinc = (confMode!=CONF_RUN && !currentSolver.supportsMzn) || currentSolver.executable.isEmpty() || !currentSolver.supportsFzn;
     bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
     bool haveCompilerStats =  isMiniZinc || currentSolver.stdFlags.contains("-s");
     bool haveCompilerOpt[6];
@@ -1487,8 +1537,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     }
 
     if ((confMode==CONF_COMPILE || confMode==CONF_CHECKARGS) && !ui->conf_mzn2fzn_params->text().isEmpty()) {
-        QStringList compilerArgs =
-                ui->conf_mzn2fzn_params->text().split(" ", QString::SkipEmptyParts);
+        QStringList compilerArgs = parseArgList(ui->conf_mzn2fzn_params->text());
         ret << compilerArgs;
     }
 
@@ -1520,8 +1569,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     if (confMode==CONF_RUN && ui->conf_solver_verbose->isChecked() && haveSolverVerbose)
         ret << (isMiniZinc ? "--verbose-solving" : "-v");
     if (confMode==CONF_RUN && !ui->conf_solverFlags->text().isEmpty()) {
-        QStringList solverArgs =
-                ui->conf_solverFlags->text().split(" ", QString::SkipEmptyParts);
+        QStringList solverArgs = parseArgList(ui->conf_solverFlags->text());
         ret << solverArgs;
     }
     if (confMode==CONF_RUN) {
@@ -1906,7 +1954,7 @@ void MainWindow::readOutput()
                                 hiddenSolutions.back() += l;
                             }
                             if (solutionLimit != 0 && solutionCount == solutionLimit) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionLimit-1)+" more solutions ]</div>");
+                                addOutput("<div class='mznnotice'>[ "+QString().number(solutionLimit-1)+" more solutions ]</div>");
                                 for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                     addOutput(hiddenSolutions[i], false);
                                 }
@@ -1920,7 +1968,7 @@ void MainWindow::readOutput()
                         }
                         if (!hiddenSolutions.isEmpty() && l.trimmed() == "==========") {
                             if (solutionCount!=solutionLimit && solutionCount > 1) {
-                                addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
+                                addOutput("<div class='mznnotice'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
                             }
                             for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
                                 addOutput(hiddenSolutions[i], false);
@@ -2148,7 +2196,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
         if (!additionalCmdlineParams.isEmpty()) {
             compiling += ", additional arguments " + additionalCmdlineParams;
         }
-        addOutput("<div style='color:blue;'>"+compiling+"</div>");
+        addOutput("<div class='mznnotice'>"+compiling+"</div>");
         time = 0;
         timer->start(500);
         elapsedTime.start();
@@ -2298,7 +2346,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     JSONOutput.clear();
     if (!hiddenSolutions.isEmpty()) {
         if (solutionLimit != 0 && solutionCount!=solutionLimit && solutionCount > 1) {
-            addOutput("<div style='color:blue;'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
+            addOutput("<div class='mznnotice'>[ "+QString().number(solutionCount-1)+" more solutions ]</div>");
         }
         for (int i=std::max(0,hiddenSolutions.size()-2); i<hiddenSolutions.size(); i++) {
             addOutput(hiddenSolutions[i], false);
@@ -2306,7 +2354,7 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     }
 
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
+        addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
@@ -2336,7 +2384,7 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
     inJSONHandler = false;
     JSONOutput.clear();
     if (showTime) {
-        addOutput("<div style='color:blue;'>Finished in "+elapsedTime+"</div>");
+        addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
     tmpDir = NULL;
@@ -2490,7 +2538,7 @@ void MainWindow::on_actionStop_triggered()
         process->terminate();
         delete process;
         process = NULL;
-        addOutput("<div style='color:blue;'>Stopped.</div>");
+        addOutput("<div class='mznnotice'>Stopped.</div>");
         procFinished(0);
     }
 }
@@ -2561,14 +2609,14 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         args << currentFznTarget;
 
         if (s->isGUIApplication) {
-            addOutput("<div style='color:blue;'>Running "+curEditor->filename+" (detached)</div>");
+            addOutput("<div class='mznnotice'>Running "+curEditor->filename+" (detached)</div>");
 
             MznProcess* detached_process = new MznProcess(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
             QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
-                addOutput("<div style='color:blue;'>Command line:</div>");
+                addOutput("<div class='mznnotice'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -2616,10 +2664,10 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 }
             }
 
-            addOutput("<div style='color:blue;'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
+            addOutput("<div class='mznnotice'>Running "+QFileInfo(curFilePath).fileName()+"</div>");
             QString executable = s->executable_resolved;
             if (ui->conf_solver_verbose->isChecked()) {
-                addOutput("<div style='color:blue;'>Command line:</div>");
+                addOutput("<div class='mznnotice'>Command line:</div>");
                 QString cmdline = executable;
                 QRegExp white("\\s");
                 for (int i=0; i<args.size(); i++) {
@@ -3034,6 +3082,50 @@ void MainWindow::setCurrentSolverConfig(int idx)
     project.solverConfigs(projectSolverConfigs,false);
 }
 
+void MainWindow::find(bool fwd)
+{
+    const QString& toFind = ui->find->text();
+    QTextDocument::FindFlags flags;
+    if (!fwd)
+        flags |= QTextDocument::FindBackward;
+    bool ignoreCase = ui->check_case->isChecked();
+    if (!ignoreCase)
+        flags |= QTextDocument::FindCaseSensitively;
+    bool wrap = ui->check_wrap->isChecked();
+
+    QTextCursor cursor(curEditor->textCursor());
+    int hasWrapped = wrap ? 0 : 1;
+    while (hasWrapped < 2) {
+        if (ui->check_re->isChecked()) {
+            QRegExp re(toFind, ignoreCase ? Qt::CaseInsensitive : Qt::CaseSensitive);
+            if (!re.isValid()) {
+                ui->not_found->setText("invalid");
+                return;
+            }
+            cursor = curEditor->document()->find(re,cursor,flags);
+        } else {
+            cursor = curEditor->document()->find(toFind,cursor,flags);
+        }
+        if (cursor.isNull()) {
+            hasWrapped++;
+            cursor = curEditor->textCursor();
+            if (fwd) {
+                cursor.setPosition(0);
+            } else {
+                cursor.movePosition(QTextCursor::End);
+            }
+        } else {
+            ui->not_found->setText("");
+            curEditor->setTextCursor(cursor);
+            break;
+        }
+    }
+    if (hasWrapped==2) {
+        ui->not_found->setText("not found");
+    }
+
+}
+
 void MainWindow::on_conf_solver_conf_currentIndexChanged(int index)
 {
     if (projectSolverConfigs.size() != 0 && index >= projectSolverConfigs.size())
@@ -3386,16 +3478,27 @@ void MainWindow::on_conf_default_toggled(bool checked)
 
 void MainWindow::on_actionFind_triggered()
 {
-    findDialog->raise();
-    findDialog->show();
-    findDialog->activateWindow();
+    incrementalFindCursor = curEditor->textCursor();
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+    if (curEditor->textCursor().hasSelection()) {
+        ui->find->setText(curEditor->textCursor().selectedText());
+    }
+    ui->not_found->setText("");
+    ui->findFrame->raise();
+    ui->findFrame->show();
+    ui->find->setFocus();
 }
 
 void MainWindow::on_actionReplace_triggered()
 {
-    findDialog->raise();
-    findDialog->show();
-    findDialog->activateWindow();
+    incrementalFindCursor = curEditor->textCursor();
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+    if (curEditor->textCursor().hasSelection()) {
+        ui->find->setText(curEditor->textCursor().selectedText());
+    }
+    ui->not_found->setText("");
+    ui->findFrame->raise();
+    ui->findFrame->show();
 }
 
 void MainWindow::on_actionSelect_font_triggered()
@@ -4129,12 +4232,12 @@ void MainWindow::on_actionClose_project_triggered()
 
 void MainWindow::on_actionFind_next_triggered()
 {
-    findDialog->on_b_next_clicked();
+    on_b_next_clicked();
 }
 
 void MainWindow::on_actionFind_previous_triggered()
 {
-    findDialog->on_b_prev_clicked();
+    on_b_prev_clicked();
 }
 
 void MainWindow::on_actionSave_all_triggered()
@@ -4321,6 +4424,12 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         ce->setDarkMode(darkMode);
     }
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
+
+    if (darkMode) {
+        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : green }");
+    } else {
+        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
+    }
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
@@ -4341,7 +4450,70 @@ void MainWindow::on_conf_dock_widget_visibilityChanged(bool visible)
     }
 }
 
-void MainWindow::on_conf_check_solutions_toggled(bool checked)
+void MainWindow::on_conf_check_solutions_toggled(bool)
 {
     tabChange(ui->tabWidget->currentIndex());
+}
+
+
+
+void MainWindow::on_b_next_clicked()
+{
+    find(true);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_prev_clicked()
+{
+    find(false);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_replacefind_clicked()
+{
+    on_b_replace_clicked();
+    find(true);
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_b_replace_clicked()
+{
+    QTextCursor cursor = curEditor->textCursor();
+    if (cursor.hasSelection()) {
+        cursor.insertText(ui->replace->text());
+    }
+}
+
+void MainWindow::on_b_replaceall_clicked()
+{
+    int counter = 0;
+    QTextCursor cursor = curEditor->textCursor();
+    if (!cursor.hasSelection()) {
+        find(true);
+        cursor = curEditor->textCursor();
+    }
+    cursor.beginEditBlock();
+    while (cursor.hasSelection()) {
+        counter++;
+        cursor.insertText(ui->replace->text());
+        find(true);
+        cursor = curEditor->textCursor();
+    }
+    cursor.endEditBlock();
+    if (counter > 0) {
+        ui->not_found->setText(QString().number(counter)+" replaced");
+    }
+    incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
+}
+
+void MainWindow::on_closeFindWidget_clicked()
+{
+    ui->findFrame->hide();
+    curEditor->setFocus();
+}
+
+void MainWindow::on_find_textEdited(const QString &)
+{
+    curEditor->setTextCursor(incrementalFindCursor);
+    find(true);
 }

@@ -55,7 +55,6 @@ SOURCES += main.cpp\
     fzndoc.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
-    finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
@@ -73,7 +72,6 @@ HEADERS  += mainwindow.h \
     macos_extras.h \
     solverdialog.h \
     gotolinedialog.h \
-    finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
     checkupdatedialog.h \
@@ -88,7 +86,6 @@ FORMS    += \
     mainwindow.ui \
     solverdialog.ui \
     gotolinedialog.ui \
-    finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
     htmlwindow.ui \
