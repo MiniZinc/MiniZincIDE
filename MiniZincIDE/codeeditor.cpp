@@ -65,12 +65,12 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     }
     completer = new QCompleter(this);
     QStringList completionList;
-    completionList << "annotation" << "array" << "bool" << "case" << "constraint" << "default"
+    completionList << "annotation" << "array" << "bool" << "constraint"
                    << "diff" << "else" << "elseif" << "endif" << "enum" << "float"
                    << "function" << "include" << "intersect" << "maximize" << "minimize"
                    << "output" << "predicate" << "satisfy" << "solve" << "string"
                    << "subset" << "superset" << "symdiff" << "test" << "then"
-                   << "tuple" << "type" << "union" << "variant_record" << "where";
+                   << "union" << "where";
     completionList.sort();
     completionModel.setStringList(completionList);
     completer->setModel(&completionModel);
