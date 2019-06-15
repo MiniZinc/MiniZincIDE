@@ -168,6 +168,7 @@ private slots:
     void checkArgs(QString filepath);
     void checkArgsOutput();
     void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
+    void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
     void readOutput();
 
@@ -284,6 +285,7 @@ private slots:
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(int);
     void on_actionCheat_Sheet_triggered();
+    void check_code();
 
     void on_actionDark_mode_toggled(bool arg1);
 
@@ -352,8 +354,11 @@ private:
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
     MznProcess* process;
+    MznProcess* check_process;
     QString processName;
     QString curModelFilepath;
+    QTemporaryFile* curCheckFile;
+    CodeEditor* curCheckEditor;
     MznProcess* outputProcess;
     bool processWasStopped;
     int solutionCount;
@@ -369,6 +374,7 @@ private:
     QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
+    QTimer* checkTimer;
     int time;
     QElapsedTimer elapsedTime;
     QProgressBar* progressBar;

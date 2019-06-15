@@ -15,8 +15,30 @@
 
 #include <QPlainTextEdit>
 #include <QTabWidget>
+#include <QCompleter>
+#include <QStringListModel>
+#include <QTimer>
 
 #include "highlighter.h"
+
+class CodeEditorError {
+public:
+    int startPos;
+    int endPos;
+    QString msg;
+    CodeEditorError(int startPos0, int endPos0, const QString& msg0)
+        : startPos(startPos0), endPos(endPos0), msg(msg0) {}
+};
+
+struct MiniZincError {
+    QString filename;
+    int first_line;
+    int last_line;
+    int first_col;
+    int last_col;
+    QString msg;
+};
+
 
 class CodeEditor : public QPlainTextEdit
 {
@@ -32,6 +54,8 @@ public:
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
     Highlighter& getHighlighter();
+    bool modifiedSinceLastCheck;
+    void checkFile(const QVector<MiniZincError>& errors);
 protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);
@@ -42,13 +66,22 @@ private slots:
     void cursorChange();
     void setLineNumbers(const QRect &, int);
     void docChanged(bool);
+    void contentsChanged();
+    void contentsChangedWithTimeout();
     void loadContents();
+    void insertCompletion(const QString& completion);
 private:
     QWidget* lineNumbers;
     QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
+    QCompleter* completer;
+    QStringListModel completionModel;
     bool darkMode;
+    QList<CodeEditorError> errors;
+    QSet<int> errorLines;
+    QHash<QString,QString> idMap;
+    QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
 signals:

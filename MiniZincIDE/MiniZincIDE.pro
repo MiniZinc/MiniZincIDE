@@ -26,6 +26,8 @@ bundled {
     DEFINES += MINIZINC_IDE_BUNDLED
 }
 
+CONFIG += c++11
+
 macx {
     ICON = mznide.icns
     OBJECTIVE_SOURCES += macos_extras.mm

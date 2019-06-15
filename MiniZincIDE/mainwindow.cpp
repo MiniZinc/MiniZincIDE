@@ -16,6 +16,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QBoxLayout>
+#include <QTemporaryFile>
 #include <csignal>
 #include <sstream>
 
@@ -683,6 +684,8 @@ MainWindow::MainWindow(const QString& project) :
     curEditor(NULL),
     curHtmlWindow(-1),
     process(NULL),
+    check_process(NULL),
+    curCheckFile(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
@@ -699,6 +702,8 @@ MainWindow::MainWindow(const QStringList& files) :
     curEditor(NULL),
     curHtmlWindow(-1),
     process(NULL),
+    check_process(NULL),
+    curCheckFile(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
@@ -828,6 +833,9 @@ void MainWindow::init(const QString& projectFile)
     solverTimeout = new QTimer(this);
     solverTimeout->setSingleShot(true);
     connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
+    checkTimer = new QTimer(this);
+    connect(checkTimer, SIGNAL(timeout()), this, SLOT(check_code()));
+    checkTimer->start(1000);
     progressBar = new QProgressBar;
     progressBar->setRange(0, 100);
     progressBar->setSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Minimum);
@@ -4400,6 +4408,70 @@ void MainWindow::on_actionCheat_Sheet_triggered()
     IDE::instance()->cheatSheet->show();
     IDE::instance()->cheatSheet->raise();
     IDE::instance()->cheatSheet->activateWindow();
+}
+
+void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
+{
+    if (curCheckEditor==curEditor) {
+        bool inRelevantError = false;
+        MiniZincError curError;
+        QVector<MiniZincError> mznErrors;
+        while (check_process->canReadLine()) {
+            QString l = check_process->readLine();
+            QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-([0-9]+)(\\.([0-9]+))?)?)?):\\s*$");
+            if (errexp.indexIn(l) != -1) {
+                inRelevantError = false;
+                QString errFile = errexp.cap(1).trimmed();
+                if (errFile==curCheckFile->fileName()) {
+                    inRelevantError = true;
+                    curError.filename = errFile;
+                    curError.first_line = errexp.cap(3).toInt();
+                    curError.first_col = errexp.cap(5).isEmpty() ? 1 : errexp.cap(5).toInt();
+                    curError.last_line =
+                            (errexp.cap(7).isEmpty() || errexp.cap(9).isEmpty()) ? curError.first_line : errexp.cap(7).toInt();
+                    curError.last_col =
+                            errexp.cap(7).isEmpty() ? 1 : (errexp.cap(9).isEmpty() ? errexp.cap(7).toInt(): errexp.cap(9).toInt());
+                }
+            } else {
+                if (inRelevantError && (l.startsWith("MiniZinc:") || l.startsWith("Error:"))) {
+                    curError.msg = l.trimmed();
+                    mznErrors.push_back(curError);
+                }
+            }
+        }
+        curEditor->checkFile(mznErrors);
+    }
+    delete check_process;
+    check_process = NULL;
+    delete curCheckFile;
+    curCheckFile = NULL;
+}
+
+void MainWindow::check_code()
+{
+    if (check_process==NULL && curCheckFile==NULL && minizinc_executable!="" &&
+        ui->actionRun->isEnabled() &&
+        curEditor && curEditor->modifiedSinceLastCheck) {
+        curEditor->modifiedSinceLastCheck = false;
+        curCheckFile = new QTemporaryFile(QDir::tempPath()+"mzncheckXXXXXX.mzn");
+        curCheckEditor = curEditor;
+        if (curCheckFile->open()) {
+            QTextStream ts(curCheckFile);
+            ts << curEditor->document()->toPlainText();
+            curCheckFile->close();
+            check_process = new MznProcess(this);
+            check_process->setWorkingDirectory(QFileInfo(curCheckFile->fileName()).absolutePath());
+            check_process->setProcessChannelMode(QProcess::MergedChannels);
+            connect(check_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkModelFinished(int,QProcess::ExitStatus)));
+
+            QStringList args = parseConf(CONF_CHECKARGS, "", false);
+            args << "-c" << "--model-check-only";
+            for (QString dzn: currentAdditionalDataFiles)
+                args << dzn;
+            args << curCheckFile->fileName();
+            check_process->start(minizinc_executable,args,getMznDistribPath());
+        }
+    }
 }
 
 void MainWindow::on_actionDark_mode_toggled(bool enable)

@@ -14,7 +14,6 @@
 
 #include "highlighter.h"
 
-
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
