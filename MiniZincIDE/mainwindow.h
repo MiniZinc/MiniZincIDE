@@ -168,6 +168,7 @@ private slots:
     void checkArgs(QString filepath);
     void checkArgsOutput();
     void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
+    void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
     void readOutput();
 
@@ -353,8 +354,10 @@ private:
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
     MznProcess* process;
+    MznProcess* check_process;
     QString processName;
     QString curModelFilepath;
+    QTemporaryFile* curCheckFile;
     MznProcess* outputProcess;
     bool processWasStopped;
     int solutionCount;

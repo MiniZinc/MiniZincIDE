@@ -29,6 +29,16 @@ public:
         : startPos(startPos0), endPos(endPos0), msg(msg0) {}
 };
 
+struct MiniZincError {
+    QString filename;
+    int first_line;
+    int last_line;
+    int first_col;
+    int last_col;
+    QString msg;
+};
+
+
 class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
@@ -43,6 +53,8 @@ public:
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
     Highlighter& getHighlighter();
+    bool modifiedSinceLastCheck;
+    void checkFile(const QVector<MiniZincError>& errors);
 protected:
     void resizeEvent(QResizeEvent *event);
     void initUI(QFont& font);
@@ -64,7 +76,6 @@ private:
     QCompleter* completer;
     QStringListModel completionModel;
     bool darkMode;
-    bool modifiedSinceLastCheck;
     QList<CodeEditorError> errors;
     QSet<int> errorLines;
     QHash<QString,QString> idMap;
@@ -76,7 +87,6 @@ public slots:
     void loadedLargeFile();
     void copy();
     void cut();
-    void checkFile();
 };
 
 class LineNumbers: public QWidget

@@ -14,18 +14,6 @@
 #include "codeeditor.h"
 #include "mainwindow.h"
 
-#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
-
-#include <minizinc/model.hh>
-#include <minizinc/parser.hh>
-#include <minizinc/ast.hh>
-#include <minizinc/astexception.hh>
-#include <minizinc/typecheck.hh>
-#include <minizinc/astiterator.hh>
-#include <minizinc/prettyprinter.hh>
-
-#endif
-
 void
 CodeEditor::initUI(QFont& font)
 {
@@ -595,14 +583,8 @@ public:
 
 #endif
 
-void CodeEditor::checkFile()
+void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
 {
-#ifdef MINIZINC_IDE_HAVE_LIBMINIZINC
-    if (!modifiedSinceLastCheck) {
-        return;
-    }
-    modifiedSinceLastCheck = false;
-
     QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
 
     QList<QTextEdit::ExtraSelection> extraSelections;
@@ -612,85 +594,34 @@ void CodeEditor::checkFile()
         }
     }
 
-    if (filename.endsWith(".mzn") || filename=="Playground") {
-        MiniZinc::GCLock lock;
-        MiniZinc::Model* m;
-        std::vector<std::pair<MiniZinc::Location,std::string> > mznErrors;
-        try {
-            std::string input = document()->toPlainText().toStdString();
-            std::stringstream errstream;
-            std::vector<std::string> includePaths;
-            includePaths.push_back("/Users/tack/Programming/MiniZinc/libmzn/share/minizinc/std/");
-            std::vector<MiniZinc::SyntaxError> se;
-            MiniZinc::Env env;
-            m = MiniZinc::parseFromString(env,input,filename.toStdString(),includePaths,false,false,false,errstream,se);
-            if (se.size() != 0) {
-                for (unsigned int i=0; i<se.size(); i++) {
-                    mznErrors.push_back(std::make_pair(se[i].loc(),se[i].msg()));
-                }
-            } else if (m) {
-                MiniZinc::Env env(m);
-                std::vector<MiniZinc::TypeError> typeErrors;
-                MiniZinc::typecheck(env, m, typeErrors, true, false);
-                for (unsigned int i=0; i<typeErrors.size(); i++) {
-                    mznErrors.push_back(std::make_pair(typeErrors[i].loc(), typeErrors[i].msg()));
-                }
-                idMap.clear();
-                CollectIds cids(idMap,env.envi());
-                IterCollectIds ici(cids);
-                MiniZinc::iterItems<IterCollectIds>(ici,m);
-                QStringList completionList;
-                completionList << "annotation" << "array" << "bool" << "case" << "constraint" << "default"
-                               << "diff" << "else" << "elseif" << "endif" << "enum" << "float"
-                               << "function" << "include" << "intersect" << "maximize" << "minimize"
-                               << "output" << "predicate" << "satisfy" << "solve" << "string"
-                               << "subset" << "superset" << "symdiff" << "test" << "then"
-                               << "tuple" << "type" << "union" << "variant_record" << "where";
-                foreach (QString fnid, cids.functionIds) {
-                    completionList << fnid;
-                }
-                completionList.sort();
-                completionModel.setStringList(completionList);
-            } else {
-//                qDebug() << "didn't get model\n";
-//                qDebug() << errstream.str().c_str();
-            }
-        } catch (MiniZinc::LocationException& e) {
-             mznErrors.push_back(std::make_pair(e.loc(),e.msg()));
-        } catch (std::exception& e) {
-//          qDebug() << "unhandled exception" << e.what();
-        }
-        errors.clear();
-        errorLines.clear();
-        for (unsigned int i=0; i<mznErrors.size(); i++) {
-            if (mznErrors[i].first.filename() != filename.toStdString())
-                continue;
-            QTextEdit::ExtraSelection sel;
-            QTextCharFormat format = sel.format;
-            format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
-            format.setUnderlineColor(Qt::red);
-            MiniZinc::Location& loc = mznErrors[i].first;
-            QTextBlock block = document()->findBlockByNumber(loc.first_line()-1);
-            QTextBlock endblock = document()->findBlockByNumber(loc.last_line()-1);
-            if (block.isValid() && endblock.isValid()) {
-                QTextCursor cursor = textCursor();
-                cursor.setPosition(block.position());
-                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, loc.first_column()-1);
-                int startPos = cursor.position();
-                cursor.setPosition(endblock.position(), QTextCursor::KeepAnchor);
-                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, loc.last_column());
-                int endPos = cursor.position();
-                sel.cursor = cursor;
-                sel.format = format;
-                extraSelections.append(sel);
-                CodeEditorError cee(startPos,endPos,QString::fromStdString(mznErrors[i].second));
-                errors.append(cee);
-                for (int i=loc.first_line(); i<=loc.last_line(); i++) {
-                    errorLines.insert(i-1);
-                }
+    errors.clear();
+    errorLines.clear();
+    for (unsigned int i=0; i<mznErrors.size(); i++) {
+        QTextEdit::ExtraSelection sel;
+        QTextCharFormat format = sel.format;
+        format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+        format.setUnderlineColor(Qt::red);
+        QTextBlock block = document()->findBlockByNumber(mznErrors[i].first_line-1);
+        QTextBlock endblock = document()->findBlockByNumber(mznErrors[i].last_line-1);
+        if (block.isValid() && endblock.isValid()) {
+            QTextCursor cursor = textCursor();
+            cursor.setPosition(block.position());
+            int firstCol = mznErrors[i].first_col < mznErrors[i].last_col ? (mznErrors[i].first_col-1) : (mznErrors[i].last_col-1);
+            int lastCol = mznErrors[i].first_col < mznErrors[i].last_col ? (mznErrors[i].last_col) : (mznErrors[i].first_col);
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, firstCol);
+            int startPos = cursor.position();
+            cursor.setPosition(endblock.position(), QTextCursor::KeepAnchor);
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, lastCol);
+            int endPos = cursor.position();
+            sel.cursor = cursor;
+            sel.format = format;
+            extraSelections.append(sel);
+            CodeEditorError cee(startPos,endPos,mznErrors[i].msg);
+            errors.append(cee);
+            for (int j=mznErrors[i].first_line; j<=mznErrors[i].last_line; j++) {
+                errorLines.insert(j-1);
             }
         }
     }
     setExtraSelections(extraSelections);
-#endif
 }

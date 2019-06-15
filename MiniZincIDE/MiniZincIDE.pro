@@ -44,10 +44,6 @@ RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe
 
-#LIBS += -L/Users/tack/Programming/MiniZinc/libmzn/build_xcode/Debug -lminizinc_compiler -lminizinc_fzn -lminizinc_cplex -lminizinc_nl -lminizinc_gurobi -lminizinc_osicbc
-#INCLUDEPATH += /Users/tack/Programming/MiniZinc/libmzn/include /Users/tack/Programming/MiniZinc/libmzn/build_xcode/include
-#DEFINES += MINIZINC_IDE_HAVE_LIBMINIZINC
-
 SOURCES += main.cpp\
     mainwindow.cpp \
     codeeditor.cpp \
