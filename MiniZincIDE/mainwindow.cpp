@@ -4434,7 +4434,7 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
                 }
             } else {
                 if (inRelevantError && (l.startsWith("MiniZinc:") || l.startsWith("Error:"))) {
-                    curError.msg = l;
+                    curError.msg = l.trimmed();
                     mznErrors.push_back(curError);
                 }
             }
