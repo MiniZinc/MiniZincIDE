@@ -17,6 +17,7 @@
 #include <QTabWidget>
 #include <QCompleter>
 #include <QStringListModel>
+#include <QTimer>
 
 #include "highlighter.h"
 
@@ -66,6 +67,7 @@ private slots:
     void setLineNumbers(const QRect &, int);
     void docChanged(bool);
     void contentsChanged();
+    void contentsChangedWithTimeout();
     void loadContents();
     void insertCompletion(const QString& completion);
 private:
@@ -79,6 +81,7 @@ private:
     QList<CodeEditorError> errors;
     QSet<int> errorLines;
     QHash<QString,QString> idMap;
+    QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
 signals:

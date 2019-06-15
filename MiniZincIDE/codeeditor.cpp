@@ -80,6 +80,10 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     completer->setWidget(this);
     completer->setCompletionMode(QCompleter::PopupCompletion);
     QObject::connect(completer, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
+
+    modificationTimer.setSingleShot(true);
+    QObject::connect(&modificationTimer, SIGNAL(timeout()), this, SLOT(contentsChangedWithTimeout()));
+
     setAcceptDrops(false);
     installEventFilter(this);
 }
@@ -158,6 +162,13 @@ void CodeEditor::docChanged(bool c)
 }
 
 void CodeEditor::contentsChanged()
+{
+    if (!modifiedSinceLastCheck) {
+        modificationTimer.start(500);
+    }
+}
+
+void CodeEditor::contentsChangedWithTimeout()
 {
     modifiedSinceLastCheck = true;
 }
