@@ -4410,35 +4410,37 @@ void MainWindow::on_actionCheat_Sheet_triggered()
     IDE::instance()->cheatSheet->activateWindow();
 }
 
-void MainWindow::checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus)
+void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
 {
-    bool inRelevantError = false;
-    MiniZincError curError;
-    QVector<MiniZincError> mznErrors;
-    while (check_process->canReadLine()) {
-        QString l = check_process->readLine();
-        QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-([0-9]+)(\\.([0-9]+))?)?)?):\\s*$");
-        if (errexp.indexIn(l) != -1) {
-            inRelevantError = false;
-            QString errFile = errexp.cap(1).trimmed();
-            if (errFile==curCheckFile->fileName()) {
-                inRelevantError = true;
-                curError.filename = errFile;
-                curError.first_line = errexp.cap(3).toInt();
-                curError.first_col = errexp.cap(5).isEmpty() ? 1 : errexp.cap(5).toInt();
-                curError.last_line =
-                        (errexp.cap(7).isEmpty() || errexp.cap(9).isEmpty()) ? curError.first_line : errexp.cap(7).toInt();
-                curError.last_col =
-                        errexp.cap(7).isEmpty() ? 1 : (errexp.cap(9).isEmpty() ? errexp.cap(7).toInt(): errexp.cap(9).toInt());
-            }
-        } else {
-            if (inRelevantError && (l.startsWith("MiniZinc:") || l.startsWith("Error:"))) {
-                curError.msg = l;
-                mznErrors.push_back(curError);
+    if (curCheckEditor==curEditor) {
+        bool inRelevantError = false;
+        MiniZincError curError;
+        QVector<MiniZincError> mznErrors;
+        while (check_process->canReadLine()) {
+            QString l = check_process->readLine();
+            QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-([0-9]+)(\\.([0-9]+))?)?)?):\\s*$");
+            if (errexp.indexIn(l) != -1) {
+                inRelevantError = false;
+                QString errFile = errexp.cap(1).trimmed();
+                if (errFile==curCheckFile->fileName()) {
+                    inRelevantError = true;
+                    curError.filename = errFile;
+                    curError.first_line = errexp.cap(3).toInt();
+                    curError.first_col = errexp.cap(5).isEmpty() ? 1 : errexp.cap(5).toInt();
+                    curError.last_line =
+                            (errexp.cap(7).isEmpty() || errexp.cap(9).isEmpty()) ? curError.first_line : errexp.cap(7).toInt();
+                    curError.last_col =
+                            errexp.cap(7).isEmpty() ? 1 : (errexp.cap(9).isEmpty() ? errexp.cap(7).toInt(): errexp.cap(9).toInt());
+                }
+            } else {
+                if (inRelevantError && (l.startsWith("MiniZinc:") || l.startsWith("Error:"))) {
+                    curError.msg = l;
+                    mznErrors.push_back(curError);
+                }
             }
         }
+        curEditor->checkFile(mznErrors);
     }
-    curEditor->checkFile(mznErrors);
     delete check_process;
     check_process = NULL;
     delete curCheckFile;
@@ -4451,6 +4453,7 @@ void MainWindow::check_code()
         curEditor && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
         curCheckFile = new QTemporaryFile(QDir::tempPath()+"mzncheckXXXXXX.mzn");
+        curCheckEditor = curEditor;
         if (curCheckFile->open()) {
             QTextStream ts(curCheckFile);
             ts << curEditor->document()->toPlainText();
