@@ -357,7 +357,6 @@ private:
     MznProcess* check_process;
     QString processName;
     QString curModelFilepath;
-    QTemporaryFile* curCheckFile;
     CodeEditor* curCheckEditor;
     MznProcess* outputProcess;
     bool processWasStopped;

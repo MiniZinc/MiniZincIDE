@@ -685,7 +685,6 @@ MainWindow::MainWindow(const QString& project) :
     curHtmlWindow(-1),
     process(NULL),
     check_process(NULL),
-    curCheckFile(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
@@ -703,7 +702,6 @@ MainWindow::MainWindow(const QStringList& files) :
     curHtmlWindow(-1),
     process(NULL),
     check_process(NULL),
-    curCheckFile(NULL),
     outputProcess(NULL),
     tmpDir(NULL),
     saveBeforeRunning(false),
@@ -4422,7 +4420,7 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
             if (errexp.indexIn(l) != -1) {
                 inRelevantError = false;
                 QString errFile = errexp.cap(1).trimmed();
-                if (errFile==curCheckFile->fileName()) {
+                if (errFile=="stdin") {
                     inRelevantError = true;
                     curError.filename = errFile;
                     curError.first_line = errexp.cap(3).toInt();
@@ -4443,34 +4441,25 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
     }
     delete check_process;
     check_process = NULL;
-    delete curCheckFile;
-    curCheckFile = NULL;
 }
 
 void MainWindow::check_code()
 {
-    if (check_process==NULL && curCheckFile==NULL && minizinc_executable!="" &&
+    if (check_process==NULL && minizinc_executable!="" &&
         ui->actionRun->isEnabled() &&
         curEditor && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
-        curCheckFile = new QTemporaryFile(QDir::tempPath()+"mzncheckXXXXXX.mzn");
         curCheckEditor = curEditor;
-        if (curCheckFile->open()) {
-            QTextStream ts(curCheckFile);
-            ts << curEditor->document()->toPlainText();
-            curCheckFile->close();
-            check_process = new MznProcess(this);
-            check_process->setWorkingDirectory(QFileInfo(curCheckFile->fileName()).absolutePath());
-            check_process->setProcessChannelMode(QProcess::MergedChannels);
-            connect(check_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkModelFinished(int,QProcess::ExitStatus)));
+        check_process = new MznProcess(this);
+        check_process->setWorkingDirectory(curEditor->filepath);
+        check_process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(check_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkModelFinished(int,QProcess::ExitStatus)));
 
-            QStringList args = parseConf(CONF_CHECKARGS, "", false);
-            args << "-c" << "--model-check-only";
-            for (QString dzn: currentAdditionalDataFiles)
-                args << dzn;
-            args << curCheckFile->fileName();
-            check_process->start(minizinc_executable,args,getMznDistribPath());
-        }
+        QStringList args = parseConf(CONF_CHECKARGS, "", false);
+        args << "-c" << "--model-check-only" << "-";
+        check_process->start(minizinc_executable,args,getMznDistribPath());
+        check_process->write(curEditor->document()->toPlainText().toUtf8());
+        check_process->closeWriteChannel();
     }
 }
 
