@@ -54,8 +54,7 @@ build:win64:
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
     - unzip -q minizinc.zip
-    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=bundle:$MZNARCH"
-    - unzip -q vendor.zip
+    - "[ ${DOWNLOAD_SOLVERS:-1} -eq 1 ] && curl --silent -o vendor.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=bundle:$MZNARCH\" && unzip -q vendor.zip"
     - "[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q globalizer.zip"
     - "[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
 
@@ -241,8 +240,13 @@ package:docker_ubuntu:
   stage: package
   variables:
     MZNARCH: "linux"
+    DOWNLOAD_SOLVERS: 0
   <<: *packaging_setup
   script:
+    - curl --silent -o gecode.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=gecode:$MZNARCH"
+    - unzip -q gecode.zip
+    - curl --silent -o chuffed.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=chuffed:$MZNARCH"
+    - unzip -q chuffed.zip
     - docker build -f resources/pkg_config/ubuntu.Dockerfile -t minizinc_ubuntu .
     - if [ -n "$CI_COMMIT_TAG" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_$CI_COMMIT_TAG && docker push minizinc/minizinc:ubuntu_$CI_COMMIT_TAG; fi
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag minizinc_ubuntu minizinc/minizinc:ubuntu_latest && docker push minizinc/minizinc:ubuntu_latest; fi
