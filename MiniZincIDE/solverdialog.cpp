@@ -515,21 +515,44 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                                     extraFlag.min=1.0;
                                     extraFlag.max=0.0;
                                     extraFlag.name = extraFlagA[0].toString();
-                                    if (extraFlagA[2].toString().startsWith("int")) {
-                                        extraFlag.t = SolverFlag::T_INT;
-                                    } else if (extraFlagA[2].toString()=="bool") {
-                                        extraFlag.t = SolverFlag::T_BOOL;
-                                    } else if (extraFlagA[2].toString().startsWith("float")) {
-                                        extraFlag.t = SolverFlag::T_FLOAT;
-                                    } else if (extraFlagA[2].toString()=="string") {
-                                        extraFlag.t = SolverFlag::T_STRING;
-                                    } else if (extraFlagA[2].toString().startsWith("opt:")) {
-                                        extraFlag.t = SolverFlag::T_OPT;
-                                        extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
-                                    } else if (extraFlagA[2].toString()=="solver") {
-                                        extraFlag.t = SolverFlag::T_SOLVER;
+                                    QRegularExpression re_opt("^(int|float|bool)(:([0-9a-zA-Z.-]+):([0-9a-zA-Z.-]+))?");
+                                    QRegularExpressionMatch re_opt_match = re_opt.match(extraFlagA[2].toString());
+                                    if (re_opt_match.hasMatch()) {
+                                        if (re_opt_match.captured(1)=="int") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_INT;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_INT_RANGE;
+                                                extraFlag.min = re_opt_match.captured(3).toInt();
+                                                extraFlag.max = re_opt_match.captured(4).toInt();
+                                            }
+                                        } else if (re_opt_match.captured(1)=="float") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_FLOAT;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_FLOAT_RANGE;
+                                                extraFlag.min = re_opt_match.captured(3).toDouble();
+                                                extraFlag.max = re_opt_match.captured(4).toDouble();
+                                            }
+                                        } else if (re_opt_match.captured(1)=="bool") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_BOOL;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_BOOL_ONOFF;
+                                                extraFlag.options = QStringList({re_opt_match.captured(3),re_opt_match.captured(4)});
+                                            }
+                                        }
                                     } else {
-                                        continue;
+                                        if (extraFlagA[2].toString()=="string") {
+                                            extraFlag.t = SolverFlag::T_STRING;
+                                        } else if (extraFlagA[2].toString().startsWith("opt:")) {
+                                            extraFlag.t = SolverFlag::T_OPT;
+                                            extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
+//                                        } else if (extraFlagA[2].toString()=="solver") {
+//                                            extraFlag.t = SolverFlag::T_SOLVER;
+                                        } else {
+                                            continue;
+                                        }
                                     }
                                     extraFlag.description = extraFlagA[1].toString();
                                     extraFlag.def = extraFlagA[3].toString();

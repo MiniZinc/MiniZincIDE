@@ -1586,6 +1586,13 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                         ret << ef.first.name;
                     }
                     break;
+                case SolverFlag::T_BOOL_ONOFF:
+                    if (static_cast<QCheckBox*>(ef.second)->isChecked()) {
+                        ret << ef.first.name << ef.first.options[0];
+                    } else {
+                        ret << ef.first.name << ef.first.options[1];
+                    }
+                    break;
                 case SolverFlag::T_OPT:
                 case SolverFlag::T_SOLVER:
                     ret << ef.first.name << static_cast<QComboBox*>(ef.second)->currentText();
@@ -1600,8 +1607,17 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                     }
                 }
                     break;
+                case SolverFlag::T_INT_RANGE:
+                {
+                    ret << ef.first.name << QString().number(static_cast<QSpinBox*>(ef.second)->value());
                 }
-
+                    break;
+                case SolverFlag::T_FLOAT_RANGE:
+                {
+                    ret << ef.first.name << QString().number(static_cast<QDoubleSpinBox*>(ef.second)->value());
+                }
+                    break;
+                }
             }
         }
     }
@@ -2893,6 +2909,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
             for (auto& ef : extraSolverFlags) {
                 switch (ef.first.t) {
                 case SolverFlag::T_BOOL:
+                case SolverFlag::T_BOOL_ONOFF:
                     oldConf.extraOptions[ef.first.name] = static_cast<QCheckBox*>(ef.second)->isChecked() ? "true" : "false";
                     break;
                 case SolverFlag::T_OPT:
@@ -2903,6 +2920,12 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 case SolverFlag::T_FLOAT:
                 case SolverFlag::T_STRING:
                     oldConf.extraOptions[ef.first.name] = static_cast<QLineEdit*>(ef.second)->text();
+                    break;
+                case SolverFlag::T_INT_RANGE:
+                    oldConf.extraOptions[ef.first.name] = static_cast<QSpinBox*>(ef.second)->text();
+                    break;
+                case SolverFlag::T_FLOAT_RANGE:
+                    oldConf.extraOptions[ef.first.name] = static_cast<QDoubleSpinBox*>(ef.second)->text();
                     break;
                 }
             }
@@ -2976,10 +2999,30 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 extraSolverFlags.push_back(qMakePair(f,le));
             }
                 break;
+            case SolverFlag::T_INT_RANGE:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QSpinBox* le = new QSpinBox(this);
+                le->setRange(f.min, f.max);
+                le->setValue(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name].toInt() : f.def.toInt());
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(le);
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,le));
+            }
+                break;
             case SolverFlag::T_BOOL:
             {
                 QCheckBox* cb = new QCheckBox(f.description,this);
                 cb->setChecked(conf.extraOptions.contains(f.name) ? (conf.extraOptions[f.name]=="true") : (f.def=="true"));
+                ui->extraOptionsLayout->addWidget(cb);
+                extraSolverFlags.push_back(qMakePair(f,cb));
+            }
+                break;
+            case SolverFlag::T_BOOL_ONOFF:
+            {
+                QCheckBox* cb = new QCheckBox(f.description,this);
+                cb->setChecked(conf.extraOptions.contains(f.name) ? (conf.extraOptions[f.name]=="true") : (f.def==f.options[0]));
                 ui->extraOptionsLayout->addWidget(cb);
                 extraSolverFlags.push_back(qMakePair(f,cb));
             }
@@ -2990,6 +3033,18 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 QLineEdit* le = new QLineEdit(this);
                 le->setText(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name] : f.def);
                 le->setValidator(new QDoubleValidator(this));
+                hb->addWidget(new QLabel(f.description));
+                hb->addWidget(le);
+                ui->extraOptionsLayout->addLayout(hb);
+                extraSolverFlags.push_back(qMakePair(f,le));
+            }
+                break;
+            case SolverFlag::T_FLOAT_RANGE:
+            {
+                QHBoxLayout* hb = new QHBoxLayout();
+                QDoubleSpinBox* le = new QDoubleSpinBox(this);
+                le->setRange(f.min, f.max);
+                le->setValue(conf.extraOptions.contains(f.name) ? conf.extraOptions[f.name].toDouble() : f.def.toDouble());
                 hb->addWidget(new QLabel(f.description));
                 hb->addWidget(le);
                 ui->extraOptionsLayout->addLayout(hb);

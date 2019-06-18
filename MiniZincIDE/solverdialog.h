@@ -28,7 +28,7 @@ class SolverDialog;
 struct SolverFlag {
     QString name;
     QString description;
-    enum { T_INT, T_BOOL, T_FLOAT, T_STRING, T_OPT, T_SOLVER } t;
+    enum { T_INT, T_INT_RANGE, T_BOOL, T_BOOL_ONOFF, T_FLOAT, T_FLOAT_RANGE, T_STRING, T_OPT, T_SOLVER } t;
     double min;
     double max;
     QStringList options;
