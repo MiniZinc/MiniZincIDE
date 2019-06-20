@@ -472,7 +472,7 @@ void IDE::openFile(const QString& fileName0)
 {
     QString fileName = fileName0;
     if (fileName.isEmpty()) {
-        fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
+        fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
@@ -1191,7 +1191,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
     QString fileName = path;
 
     if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp)");
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
