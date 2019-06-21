@@ -14,7 +14,7 @@
       ["-node", "Node cutoff", "int", "0"],
       ["-fail", "Failure cutoff", "int", "0"],
       ["-restart", "Restart sequence type (none, constant, linear, luby, geometric)", "string", "none"],
-      ["-restart-base", "Base for geometric restart sequence", "int", "1.5"],
+      ["-restart-base", "Base for geometric restart sequence", "float", "1.5"],
       ["-restart-scale", "Scale factor for restart sequence", "int", "250"],
       ["-nogoods", "Use no-goods from restarts", "bool", "false"],
       ["-nogoods-limit", "Depth limit for no-good extraction", "int", "128"],

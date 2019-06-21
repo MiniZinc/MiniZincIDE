@@ -12,7 +12,7 @@
       ["--vsids", "Use activity-based search on the Boolean variables", "bool", "false"],
       ["--toggle-vsids", "Alternate search between user-specified and activity-based one", "bool", "false"],
       ["--restart", "Restart sequence type (chuffed, none, constant, linear, luby, geometric)", "string", "chuffed"],
-      ["--restart-base", "Base for geometric restart sequence", "int", "1.5"],
+      ["--restart-base", "Base for geometric restart sequence", "float", "1.5"],
       ["--restart-scale", "Scale factor for restart sequence", "int", "1000000000"],
       ["--switch-to-vsids-after", "Search starts with the user-specified one and switches to the
      activity-based one after a specified number of conflicts", "int", "1000000000"],
