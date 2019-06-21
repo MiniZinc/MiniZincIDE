@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1425</width>
+    <width>1490</width>
     <height>1609</height>
    </rect>
   </property>
@@ -257,7 +257,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1425</width>
+     <width>1490</width>
      <height>22</height>
     </rect>
    </property>
@@ -574,9 +574,9 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
+          <y>-279</y>
           <width>661</width>
-          <height>1067</height>
+          <height>1074</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -1150,14 +1150,53 @@
            <zorder>conf_stats</zorder>
            <zorder>conf_solver_verbose</zorder>
            <zorder>conf_solver_free</zorder>
+           <zorder></zorder>
+           <zorder></zorder>
+           <zorder></zorder>
           </widget>
          </item>
          <item>
           <widget class="QGroupBox" name="extraOptionsBox">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>40</height>
+            </size>
+           </property>
            <property name="title">
             <string>Extra solver options</string>
            </property>
-           <layout class="QVBoxLayout" name="extraOptionsLayout"/>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+           <layout class="QVBoxLayout" name="extraOptionsBoxLayout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWidget" name="extraOptionsWidget" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
+              </property>
+              <layout class="QVBoxLayout" name="extraOptionsLayout"/>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </item>
          <item>

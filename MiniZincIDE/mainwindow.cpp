@@ -1575,7 +1575,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
         QStringList solverArgs = parseArgList(ui->conf_solverFlags->text());
         ret << solverArgs;
     }
-    if (confMode==CONF_RUN) {
+    if (confMode==CONF_RUN && ui->extraOptionsBox->isChecked()) {
         for (auto& ef : extraSolverFlags) {
             if (ef.first.t==SolverFlag::T_SOLVER) {
 
@@ -2905,6 +2905,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
             oldConf.verboseSolving = ui->conf_solver_verbose->isChecked();
             oldConf.solvingStats = ui->conf_stats->isChecked();
             oldConf.runSolutionChecker = ui->conf_check_solutions->isChecked();
+            oldConf.useExtraOptions = ui->extraOptionsBox->isChecked();
             oldConf.extraOptions.clear();
             for (auto& ef : extraSolverFlags) {
                 switch (ef.first.t) {
@@ -3097,6 +3098,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
                 break;
             }
         }
+        on_extraOptionsBox_toggled(conf.useExtraOptions);
     }
 
     if (idx < projectSolverConfigs.size()) {
@@ -3825,6 +3827,7 @@ void MainWindow::saveProject(const QString& f)
                 projConf["outputTiming"] = sc.outputTiming;
                 projConf["solvingStats"] = sc.solvingStats;
                 projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                projConf["useExtraOptions"] = sc.useExtraOptions;
                 if (!sc.extraOptions.empty()) {
                     QJsonObject extraOptions;
                     for (auto& k : sc.extraOptions.keys()) {
@@ -3870,6 +3873,7 @@ void MainWindow::saveProject(const QString& f)
                     projConf["outputTiming"] = sc.outputTiming;
                     projConf["solvingStats"] = sc.solvingStats;
                     projConf["runSolutionChecker"] = sc.runSolutionChecker;
+                    projConf["useExtraOptions"] = sc.useExtraOptions;
                     if (!sc.extraOptions.empty()) {
                         QJsonObject extraOptions;
                         for (auto& k : sc.extraOptions.keys()) {
@@ -3969,8 +3973,11 @@ namespace {
         if (sco["solvingStats"].isBool()) {
             newSc.solvingStats = sco["solvingStats"].toBool();
         }
-        if (sco["runSolutionChecker"].toBool()) {
+        if (sco["runSolutionChecker"].isBool()) {
             newSc.runSolutionChecker = sco["runSolutionChecker"].toBool();
+        }
+        if (sco["useExtraOptions"].isBool()) {
+            newSc.useExtraOptions = sco["useExtraOptions"].toBool();
         }
         if (sco["extraOptions"].isObject()) {
             QJsonObject extraOptions = sco["extraOptions"].toObject();
@@ -4622,4 +4629,9 @@ void MainWindow::on_find_textEdited(const QString &)
 {
     curEditor->setTextCursor(incrementalFindCursor);
     find(true);
+}
+
+void MainWindow::on_extraOptionsBox_toggled(bool isActive)
+{
+    ui->extraOptionsWidget->setVisible(isActive);
 }

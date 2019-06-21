@@ -325,6 +325,8 @@ private slots:
 
     void on_find_textEdited(const QString &arg1);
 
+    void on_extraOptionsBox_toggled(bool arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

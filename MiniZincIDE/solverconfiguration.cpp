@@ -26,6 +26,7 @@ SolverConfiguration SolverConfiguration::defaultConfig() {
     def.outputTiming = false;
     def.solvingStats = false;
     def.runSolutionChecker = true;
+    def.useExtraOptions = false;
     return def;
 }
 
@@ -106,5 +107,6 @@ bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
             sc.verboseSolving==verboseSolving &&
             sc.outputTiming==outputTiming &&
             sc.solvingStats==solvingStats &&
-            sc.runSolutionChecker==runSolutionChecker;
+            sc.runSolutionChecker==runSolutionChecker &&
+            sc.useExtraOptions==useExtraOptions;
 }
