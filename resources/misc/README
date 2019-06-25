@@ -1,0 +1,11 @@
+MiniZinc bundled binary distribution for Linux
+==============================================
+
+This package contains MiniZinc binaries for Ubuntu 16.04. If you want
+to run MiniZinc on other versions of Linux that are not compatible
+with Ubuntu 16.04, you may have to compile MiniZinc from the source
+code which is available at http://www.minizinc.org.
+
+To run the MiniZinc IDE, just execute MiniZincIDE.sh.
+
+To use the MiniZinc command line tools, add this directory to your PATH.

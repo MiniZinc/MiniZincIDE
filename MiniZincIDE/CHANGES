@@ -1,3 +1,17 @@
+  v2.3.0
+  - The IDE will now check MiniZinc code for syntax and type errors
+  - The editor performs simple code completion for MiniZinc keywords
+  - Ensure cursor is visible (editor scrolls to cursor position) when pressing 
+    tab or enter. Fixes #71.
+  - Replace find dialog with inline widget and incremental search.
+  - Support dark mode on macOS.
+  - Add support for extra solver flags (parsed from solver configuration).
+  - IDE now only uses minizinc executable (not mzn2fzn and solns2out).
+  - Re-dock configuration editor when closing un-docked window.
+  - Handle quotes when parsing additional solver command line arguments.
+    Fixes #77.
+  - Add workaround for the missing libnss requirements
+  - Allow spaces in $DIR in MiniZincIDE.sh (Fixes #81)
   v2.2.3
   - Only run solution checker if it is enabled in the solver configuration dialog.
   v2.2.2

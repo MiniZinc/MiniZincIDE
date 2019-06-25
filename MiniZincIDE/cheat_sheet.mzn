@@ -25,15 +25,17 @@ output ["Solution:\n", "x = ", show(x),  % output list of strings
 ***********************/
 
 int: i;
-3..5: j;         % integer
+3..5: j;                     % integer
 
 float: f;
-3.0..5.0: g;     % floating point number
+3.0..5.0: g;                 % floating point number
 
-bool: b;         % boolean
+bool: b;                     % boolean
 
-set of int: s;   % set
+set of int: s;               % set
 set of 3..5: t;
+
+enum E = { Boat, Airplane }; % enumerated type
 
 /***********************
 * Type-insts           *
@@ -48,7 +50,7 @@ array[1..4,1..10] of var 0.0..100.0: f;
                       % declare 2d array of float variables
 
 var opt 1..10: ox;    % declare optional int variable (can be 1..10 or
-                      % absent)
+                      % "absent", written <>)
 
 /*********************
 * Basic Constraints  *
@@ -117,7 +119,7 @@ array[int,int] of float: x =
 solve maximize sum(x);        % optimization
 solve minimize sum(x);
 
-solve ::int_search([x,y,z], input_order, indomain_min, complete) satisfy;
+solve ::int_search([x,y,z], input_order, indomain_min) satisfy;
                       % search annotation
                       % variable selection (examples):
                       %   input_order, first_fail, max_regret, smallest
@@ -126,8 +128,8 @@ solve ::int_search([x,y,z], input_order, indomain_min, complete) satisfy;
                       %   indomain_split, indomain_reverse_split
                       % similar for bool_search, set_search, float_search
 
-solve ::seq_search([int_search(x, first_fail, indomain, complete),
-                    int_search(y, input_order, indomain_min, complete)])
+solve ::seq_search([int_search(x, first_fail, indomain),
+                    int_search(y, input_order, indomain_min)])
       satisfy;
                       % first search x, then y
 

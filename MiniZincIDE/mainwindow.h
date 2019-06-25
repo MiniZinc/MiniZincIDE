@@ -168,6 +168,7 @@ private slots:
     void checkArgs(QString filepath);
     void checkArgsOutput();
     void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
+    void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
     void readOutput();
 
@@ -284,6 +285,7 @@ private slots:
     void windowMenuSelected(QAction*);
     void closeHTMLWindow(int);
     void on_actionCheat_Sheet_triggered();
+    void check_code();
 
     void on_actionDark_mode_toggled(bool arg1);
 
@@ -309,10 +311,29 @@ private slots:
 
     void on_conf_check_solutions_toggled(bool checked);
 
+    void on_b_next_clicked();
+
+    void on_b_prev_clicked();
+
+    void on_b_replacefind_clicked();
+
+    void on_b_replace_clicked();
+
+    void on_b_replaceall_clicked();
+
+    void on_closeFindWidget_clicked();
+
+    void on_find_textEdited(const QString &arg1);
+
+    void on_extraOptionsBox_toggled(bool arg1);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
+#ifdef Q_OS_MAC
+    virtual void paintEvent(QPaintEvent *);
+#endif
     bool eventFilter(QObject *, QEvent *);
     void openJSONViewer(void);
     void finishJSONViewer(void);
@@ -335,8 +356,10 @@ private:
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
     MznProcess* process;
+    MznProcess* check_process;
     QString processName;
     QString curModelFilepath;
+    CodeEditor* curCheckEditor;
     MznProcess* outputProcess;
     bool processWasStopped;
     int solutionCount;
@@ -352,6 +375,7 @@ private:
     QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
+    QTimer* checkTimer;
     int time;
     QElapsedTimer elapsedTime;
     QProgressBar* progressBar;
@@ -374,14 +398,14 @@ private:
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     QVector<MznProcess*> cleanupProcesses;
-    FindDialog* findDialog;
+    QTextCursor incrementalFindCursor;
     QString projectPath;
     bool saveBeforeRunning;
     QString compileErrors;
     ParamDialog* paramDialog;
     bool compileOnly;
     int runTimeout;
-    QString mzn2fzn_executable;
+    QString minizinc_executable;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
@@ -405,6 +429,7 @@ private:
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
     QVector<SolverConfiguration> builtinSolverConfigs;
+    QVector<QPair<SolverFlag,QWidget*>> extraSolverFlags;
     int currentSolverConfig;
     bool renamingSolverConf;
 
@@ -427,6 +452,7 @@ private:
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
     void updateSolverConfigs(void);
     void setCurrentSolverConfig(int idx);
+    void find(bool fwd);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

@@ -366,8 +366,6 @@ void SolverDialog::on_updateButton_clicked()
         }
         ui->solvers_combo->setCurrentIndex(index);
     }
-    QString mzn2fzn_executable;
-    QString mzn2fzn_version;
     editingFinished(false);
 }
 
@@ -418,8 +416,8 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
 }
 
 void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
-                                      QString& mzn2fzn_executable,
-                                      QString& mzn2fzn_version_string,                                      
+                                      QString& minizinc_executable,
+                                      QString& minizinc_version_string,
                                       QVector<Solver>& solvers,
                                       QString& userSolverConfigDir,
                                       QString& userConfigFile,
@@ -428,23 +426,18 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
     MznProcess p;
     QStringList args;
     args << "--version";
-    mzn2fzn_executable = "";
-    mzn2fzn_version_string = "";
+    minizinc_executable = "";
+    minizinc_version_string = "";
     p.start("minizinc", args, mznDistribPath);
     if (!p.waitForStarted() || !p.waitForFinished()) {
-        p.start("mzn2fzn.bat", args, mznDistribPath);
-        if (!p.waitForStarted() || !p.waitForFinished()) {
-            return;
-        } else {
-            mzn2fzn_executable = "mzn2fzn.bat";
-        }
+        return;
     } else {
-        mzn2fzn_executable = "minizinc";
+        minizinc_executable = "minizinc";
     }
-    mzn2fzn_version_string = p.readAllStandardOutput()+p.readAllStandardError();
+    minizinc_version_string = p.readAllStandardOutput()+p.readAllStandardError();
     QRegExp reVersion("version ([0-9]+)\\.([0-9]+)\\.\\S+");
-    if (reVersion.indexIn(mzn2fzn_version_string)==-1) {
-        mzn2fzn_executable = "";
+    if (reVersion.indexIn(minizinc_version_string)==-1) {
+        minizinc_executable = "";
         return;
     } else {
         bool ok;
@@ -452,15 +445,15 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         if (ok) {
             int curVersionMinor = reVersion.cap(2).toInt(&ok);
             if (curVersionMajor<2 || (curVersionMajor<3 && curVersionMinor<2)) {
-                mzn2fzn_executable = "";
+                minizinc_executable = "";
                 return;
             }
         }
     }
-    if (!mzn2fzn_executable.isEmpty()) {
+    if (!minizinc_executable.isEmpty()) {
         args.clear();
         args << "--config-dirs";
-        p.start(mzn2fzn_executable, args, mznDistribPath);
+        p.start(minizinc_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
             QString allOutput = p.readAllStandardOutput();
             QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
@@ -473,7 +466,7 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
         }
         args.clear();
         args << "--solvers-json";
-        p.start(mzn2fzn_executable, args, mznDistribPath);
+        p.start(minizinc_executable, args, mznDistribPath);
         if (p.waitForStarted() && p.waitForFinished()) {
             QString allOutput = p.readAllStandardOutput();
             QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
@@ -512,6 +505,62 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
                             s.stdFlags.push_back(sf.toString());
                         }
                     }
+                    if (sj["extraFlags"].isArray()) {
+                        QJsonArray sfs = sj["extraFlags"].toArray();
+                        for (auto sf : sfs) {
+                            if (sf.isArray()) {
+                                QJsonArray extraFlagA = sf.toArray();
+                                if (extraFlagA.size()==4) {
+                                    SolverFlag extraFlag;
+                                    extraFlag.min=1.0;
+                                    extraFlag.max=0.0;
+                                    extraFlag.name = extraFlagA[0].toString();
+                                    QRegularExpression re_opt("^(int|float|bool)(:([0-9a-zA-Z.-]+):([0-9a-zA-Z.-]+))?");
+                                    QRegularExpressionMatch re_opt_match = re_opt.match(extraFlagA[2].toString());
+                                    if (re_opt_match.hasMatch()) {
+                                        if (re_opt_match.captured(1)=="int") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_INT;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_INT_RANGE;
+                                                extraFlag.min = re_opt_match.captured(3).toInt();
+                                                extraFlag.max = re_opt_match.captured(4).toInt();
+                                            }
+                                        } else if (re_opt_match.captured(1)=="float") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_FLOAT;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_FLOAT_RANGE;
+                                                extraFlag.min = re_opt_match.captured(3).toDouble();
+                                                extraFlag.max = re_opt_match.captured(4).toDouble();
+                                            }
+                                        } else if (re_opt_match.captured(1)=="bool") {
+                                            if (re_opt_match.captured(3).isEmpty()) {
+                                                extraFlag.t = SolverFlag::T_BOOL;
+                                            } else {
+                                                extraFlag.t = SolverFlag::T_BOOL_ONOFF;
+                                                extraFlag.options = QStringList({re_opt_match.captured(3),re_opt_match.captured(4)});
+                                            }
+                                        }
+                                    } else {
+                                        if (extraFlagA[2].toString()=="string") {
+                                            extraFlag.t = SolverFlag::T_STRING;
+                                        } else if (extraFlagA[2].toString().startsWith("opt:")) {
+                                            extraFlag.t = SolverFlag::T_OPT;
+                                            extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
+//                                        } else if (extraFlagA[2].toString()=="solver") {
+//                                            extraFlag.t = SolverFlag::T_SOLVER;
+                                        } else {
+                                            continue;
+                                        }
+                                    }
+                                    extraFlag.description = extraFlagA[1].toString();
+                                    extraFlag.def = extraFlagA[3].toString();
+                                    s.extraFlags.push_back(extraFlag);
+                                }
+                            }
+                        }
+                    }
                     s.isGUIApplication = sj["isGUIApplication"].toBool(false);
                     s.needsMznExecutable = sj["needsMznExecutable"].toBool(false);
                     s.needsStdlibDir = sj["needsStdlibDir"].toBool(false);
@@ -531,25 +580,25 @@ void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
 
 void SolverDialog::editingFinished(bool showError)
 {
-    QString mzn2fzn_executable;
-    QString mzn2fzn_version;
+    QString minizinc_executable;
+    QString minizinc_version;
     for (int i=0; i<solvers.size(); i++) {
         ui->solvers_combo->removeItem(0);
     }
     solvers.clear();
-    checkMznExecutable(ui->mznDistribPath->text(),mzn2fzn_executable,mzn2fzn_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
-    if (mzn2fzn_executable.isEmpty()) {
+    checkMznExecutable(ui->mznDistribPath->text(),minizinc_executable,minizinc_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
+    if (minizinc_executable.isEmpty()) {
         if (showError) {
-            QMessageBox::warning(this,"MiniZinc IDE","Could not find the mzn2fzn executable.",
+            QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.",
                                  QMessageBox::Ok);
         }
-        if (mzn2fzn_version.isEmpty()) {
+        if (minizinc_version.isEmpty()) {
             ui->mzn2fzn_version->setText("None");
         } else {
-            ui->mzn2fzn_version->setText("None. Error message:\n"+mzn2fzn_version);
+            ui->mzn2fzn_version->setText("None. Error message:\n"+minizinc_version);
         }
     } else {
-        ui->mzn2fzn_version->setText(mzn2fzn_version);
+        ui->mzn2fzn_version->setText(minizinc_version);
         for (int i=solvers.size(); i--;) {
             ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
         }

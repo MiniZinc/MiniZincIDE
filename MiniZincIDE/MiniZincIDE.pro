@@ -19,16 +19,18 @@ greaterThan(QT_MAJOR_VERSION, 4): {
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.2.3
+VERSION = 2.3.0
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
     DEFINES += MINIZINC_IDE_BUNDLED
 }
 
+CONFIG += c++11
+
 macx {
     ICON = mznide.icns
-    OBJECTIVE_SOURCES += rtfexporter.mm
+    OBJECTIVE_SOURCES += macos_extras.mm
     QT += macextras
     LIBS += -framework Cocoa
     macx-xcode {
@@ -43,13 +45,12 @@ RC_ICONS = mznide.ico
 CONFIG += embed_manifest_exe
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
-    finddialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
@@ -64,14 +65,13 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
+    macos_extras.h \
     solverdialog.h \
     gotolinedialog.h \
-    finddialog.h \
     paramdialog.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    rtfexporter.h \
     htmlwindow.h \
     htmlpage.h \
     moocsubmission.h \
@@ -82,7 +82,6 @@ FORMS    += \
     mainwindow.ui \
     solverdialog.ui \
     gotolinedialog.ui \
-    finddialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
     htmlwindow.ui \

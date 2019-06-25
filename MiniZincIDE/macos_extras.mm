@@ -1,5 +1,5 @@
 #import <Cocoa/Cocoa.h>
-#include "rtfexporter.h"
+#include "macos_extras.h"
 
 NSData* ba_toNSData(const QByteArray& data) {
   return [NSData dataWithBytes:data.constData() length:data.size()];
@@ -45,4 +45,14 @@ QList<QByteArray> MyRtfMime::convertFromMime(const QString &mime, QVariant data,
     NSData *rtfData = [string dataFromRange:range documentAttributes:dict error:&error];
     ret << ba_fromNSData(rtfData);
     return ret;
+}
+
+int isDark(void) {
+    id appObjects[] = { NSAppearanceNameAqua, NSAppearanceNameDarkAqua };
+    NSArray* appearances = [NSArray arrayWithObjects: appObjects count:2];
+    return [[NSAppearance currentAppearance] bestMatchFromAppearancesWithNames: appearances] == NSAppearanceNameDarkAqua;
+}
+
+int hasDarkMode(void) {
+    return (NSAppKitVersionNumber > NSAppKitVersionNumber10_13);
 }

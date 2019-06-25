@@ -26,6 +26,7 @@ SolverConfiguration SolverConfiguration::defaultConfig() {
     def.outputTiming = false;
     def.solvingStats = false;
     def.runSolutionChecker = true;
+    def.useExtraOptions = false;
     return def;
 }
 
@@ -72,8 +73,12 @@ void SolverConfiguration::defaultConfigs(const QVector<Solver>& solvers,
             def.name = n.name+" "+n.version;
             def.solverId = n.id;
             def.solverVersion = n.version;
+            def.extraOptions.clear();
             if (n.isDefaultSolver)
                 defaultSolverIdx = solverConfigs.size();
+            for (auto ef : n.extraFlags) {
+                def.extraOptions[ef.name] = ef.def;
+            }
             solverConfigs.push_back(def);
         }
     }
@@ -102,5 +107,6 @@ bool SolverConfiguration::operator==(const SolverConfiguration &sc) const
             sc.verboseSolving==verboseSolving &&
             sc.outputTiming==outputTiming &&
             sc.solvingStats==solvingStats &&
-            sc.runSolutionChecker==runSolutionChecker;
+            sc.runSolutionChecker==runSolutionChecker &&
+            sc.useExtraOptions==useExtraOptions;
 }
