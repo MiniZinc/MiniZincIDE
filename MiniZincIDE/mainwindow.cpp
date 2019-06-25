@@ -1595,7 +1595,12 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
                     break;
                 case SolverFlag::T_OPT:
                 case SolverFlag::T_SOLVER:
-                    ret << ef.first.name << static_cast<QComboBox*>(ef.second)->currentText();
+                {
+                    QString s = static_cast<QComboBox*>(ef.second)->currentText();
+                    if (!s.isEmpty() && s!=ef.first.def) {
+                        ret << ef.first.name << s;
+                    }
+                }
                     break;
                 case SolverFlag::T_INT:
                 case SolverFlag::T_FLOAT:
