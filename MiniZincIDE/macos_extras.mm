@@ -48,11 +48,19 @@ QList<QByteArray> MyRtfMime::convertFromMime(const QString &mime, QVariant data,
 }
 
 int isDark(void) {
-    id appObjects[] = { NSAppearanceNameAqua, NSAppearanceNameDarkAqua };
-    NSArray* appearances = [NSArray arrayWithObjects: appObjects count:2];
-    return [[NSAppearance currentAppearance] bestMatchFromAppearancesWithNames: appearances] == NSAppearanceNameDarkAqua;
+    if (@available(macOS 10.14, *)) {
+        id appObjects[] = { NSAppearanceNameAqua, NSAppearanceNameDarkAqua };
+        NSArray* appearances = [NSArray arrayWithObjects: appObjects count:2];
+        return [[NSAppearance currentAppearance] bestMatchFromAppearancesWithNames: appearances] == NSAppearanceNameDarkAqua;
+    } else {
+        return false;
+    }
 }
 
 int hasDarkMode(void) {
-    return (NSAppKitVersionNumber > NSAppKitVersionNumber10_13);
+    if (@available(macOS 10.14, *)) {
+        return true;
+    } else {
+        return false;
+    }
 }
