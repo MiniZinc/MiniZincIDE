@@ -13,7 +13,7 @@
   "stdFlags": ["--output-html", "-v", "-s", "-a", "-n", "-t"],
   "extraFlags": [
     ["--paramset", "Preset parameters", "opt:hint:mzn:fzn", "hint"],
-    ["--solver", "Which solver to use for SAT checking", "string", "gecode"],
+    ["--subsolver", "Which solver to use for SAT checking", "string", "gecode"],
     ["--structure", "Alter initial structure", "opt:flat:gen:normal:mix:idx:idxmix", "gen"],
     ["--no-binarize", "Disable binarization", "bool", "false"],
     ["--shrink-alg", "Select MUS shrink algorithm", "opt:lin:map_lin:qx:map_qx", "map_qx"],
@@ -31,6 +31,7 @@
     ["--filter-name", "Filter constraints based on comma separated substrings of expression and constraint names", "string", ""],
     ["--dump-dot", "Write tree to GraphViz file", "string", ""],
     ["--soft-defines", "Consider functional constraints as part of MUSes.", "bool", "false"],
+    ["-g", "Record domain changes during compilation as constraints. (use with --soft-domains)", "bool", "false"],
     ["--help", "Extra help information", "bool", "false"],
     ]
 }
