@@ -44,7 +44,7 @@ CodeEditor::initUI(QFont& font)
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                        QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), loadContentsButton(NULL), tabs(t), darkMode(darkMode0), modifiedSinceLastCheck(true)
+    QPlainTextEdit(parent), modifiedSinceLastCheck(true), loadContentsButton(NULL), tabs(t), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
