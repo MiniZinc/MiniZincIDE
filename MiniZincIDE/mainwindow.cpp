@@ -1666,8 +1666,8 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
     if (exitcode==0) {
         if (!compileErrors.isEmpty()) {
             QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
-            compileErrors = "";
             if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+                compileErrors = "";
                 isOptimisation = (jdoc.object()["method"].toString() != "sat");
                 QJsonObject inputArgs = jdoc.object()["input"].toObject();
                 QStringList undefinedArgs = inputArgs.keys();
@@ -1693,7 +1693,9 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                     }
                 }
             } else {
-                qDebug() << compileErrors;
+                addOutput("<p style='color:red'>Error when checking model parameters:</p>");
+                addOutput(compileErrors, false);
+                compileErrors = "";
                 QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
                 procFinished(0);
                 return;
