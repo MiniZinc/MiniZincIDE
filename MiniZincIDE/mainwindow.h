@@ -402,6 +402,7 @@ private:
     QString projectPath;
     bool saveBeforeRunning;
     QString compileErrors;
+    QString checkArgsStdout;
     ParamDialog* paramDialog;
     bool compileOnly;
     int runTimeout;
