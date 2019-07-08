@@ -132,7 +132,7 @@ package:osx:
     - mv findMUS/bin/findMUS $DIR/bin/
     ### Package solver scripts
     - cp resources/scripts/fzn-gecode-gist $DIR/bin/
-    - cp resources/misc/gecode-qt.conf $DIR/bin/qt.conf
+    - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
     ### Package default settings
     - cp resources/solvers/*.msc $MZNDIR/solvers
     - cp resources/Preferences.json $MZNDIR/
