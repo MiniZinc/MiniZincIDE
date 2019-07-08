@@ -28,6 +28,7 @@ SolidCompression=yes
 ChangesAssociations=yes
 ArchitecturesInstallIn64BitMode={#MyApp64Bit}
 ArchitecturesAllowed={#MyAppArchitectures}
+DisableDirPage=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
