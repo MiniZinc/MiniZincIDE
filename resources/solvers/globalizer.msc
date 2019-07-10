@@ -2,7 +2,7 @@
     "executable": "../../../bin/minizinc-globalizer",
     "id": "org.minizinc.globalizer",
     "isGUIApplication": false,
-    "mznlib": "-Gglobalizer",
+    "mznlib": "../globalizer",
     "name": "Globalizer",
     "supportsMzn": true,
     "version": "0.1.6.0",
