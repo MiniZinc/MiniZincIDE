@@ -1646,8 +1646,8 @@ void MainWindow::addOutput(const QString& s, bool html)
 
 void MainWindow::checkArgsOutput()
 {
-    QString l = process->readAll();
-    compileErrors += l;
+    compileErrors += process->readAllStandardError();
+    checkArgsStdout += process->readAllStandardOutput();
 }
 
 QString MainWindow::getMznDistribPath(void) const {
@@ -1664,10 +1664,11 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
         checkArgsOutput();
     }
     if (exitcode==0) {
-        if (!compileErrors.isEmpty()) {
-            QJsonDocument jdoc = QJsonDocument::fromJson(compileErrors.toUtf8());
-            compileErrors = "";
+        if (!checkArgsStdout.isEmpty()) {
+            QJsonDocument jdoc = QJsonDocument::fromJson(checkArgsStdout.toUtf8());
             if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+                compileErrors = "";
+                checkArgsStdout = "";
                 isOptimisation = (jdoc.object()["method"].toString() != "sat");
                 QJsonObject inputArgs = jdoc.object()["input"].toObject();
                 QStringList undefinedArgs = inputArgs.keys();
@@ -1693,7 +1694,10 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                     }
                 }
             } else {
-                qDebug() << compileErrors;
+                addOutput("<p style='color:red'>Error when checking model parameters:</p>");
+                addOutput(compileErrors, false);
+                compileErrors = "";
+                checkArgsStdout = "";
                 QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
                 procFinished(0);
                 return;
@@ -1721,6 +1725,7 @@ void MainWindow::checkArgs(QString filepath)
     curModelFilepath = filepath;
     processWasStopped = false;
     compileErrors = "";
+    checkArgsStdout = "";
     if (compileOnly && filepath.endsWith(".mzc.mzn")) {
         // We are compiling a solution checker
         process = NULL;
@@ -1728,8 +1733,8 @@ void MainWindow::checkArgs(QString filepath)
     } else {
         process = new MznProcess(this);
         process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
-        process->setProcessChannelMode(QProcess::MergedChannels);
         connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
+        connect(process, SIGNAL(readyReadStandardError()), this, SLOT(checkArgsOutput()));
         connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkArgsFinished(int,QProcess::ExitStatus)));
         connect(process, SIGNAL(error(QProcess::ProcessError)),
                 this, SLOT(checkArgsError(QProcess::ProcessError)));

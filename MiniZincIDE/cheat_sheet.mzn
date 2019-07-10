@@ -110,7 +110,7 @@ constraint forall ([ x[i] != x[j] | i,j in 1..n where i<j ]);
 array[20..30] of int: i = array1d(20..30, x);
 
 array[int,int] of float: x =
-  array2d(1..10, 1..10, [ 0.0 | i,j in 1.10 ]);
+  array2d(1..10, 1..10, [ 0.0 | i,j in 1..10 ]);
 
 /********************************
 * Search and search annotations *

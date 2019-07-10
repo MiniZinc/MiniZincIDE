@@ -28,6 +28,7 @@ SolidCompression=yes
 ChangesAssociations=yes
 ArchitecturesInstallIn64BitMode={#MyApp64Bit}
 ArchitecturesAllowed={#MyAppArchitectures}
+DisableDirPage=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -48,6 +49,7 @@ Source: "{#MyAppDirectory}\resources\Preferences.json"; DestDir: "{app}\share\mi
 
 Source: "{#MyAppDirectory}\vendor\gecode\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\gecode\share\gecode\mznlib\*"; DestDir: "{app}\share\minizinc\gecode"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\bin"; DestName: "qt.conf"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\chuffed\share\chuffed\mznlib\*"; DestDir: "{app}\share\minizinc\chuffed"; Flags: ignoreversion recursesubdirs createallsubdirs

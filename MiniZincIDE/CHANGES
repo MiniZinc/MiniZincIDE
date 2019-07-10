@@ -1,3 +1,14 @@
+2019-07-10
+  v2.3.1
+  - Remove incorrect symbolic link and fix qt.conf for some bundled distributions.
+  - Fix check for availability of dark mode on older versions of macOS.
+  - Fix a typo in the cheat sheet.
+  - Provide more robust solution for checking the model parameters, which will get
+    rid of some "internal error" messages.
+  - Always show directory selection dialog in the Windows installer. Addresses #89.
+  - Improved the configuration files for some bundled solvers, provides nicer
+    configuration interface.
+2019-06-26
   v2.3.0
   - The IDE will now check MiniZinc code for syntax and type errors
   - The editor performs simple code completion for MiniZinc keywords
@@ -12,8 +23,10 @@
     Fixes #77.
   - Add workaround for the missing libnss requirements
   - Allow spaces in $DIR in MiniZincIDE.sh (Fixes #81)
+2018-10-31
   v2.2.3
   - Only run solution checker if it is enabled in the solver configuration dialog.
+2018-10-26
   v2.2.2
   - Add line/column display in status bar. Fixes #65.
   - Optional parameters don't have to be defined in input dialog.
@@ -24,11 +37,13 @@
     Fixes #66.
   - Manage multiple open visualisation windows, and implement re-solve function
     that can be initiated from a visualisation.
+2018-09-06
   v2.2.1
   - Improve dark mode by changing line numbers to dark background.
   - Make parameter input dialog scrollable.
   - Fix solution compression limit, and output one solution per
     block of compressed solutions.
+2018-08-24
   v2.2.0
   - Update to MiniZinc 2.2.0.
   - Change solver configuration interface to work with new MiniZinc 2.2.0
@@ -40,6 +55,7 @@
   - Fix shift left/shift right functionality.
   - Support for running models without saving them first.
   - Fix file dialogs to use correct file extensions.
+2018-01-10
   v2.1.7
   - Update to MiniZinc 2.1.7.
   - Fix problem where files with a . in the filename could not be run (bug #44).
@@ -49,8 +65,10 @@
   - Fix hidden solution display when there are exactly as many solutions as the
     configured threshold for hiding solutions (bug #42).
   - Add configuration option to print timing information for each solution.
+2017-09-22
   v2.1.6
   - Update to MiniZinc 2.1.6.
+2017-05-17
   v2.1.5
   - Update to MiniZinc 2.1.5.
   - Fix an issue where solver output may not get printed if it occurs too

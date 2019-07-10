@@ -1,3 +1,3 @@
 @echo off
 setlocal
-fzn-gecode -mode gist %*
+"%~dp0"fzn-gecode -mode gist %*

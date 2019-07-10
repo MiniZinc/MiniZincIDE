@@ -122,7 +122,6 @@ package:osx:
     ### Package vendor solvers
     - mkdir -p $DIR/bin/
     - mv vendor/gecode/bin/fzn-gecode $DIR/bin/
-    - (cd $DIR; ln -s gecode/fzn-gecode)
     - mv vendor/gecode/share/gecode/mznlib $MZNDIR/gecode
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - mv vendor/chuffed/share/chuffed/mznlib $MZNDIR/chuffed
@@ -133,6 +132,7 @@ package:osx:
     - mv findMUS/bin/findMUS $DIR/bin/
     ### Package solver scripts
     - cp resources/scripts/fzn-gecode-gist $DIR/bin/
+    - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
     ### Package default settings
     - cp resources/solvers/*.msc $MZNDIR/solvers
     - cp resources/Preferences.json $MZNDIR/
