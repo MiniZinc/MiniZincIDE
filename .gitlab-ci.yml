@@ -257,7 +257,7 @@ package:docker_ubuntu:
   only: [tags, master, develop]
   tags: [docker-cli]
 
-package:snap:
+.snap_job: &snap_job
   stage: package
   image: dekker1/minibuild:snap
   variables:
@@ -278,5 +278,13 @@ package:snap:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
   dependencies: []
-  only: [tags, develop]
   tags: [linux, docker]
+
+package:snap:
+  <<: *snap_job
+  only: [tag]
+
+package:snap_manual:
+  <<: *snap_job
+  except: [tag]
+  when: manual
