@@ -104,6 +104,7 @@ package:linux:
     name: "minizinc_bundle_linux_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE*.tgz, MiniZincIDE*.sha256]
   dependencies: ["build:linux"]
+  needs: ["build:linux"]
   tags: [linux, docker]
 
 package:osx:
@@ -142,6 +143,7 @@ package:osx:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE.app]
   dependencies: ["build:osx"]
+  needs: ["build:osx"]
   tags: [osx, qt]
 
 package:win64:
@@ -174,6 +176,7 @@ package:win64:
     name: "minizinc_bundle_windows_%CI_PIPELINE_ID%"
     paths: [MiniZincIDE*.exe, MiniZincIDE*.sha256]
   dependencies: ["build:win64"]
+  needs: ["build:win64"]
   tags: [win64]
 
 package:appimage:
@@ -222,6 +225,7 @@ package:appimage:
     name: "minizinc_appimage_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE*.AppImage, MiniZincIDE*.sha256]
   dependencies: ["build:linux"]
+  needs: ["build:linux"]
   tags: [linux, docker]
 
 package:docker_alpine:
