@@ -230,37 +230,44 @@ package:appimage:
 
 package:docker_alpine:
   stage: package
+  parallel: 4
   variables:
     MZNARCH: "musl"
   <<: *packaging_setup
   script:
-    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE='alpine:latest' -q .)"
-    - echo $HASH 
-    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}-alpine && docker push minizinc/minizinc:${CI_COMMIT_TAG}-alpine; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest-alpine && docker push minizinc/minizinc:latest-alpine; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "develop2" ]; then docker tag ${HASH} minizinc/minizinc:edge-alpine && docker push minizinc/minizinc:edge-alpine; fi
+    - BASES=("null" "alpine:latest" "alpine:3.10" "alpine:3.9" "alpine:3.8")
+    - EXTS=("null" "-alpine" "-alpine3.10" "-alpine3.9" "-alpine3.8")
+    - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
+    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
+    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
   dependencies: []
-  only: [tags, master, develop, develop2]
+  only: [tags, master, develop]
   tags: [docker-cli]
 
 package:docker_ubuntu:
   stage: package
+  parallel: 3
   variables:
     MZNARCH: "linux"
     DOWNLOAD_SOLVERS: 0
   <<: *packaging_setup
   script:
+    - BASES=("null" "ubuntu:latest" "ubuntu:bionic" "ubuntu:xenial")
+    - EXTS=("null" "" "-bionic" "-xenial")
+    - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
     - curl --silent -o gecode.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=gecode:$MZNARCH"
     - unzip -q gecode.zip
     - curl --silent -o chuffed.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=chuffed:$MZNARCH"
     - unzip -q chuffed.zip
-    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE='ubuntu:latest' -q .)"
+    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
     - echo $HASH 
-    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG} && docker push minizinc/minizinc:${CI_COMMIT_TAG}; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest && docker push minizinc/minizinc:latest; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "develop2" ]; then docker tag ${HASH} minizinc/minizinc:edge && docker push minizinc/minizinc:edge; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
   dependencies: []
-  only: [tags, master, develop, develop2]
+  only: [tags, master, develop]
   tags: [docker-cli]
 
 .snap_job: &snap_job
