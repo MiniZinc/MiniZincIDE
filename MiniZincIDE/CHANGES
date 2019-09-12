@@ -1,3 +1,6 @@
+2019-09-12
+  v2.3.2
+  - Update to MiniZinc 2.3.2.
 2019-07-10
   v2.3.1
   - Remove incorrect symbolic link and fix qt.conf for some bundled distributions.
