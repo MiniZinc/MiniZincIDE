@@ -295,9 +295,9 @@ package:docker_ubuntu:
 
 package:snap:
   <<: *snap_job
-  only: [tag]
+  only: [tags]
 
 package:snap_manual:
   <<: *snap_job
-  except: [tag]
+  except: [tags]
   when: manual
