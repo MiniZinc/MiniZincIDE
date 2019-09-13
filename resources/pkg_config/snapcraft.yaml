@@ -17,7 +17,7 @@ apps:
   minizinc:
     command: usr/bin/minizinc
   ide:
-    command: bin/desktop-launch $SNAP/usr/bin/MiniZincIDE
+    command: bin/desktop-launch ${SNAP}/usr/bin/MiniZincIDE
     desktop: usr/share/applications/MiniZincIDE.desktop
 
 parts:

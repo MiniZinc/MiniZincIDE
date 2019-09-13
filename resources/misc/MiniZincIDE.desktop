@@ -4,5 +4,5 @@ Type=Application
 Terminal=false
 Exec=minizinc.ide
 Name=MiniZincIDE
-Icon=$SNAP/meta/gui/icon.png
+Icon=${SNAP}/meta/gui/icon.png
 Categories=Science;Development;Education;
