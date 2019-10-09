@@ -22,14 +22,16 @@ CodeEditor::initUI(QFont& font)
     setTabStopWidth(QFontMetrics(font).width("  "));
 
     lineNumbers= new LineNumbers(this);
+    debugInfo = new DebugInfo(this);
 
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     connect(document(), SIGNAL(contentsChanged()), this, SLOT(contentsChanged()));
 
-    setLineNumbersWidth(0);
+    setViewportWidth(0);
     cursorChange();
 
     highlighter = new Highlighter(font,darkMode,document());
@@ -116,8 +118,9 @@ void CodeEditor::setDocument(QTextDocument *document)
         delete highlighter;
         highlighter = NULL;
     }
-    disconnect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    disconnect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
     disconnect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     disconnect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     QList<QTextEdit::ExtraSelection> noSelections;
@@ -127,8 +130,9 @@ void CodeEditor::setDocument(QTextDocument *document)
         QFont f= font();
         highlighter = new Highlighter(f,darkMode,document);
     }
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setLineNumbersWidth(int)));
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     connect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
 }
@@ -244,11 +248,16 @@ int CodeEditor::lineNumbersWidth()
     return 3 + fontMetrics().width(QLatin1Char('9')) * width;
 }
 
-
-
-void CodeEditor::setLineNumbersWidth(int)
+int CodeEditor::debugInfoWidth()
 {
-    setViewportMargins(lineNumbersWidth(), 0, 0, 0);
+    return 100;
+}
+
+
+
+void CodeEditor::setViewportWidth(int)
+{
+    setViewportMargins(lineNumbersWidth(), 0, debugInfoWidth(), 0); // TODO: Set debug window width here
 }
 
 
@@ -261,7 +270,18 @@ void CodeEditor::setLineNumbers(const QRect &rect, int dy)
         lineNumbers->update(0, rect.y(), lineNumbers->width(), rect.height());
 
     if (rect.contains(viewport()->rect()))
-        setLineNumbersWidth(0);
+        setViewportWidth(0);
+}
+
+void CodeEditor::setDebugInfoPos(const QRect &rect, int dy)
+{
+    if (dy)
+        debugInfo->scroll(0, dy);
+    else
+        debugInfo->update(0, rect.y(), debugInfo->width(), rect.height());
+
+    if (rect.contains(viewport()->rect()))
+        setViewportWidth(0);
 }
 
 
@@ -275,6 +295,8 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
     if (loadContentsButton) {
         loadContentsButton->move(cr.left()+lineNumbersWidth(), cr.top());
     }
+
+    debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top(), cr.right(), cr.height()));
 }
 
 
@@ -456,6 +478,65 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
             int textTop = top+fontMetrics().leading()+heightDiff;
             painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
                              Qt::AlignRight, number);
+        }
+
+        block = block.next();
+        top = bottom;
+        bottom = top + (int) blockBoundingRect(block).height();
+        ++blockNumber;
+    }
+}
+
+QColor CodeEditor::interpolate(QColor start,QColor end,double ratio)
+{
+    //From https://stackoverflow.com/questions/3306786/get-intermediate-color-from-a-gradient
+    int r = (int)(ratio*start.red() + (1-ratio)*end.red());
+    int g = (int)(ratio*start.green() + (1-ratio)*end.green());
+    int b = (int)(ratio*start.blue() + (1-ratio)*end.blue());
+    return QColor::fromRgb(r,g,b);
+}
+
+void CodeEditor::paintDebugInfo(QPaintEvent *event)
+{
+    QColor backgroundColor;
+    QColor foregroundActiveColor;
+    QColor foregroundInactiveColor;
+    if (darkMode) {
+        backgroundColor = QColor(0x26, 0x26, 0x26);
+        foregroundActiveColor = Qt::white;
+        foregroundInactiveColor = Qt::darkGray;
+    } else {
+        backgroundColor = QColor(Qt::red).lighter(120);
+        foregroundActiveColor = Qt::black;
+        foregroundInactiveColor = Qt::gray;
+    }
+
+    QPainter painter(debugInfo);
+    QFont lineNoFont = font();
+    QFontMetrics fm(lineNoFont);
+    int origFontHeight = fm.height();
+    lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
+    QFontMetrics fm2(lineNoFont);
+    int heightDiff = (origFontHeight-fm2.height());
+    painter.setFont(lineNoFont);
+//    painter.fillRect(event->rect(), backgroundColor);
+
+    QTextBlock block = firstVisibleBlock();
+    int blockNumber = block.blockNumber();
+    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+    int bottom = top + (int) blockBoundingRect(block).height();
+
+    int curLine = textCursor().blockNumber();
+
+    while (block.isValid() && top <= event->rect().bottom()) {
+        if (block.isVisible() && bottom >= event->rect().top()) {
+            QString number = QString::number(block.length() + 1);
+            painter.setPen(foregroundActiveColor);
+            int textTop = top+fontMetrics().leading()+heightDiff;
+            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
+                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
+            painter.drawText(0, textTop, debugInfo->width(), fm2.height(),
+                             Qt::AlignLeft, number);
         }
 
         block = block.next();
