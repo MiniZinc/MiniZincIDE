@@ -48,6 +48,8 @@ public:
                         QFont& font, bool darkMode, QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
+    void paintDebugInfo(QPaintEvent *event);
+    int debugInfoWidth();
     QString filepath;
     QString filename;
     void setEditorFont(QFont& font);
@@ -62,9 +64,10 @@ protected:
     virtual void keyPressEvent(QKeyEvent *e);
     bool eventFilter(QObject *, QEvent *);
 private slots:
-    void setLineNumbersWidth(int newBlockCount);
+    void setViewportWidth(int newBlockCount);
     void cursorChange();
     void setLineNumbers(const QRect &, int);
+    void setDebugInfoPos(const QRect &, int);
     void docChanged(bool);
     void contentsChanged();
     void contentsChangedWithTimeout();
@@ -72,6 +75,7 @@ private slots:
     void insertCompletion(const QString& completion);
 private:
     QWidget* lineNumbers;
+    QWidget* debugInfo;
     QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
@@ -84,6 +88,8 @@ private:
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
+
+    QColor interpolate(QColor start,QColor end,double ratio); // This should not go here
 signals:
 
 public slots:
@@ -104,6 +110,24 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) {
         codeEditor->paintLineNumbers(event);
+    }
+
+private:
+    CodeEditor *codeEditor;
+};
+
+class DebugInfo: public QWidget
+{
+public:
+    DebugInfo(CodeEditor *e) : QWidget(e), codeEditor(e) {}
+
+    QSize sizeHint() const {
+        return QSize(codeEditor->debugInfoWidth(), 0);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) {
+        codeEditor->paintDebugInfo(event);
     }
 
 private:
