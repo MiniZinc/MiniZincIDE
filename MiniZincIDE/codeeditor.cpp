@@ -367,6 +367,15 @@ void CodeEditor::cursorChange()
         }
     }
 
+    {
+        QTextEdit::ExtraSelection highlightLineSelection;
+        QColor lineColor = QColor(Qt::gray).lighter(150);
+        highlightLineSelection.format.setBackground(lineColor);
+        highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
+        highlightLineSelection.cursor = textCursor();
+        highlightLineSelection.cursor.clearSelection();
+        extraSelections.append(highlightLineSelection);
+    }
     setExtraSelections(extraSelections);
 }
 
