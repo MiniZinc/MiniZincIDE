@@ -538,12 +538,13 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     int curLine = textCursor().blockNumber();
 
     while (block.isValid() && top <= event->rect().bottom()) {
-        if (block.isVisible() && bottom >= event->rect().top()) {
-            QString number = QString::number(block.length() + 1);
+        BracketData* bd = static_cast<BracketData*>(block.userData());
+        if (block.isVisible() && bottom >= event->rect().top() && bd->d.hasData()) {
+            QString number = bd->d.toString();
             painter.setPen(foregroundActiveColor);
             int textTop = top+fontMetrics().leading()+heightDiff;
-            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
-                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
+//            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
+//                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
             painter.drawText(0, textTop, debugInfo->width(), fm2.height(),
                              Qt::AlignLeft, number);
         }

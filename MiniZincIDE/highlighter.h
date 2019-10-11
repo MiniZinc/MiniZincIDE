@@ -22,10 +22,24 @@ struct Bracket {
     int pos;
 };
 
+
+class DebugInfoData {
+public:
+    int con; // DebugInfo: number of constraints
+    int var; // DebugInfo: number of variables
+    DebugInfoData(void) : con(0), var(0) {}
+    bool hasData(void) { return con!=0 || var!=0; }
+    void reset(void) { con=0; var=0; }
+    QString toString(void) {
+        return QString().number(con)+","+QString().number(var);
+    }
+};
+
 class BracketData : public QTextBlockUserData
 {
 public:
     QVector<Bracket> brackets;
+    DebugInfoData d;
 };
 
 struct FixedBg {

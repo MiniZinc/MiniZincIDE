@@ -189,6 +189,8 @@ private slots:
 
     void openCompiledFzn(int);
 
+    void profileCompiledFzn(int);
+
     void runCompiledFzn(int,QProcess::ExitStatus);
 
     void on_actionSave_as_triggered();
@@ -327,6 +329,8 @@ private slots:
 
     void on_extraOptionsBox_toggled(bool arg1);
 
+    void on_actionProfile_compilation_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -404,7 +408,8 @@ private:
     QString compileErrors;
     QString checkArgsStdout;
     ParamDialog* paramDialog;
-    bool compileOnly;
+    enum CompileMode { CM_RUN, CM_COMPILE, CM_PROFILE };
+    CompileMode compileMode;
     int runTimeout;
     QString minizinc_executable;
     Project project;

@@ -1726,7 +1726,7 @@ void MainWindow::checkArgs(QString filepath)
     processWasStopped = false;
     compileErrors = "";
     checkArgsStdout = "";
-    if (compileOnly && filepath.endsWith(".mzc.mzn")) {
+    if (compileMode!=CM_RUN && filepath.endsWith(".mzc.mzn")) {
         // We are compiling a solution checker
         process = NULL;
         checkArgsFinished(0, QProcess::NormalExit);
@@ -1751,7 +1751,7 @@ void MainWindow::checkArgs(QString filepath)
 
 void MainWindow::on_actionRun_triggered()
 {
-    compileOnly = false;
+    compileMode = CM_RUN;
     curHtmlWindow = -1;
     compileOrRun();
 }
@@ -1816,7 +1816,7 @@ void MainWindow::compileOrRun()
                 on_actionClear_output_triggered();
             }
             updateUiProcessRunning(true);
-            if (!compileOnly) {
+            if (compileMode==CM_RUN) {
                 on_actionSplit_triggered();
                 IDE::instance()->stats.modelsRun++;
                 if (filepath.endsWith(".fzn")) {
@@ -2146,7 +2146,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     processName = minizinc_executable;
 
     bool standalone = false;
-    if (!compileOnly) {
+    if (compileMode==CM_RUN) {
         // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
         if (currentSolver.supportsMzn || !currentSolver.supportsFzn) {
             standalone = true;
@@ -2159,8 +2159,10 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
     connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
     connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
-    if (compileOnly) {
+    if (compileMode==CM_COMPILE) {
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
+    } else if (compileMode==CM_PROFILE) {
+        connect(process, SIGNAL(finished(int)), this, SLOT(profileCompiledFzn(int)));
     } else if (standalone) {
         connect(process, SIGNAL(finished(int)), this, SLOT(procFinished(int)));
     } else {
@@ -2176,6 +2178,9 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     if (!additionalDataFiles.isEmpty()) {
         for (auto df: additionalDataFiles)
             args << df;
+    }
+    if (compileMode==CM_PROFILE) {
+        args << "--keep-paths";
     }
 
     solutionCount = 0;
@@ -2281,7 +2286,7 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     }
 
     outputBuffer = &outstream;
-    compileOnly = false;
+    compileMode = CM_RUN;
     runTimeout = timeout;
     curHtmlWindow = -1;
     updateUiProcessRunning(true);
@@ -2619,6 +2624,67 @@ void MainWindow::openCompiledFzn(int exitcode)
     procFinished(exitcode);
 }
 
+void MainWindow::profileCompiledFzn(int exitcode)
+{
+    if (processWasStopped)
+        return;
+    if (exitcode==0) {
+        QFile file(currentFznTarget);
+        if (file.open(QFile::ReadOnly)) {
+            QTextStream fileContents(&file);
+            QRegularExpression path_re("^(constraint|.*\\bvar\\b).*:: mzn_path\\(\"([^)]*)\"\\)");
+            QRegularExpression re("([^|;]*)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|([^;]*);");
+
+            QVector<BracketData*> coverage;
+            QTextBlock tb = curEditor->document()->begin();
+            while (tb.isValid()) {
+                BracketData* bd = static_cast<BracketData*>(tb.userData());
+                if (bd==nullptr) {
+                    bd = new BracketData;
+                    tb.setUserData(bd);
+                }
+                bd->d.reset();
+                coverage.push_back(bd);
+                tb = tb.next();
+            }
+
+            while (!fileContents.atEnd()) {
+                QString line = fileContents.readLine();
+                QRegularExpressionMatch path_match = path_re.match(line);
+                if (path_match.hasMatch()) {
+                    QString paths = path_match.captured(2);
+                    QRegularExpressionMatchIterator match = re.globalMatch(paths);
+                    int min_line_covered = -1;
+                    QString lastMatch;
+                    if (match.hasNext()) {
+                        while (match.hasNext()) {
+                            QRegularExpressionMatch m = match.next();
+                            if (m.captured(1)==curFilePath) {
+                                min_line_covered = m.captured(2).toInt();
+                            }
+                        }
+                        if (min_line_covered > 0) {
+                            if (path_match.captured(1)=="constraint") {
+                                coverage[min_line_covered-1]->d.con++;
+                            } else {
+                                coverage[min_line_covered-1]->d.var++;
+                            }
+                        }
+                    }
+                }
+            }
+            file.close();
+            curEditor->repaint();
+        } else {
+            QMessageBox::warning(this,"MiniZinc IDE",
+                                 "Could not open file "+currentFznTarget,
+                                 QMessageBox::Ok);
+            return;
+        }
+    }
+    procFinished(exitcode);
+}
+
 void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 {
     if (processWasStopped)
@@ -2728,7 +2794,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
 
 void MainWindow::on_actionCompile_triggered()
 {
-    compileOnly = true;
+    compileMode = CM_COMPILE;
     compileOrRun();
 }
 
@@ -4644,4 +4710,10 @@ void MainWindow::on_find_textEdited(const QString &)
 void MainWindow::on_extraOptionsBox_toggled(bool isActive)
 {
     ui->extraOptionsWidget->setVisible(isActive);
+}
+
+void MainWindow::on_actionProfile_compilation_triggered()
+{
+    compileMode = CM_PROFILE;
+    compileOrRun();
 }

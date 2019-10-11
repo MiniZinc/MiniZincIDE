@@ -342,6 +342,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionCompile"/>
+    <addaction name="actionProfile_compilation"/>
     <addaction name="actionSubmit_to_MOOC"/>
     <addaction name="separator"/>
     <addaction name="menuSolver_configurations"/>
@@ -574,8 +575,8 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-279</y>
-          <width>661</width>
+          <y>0</y>
+          <width>676</width>
           <height>1074</height>
          </rect>
         </property>
@@ -1773,6 +1774,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+C</string>
+   </property>
+  </action>
+  <action name="actionProfile_compilation">
+   <property name="text">
+    <string>Profile compilation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+;</string>
    </property>
   </action>
  </widget>

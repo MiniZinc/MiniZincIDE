@@ -162,6 +162,8 @@ void Highlighter::highlightBlock(const QString &text)
     }
 
     BracketData* bd = new BracketData;
+    if (currentBlockUserData())
+        bd->d = static_cast<BracketData*>(currentBlockUserData())->d;
     QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
     int pos = text.indexOf(re);
     while (pos != -1) {
