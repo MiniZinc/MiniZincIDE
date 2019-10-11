@@ -4616,11 +4616,14 @@ void MainWindow::on_b_replaceall_clicked()
         cursor = curEditor->textCursor();
     }
     cursor.beginEditBlock();
+    int startingBlock = cursor.block().blockNumber();
     while (cursor.hasSelection()) {
         counter++;
         cursor.insertText(ui->replace->text());
         find(true);
         cursor = curEditor->textCursor();
+        if (cursor.block().blockNumber() >= startingBlock)
+            break;
     }
     cursor.endEditBlock();
     if (counter > 0) {
