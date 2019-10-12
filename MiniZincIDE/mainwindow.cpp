@@ -2189,7 +2189,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             args << df;
     }
     if (compileMode==CM_PROFILE) {
-        args << "--output-paths-to-stdout"; // << "--output-detailed-timing";
+        args << "--output-paths-to-stdout" << "--output-detailed-timing";
     }
 
     solutionCount = 0;
