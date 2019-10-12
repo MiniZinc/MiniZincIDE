@@ -27,11 +27,12 @@ class DebugInfoData {
 public:
     int con; // DebugInfo: number of constraints
     int var; // DebugInfo: number of variables
-    DebugInfoData(void) : con(0), var(0) {}
-    bool hasData(void) { return con!=0 || var!=0; }
-    void reset(void) { con=0; var=0; }
+    int ms;  // DebugInfo: milliseconds
+    DebugInfoData(void) : con(0), var(0), ms(0) {}
+    bool hasData(void) { return con!=0 || var!=0 || ms!=0; }
+    void reset(void) { con=0; var=0; ms=0; }
     QString toString(void) {
-        return QString().number(con)+","+QString().number(var);
+        return QString().number(ms)+"ms,"+QString().number(con)+","+QString().number(var);
     }
 };
 

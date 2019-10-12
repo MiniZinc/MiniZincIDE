@@ -1650,6 +1650,11 @@ void MainWindow::checkArgsOutput()
     checkArgsStdout += process->readAllStandardOutput();
 }
 
+void MainWindow::readRrofileOutput()
+{
+    checkArgsStdout += process->readAllStandardOutput();
+}
+
 QString MainWindow::getMznDistribPath(void) const {
     return mznDistribPath;
 }
@@ -2157,7 +2162,11 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     processWasStopped = false;
     runSolns2Out = currentSolver.needsSolns2Out;
     process->setWorkingDirectory(QFileInfo(modelPath).absolutePath());
-    connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+    if (compileMode==CM_PROFILE) {
+        connect(process, SIGNAL(readyRead()), this, SLOT(readRrofileOutput()));
+    } else {
+        connect(process, SIGNAL(readyRead()), this, SLOT(readOutput()));
+    }
     connect(process, SIGNAL(readyReadStandardError()), this, SLOT(readOutput()));
     if (compileMode==CM_COMPILE) {
         connect(process, SIGNAL(finished(int)), this, SLOT(openCompiledFzn(int)));
@@ -2180,7 +2189,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             args << df;
     }
     if (compileMode==CM_PROFILE) {
-        args << "--keep-paths";
+        args << "--output-paths-to-stdout" << "--output-detailed-timing";
     }
 
     solutionCount = 0;
@@ -2629,58 +2638,58 @@ void MainWindow::profileCompiledFzn(int exitcode)
     if (processWasStopped)
         return;
     if (exitcode==0) {
-        QFile file(currentFznTarget);
-        if (file.open(QFile::ReadOnly)) {
-            QTextStream fileContents(&file);
-            QRegularExpression path_re("^(constraint|.*\\bvar\\b).*:: mzn_path\\(\"([^)]*)\"\\)");
-            QRegularExpression re("([^|;]*)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|([^;]*);");
+        auto lines = checkArgsStdout.split(QRegExp("[\r\n]"), QString::SkipEmptyParts);
+        QRegularExpression path_re("^(.+)\\t(.+)\\t(.*;)$");
+        QRegularExpression count_re("([^|;]*)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|([^;]*);");
+        QRegularExpression time_re("^%%%mzn-stat: profiling=\\[\"(.*)\",(\\d*),(\\d*)\\]$");
 
-            QVector<BracketData*> coverage;
-            QTextBlock tb = curEditor->document()->begin();
-            while (tb.isValid()) {
-                BracketData* bd = static_cast<BracketData*>(tb.userData());
-                if (bd==nullptr) {
-                    bd = new BracketData;
-                    tb.setUserData(bd);
-                }
-                bd->d.reset();
-                coverage.push_back(bd);
-                tb = tb.next();
+        QVector<BracketData*> coverage;
+        QTextBlock tb = curEditor->document()->begin();
+        while (tb.isValid()) {
+            BracketData* bd = static_cast<BracketData*>(tb.userData());
+            if (bd==nullptr) {
+                bd = new BracketData;
+                tb.setUserData(bd);
             }
-
-            while (!fileContents.atEnd()) {
-                QString line = fileContents.readLine();
-                QRegularExpressionMatch path_match = path_re.match(line);
-                if (path_match.hasMatch()) {
-                    QString paths = path_match.captured(2);
-                    QRegularExpressionMatchIterator match = re.globalMatch(paths);
-                    int min_line_covered = -1;
-                    QString lastMatch;
-                    if (match.hasNext()) {
-                        while (match.hasNext()) {
-                            QRegularExpressionMatch m = match.next();
-                            if (m.captured(1)==curFilePath) {
-                                min_line_covered = m.captured(2).toInt();
-                            }
+            bd->d.reset();
+            coverage.push_back(bd);
+            tb = tb.next();
+        }
+        for (auto line : lines) {
+            QRegularExpressionMatch path_match = path_re.match(line);
+            if (path_match.hasMatch()) {
+                QString paths = path_match.captured(3);
+                QRegularExpressionMatchIterator match = count_re.globalMatch(paths);
+                int min_line_covered = -1;
+                QString lastMatch;
+                if (match.hasNext()) {
+                    while (match.hasNext()) {
+                        QRegularExpressionMatch m = match.next();
+                        if (m.captured(1)==curFilePath) {
+                            min_line_covered = m.captured(2).toInt();
                         }
-                        if (min_line_covered > 0) {
-                            if (path_match.captured(1)=="constraint") {
-                                coverage[min_line_covered-1]->d.con++;
-                            } else {
-                                coverage[min_line_covered-1]->d.var++;
-                            }
+                    }
+                    if (min_line_covered > 0 && min_line_covered <= coverage.size()) {
+                        if (path_match.captured(1)[0].isDigit()) {
+                            coverage[min_line_covered-1]->d.con++;
+                        } else {
+                            coverage[min_line_covered-1]->d.var++;
+                        }
+                    }
+                }
+            } else {
+                QRegularExpressionMatch time_match = time_re.match(line);
+                if (time_match.hasMatch()) {
+                    if (time_match.captured(1)==curFilePath) {
+                        int line_no = time_match.captured(2).toInt();
+                        if (line_no <= coverage.size()) {
+                            coverage[line_no]->d.ms = time_match.captured(3).toInt();
                         }
                     }
                 }
             }
-            file.close();
-            curEditor->repaint();
-        } else {
-            QMessageBox::warning(this,"MiniZinc IDE",
-                                 "Could not open file "+currentFznTarget,
-                                 QMessageBox::Ok);
-            return;
         }
+        curEditor->repaint();
     }
     procFinished(exitcode);
 }
@@ -4715,5 +4724,6 @@ void MainWindow::on_extraOptionsBox_toggled(bool isActive)
 void MainWindow::on_actionProfile_compilation_triggered()
 {
     compileMode = CM_PROFILE;
+    checkArgsStdout = "";
     compileOrRun();
 }

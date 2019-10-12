@@ -171,6 +171,7 @@ private slots:
     void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
     void readOutput();
+    void readRrofileOutput();
 
     void procFinished(int, bool showTime=true);
 
