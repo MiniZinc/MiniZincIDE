@@ -88,8 +88,9 @@ private:
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
-
+    const int DEBUG_TAB_SIZE = 50;
     QColor interpolate(QColor start,QColor end,double ratio); // This should not go here
+    QColor heatColor(double ratio); // This should not go here
 signals:
 
 public slots:

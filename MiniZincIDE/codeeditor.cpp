@@ -250,7 +250,7 @@ int CodeEditor::lineNumbersWidth()
 
 int CodeEditor::debugInfoWidth()
 {
-    return 100;
+    return 3*DEBUG_TAB_SIZE;
 }
 
 
@@ -296,7 +296,7 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
         loadContentsButton->move(cr.left()+lineNumbersWidth(), cr.top());
     }
 
-    debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top(), cr.right(), cr.height()));
+    debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top(), debugInfoWidth(), cr.height()));
 }
 
 
@@ -369,7 +369,7 @@ void CodeEditor::cursorChange()
 
     {
         QTextEdit::ExtraSelection highlightLineSelection;
-        QColor lineColor = QColor(Qt::gray).lighter(150);
+        QColor lineColor = darkMode?QColor(0x16, 0x16, 0x16):QColor(Qt::gray).lighter(150);
         highlightLineSelection.format.setBackground(lineColor);
         highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
         highlightLineSelection.cursor = textCursor();
@@ -505,6 +505,12 @@ QColor CodeEditor::interpolate(QColor start,QColor end,double ratio)
     return QColor::fromRgb(r,g,b);
 }
 
+QColor CodeEditor::heatColor(double ratio)
+{
+    return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), darkMode?QColor(0x26, 0x26, 0x26):Qt::white, ratio);
+//    return interpolate(QColor(Qt::red).lighter(110), QColor(255, 254, 247), ratio);
+}
+
 void CodeEditor::paintDebugInfo(QPaintEvent *event)
 {
     QColor backgroundColor;
@@ -515,7 +521,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         foregroundActiveColor = Qt::white;
         foregroundInactiveColor = Qt::darkGray;
     } else {
-        backgroundColor = QColor(Qt::red).lighter(120);
+        backgroundColor = QColor(Qt::gray).lighter(155);
         foregroundActiveColor = Qt::black;
         foregroundInactiveColor = Qt::gray;
     }
@@ -528,7 +534,31 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     QFontMetrics fm2(lineNoFont);
     int heightDiff = (origFontHeight-fm2.height());
     painter.setFont(lineNoFont);
+
 //    painter.fillRect(event->rect(), backgroundColor);
+
+    // TODO: This should be pre-computed only once and stored in each block.
+    // Statistics should not be recounted at eack redraw...
+    QTextBlock tmpBlock = document()->begin();
+//    int maxConsCount = 1;
+//    int maxVarCount = 1;
+//    int maxTimeCount = 1;
+    int accConsCount = 1;
+    int accVarCount = 1;
+    int accTimeCount = 1;
+    while (tmpBlock.isValid()){
+        BracketData* bd = static_cast<BracketData*>(tmpBlock.userData());
+        if(bd->d.hasData()){
+//            maxConsCount = bd->d.con>maxConsCount?bd->d.con:maxConsCount;
+//            maxVarCount = bd->d.var>maxVarCount?bd->d.var:maxVarCount;
+//            maxTimeCount = bd->d.ms>maxTimeCount?bd->d.ms:maxTimeCount;
+            accConsCount += bd->d.con;
+            accVarCount += bd->d.var;
+            accTimeCount += bd->d.ms;
+        }
+        tmpBlock = tmpBlock.next();
+    }
+
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -537,16 +567,30 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
     int curLine = textCursor().blockNumber();
 
+    painter.setPen(foregroundActiveColor);
     while (block.isValid() && top <= event->rect().bottom()) {
         BracketData* bd = static_cast<BracketData*>(block.userData());
         if (block.isVisible() && bottom >= event->rect().top() && bd->d.hasData()) {
-            QString number = bd->d.toString();
-            painter.setPen(foregroundActiveColor);
             int textTop = top+fontMetrics().leading()+heightDiff;
 //            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
 //                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
-            painter.drawText(0, textTop, debugInfo->width(), fm2.height(),
-                             Qt::AlignLeft, number);
+            // num constraints
+            painter.fillRect(0, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
+                             heatColor(((double)bd->d.con)/accConsCount));
+            QString numConstraints = QString().number(bd->d.con);
+            painter.drawText(0, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numConstraints+"c");
+            // num vars
+            painter.fillRect(DEBUG_TAB_SIZE, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
+                              heatColor(((double)bd->d.var)/accVarCount));
+            QString numVars = QString().number(bd->d.var);
+            painter.drawText(DEBUG_TAB_SIZE, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numVars+"v");
+            // flatten time
+            painter.fillRect(DEBUG_TAB_SIZE*2, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
+                              heatColor(((double)bd->d.ms)/accTimeCount));
+            QString flattenTime = QString().number(bd->d.ms);
+            painter.drawText(DEBUG_TAB_SIZE*2, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, flattenTime+"ms");
+            //            painter.drawText(0, textTop, debugInfo->width(), fm2.height(),
+//                             Qt::AlignLeft, number);
         }
 
         block = block.next();
@@ -554,6 +598,11 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         bottom = top + (int) blockBoundingRect(block).height();
         ++blockNumber;
     }
+    painter.fillRect(0, 0, debugInfo->width(), origFontHeight,backgroundColor);
+
+    painter.drawText(0, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Cons");
+    painter.drawText(DEBUG_TAB_SIZE, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Vars");
+    painter.drawText(DEBUG_TAB_SIZE*2, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Time");
 }
 
 void CodeEditor::setEditorFont(QFont& font)
