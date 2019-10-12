@@ -2347,7 +2347,6 @@ void MainWindow::closeHTMLWindow(int identifier)
     if (identifier==curHtmlWindow) {
         curHtmlWindow = -1;
     }
-    delete htmlWindows[identifier];
     htmlWindows[identifier] = NULL;
 }
 
