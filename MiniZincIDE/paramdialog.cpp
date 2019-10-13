@@ -48,7 +48,7 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
     scrollArea->setWidget(manual);
     tw->addTab(scrollArea, "Enter parameters");
 
-    selectedFiles = NULL;
+    selectedFiles = nullptr;
 
     if (dataFiles.size() > 0) {
         selectedFiles = new QListWidget(this);
@@ -66,7 +66,7 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
     }
     mainLayout->addRow(tw);
     ui->frame->setLayout(mainLayout);
-    if (selectedFiles==NULL || selectedFiles->selectedItems().size()==0)
+    if (selectedFiles==nullptr || selectedFiles->selectedItems().size()==0)
         le[0]->setFocus();
     if (QDialog::exec()==QDialog::Accepted) {
         additionalDataFiles.clear();

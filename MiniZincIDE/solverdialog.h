@@ -70,7 +70,7 @@ class MznProcess : public QProcess {
     Q_OBJECT
 #endif
 public:
-    MznProcess(QObject* parent=NULL) : QProcess(parent) {}
+    MznProcess(QObject* parent=nullptr) : QProcess(parent) {}
     void start(const QString& program, const QStringList& arguments, const QString& path);
     void terminate(void);
 protected:

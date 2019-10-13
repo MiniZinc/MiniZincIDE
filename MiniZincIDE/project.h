@@ -68,7 +68,7 @@ public:
     bool isModified() const { return _isModified; }
     void setModified(bool flag, bool files=false);
 
-    MOOCAssignment& moocAssignment(void) { return _moocAssignment!=NULL ? *_moocAssignment : *_courseraAssignment; }
+    MOOCAssignment& moocAssignment(void) { return _moocAssignment!=nullptr ? *_moocAssignment : *_courseraAssignment; }
     bool isUndefined(void) const;
     const QVector<SolverConfiguration>& solverConfigs(void) const;
     void solverConfigs(const QVector<SolverConfiguration>& sc,bool init);

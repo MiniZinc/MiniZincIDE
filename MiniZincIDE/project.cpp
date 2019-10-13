@@ -22,7 +22,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(NULL), _courseraAssignment(NULL)
+Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(nullptr), _courseraAssignment(nullptr)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -70,7 +70,7 @@ QVariant Project::data(const QModelIndex &index, int role) const
 {
     if (role==Qt::UserRole) {
         QStandardItem* item = itemFromIndex(index);
-        if (item->parent()==NULL || item->parent()==invisibleRootItem()) {
+        if (item->parent()==nullptr || item->parent()==invisibleRootItem()) {
             if (item==projectFile) {
                 return "00 - project";
             }
@@ -125,13 +125,13 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
 
     if (isMOOC) {
 
-        if (fi.baseName()=="_coursera" && _courseraAssignment != NULL) {
+        if (fi.baseName()=="_coursera" && _courseraAssignment != nullptr) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
                                 "Cannot add second Coursera options file",
                                 QMessageBox::Ok);
             return;
         }
-        if (fi.baseName()=="_mooc" && _moocAssignment != NULL) {
+        if (fi.baseName()=="_mooc" && _moocAssignment != nullptr) {
             QMessageBox::warning(treeView,"MiniZinc IDE",
                                 "Cannot add second MOOC options file",
                                 QMessageBox::Ok);
@@ -161,13 +161,13 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             QTextStream in(&jsonString);
             if (in.status() != QTextStream::Ok) {
                 delete moocA;
-                moocA = NULL;
+                moocA = nullptr;
                 goto coursera_done;
             }
             moocA->assignmentKey = in.readLine();
             if (in.status() != QTextStream::Ok) {
                 delete moocA;
-                moocA = NULL;
+                moocA = nullptr;
                 goto coursera_done;
             }
             moocA->name = in.readLine();
@@ -176,14 +176,14 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             for (int i=0; i<nSolutions; i++) {
                 if (in.status() != QTextStream::Ok) {
                     delete moocA;
-                    moocA = NULL;
+                    moocA = nullptr;
                     goto coursera_done;
                 }
                 QString line = in.readLine();
                 QStringList tokens = line.split(", ");
                 if (tokens.size() < 5) {
                     delete moocA;
-                    moocA = NULL;
+                    moocA = nullptr;
                     goto coursera_done;
                 }
                 MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
@@ -192,7 +192,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             }
             if (in.status() != QTextStream::Ok) {
                 delete moocA;
-                moocA = NULL;
+                moocA = nullptr;
                 goto coursera_done;
             }
             nSolutions_s = in.readLine();
@@ -200,14 +200,14 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             for (int i=0; i<nSolutions; i++) {
                 if (in.status() != QTextStream::Ok) {
                     delete moocA;
-                    moocA = NULL;
+                    moocA = nullptr;
                     goto coursera_done;
                 }
                 QString line = in.readLine();
                 QStringList tokens = line.split(", ");
                 if (tokens.size() < 3) {
                     delete moocA;
-                    moocA = NULL;
+                    moocA = nullptr;
                     goto coursera_done;
                 }
                 MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
@@ -259,7 +259,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                                      "MOOC options file contains errors",
                                      QMessageBox::Ok);
                 delete moocA;
-                moocA = NULL;
+                moocA = nullptr;
             }
         }
 
@@ -287,7 +287,7 @@ coursera_done:
     treeView->expand(sort->mapFromSource(curItem->index()));
     curItem = curItem->child(0);
     int i=0;
-    while (curItem != NULL) {
+    while (curItem != nullptr) {
         if (curItem->text() == path.first()) {
             path.pop_front();
             treeView->expand(sort->mapFromSource(curItem->index()));
@@ -318,10 +318,10 @@ coursera_done:
 QString Project::fileAtIndex(const QModelIndex &index)
 {
     QStandardItem* item = itemFromIndex(index);
-    if (item==NULL || item->hasChildren())
+    if (item==nullptr || item->hasChildren())
         return "";
     QString fileName;
-    while (item != NULL && item->parent() != NULL && item->parent() != invisibleRootItem() ) {
+    while (item != nullptr && item->parent() != nullptr && item->parent() != invisibleRootItem() ) {
         if (fileName.isEmpty())
             fileName = item->text();
         else
@@ -370,7 +370,7 @@ void Project::removeFile(const QString &fileName)
     QModelIndex index = _files[fileName];
     _files.remove(fileName);
     QStandardItem* cur = itemFromIndex(index);
-    while (cur->parent() != NULL && cur->parent() != invisibleRootItem() && !cur->hasChildren()) {
+    while (cur->parent() != nullptr && cur->parent() != invisibleRootItem() && !cur->hasChildren()) {
         int row = cur->row();
         cur = cur->parent();
         cur->removeRow(row);
@@ -378,14 +378,14 @@ void Project::removeFile(const QString &fileName)
     QFileInfo fi(fileName);
     if (fi.fileName()=="_coursera") {
         delete _courseraAssignment;
-        _courseraAssignment = NULL;
-        if (_moocAssignment==NULL) {
+        _courseraAssignment = nullptr;
+        if (_moocAssignment==nullptr) {
             ui->actionSubmit_to_MOOC->setVisible(false);
         }
     } else if (fi.fileName()=="_mooc") {
         delete _moocAssignment;
-        _moocAssignment = NULL;
-        if (_courseraAssignment!=NULL) {
+        _moocAssignment = nullptr;
+        if (_courseraAssignment!=nullptr) {
             ui->actionSubmit_to_MOOC->setText("Submit to "+_courseraAssignment->moocName);
             ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
         } else {
