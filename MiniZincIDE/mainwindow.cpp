@@ -878,6 +878,9 @@ void MainWindow::init(const QString& projectFile)
     if (settings.value("outputWindowHidden", true).toBool()) {
         on_actionOnly_editor_triggered();
     }
+    ui->check_wrap->setChecked(settings.value("findWrapAround", false).toBool());
+    ui->check_re->setChecked(settings.value("findRegularExpression", false).toBool());
+    ui->check_case->setChecked(settings.value("findCaseSensitive", false).toBool());
     settings.endGroup();
 
     IDE::instance()->setEditorFont(editorFont);
@@ -1303,6 +1306,11 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("pos", pos());
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
     settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
+
+    settings.setValue("findWrapAround", ui->check_wrap->isChecked());
+    settings.setValue("findRegularExpression", ui->check_re->isChecked());
+    settings.setValue("findCaseSensitive", ui->check_case->isChecked());
+
     settings.endGroup();
     e->accept();
 }
