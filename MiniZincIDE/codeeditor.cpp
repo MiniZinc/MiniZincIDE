@@ -84,6 +84,10 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     modificationTimer.setSingleShot(true);
     QObject::connect(&modificationTimer, SIGNAL(timeout()), this, SLOT(contentsChangedWithTimeout()));
 
+    if (parent) {
+        QObject::connect(this, SIGNAL(escPressed()), parent, SLOT(on_closeFindWidget_clicked()));
+    }
+
     setAcceptDrops(false);
     installEventFilter(this);
 }
@@ -203,6 +207,9 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
             cursor.insertText(leadingWhitespace.cap(1));
         }
         ensureCursorVisible();
+    } else if (e->key() == Qt::Key_Escape) {
+        e->accept();
+        emit escPressed();
     } else {
         bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
         if (!isShortcut) // do not process the shortcut when we have a completer

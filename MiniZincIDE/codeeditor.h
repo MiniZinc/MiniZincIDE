@@ -85,7 +85,7 @@ private:
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
 signals:
-
+    void escPressed();
 public slots:
     void loadedLargeFile();
     void copy();
