@@ -3553,6 +3553,7 @@ void MainWindow::on_actionFind_triggered()
         ui->find->setText(curEditor->textCursor().selectedText());
     }
     ui->not_found->setText("");
+    ui->find->selectAll();
     ui->findFrame->raise();
     ui->findFrame->show();
     ui->find->setFocus();
@@ -3566,6 +3567,7 @@ void MainWindow::on_actionReplace_triggered()
         ui->find->setText(curEditor->textCursor().selectedText());
     }
     ui->not_found->setText("");
+    ui->find->selectAll();
     ui->findFrame->raise();
     ui->findFrame->show();
 }
