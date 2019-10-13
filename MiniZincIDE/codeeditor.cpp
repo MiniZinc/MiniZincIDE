@@ -578,12 +578,12 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
             painter.fillRect(0, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
                              heatColor(((double)bd->d.con)/accConsCount));
             QString numConstraints = QString().number(bd->d.con);
-            painter.drawText(0, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numConstraints+"c");
+            painter.drawText(0, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numConstraints);
             // num vars
             painter.fillRect(DEBUG_TAB_SIZE, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
                               heatColor(((double)bd->d.var)/accVarCount));
             QString numVars = QString().number(bd->d.var);
-            painter.drawText(DEBUG_TAB_SIZE, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numVars+"v");
+            painter.drawText(DEBUG_TAB_SIZE, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numVars);
             // flatten time
             painter.fillRect(DEBUG_TAB_SIZE*2, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
                               heatColor(((double)bd->d.ms)/accTimeCount));
