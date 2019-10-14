@@ -321,6 +321,16 @@ void CodeEditor::cursorChange()
 
     BracketData* bd = static_cast<BracketData*>(textCursor().block().userData());
 
+    {
+        QTextEdit::ExtraSelection highlightLineSelection;
+        QColor lineColor = darkMode?QColor(0x16, 0x16, 0x16):QColor(Qt::gray).lighter(150);
+        highlightLineSelection.format.setBackground(lineColor);
+        highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
+        highlightLineSelection.cursor = textCursor();
+        highlightLineSelection.cursor.clearSelection();
+        extraSelections.append(highlightLineSelection);
+    }
+
     if (bd) {
         QVector<Bracket>& brackets = bd->brackets;
         int pos = textCursor().block().position();
@@ -374,15 +384,6 @@ void CodeEditor::cursorChange()
         }
     }
 
-    {
-        QTextEdit::ExtraSelection highlightLineSelection;
-        QColor lineColor = darkMode?QColor(0x16, 0x16, 0x16):QColor(Qt::gray).lighter(150);
-        highlightLineSelection.format.setBackground(lineColor);
-        highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
-        highlightLineSelection.cursor = textCursor();
-        highlightLineSelection.cursor.clearSelection();
-        extraSelections.append(highlightLineSelection);
-    }
     setExtraSelections(extraSelections);
 }
 
