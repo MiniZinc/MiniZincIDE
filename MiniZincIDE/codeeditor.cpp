@@ -571,7 +571,8 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     while (block.isValid() && top <= event->rect().bottom()) {
         BracketData* bd = static_cast<BracketData*>(block.userData());
         if (block.isVisible() && bottom >= event->rect().top() && bd->d.hasData()) {
-            int textTop = top+fontMetrics().leading()+heightDiff;
+//            int textTop = top+fontMetrics().leading()+heightDiff;
+            int textTop = top+heightDiff;
 //            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
 //                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
             // num constraints
@@ -600,9 +601,9 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     }
     painter.fillRect(0, 0, debugInfo->width(), origFontHeight,backgroundColor);
 
-    painter.drawText(0, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Cons");
-    painter.drawText(DEBUG_TAB_SIZE, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Vars");
-    painter.drawText(DEBUG_TAB_SIZE*2, fontMetrics().leading()*2, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Time");
+    painter.drawText(0, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Cons");
+    painter.drawText(DEBUG_TAB_SIZE, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Vars");
+    painter.drawText(DEBUG_TAB_SIZE*2, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Time");
 }
 
 void CodeEditor::setEditorFont(QFont& font)
