@@ -312,14 +312,8 @@ void CodeEditor::cursorChange()
 {
     QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
 
-    QList<QTextEdit::ExtraSelection> extraSelections;
-    foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
-        if (sel.format.underlineColor()==Qt::red) {
-            extraSelections.append(sel);
-        }
-    }
-
     BracketData* bd = static_cast<BracketData*>(textCursor().block().userData());
+    QList<QTextEdit::ExtraSelection> extraSelections;
 
     {
         QTextEdit::ExtraSelection highlightLineSelection;
@@ -329,6 +323,12 @@ void CodeEditor::cursorChange()
         highlightLineSelection.cursor = textCursor();
         highlightLineSelection.cursor.clearSelection();
         extraSelections.append(highlightLineSelection);
+    }
+
+    foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
+        if (sel.format.underlineColor()==Qt::red) {
+            extraSelections.append(sel);
+        }
     }
 
     if (bd) {
