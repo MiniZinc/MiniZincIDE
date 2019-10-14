@@ -102,7 +102,7 @@ bool IDE::event(QEvent *e)
             PMap::iterator it = projects.find(file);
             if (it==projects.end()) {
                 MainWindow* mw = qobject_cast<MainWindow*>(activeWindow());
-                if (mw==NULL) {
+                if (mw==nullptr) {
                     mw = new MainWindow(file);
                     mw->show();
                 } else {
@@ -114,14 +114,14 @@ bool IDE::event(QEvent *e)
             }
         } else {
             MainWindow* curw = qobject_cast<MainWindow*>(activeWindow());
-            if (curw != NULL && (curw->isEmptyProject() || curw==lastDefaultProject)) {
+            if (curw != nullptr && (curw->isEmptyProject() || curw==lastDefaultProject)) {
                 curw->openFile(file);
                 lastDefaultProject = curw;
             } else {
                 QStringList files;
                 files << file;
                 MainWindow* mw = new MainWindow(files);
-                if (curw!=NULL) {
+                if (curw!=nullptr) {
                     QPoint p = curw->pos();
                     mw->move(p.x()+20, p.y()+20);
                 }
@@ -205,7 +205,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     stats.init(settings.value("statistics"));
 
-    lastDefaultProject = NULL;
+    lastDefaultProject = nullptr;
 
     { // Load cheat sheet
         QString fileContents;
@@ -236,7 +236,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
         cheatSheet = new QMainWindow;
         cheatSheet->setWindowTitle("MiniZinc Cheat Sheet");
-        CodeEditor* ce = new CodeEditor(NULL,":/cheat_sheet.mzn",false,false,editorFont,darkMode,NULL,NULL);
+        CodeEditor* ce = new CodeEditor(nullptr,":/cheat_sheet.mzn",false,false,editorFont,darkMode,nullptr,nullptr);
         ce->document()->setPlainText(fileContents);
         QTextCursor cursor = ce->textCursor();
         cursor.movePosition(QTextCursor::Start);
@@ -331,7 +331,7 @@ void IDE::recentProjectMenuAction(QAction* a) {
 
 void IDE::handleFocusChange(QWidget *old, QWidget *newW)
 {
-    if (old==NULL && newW!=NULL && !modifiedFiles.empty()) {
+    if (old==nullptr && newW!=nullptr && !modifiedFiles.empty()) {
         fileModifiedTimeout();
     }
 }
@@ -380,7 +380,7 @@ void IDE::fileModifiedTimeout(void)
                             it.value()->td.setPlainText(file.readAll());
                             it.value()->td.setModified(false);
                         } else {
-                            QMessageBox::warning(NULL, "MiniZinc IDE",
+                            QMessageBox::warning(nullptr, "MiniZinc IDE",
                                                  "Could not reload file "+*s_it,
                                                  QMessageBox::Ok);
                             it.value()->td.setModified(true);
@@ -395,7 +395,7 @@ void IDE::fileModifiedTimeout(void)
 void IDE::fileModified(const QString &f)
 {
     modifiedFiles.insert(f);
-    if (activeWindow()!=NULL) {
+    if (activeWindow()!=nullptr) {
         modifiedTimer.setSingleShot(true);
         modifiedTimer.start(3000);
     }
@@ -472,7 +472,7 @@ void IDE::openFile(const QString& fileName0)
 {
     QString fileName = fileName0;
     if (fileName.isEmpty()) {
-        fileName = QFileDialog::getOpenFileName(NULL, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
+        fileName = QFileDialog::getOpenFileName(nullptr, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
@@ -528,7 +528,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             Doc* d = new Doc;
-            if ( (path.endsWith(".dzn") || path.endsWith(".fzn")) && file.size() > 5*1024*1024) {
+            if ( (path.endsWith(".dzn") || path.endsWith(".fzn") || path.endsWith(".json")) && file.size() > 5*1024*1024) {
                 d->large = true;
             } else {
                 d->td.setPlainText(file.readAll());
@@ -543,7 +543,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
             QMessageBox::warning(parent, "MiniZinc IDE",
                                  "Could not open file "+path,
                                  QMessageBox::Ok);
-            QTextDocument* nd = NULL;
+            QTextDocument* nd = nullptr;
             return qMakePair(nd,false);
         }
 
@@ -650,7 +650,7 @@ IDE::versionCheckFinished(void) {
                                     curVersionPatch > appVersionPatch))));
 
         if (needUpdate) {
-            int button = QMessageBox::information(NULL,"Update available",
+            int button = QMessageBox::information(nullptr,"Update available",
                                      "Version "+currentVersion+" of MiniZinc is now available. "
                                      "You are currently using version "+applicationVersion()+
                                      ".\nDo you want to open the MiniZinc web site?",
@@ -681,15 +681,15 @@ IDE* IDE::instance(void) {
 
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
-    curEditor(NULL),
+    curEditor(nullptr),
     curHtmlWindow(-1),
-    process(NULL),
-    check_process(NULL),
-    outputProcess(NULL),
-    tmpDir(NULL),
+    process(nullptr),
+    check_process(nullptr),
+    outputProcess(nullptr),
+    tmpDir(nullptr),
     saveBeforeRunning(false),
     project(ui),
-    outputBuffer(NULL),
+    outputBuffer(nullptr),
     processRunning(false),
     currentSolverConfig(-1)
 {
@@ -698,15 +698,15 @@ MainWindow::MainWindow(const QString& project) :
 
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
-    curEditor(NULL),
+    curEditor(nullptr),
     curHtmlWindow(-1),
-    process(NULL),
-    check_process(NULL),
-    outputProcess(NULL),
-    tmpDir(NULL),
+    process(nullptr),
+    check_process(nullptr),
+    outputProcess(nullptr),
+    tmpDir(nullptr),
     saveBeforeRunning(false),
     project(ui),
-    outputBuffer(NULL),
+    outputBuffer(nullptr),
     processRunning(false),
     currentSolverConfig(-1)
 {
@@ -878,6 +878,9 @@ void MainWindow::init(const QString& projectFile)
     if (settings.value("outputWindowHidden", true).toBool()) {
         on_actionOnly_editor_triggered();
     }
+    ui->check_wrap->setChecked(settings.value("findWrapAround", false).toBool());
+    ui->check_re->setChecked(settings.value("findRegularExpression", false).toBool());
+    ui->check_case->setChecked(settings.value("findCaseSensitive", false).toBool());
     settings.endGroup();
 
     IDE::instance()->setEditorFont(editorFont);
@@ -949,7 +952,7 @@ void MainWindow::onProjectCustomContextMenu(const QPoint & point)
         projectOpen->setEnabled(true);
         projectRemove->setEnabled(true);
         projectRename->setEnabled(true);
-        projectRunWith->setEnabled(ui->actionRun->isEnabled() && file.endsWith(".dzn"));
+        projectRunWith->setEnabled(ui->actionRun->isEnabled() && (file.endsWith(".dzn") || file.endsWith(".json")));
         projectContextMenu->exec(ui->projectView->mapToGlobal(point));
     } else {
         projectOpen->setEnabled(false);
@@ -969,11 +972,11 @@ void MainWindow::addFileToProject(bool dznOnly)
 {
     QStringList fileNames;
     if (dznOnly) {
-        QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn *.json)");
         if (!fileName.isNull())
             fileNames.append(fileName);
     } else {
-        fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
+        fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.json)");
     }
 
     for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
@@ -1109,7 +1112,7 @@ void MainWindow::on_defaultBehaviourButton_toggled(bool checked)
 }
 
 void MainWindow::createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly, bool focus) {
-    QTextDocument* doc = NULL;
+    QTextDocument* doc = nullptr;
     bool large = false;
     QString fileContents;
     QString absPath = QFileInfo(path).canonicalFilePath();
@@ -1191,7 +1194,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
     QString fileName = path;
 
     if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
@@ -1222,6 +1225,7 @@ void MainWindow::tabCloseRequest(int tab)
             on_actionSave_triggered();
             if (ce->document()->isModified())
                 return;
+            break;
         case QMessageBox::Discard:
             break;
         case QMessageBox::Cancel:
@@ -1280,11 +1284,11 @@ void MainWindow::closeEvent(QCloseEvent* e) {
                    this, 0);
         process->terminate();
         delete process;
-        process = NULL;
+        process = nullptr;
     }
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->setDocument(NULL);
+        ce->setDocument(nullptr);
         ce->filepath = "";
         if (ce->filepath != "")
             IDE::instance()->removeEditor(ce->filepath,ce);
@@ -1303,6 +1307,11 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     settings.setValue("pos", pos());
     settings.setValue("toolbarHidden", ui->toolBar->isHidden());
     settings.setValue("outputWindowHidden", ui->outputDockWidget->isHidden());
+
+    settings.setValue("findWrapAround", ui->check_wrap->isChecked());
+    settings.setValue("findRegularExpression", ui->check_re->isChecked());
+    settings.setValue("findCaseSensitive", ui->check_case->isChecked());
+
     settings.endGroup();
     e->accept();
 }
@@ -1352,7 +1361,7 @@ void MainWindow::tabChange(int tab) {
         disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
     }
     if (tab==-1) {
-        curEditor = NULL;
+        curEditor = nullptr;
         ui->actionClose->setEnabled(false);
     } else {
         ui->actionClose->setEnabled(true);
@@ -1733,7 +1742,7 @@ void MainWindow::checkArgs(QString filepath)
     checkArgsStdout = "";
     if (compileMode!=CM_RUN && filepath.endsWith(".mzc.mzn")) {
         // We are compiling a solution checker
-        process = NULL;
+        process = nullptr;
         checkArgsFinished(0, QProcess::NormalExit);
     } else {
         process = new MznProcess(this);
@@ -1772,7 +1781,7 @@ void MainWindow::compileOrRun()
     }
     if (curEditor) {
         QString filepath;
-        bool docIsModified;
+        bool docIsModified = false;
         if (curEditor->filepath!="") {
             filepath = curEditor->filepath;
             docIsModified = curEditor->document()->isModified();
@@ -1782,7 +1791,6 @@ void MainWindow::compileOrRun()
                 QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
             } else {
                 cleanupTmpDirs.append(modelTmpDir);
-                docIsModified = false;
                 filepath = modelTmpDir->path()+"/untitled_model.mzn";
                 QFile modelFile(filepath);
                 if (modelFile.open(QIODevice::ReadWrite)) {
@@ -1909,8 +1917,8 @@ void MainWindow::statusTimerEvent()
 
 void MainWindow::readOutput()
 {
-    MznProcess* readProc = (outputProcess==NULL ? process : outputProcess);
-    if (readProc != NULL) {
+    MznProcess* readProc = (outputProcess==nullptr ? process : outputProcess);
+    if (readProc != nullptr) {
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
             QString l = readProc->readLine();
@@ -2018,7 +2026,7 @@ void MainWindow::readOutput()
         readProc->setReadChannel(QProcess::StandardOutput);
     }
 
-    if (process != NULL) {
+    if (process != nullptr) {
         process->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -2060,7 +2068,7 @@ void MainWindow::readOutput()
         process->setReadChannel(QProcess::StandardOutput);
     }
 
-    if (outputProcess != NULL) {
+    if (outputProcess != nullptr) {
         outputProcess->setReadChannel(QProcess::StandardError);
         for (;;) {
             QString l;
@@ -2132,7 +2140,7 @@ SolverConfiguration* MainWindow::getCurrentSolverConfig(void) {
 
 Solver* MainWindow::getCurrentSolver(void) {
     SolverConfiguration* conf = getCurrentSolverConfig();
-    Solver* s = NULL;
+    Solver* s = nullptr;
     for (int i=0; i<solvers.size(); i++) {
         if (conf->solverId==solvers[i].id) {
             s = &solvers[i];
@@ -2327,7 +2335,7 @@ void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
                 outputProcess->disconnect();
                 outputProcess->terminate();
                 delete outputProcess;
-                outputProcess = NULL;
+                outputProcess = nullptr;
             }
             on_actionStop_triggered();
             compileAndRun(htmlWindowModels[htmlWindowIdentifier],"",dataFiles);
@@ -2361,8 +2369,7 @@ void MainWindow::closeHTMLWindow(int identifier)
     if (identifier==curHtmlWindow) {
         curHtmlWindow = -1;
     }
-    delete htmlWindows[identifier];
-    htmlWindows[identifier] = NULL;
+    htmlWindows[identifier] = nullptr;
 }
 
 void MainWindow::selectJSONSolution(HTMLPage* source, int n)
@@ -2382,8 +2389,8 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
     QString elapsedTime = setElapsedTime();
     ui->statusbar->clearMessage();
     progressBar->reset();
-    process = NULL;
-    outputProcess = NULL;
+    process = nullptr;
+    outputProcess = nullptr;
     finishJSONViewer();
     inJSONHandler = false;
     JSONOutput.clear();
@@ -2400,8 +2407,8 @@ void MainWindow::outputProcFinished(int exitCode, bool showTime) {
         addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
-    tmpDir = NULL;
-    outputBuffer = NULL;
+    tmpDir = nullptr;
+    outputBuffer = nullptr;
     compileErrors = "";
     emit(finished());
 }
@@ -2421,8 +2428,8 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
     solverTimeout->stop();
     QString elapsedTime = setElapsedTime();
     ui->statusbar->clearMessage();
-    process = NULL;
-    outputProcess = NULL;
+    process = nullptr;
+    outputProcess = nullptr;
     finishJSONViewer();
     inJSONHandler = false;
     JSONOutput.clear();
@@ -2430,8 +2437,8 @@ void MainWindow::procFinished(int exitCode, bool showTime) {
         addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
     }
     delete tmpDir;
-    tmpDir = NULL;
-    outputBuffer = NULL;
+    tmpDir = nullptr;
+    outputBuffer = nullptr;
     compileErrors = "";
     emit(finished());
 }
@@ -2482,13 +2489,13 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         QString selectedFilter = "Other (*)";
         if (dialogPath.endsWith(".mzn") || (ce->filepath.isEmpty() && ce->filename=="Playground"))
             selectedFilter = "MiniZinc model (*.mzn)";
-        else if (dialogPath.endsWith(".dzn"))
-            selectedFilter = "MiniZinc data (*.dzn)";
+        else if (dialogPath.endsWith(".dzn") || dialogPath.endsWith(".json"))
+            selectedFilter = "MiniZinc data (*.dzn *.json)";
         else if (dialogPath.endsWith(".fzn"))
             selectedFilter = "FlatZinc (*.fzn)";
         else if (dialogPath.endsWith(".mzc"))
             selectedFilter = "MiniZinc solution checker (*.mzc)";
-        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc model (*.mzn);;MiniZinc data (*.dzn);;MiniZinc solution checker (*.mzc);;FlatZinc (*.fzn);;Other (*)",&selectedFilter);
+        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc model (*.mzn);;MiniZinc data (*.dzn *.json);;MiniZinc solution checker (*.mzc);;FlatZinc (*.fzn);;Other (*)",&selectedFilter);
         if (!filepath.isNull()) {
             setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
         }
@@ -2580,7 +2587,7 @@ void MainWindow::on_actionStop_triggered()
 
         process->terminate();
         delete process;
-        process = NULL;
+        process = nullptr;
         addOutput("<div class='mznnotice'>Stopped.</div>");
         procFinished(0);
     }
@@ -2706,7 +2713,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             QMessageBox::warning(this,"MiniZinc IDE","The solver "+s->executable+" cannot be executed.",
                                  QMessageBox::Ok);
             delete tmpDir;
-            tmpDir = NULL;
+            tmpDir = nullptr;
             procFinished(exitcode);
             return;
         }
@@ -2734,7 +2741,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
             detached_process->start(executable,args,getMznDistribPath());
             cleanupTmpDirs.append(tmpDir);
             cleanupProcesses.append(detached_process);
-            tmpDir = NULL;
+            tmpDir = nullptr;
             procFinished(exitcode);
         } else {
             if (runSolns2Out) {
@@ -2796,7 +2803,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         }
     } else {
         delete tmpDir;
-        tmpDir = NULL;
+        tmpDir = nullptr;
         procFinished(exitcode);
     }
 }
@@ -3195,7 +3202,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     }
 
     bool haveChecker = false;
-    if (curEditor!=NULL && curEditor->filename.endsWith(".mzn")) {
+    if (curEditor!=nullptr && curEditor->filename.endsWith(".mzn")) {
         QString checkFile = curEditor->filepath;
         checkFile.replace(checkFile.length()-1,1,"c");
         haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
@@ -3629,6 +3636,7 @@ void MainWindow::on_actionFind_triggered()
         ui->find->setText(curEditor->textCursor().selectedText());
     }
     ui->not_found->setText("");
+    ui->find->selectAll();
     ui->findFrame->raise();
     ui->findFrame->show();
     ui->find->setFocus();
@@ -3642,6 +3650,7 @@ void MainWindow::on_actionReplace_triggered()
         ui->find->setText(curEditor->textCursor().selectedText());
     }
     ui->not_found->setText("");
+    ui->find->selectAll();
     ui->findFrame->raise();
     ui->findFrame->show();
 }
@@ -3658,7 +3667,7 @@ void MainWindow::on_actionSelect_font_triggered()
 
 void MainWindow::on_actionGo_to_line_triggered()
 {
-    if (curEditor==NULL)
+    if (curEditor==nullptr)
         return;
     GoToLineDialog gtl;
     if (gtl.exec()==QDialog::Accepted) {
@@ -4401,7 +4410,7 @@ void MainWindow::on_actionSave_all_triggered()
 
 void MainWindow::on_action_Un_comment_triggered()
 {
-    if (curEditor==NULL)
+    if (curEditor==nullptr)
         return;
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock beginBlock = curEditor->document()->findBlock(cursor.anchor());
@@ -4587,12 +4596,12 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
         curEditor->checkFile(mznErrors);
     }
     delete check_process;
-    check_process = NULL;
+    check_process = nullptr;
 }
 
 void MainWindow::check_code()
 {
-    if (check_process==NULL && minizinc_executable!="" &&
+    if (check_process==nullptr && minizinc_executable!="" &&
         ui->actionRun->isEnabled() &&
         curEditor && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
@@ -4691,11 +4700,14 @@ void MainWindow::on_b_replaceall_clicked()
         cursor = curEditor->textCursor();
     }
     cursor.beginEditBlock();
+    int startingBlock = cursor.block().blockNumber();
     while (cursor.hasSelection()) {
         counter++;
         cursor.insertText(ui->replace->text());
         find(true);
         cursor = curEditor->textCursor();
+        if (cursor.block().blockNumber() >= startingBlock)
+            break;
     }
     cursor.endEditBlock();
     if (counter > 0) {

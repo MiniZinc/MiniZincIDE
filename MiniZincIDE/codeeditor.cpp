@@ -19,7 +19,7 @@ CodeEditor::initUI(QFont& font)
 {
     setFont(font);
 
-    setTabStopWidth(QFontMetrics(font).width("  "));
+    setTabStopWidth(QFontMetrics(font).boundingRect("  ").width());
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
@@ -46,7 +46,7 @@ CodeEditor::initUI(QFont& font)
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                        QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), modifiedSinceLastCheck(true), loadContentsButton(NULL), tabs(t), darkMode(darkMode0)
+    QPlainTextEdit(parent), modifiedSinceLastCheck(true), loadContentsButton(nullptr), tabs(t), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -86,6 +86,10 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     modificationTimer.setSingleShot(true);
     QObject::connect(&modificationTimer, SIGNAL(timeout()), this, SLOT(contentsChangedWithTimeout()));
 
+    if (parent) {
+        QObject::connect(this, SIGNAL(escPressed()), parent, SLOT(on_closeFindWidget_clicked()));
+    }
+
     setAcceptDrops(false);
     installEventFilter(this);
 }
@@ -109,14 +113,14 @@ void CodeEditor::loadedLargeFile()
 {
     setReadOnly(false);
     delete loadContentsButton;
-    loadContentsButton = NULL;
+    loadContentsButton = nullptr;
 }
 
 void CodeEditor::setDocument(QTextDocument *document)
 {
     if (document) {
         delete highlighter;
-        highlighter = NULL;
+        highlighter = nullptr;
     }
     disconnect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
@@ -155,7 +159,7 @@ Highlighter& CodeEditor::getHighlighter() {
 
 void CodeEditor::docChanged(bool c)
 {
-    int t = tabs == NULL ? -1 : tabs->indexOf(this);
+    int t = tabs == nullptr ? -1 : tabs->indexOf(this);
     if (t != -1) {
         QString title = tabs->tabText(t);
         title = title.mid(0, title.lastIndexOf(" *"));
@@ -207,6 +211,9 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
             cursor.insertText(leadingWhitespace.cap(1));
         }
         ensureCursorVisible();
+    } else if (e->key() == Qt::Key_Escape) {
+        e->accept();
+        emit escPressed();
     } else {
         bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
         if (!isShortcut) // do not process the shortcut when we have a completer
@@ -245,7 +252,7 @@ int CodeEditor::lineNumbersWidth()
         ++width;
     }
     width = std::max(width,3);
-    return 3 + fontMetrics().width(QLatin1Char('9')) * width;
+    return 3 + fontMetrics().boundingRect(QLatin1Char('9')).width() * width;
 }
 
 int CodeEditor::debugInfoWidth()
@@ -469,8 +476,8 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
-    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
-    int bottom = top + (int) blockBoundingRect(block).height();
+    int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
+    int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
     int curLine = textCursor().blockNumber();
 
@@ -491,7 +498,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 
         block = block.next();
         top = bottom;
-        bottom = top + (int) blockBoundingRect(block).height();
+        bottom = top + static_cast<int>(blockBoundingRect(block).height());
         ++blockNumber;
     }
 }
