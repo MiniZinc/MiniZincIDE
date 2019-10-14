@@ -14,7 +14,7 @@
 #include <QJsonDocument>
 
 MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
-    QDialog(NULL), _cur_phase(S_NONE), project(cp), mw(mw0),
+    QDialog(nullptr), _cur_phase(S_NONE), project(cp), mw(mw0),
     ui(new Ui::MOOCSubmission)
 {
     ui->setupUi(this);

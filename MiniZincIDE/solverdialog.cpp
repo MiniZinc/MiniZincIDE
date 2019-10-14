@@ -622,7 +622,7 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
     setProcessEnvironment(env);
 #ifdef Q_OS_WIN
     _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
-    jobObject = CreateJobObject(NULL, NULL);
+    jobObject = CreateJobObject(nullptr, nullptr);
     connect(this, SIGNAL(started()), this, SLOT(attachJob()));
 #else
     setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
@@ -639,7 +639,7 @@ void MznProcess::terminate()
 {
 #ifdef Q_OS_WIN
         AttachConsole(pid()->dwProcessId);
-        SetConsoleCtrlHandler(NULL, TRUE);
+        SetConsoleCtrlHandler(nullptr, TRUE);
         GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
 #else
         ::killpg(processId(), SIGINT);
