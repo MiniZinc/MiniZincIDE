@@ -472,7 +472,7 @@ void IDE::openFile(const QString& fileName0)
 {
     QString fileName = fileName0;
     if (fileName.isEmpty()) {
-        fileName = QFileDialog::getOpenFileName(nullptr, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
+        fileName = QFileDialog::getOpenFileName(nullptr, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
@@ -528,7 +528,7 @@ QPair<QTextDocument*,bool> IDE::loadFile(const QString& path, QWidget* parent)
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             Doc* d = new Doc;
-            if ( (path.endsWith(".dzn") || path.endsWith(".fzn")) && file.size() > 5*1024*1024) {
+            if ( (path.endsWith(".dzn") || path.endsWith(".fzn") || path.endsWith(".json")) && file.size() > 5*1024*1024) {
                 d->large = true;
             } else {
                 d->td.setPlainText(file.readAll());
@@ -952,7 +952,7 @@ void MainWindow::onProjectCustomContextMenu(const QPoint & point)
         projectOpen->setEnabled(true);
         projectRemove->setEnabled(true);
         projectRename->setEnabled(true);
-        projectRunWith->setEnabled(ui->actionRun->isEnabled() && file.endsWith(".dzn"));
+        projectRunWith->setEnabled(ui->actionRun->isEnabled() && (file.endsWith(".dzn") || file.endsWith(".json")));
         projectContextMenu->exec(ui->projectView->mapToGlobal(point));
     } else {
         projectOpen->setEnabled(false);
@@ -972,11 +972,11 @@ void MainWindow::addFileToProject(bool dznOnly)
 {
     QStringList fileNames;
     if (dznOnly) {
-        QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn)");
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Select a data file to open"), getLastPath(), "MiniZinc data files (*.dzn *.json)");
         if (!fileName.isNull())
             fileNames.append(fileName);
     } else {
-        fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn)");
+        fileNames = QFileDialog::getOpenFileNames(this, tr("Select one or more files to open"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.json)");
     }
 
     for (QStringList::iterator it = fileNames.begin(); it != fileNames.end(); ++it) {
@@ -1194,7 +1194,7 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
     QString fileName = path;
 
     if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.mzp *.mzc);;Other (*)");
+        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc);;Other (*)");
         if (!fileName.isNull()) {
             setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
         }
@@ -2475,13 +2475,13 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
         QString selectedFilter = "Other (*)";
         if (dialogPath.endsWith(".mzn") || (ce->filepath.isEmpty() && ce->filename=="Playground"))
             selectedFilter = "MiniZinc model (*.mzn)";
-        else if (dialogPath.endsWith(".dzn"))
-            selectedFilter = "MiniZinc data (*.dzn)";
+        else if (dialogPath.endsWith(".dzn") || dialogPath.endsWith(".json"))
+            selectedFilter = "MiniZinc data (*.dzn *.json)";
         else if (dialogPath.endsWith(".fzn"))
             selectedFilter = "FlatZinc (*.fzn)";
         else if (dialogPath.endsWith(".mzc"))
             selectedFilter = "MiniZinc solution checker (*.mzc)";
-        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc model (*.mzn);;MiniZinc data (*.dzn);;MiniZinc solution checker (*.mzc);;FlatZinc (*.fzn);;Other (*)",&selectedFilter);
+        filepath = QFileDialog::getSaveFileName(this,"Save file",dialogPath,"MiniZinc model (*.mzn);;MiniZinc data (*.dzn *.json);;MiniZinc solution checker (*.mzc);;FlatZinc (*.fzn);;Other (*)",&selectedFilter);
         if (!filepath.isNull()) {
             setLastPath(QFileInfo(filepath).absolutePath()+fileDialogSuffix);
         }

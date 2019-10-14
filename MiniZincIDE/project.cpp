@@ -113,7 +113,7 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
     bool isMOOC = false;
     if (fi.suffix()=="mzn") {
         curItem = mzn;
-    } else if (fi.suffix()=="dzn") {
+    } else if (fi.suffix()=="dzn" || fi.suffix()=="json") {
         curItem = dzn;
     } else if (fi.suffix()=="fzn") {
         return;
@@ -352,7 +352,7 @@ QStringList Project::dataFiles(void) const
 {
     QStringList ret;
     for (QMap<QString,QPersistentModelIndex>::const_iterator it = _files.begin(); it != _files.end(); ++it) {
-        if (it.key().endsWith(".dzn"))
+        if (it.key().endsWith(".dzn") || it.key().endsWith(".json"))
             ret << it.key();
     }
     return ret;
