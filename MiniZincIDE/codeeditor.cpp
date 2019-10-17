@@ -23,7 +23,6 @@ CodeEditor::initUI(QFont& font)
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
-
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
@@ -257,14 +256,20 @@ int CodeEditor::lineNumbersWidth()
 
 int CodeEditor::debugInfoWidth()
 {
-    return 3*DEBUG_TAB_SIZE;
+    return !debugInfo->isVisible()?0:3*DEBUG_TAB_SIZE;
 }
 
 
 
 void CodeEditor::setViewportWidth(int)
 {
-    setViewportMargins(lineNumbersWidth(), 0, debugInfoWidth(), 0); // TODO: Set debug window width here
+    int heightOffset = 0;
+//    if(debugInfo->isVisible()){
+//        QFont lineNoFont = font();
+//        QFontMetrics fm(lineNoFont);
+//        heightOffset = fm.height();
+//    }
+    setViewportMargins(lineNumbersWidth(), heightOffset, debugInfoWidth(), 0); // TODO: Set debug window width here
 }
 
 
@@ -477,6 +482,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
+
     int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
     int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
@@ -548,25 +554,6 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     // TODO: This should be pre-computed only once and stored in each block.
     // Statistics should not be recounted at eack redraw...
     QTextBlock tmpBlock = document()->begin();
-//    int maxConsCount = 1;
-//    int maxVarCount = 1;
-//    int maxTimeCount = 1;
-    int accConsCount = 1;
-    int accVarCount = 1;
-    int accTimeCount = 1;
-    while (tmpBlock.isValid()){
-        BracketData* bd = static_cast<BracketData*>(tmpBlock.userData());
-        if(bd->d.hasData()){
-//            maxConsCount = bd->d.con>maxConsCount?bd->d.con:maxConsCount;
-//            maxVarCount = bd->d.var>maxVarCount?bd->d.var:maxVarCount;
-//            maxTimeCount = bd->d.ms>maxTimeCount?bd->d.ms:maxTimeCount;
-            accConsCount += bd->d.con;
-            accVarCount += bd->d.var;
-            accTimeCount += bd->d.ms;
-        }
-        tmpBlock = tmpBlock.next();
-    }
-
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -581,21 +568,19 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         if (block.isVisible() && bottom >= event->rect().top() && bd->d.hasData()) {
 //            int textTop = top+fontMetrics().leading()+heightDiff;
             int textTop = top+heightDiff;
-//            painter.fillRect(0, top, debugInfo->width(), blockBoundingRect(block).height(),
-//                               interpolate(Qt::red, QColor(Qt::yellow).lighter(160), ((double)block.length())/50));
             // num constraints
             painter.fillRect(0, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                             heatColor(((double)bd->d.con)/accConsCount));
+                             heatColor(((double)bd->d.con)/bd->d.totalCon));
             QString numConstraints = QString().number(bd->d.con);
             painter.drawText(0, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numConstraints);
             // num vars
             painter.fillRect(DEBUG_TAB_SIZE, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                              heatColor(((double)bd->d.var)/accVarCount));
+                              heatColor(((double)bd->d.var)/bd->d.totalVar));
             QString numVars = QString().number(bd->d.var);
             painter.drawText(DEBUG_TAB_SIZE, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numVars);
             // flatten time
             painter.fillRect(DEBUG_TAB_SIZE*2, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                              heatColor(((double)bd->d.ms)/accTimeCount));
+                              heatColor(((double)bd->d.ms)/bd->d.totalMs));
             QString flattenTime = QString().number(bd->d.ms);
             painter.drawText(DEBUG_TAB_SIZE*2, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, flattenTime+"ms");
             //            painter.drawText(0, textTop, debugInfo->width(), fm2.height(),

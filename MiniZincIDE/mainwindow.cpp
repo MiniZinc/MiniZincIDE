@@ -2662,6 +2662,9 @@ void MainWindow::profileCompiledFzn(int exitcode)
             coverage.push_back(bd);
             tb = tb.next();
         }
+        int totalCons=0;
+        int totalVars=0;
+        int totalTime=1;
         for (auto line : lines) {
             QRegularExpressionMatch path_match = path_re.match(line);
             if (path_match.hasMatch()) {
@@ -2679,8 +2682,10 @@ void MainWindow::profileCompiledFzn(int exitcode)
                     if (min_line_covered > 0 && min_line_covered <= coverage.size()) {
                         if (path_match.captured(1)[0].isDigit()) {
                             coverage[min_line_covered-1]->d.con++;
+                            totalCons++;
                         } else {
                             coverage[min_line_covered-1]->d.var++;
+                            totalVars++;
                         }
                     }
                 }
@@ -2691,10 +2696,16 @@ void MainWindow::profileCompiledFzn(int exitcode)
                         int line_no = time_match.captured(2).toInt();
                         if (line_no <= coverage.size()) {
                             coverage[line_no]->d.ms = time_match.captured(3).toInt();
+                            totalTime += coverage[line_no]->d.ms;
                         }
                     }
                 }
             }
+        }
+        for(auto data: coverage){
+            data->d.totalCon = totalCons;
+            data->d.totalVar = totalVars;
+            data->d.totalMs = totalTime;
         }
         curEditor->repaint();
     }

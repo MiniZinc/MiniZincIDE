@@ -28,9 +28,12 @@ public:
     int con; // DebugInfo: number of constraints
     int var; // DebugInfo: number of variables
     int ms;  // DebugInfo: milliseconds
-    DebugInfoData(void) : con(0), var(0), ms(0) {}
+    int totalCon;
+    int totalVar;
+    int totalMs;
+    DebugInfoData(void) : con(0), var(0), ms(0), totalCon(0), totalVar(0), totalMs(1) {}
     bool hasData(void) { return con!=0 || var!=0 || ms!=0; }
-    void reset(void) { con=0; var=0; ms=0; }
+    void reset(void) { con=0; var=0; ms=0; totalCon=0; totalVar=0; totalMs=1; }
     QString toString(void) {
         return QString().number(ms)+"ms,"+QString().number(con)+","+QString().number(var);
     }
