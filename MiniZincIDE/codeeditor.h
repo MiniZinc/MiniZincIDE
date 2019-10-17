@@ -60,6 +60,7 @@ public:
     void checkFile(const QVector<MiniZincError>& errors);
 protected:
     void resizeEvent(QResizeEvent *event);
+    void showEvent(QShowEvent *event);
     void initUI(QFont& font);
     virtual void keyPressEvent(QKeyEvent *e);
     bool eventFilter(QObject *, QEvent *);
