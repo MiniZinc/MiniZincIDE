@@ -60,6 +60,7 @@ public:
     bool modifiedSinceLastCheck;
     void checkFile(const QVector<MiniZincError>& errors);
     void toggleDebugInfo();
+    void showDebugInfo();
 
 protected:
     void resizeEvent(QResizeEvent *event);

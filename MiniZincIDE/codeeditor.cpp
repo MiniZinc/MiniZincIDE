@@ -277,6 +277,14 @@ void CodeEditor::toggleDebugInfo()
     setViewportWidth(0);
 }
 
+void CodeEditor::showDebugInfo()
+{
+    if(debugInfo->isHidden()){
+     debugInfo->show();
+     setViewportWidth(0);
+    }
+}
+
 void CodeEditor::setViewportWidth(int)
 {
     setViewportMargins(lineNumbersWidth(), debugInfoOffset(), debugInfoWidth(), 0);

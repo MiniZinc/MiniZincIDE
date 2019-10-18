@@ -4757,5 +4757,10 @@ void MainWindow::on_actionProfile_compilation_triggered()
     compileMode = CM_PROFILE;
     checkArgsStdout = "";
     compileOrRun();
-    on_actionToggle_profiler_info_triggered();
+
+
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        ce->showDebugInfo();
+    }
 }
