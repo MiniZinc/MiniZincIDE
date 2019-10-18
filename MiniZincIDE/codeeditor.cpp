@@ -259,17 +259,22 @@ int CodeEditor::debugInfoWidth()
     return !debugInfo->isVisible()?0:3*DEBUG_TAB_SIZE;
 }
 
+int CodeEditor::debugInfoOffset()
+{
+    int heightOffset = 0;
+    if(debugInfo->isVisible()){
+        QFont lineNoFont = font();
+        QFontMetrics fm(lineNoFont);
+        heightOffset = fm.height();
+    }
+    return heightOffset;
+}
+
 
 
 void CodeEditor::setViewportWidth(int)
 {
-    int heightOffset = 0;
-//    if(debugInfo->isVisible()){
-//        QFont lineNoFont = font();
-//        QFontMetrics fm(lineNoFont);
-//        heightOffset = fm.height();
-//    }
-    setViewportMargins(lineNumbersWidth(), heightOffset, debugInfoWidth(), 0); // TODO: Set debug window width here
+    setViewportMargins(lineNumbersWidth(), debugInfoOffset(), debugInfoWidth(), 0); // TODO: Set debug window width here
 }
 
 
@@ -486,6 +491,8 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
     int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
+//    painter.fillRect(event->rect(), QColor::fromRgb(QRandomGenerator::global()->generate()));
+
     int curLine = textCursor().blockNumber();
 
     while (block.isValid() && top <= event->rect().bottom()) {
@@ -557,7 +564,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
-    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top()+debugInfoOffset();
     int bottom = top + (int) blockBoundingRect(block).height();
 
     int curLine = textCursor().blockNumber();

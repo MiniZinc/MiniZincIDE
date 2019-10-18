@@ -50,6 +50,7 @@ public:
     int lineNumbersWidth();
     void paintDebugInfo(QPaintEvent *event);
     int debugInfoWidth();
+    int debugInfoOffset();
     QString filepath;
     QString filename;
     void setEditorFont(QFont& font);
