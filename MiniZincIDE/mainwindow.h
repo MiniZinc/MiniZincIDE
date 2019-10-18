@@ -254,6 +254,8 @@ private slots:
 
     void on_actionHide_tool_bar_triggered();
 
+    void on_actionToggle_profiler_info_triggered();
+
     void on_actionShow_project_explorer_triggered();
 
     void activateFileInProject(const QModelIndex&);

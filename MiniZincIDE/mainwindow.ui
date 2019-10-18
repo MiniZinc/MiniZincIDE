@@ -365,6 +365,7 @@
     <addaction name="actionNext_tab"/>
     <addaction name="separator"/>
     <addaction name="actionHide_tool_bar"/>
+    <addaction name="actionToggle_profiler_info"/>
     <addaction name="separator"/>
     <addaction name="actionShow_project_explorer"/>
     <addaction name="separator"/>
@@ -1782,6 +1783,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+;</string>
+   </property>
+  </action>
+  <action name="actionToggle_profiler_info">
+   <property name="text">
+    <string>Toggle Profiler Info</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+.</string>
    </property>
   </action>
  </widget>

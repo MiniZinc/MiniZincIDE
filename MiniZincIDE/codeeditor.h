@@ -59,6 +59,8 @@ public:
     Highlighter& getHighlighter();
     bool modifiedSinceLastCheck;
     void checkFile(const QVector<MiniZincError>& errors);
+    void toggleDebugInfo();
+
 protected:
     void resizeEvent(QResizeEvent *event);
     void showEvent(QShowEvent *event);
@@ -90,7 +92,7 @@ private:
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
-    const int DEBUG_TAB_SIZE = 50;
+    const int DEBUG_TAB_SIZE = 70;
     QColor interpolate(QColor start,QColor end,double ratio); // This should not go here
     QColor heatColor(double ratio); // This should not go here
 

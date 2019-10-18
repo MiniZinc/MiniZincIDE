@@ -23,6 +23,7 @@ CodeEditor::initUI(QFont& font)
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
+    debugInfo->hide();
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
@@ -146,7 +147,7 @@ void CodeEditor::setDarkMode(bool enable)
     highlighter->setDarkMode(enable);
     highlighter->rehighlight();
     if (darkMode) {
-        setStyleSheet("QPlainTextEdit{color: #ffffff; background-color: #181818;}");
+        setStyleSheet("QPlainTextEdit{color: #E6FFFE; background-color: #181820;}");
     } else {
         setStyleSheet("QPlainTextEdit{color: #000000; background-color: #ffffff;}");
     }
@@ -270,11 +271,15 @@ int CodeEditor::debugInfoOffset()
     return heightOffset;
 }
 
-
+void CodeEditor::toggleDebugInfo()
+{
+    !debugInfo->isHidden()?debugInfo->hide():debugInfo->show();
+    setViewportWidth(0);
+}
 
 void CodeEditor::setViewportWidth(int)
 {
-    setViewportMargins(lineNumbersWidth(), debugInfoOffset(), debugInfoWidth(), 0); // TODO: Set debug window width here
+    setViewportMargins(lineNumbersWidth(), debugInfoOffset(), debugInfoWidth(), 0);
 }
 
 
@@ -308,7 +313,7 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
     QPlainTextEdit::resizeEvent(e);
 
     QRect cr = contentsRect();
-    lineNumbers->setGeometry(QRect(cr.left(), cr.top(), lineNumbersWidth(), cr.height()));
+    lineNumbers->setGeometry(QRect(cr.left(), cr.top()+debugInfoOffset(), lineNumbersWidth(), cr.height()));
     if (loadContentsButton) {
         loadContentsButton->move(cr.left()+lineNumbersWidth(), cr.top());
     }
@@ -332,7 +337,7 @@ void CodeEditor::cursorChange()
 
     {
         QTextEdit::ExtraSelection highlightLineSelection;
-        QColor lineColor = darkMode?QColor(0x16, 0x16, 0x16):QColor(Qt::gray).lighter(150);
+        QColor lineColor = darkMode?QColor(0x242433):QColor(Qt::gray).lighter(150);
         highlightLineSelection.format.setBackground(lineColor);
         highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
         highlightLineSelection.cursor = textCursor();
@@ -373,7 +378,7 @@ void CodeEditor::cursorChange()
             if (parenPos0 != -1 && parenPos1 != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                format.setBackground(Qt::green);
+                darkMode?format.setBackground(QColor(0x45588F).lighter(140)):format.setBackground(Qt::green);
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(parenPos0);
@@ -388,7 +393,7 @@ void CodeEditor::cursorChange()
             if (errPos != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                format.setBackground(Qt::red);
+                darkMode?format.setBackground(QColor(0xC24223)):format.setBackground(Qt::red);
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(errPos);
@@ -604,11 +609,12 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         bottom = top + (int) blockBoundingRect(block).height();
         ++blockNumber;
     }
-    painter.fillRect(0, 0, debugInfo->width(), origFontHeight,backgroundColor);
 
-    painter.drawText(0, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Cons");
-    painter.drawText(DEBUG_TAB_SIZE, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Vars");
-    painter.drawText(DEBUG_TAB_SIZE*2, 0, DEBUG_TAB_SIZE, origFontHeight, Qt::AlignCenter, "Time");
+    painter.fillRect(0, 0, debugInfo->width(), debugInfoOffset(), backgroundColor);
+
+    painter.drawText(0, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
+    painter.drawText(DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
+    painter.drawText(DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
 }
 
 void CodeEditor::setEditorFont(QFont& font)

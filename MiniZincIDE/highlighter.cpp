@@ -265,13 +265,17 @@ void Highlighter::setDarkMode(bool enable)
 {
     darkMode = enable;
     if (darkMode) {
-        rules[0].format.setForeground(QColor(143,157,106));
-        commentFormat.setForeground(QColor(90,90,90));
-        rules[1].format.setForeground(QColor(90,90,90));
+        QColor keywordColor = QColor(0xbb86fc);
+        QColor functionColor = QColor(0x13C4F5);
+        QColor stringColor = QColor(0xF29F05);
+        QColor comment = QColor(0x52514C);
+        rules[0].format.setForeground(stringColor);
+        commentFormat.setForeground(comment);
+        rules[1].format.setForeground(comment);
         for (int i=2; i<rules.size()-1; i++) {
-            rules[i].format.setForeground(QColor(218,208,133));
+            rules[i].format.setForeground(keywordColor);
         }
-        rules[rules.size()-1].format.setForeground(QColor(155,112,63));
+        rules[rules.size()-1].format.setForeground(functionColor);
     } else {
         rules[0].format.setForeground(Qt::darkRed);
         rules[1].format.setForeground(Qt::red);

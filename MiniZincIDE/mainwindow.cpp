@@ -4504,6 +4504,14 @@ void MainWindow::on_actionHide_tool_bar_triggered()
     }
 }
 
+void MainWindow::on_actionToggle_profiler_info_triggered()
+{
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        ce->toggleDebugInfo();
+    }
+}
+
 void MainWindow::on_actionShow_project_explorer_triggered()
 {
     if (ui->projectExplorerDockWidget->isHidden()) {
@@ -4749,4 +4757,5 @@ void MainWindow::on_actionProfile_compilation_triggered()
     compileMode = CM_PROFILE;
     checkArgsStdout = "";
     compileOrRun();
+    on_actionToggle_profiler_info_triggered();
 }
