@@ -316,6 +316,11 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
     debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top(), debugInfoWidth(), cr.height()));
 }
 
+void CodeEditor::showEvent(QShowEvent *event)
+{
+    setViewportWidth(0);
+}
+
 
 
 void CodeEditor::cursorChange()
