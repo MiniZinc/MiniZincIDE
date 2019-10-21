@@ -2662,8 +2662,8 @@ void MainWindow::profileCompiledFzn(int exitcode)
             coverage.push_back(bd);
             tb = tb.next();
         }
-        int totalCons=0;
-        int totalVars=0;
+        int totalCons=1;
+        int totalVars=1;
         int totalTime=1;
         for (auto line : lines) {
             QRegularExpressionMatch path_match = path_re.match(line);
@@ -4652,7 +4652,7 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
 
     if (darkMode) {
-        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : green }");
+        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : #13C4F5 }");
     } else {
         ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
     }

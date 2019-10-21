@@ -23,6 +23,7 @@ CodeEditor::initUI(QFont& font)
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
+    editorHeadder = new EditorHeadder(this);
     debugInfo->hide();
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
@@ -310,9 +311,12 @@ void CodeEditor::setDebugInfoPos(const QRect &rect, int dy)
     else
         debugInfo->update(0, rect.y(), debugInfo->width(), rect.height());
 
+
     if (rect.contains(viewport()->rect()))
         setViewportWidth(0);
 }
+
+
 
 
 
@@ -326,7 +330,9 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
         loadContentsButton->move(cr.left()+lineNumbersWidth(), cr.top());
     }
 
-    debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top(), debugInfoWidth(), cr.height()));
+    debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top()+debugInfoOffset(), debugInfoWidth(), cr.height()));
+
+    editorHeadder->setGeometry(QRect(cr.left(), cr.top(), cr.width(), debugInfoOffset()));
 }
 
 void CodeEditor::showEvent(QShowEvent *event)
@@ -541,12 +547,18 @@ QColor CodeEditor::interpolate(QColor start,QColor end,double ratio)
     int r = (int)(ratio*start.red() + (1-ratio)*end.red());
     int g = (int)(ratio*start.green() + (1-ratio)*end.green());
     int b = (int)(ratio*start.blue() + (1-ratio)*end.blue());
-    return QColor::fromRgb(r,g,b);
+    int a = (int)(ratio*start.alpha() + (1-ratio)*end.alpha());
+    QColor c = QColor::fromRgb(r,g,b);
+    c.setAlpha(a); // Strangely there seems to be no clean way of creating a rgba color, fromRgba does not take 4 parameters as one would expect.
+    return c;
 }
 
 QColor CodeEditor::heatColor(double ratio)
 {
-    return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), darkMode?QColor(0x26, 0x26, 0x26):Qt::white, ratio);
+//return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), QColor(Qt::transparent), ratio);
+    QColor bg =  darkMode?QColor(0x26, 0x26, 0x26):Qt::white;
+    bg.setAlpha(50);
+    return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), bg, ratio);
 //    return interpolate(QColor(Qt::red).lighter(110), QColor(255, 254, 247), ratio);
 }
 
@@ -582,7 +594,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
-    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top()+debugInfoOffset();
+    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
     int bottom = top + (int) blockBoundingRect(block).height();
 
     int curLine = textCursor().blockNumber();
@@ -618,11 +630,43 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         ++blockNumber;
     }
 
-    painter.fillRect(0, 0, debugInfo->width(), debugInfoOffset(), backgroundColor);
+//    painter.fillRect(0, 0, debugInfo->width(), debugInfoOffset(), backgroundColor);
 
-    painter.drawText(0, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
-    painter.drawText(DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
-    painter.drawText(DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
+//    painter.drawText(0, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
+//    painter.drawText(DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
+//    painter.drawText(DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
+}
+
+void CodeEditor::paintHeadder(QPaintEvent *event)
+{
+    QColor backgroundColor;
+    QColor foregroundActiveColor;
+    QColor foregroundInactiveColor;
+    if (darkMode) {
+        backgroundColor = QColor(0x26, 0x26, 0x26);
+        foregroundActiveColor = Qt::white;
+        foregroundInactiveColor = Qt::darkGray;
+    } else {
+        backgroundColor = QColor(Qt::lightGray).lighter(120);
+        foregroundActiveColor = Qt::black;
+        foregroundInactiveColor = Qt::gray;
+    }
+
+    QPainter painter(editorHeadder);
+    QFont lineNoFont = font();
+    QFontMetrics fm(lineNoFont);
+    int origFontHeight = fm.height();
+    lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
+    QFontMetrics fm2(lineNoFont);
+    int heightDiff = (origFontHeight-fm2.height());
+    painter.setFont(lineNoFont);
+
+
+    painter.fillRect(event->rect(), backgroundColor);
+    int baseX = debugInfo->geometry().x();
+    painter.drawText(baseX, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
+    painter.drawText(baseX + DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
+    painter.drawText(baseX + DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
 }
 
 void CodeEditor::setEditorFont(QFont& font)

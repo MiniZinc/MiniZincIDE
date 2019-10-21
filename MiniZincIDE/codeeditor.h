@@ -49,6 +49,7 @@ public:
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
     void paintDebugInfo(QPaintEvent *event);
+    void paintHeadder(QPaintEvent *event);
     int debugInfoWidth();
     int debugInfoOffset();
     QString filepath;
@@ -81,6 +82,7 @@ private slots:
 private:
     QWidget* lineNumbers;
     QWidget* debugInfo;
+    QWidget* editorHeadder;
     QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
@@ -135,6 +137,24 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) {
         codeEditor->paintDebugInfo(event);
+    }
+
+private:
+    CodeEditor *codeEditor;
+};
+
+class EditorHeadder: public QWidget
+{
+public:
+    EditorHeadder(CodeEditor *e) : QWidget(e), codeEditor(e) {}
+
+    QSize sizeHint() const {
+        return QSize(0, codeEditor->debugInfoOffset());
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) {
+        codeEditor->paintHeadder(event);
     }
 
 private:
