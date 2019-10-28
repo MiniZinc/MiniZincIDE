@@ -1787,7 +1787,7 @@
   </action>
   <action name="actionToggle_profiler_info">
    <property name="text">
-    <string>Toggle Profiler Info</string>
+    <string>Profiler Info</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+.</string>
