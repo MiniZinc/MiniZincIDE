@@ -44,6 +44,7 @@ parts:
     source: vendor/
     organize:
       gecode/bin/fzn-gecode: usr/bin/
+      gecode_gist/bin/fzn-gecode: usr/bin/fzn-gecode-gist
       gecode/share/gecode/mznlib: usr/share/minizinc/gecode
       chuffed/bin/fzn-chuffed: usr/bin/
       chuffed/share/chuffed/mznlib: usr/share/minizinc/chuffed
@@ -65,9 +66,8 @@ parts:
     plugin: dump
     source: resources/
     organize:
-      scripts/fzn-gecode-gist: usr/bin/
+      scripts/run-fzn-gecode-gist: usr/bin/
       solvers/*.msc: usr/share/minizinc/solvers/
       Preferences.json: usr/share/minizinc/
       misc/MiniZincIDE.desktop: usr/share/applications/
-      scripts/MiniZincIDE.sh: usr/
     stage: [usr/]
