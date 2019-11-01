@@ -95,7 +95,7 @@ package:linux:
     - cp resources/solvers/*.msc $PACKAGE/share/minizinc/solvers/
     - cp resources/Preferences.json $PACKAGE/share/minizinc/
     ### Strip included binaries
-    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Compress package
     - tar -czf $PACKAGE.tgz $PACKAGE
@@ -140,6 +140,9 @@ package:osx:
     ### Package default settings
     - cp resources/solvers/*.msc $MZNDIR/solvers
     - cp resources/Preferences.json $MZNDIR/
+    ### Strip included binaries
+    - (cd $DIR; strip minizinc mzn2doc)
+    - (cd $DIR/bin; strip fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer)
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode-gist
   artifacts:
@@ -217,7 +220,7 @@ package:appimage:
     - cp resources/solvers/*.msc $PACKAGE/usr/share/minizinc/solvers/
     - cp resources/Preferences.json $PACKAGE/usr/share/minizinc/
     ### Strip included binaries
-    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Assemble AppImage
     - cp resources/scripts/AppRun $PACKAGE
