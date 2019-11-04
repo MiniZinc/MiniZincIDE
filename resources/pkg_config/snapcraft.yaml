@@ -15,10 +15,13 @@ base: core18
 
 apps:
   minizinc:
-    command: usr/bin/minizinc
+    command: bin/minizinc
   ide:
-    command: bin/desktop-launch ${SNAP}/usr/bin/MiniZincIDE
-    desktop: usr/share/applications/MiniZincIDE.desktop
+    command: bin/desktop-launch bin/MiniZincIDE
+    desktop: share/applications/MiniZincIDE.desktop
+    environment:
+      # Use GTK3 cursor theme, icon theme and open/save file dialogs.
+      QT_QPA_PLATFORMTHEME: gtk3
 
 parts:
   ide:
@@ -29,45 +32,73 @@ parts:
     build-packages:
       - qtwebengine5-dev
     stage-packages:
-      - qtwebengine5-dev
-    organize:
-      bin/*: usr/bin/
+      - libqt5webengine5
   minizinc:
     plugin: dump
     source: minizinc/
-    organize:
-      bin/*: usr/bin/
-      share/minizinc/*: usr/share/minizinc/
-    stage: [usr/]
+    stage: [bin/, share/]
   vendor:
     plugin: dump
     source: vendor/
     organize:
-      gecode/bin/fzn-gecode: usr/bin/
-      gecode/share/gecode/mznlib: usr/share/minizinc/gecode
-      chuffed/bin/fzn-chuffed: usr/bin/
-      chuffed/share/chuffed/mznlib: usr/share/minizinc/chuffed
-    stage: [usr/]
+      gecode/bin/fzn-gecode: bin/
+      gecode_gist/bin/fzn-gecode: bin/fzn-gecode-gist
+      gecode/share/gecode/mznlib: share/minizinc/gecode
+      chuffed/bin/fzn-chuffed: bin/
+      chuffed/share/chuffed/mznlib: share/minizinc/chuffed
+    stage: [bin/, share/minizinc/]
   globalizer:
     plugin: dump
     source: globalizer/
     organize:
-      bin/minizinc-globalizer: usr/bin/
-      share/globalizer/mznlib: usr/share/minizinc/globalizer
-    stage: [usr/]
+      share/globalizer/mznlib: share/minizinc/globalizer
+    stage: [bin/, share/minizinc/]
   findmus:
     plugin: dump
     source: findMUS/
-    organize:
-      bin/findMUS: usr/bin/
-    stage: [usr/]
+    stage: [bin/]
   resources:
     plugin: dump
     source: resources/
     organize:
-      scripts/fzn-gecode-gist: usr/bin/
-      solvers/*.msc: usr/share/minizinc/solvers/
-      Preferences.json: usr/share/minizinc/
-      misc/MiniZincIDE.desktop: usr/share/applications/
-      scripts/MiniZincIDE.sh: usr/
-    stage: [usr/]
+      scripts/run-fzn-gecode-gist: bin/
+      solvers/*.msc: share/minizinc/solvers/
+      Preferences.json: share/minizinc/
+      misc/MiniZincIDE.desktop: share/applications/
+    stage: [bin/, share/]
+  # This part installs the qt5 dependencies and a `desktop-launch` script to initialise
+  # desktop-specific features such as fonts, themes and the XDG environment.
+  # 
+  # It is copied straight from the snapcraft desktop helpers project. Please periodically
+  # check the source for updates and copy the changes.
+  #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
+  # 
+  desktop-qt5:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: qt
+    plugin: make
+    make-parameters: ["FLAVOR=qt5"]
+    build-packages:
+      - build-essential
+      - qtbase5-dev
+      - dpkg-dev
+    stage-packages:
+      - libxkbcommon0
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - libqt5gui5
+      - libgdk-pixbuf2.0-0
+      - libqt5svg5 # for loading icon themes which are svg
+      - try: [appmenu-qt5] # not available on core18
+      - locales-all
+      - xdg-user-dirs
+      - fcitx-frontend-qt5
+  # Add GTK theme integration
+  qt5-gtk-platform:
+    plugin: nil
+    stage-packages:
+      - qt5-gtk-platformtheme

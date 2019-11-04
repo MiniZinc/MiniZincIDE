@@ -4583,6 +4583,12 @@ void MainWindow::on_actionCheat_Sheet_triggered()
     IDE::instance()->cheatSheet->activateWindow();
 }
 
+void MainWindow::checkModelError(QProcess::ProcessError e)
+{
+//    qDebug() << "error: " << e;
+    check_process = nullptr;
+}
+
 void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
 {
     if (curCheckEditor==curEditor) {
@@ -4618,6 +4624,12 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
     check_process = nullptr;
 }
 
+void MainWindow::checkModelStarted()
+{
+    check_process->write(curEditor->document()->toPlainText().toUtf8());
+    check_process->closeWriteChannel();
+}
+
 void MainWindow::check_code()
 {
     if (check_process==nullptr && minizinc_executable!="" &&
@@ -4626,15 +4638,15 @@ void MainWindow::check_code()
         curEditor->modifiedSinceLastCheck = false;
         curCheckEditor = curEditor;
         check_process = new MznProcess(this);
-        check_process->setWorkingDirectory(curEditor->filepath);
+        check_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         check_process->setProcessChannelMode(QProcess::MergedChannels);
         connect(check_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkModelFinished(int,QProcess::ExitStatus)));
+        connect(check_process, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(checkModelError(QProcess::ProcessError)));
+        connect(check_process, SIGNAL(started()), this, SLOT(checkModelStarted()));
 
         QStringList args = parseConf(CONF_CHECKARGS, "", false);
         args << "-c" << "--model-check-only" << "-";
         check_process->start(minizinc_executable,args,getMznDistribPath());
-        check_process->write(curEditor->document()->toPlainText().toUtf8());
-        check_process->closeWriteChannel();
     }
 }
 

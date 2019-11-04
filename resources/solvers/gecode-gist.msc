@@ -4,7 +4,7 @@
   "description": "Gecode Gist FlatZinc executable",
   "version": "6.1.1",
   "mznlib": "-Ggecode",
-  "executable": "../../../bin/fzn-gecode-gist",
+  "executable": "../../../bin/run-fzn-gecode-gist",
   "tags": ["cp","int", "float", "set", "restart"],
   "stdFlags": ["-a","-n","-s","-p","-r","-f"],
   "extraFlags": [

@@ -168,7 +168,10 @@ private slots:
     void checkArgs(QString filepath);
     void checkArgsOutput();
     void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
+
+    void checkModelStarted();
     void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
+    void checkModelError(QProcess::ProcessError);
 
     void readOutput();
     void readRrofileOutput();
