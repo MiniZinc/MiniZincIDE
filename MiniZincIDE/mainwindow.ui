@@ -365,7 +365,6 @@
     <addaction name="actionNext_tab"/>
     <addaction name="separator"/>
     <addaction name="actionHide_tool_bar"/>
-    <addaction name="actionToggle_profiler_info"/>
     <addaction name="separator"/>
     <addaction name="actionShow_project_explorer"/>
     <addaction name="separator"/>

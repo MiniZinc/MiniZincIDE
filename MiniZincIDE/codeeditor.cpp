@@ -23,7 +23,7 @@ CodeEditor::initUI(QFont& font)
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
-    editorHeadder = new EditorHeadder(this);
+    editorHeader = new EditorHeader(this);
     debugInfo->hide();
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
@@ -31,6 +31,7 @@ CodeEditor::initUI(QFont& font)
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     connect(document(), SIGNAL(contentsChanged()), this, SLOT(contentsChanged()));
+    connect(editorHeader, SIGNAL(closeDebugInfo()), this, SIGNAL(closeDebugInfo()));
 
     setViewportWidth(0);
     cursorChange();
@@ -258,7 +259,7 @@ int CodeEditor::lineNumbersWidth()
 
 int CodeEditor::debugInfoWidth()
 {
-    return !debugInfo->isVisible()?0:3*DEBUG_TAB_SIZE;
+    return !debugInfo->isVisible()?0:(3*DEBUG_TAB_SIZE+10);
 }
 
 int CodeEditor::debugInfoOffset()
@@ -332,7 +333,7 @@ void CodeEditor::resizeEvent(QResizeEvent *e)
 
     debugInfo->setGeometry(QRect(cr.right()-debugInfoWidth(), cr.top()+debugInfoOffset(), debugInfoWidth(), cr.height()));
 
-    editorHeadder->setGeometry(QRect(cr.left(), cr.top(), cr.width(), debugInfoOffset()));
+    editorHeader->setGeometry(QRect(cr.left(), cr.top(), cr.width(), debugInfoOffset()));
 }
 
 void CodeEditor::showEvent(QShowEvent *event)
@@ -636,7 +637,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 //    painter.drawText(DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
 }
 
-void CodeEditor::paintHeadder(QPaintEvent *event)
+void CodeEditor::paintHeader(QPaintEvent *event)
 {
     QColor backgroundColor;
     QColor foregroundActiveColor;
@@ -651,7 +652,7 @@ void CodeEditor::paintHeadder(QPaintEvent *event)
         foregroundInactiveColor = Qt::gray;
     }
 
-    QPainter painter(editorHeadder);
+    QPainter painter(editorHeader);
     QFont lineNoFont = font();
     QFontMetrics fm(lineNoFont);
     int origFontHeight = fm.height();
@@ -666,6 +667,14 @@ void CodeEditor::paintHeadder(QPaintEvent *event)
     painter.drawText(baseX, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
     painter.drawText(baseX + DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
     painter.drawText(baseX + DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
+    if (editorHeader->in_x()) {
+        painter.setPen(foregroundActiveColor);
+    } else {
+        painter.setPen(foregroundInactiveColor);
+    }
+    lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
+    painter.setFont(lineNoFont);
+    painter.drawText(baseX + DEBUG_TAB_SIZE*3, heightDiff/2, 10, debugInfoOffset(), Qt::AlignLeft | Qt::AlignVCenter, "X");
 }
 
 void CodeEditor::setEditorFont(QFont& font)

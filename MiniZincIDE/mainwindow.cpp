@@ -1158,6 +1158,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             }
         }
         CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
+        connect(ce, SIGNAL(closeDebugInfo()), this, SLOT(on_actionToggle_profiler_info_triggered()));
         if (readOnly || ce->filename == "_coursera" || ce->filename.endsWith(".mzc"))
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);

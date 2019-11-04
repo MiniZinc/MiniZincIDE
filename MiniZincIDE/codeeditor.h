@@ -39,6 +39,7 @@ struct MiniZincError {
     QString msg;
 };
 
+class EditorHeader;
 
 class CodeEditor : public QPlainTextEdit
 {
@@ -49,7 +50,7 @@ public:
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
     void paintDebugInfo(QPaintEvent *event);
-    void paintHeadder(QPaintEvent *event);
+    void paintHeader(QPaintEvent *event);
     int debugInfoWidth();
     int debugInfoOffset();
     QString filepath;
@@ -82,7 +83,7 @@ private slots:
 private:
     QWidget* lineNumbers;
     QWidget* debugInfo;
-    QWidget* editorHeadder;
+    EditorHeader* editorHeader;
     QWidget* loadContentsButton;
     QTabWidget* tabs;
     Highlighter* highlighter;
@@ -101,6 +102,7 @@ private:
 
 signals:
     void escPressed();
+    void closeDebugInfo();
 public slots:
     void loadedLargeFile();
     void copy();
@@ -143,22 +145,45 @@ private:
     CodeEditor *codeEditor;
 };
 
-class EditorHeadder: public QWidget
+class EditorHeader: public QWidget
 {
+    Q_OBJECT
 public:
-    EditorHeadder(CodeEditor *e) : QWidget(e), codeEditor(e) {}
+    EditorHeader(CodeEditor *e) : QWidget(e), codeEditor(e), _in_x(false) {
+        setMouseTracking(true);
+    }
 
     QSize sizeHint() const {
         return QSize(0, codeEditor->debugInfoOffset());
     }
 
+    bool in_x(void) const {
+        return _in_x;
+    }
+
 protected:
     void paintEvent(QPaintEvent *event) {
-        codeEditor->paintHeadder(event);
+        codeEditor->paintHeader(event);
+    }
+    void mouseMoveEvent(QMouseEvent *event) {
+        bool new_in_x = (event->localPos().x() > width()-10);
+        if (new_in_x != _in_x) {
+            _in_x = new_in_x;
+            repaint();
+        }
+    }
+    void mouseReleaseEvent(QMouseEvent *event) {
+        if (event->localPos().x() > width()-10) {
+            emit closeDebugInfo();
+        }
     }
 
 private:
     CodeEditor *codeEditor;
+    bool _in_x;
+
+signals:
+    void closeDebugInfo();
 };
 
 #endif // CODEEDITOR_H
