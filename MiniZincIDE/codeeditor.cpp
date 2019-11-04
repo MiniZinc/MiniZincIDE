@@ -259,7 +259,7 @@ int CodeEditor::lineNumbersWidth()
 
 int CodeEditor::debugInfoWidth()
 {
-    return !debugInfo->isVisible()?0:(3*DEBUG_TAB_SIZE+10);
+    return !debugInfo->isVisible()?0:(3*DEBUG_TAB_SIZE+DEBUG_X_SIZE);
 }
 
 int CodeEditor::debugInfoOffset()
@@ -674,7 +674,7 @@ void CodeEditor::paintHeader(QPaintEvent *event)
     }
     lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
     painter.setFont(lineNoFont);
-    painter.drawText(baseX + DEBUG_TAB_SIZE*3, heightDiff/2, 10, debugInfoOffset(), Qt::AlignLeft | Qt::AlignVCenter, "X");
+    painter.drawText(baseX + DEBUG_TAB_SIZE*3+DEBUG_X_SIZE/4, heightDiff/4, DEBUG_X_SIZE, debugInfoOffset(), Qt::AlignLeft | Qt::AlignVCenter, "X");
 }
 
 void CodeEditor::setEditorFont(QFont& font)

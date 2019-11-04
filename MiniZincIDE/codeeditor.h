@@ -63,7 +63,8 @@ public:
     void checkFile(const QVector<MiniZincError>& errors);
     void toggleDebugInfo();
     void showDebugInfo();
-
+    const static int DEBUG_TAB_SIZE = 70;
+    const static int DEBUG_X_SIZE = 20;
 protected:
     void resizeEvent(QResizeEvent *event);
     void showEvent(QShowEvent *event);
@@ -96,7 +97,7 @@ private:
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
-    const int DEBUG_TAB_SIZE = 70;
+
     QColor interpolate(QColor start,QColor end,double ratio); // This should not go here
     QColor heatColor(double ratio); // This should not go here
 
@@ -166,14 +167,14 @@ protected:
         codeEditor->paintHeader(event);
     }
     void mouseMoveEvent(QMouseEvent *event) {
-        bool new_in_x = (event->localPos().x() > width()-10);
+        bool new_in_x = (event->localPos().x() > width()-CodeEditor::DEBUG_X_SIZE);
         if (new_in_x != _in_x) {
             _in_x = new_in_x;
             repaint();
         }
     }
     void mouseReleaseEvent(QMouseEvent *event) {
-        if (event->localPos().x() > width()-10) {
+        if (event->localPos().x() > width()-CodeEditor::DEBUG_X_SIZE) {
             emit closeDebugInfo();
         }
     }
