@@ -544,10 +544,10 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 QColor CodeEditor::interpolate(QColor start,QColor end,double ratio)
 {
     //From https://stackoverflow.com/questions/3306786/get-intermediate-color-from-a-gradient
-    int r = (int)(ratio*start.red() + (1-ratio)*end.red());
-    int g = (int)(ratio*start.green() + (1-ratio)*end.green());
-    int b = (int)(ratio*start.blue() + (1-ratio)*end.blue());
-    int a = (int)(ratio*start.alpha() + (1-ratio)*end.alpha());
+    int r = static_cast<int>(ratio*start.red() + (1-ratio)*end.red());
+    int g = static_cast<int>(ratio*start.green() + (1-ratio)*end.green());
+    int b = static_cast<int>(ratio*start.blue() + (1-ratio)*end.blue());
+    int a = static_cast<int>(ratio*start.alpha() + (1-ratio)*end.alpha());
     QColor c = QColor::fromRgb(r,g,b);
     c.setAlpha(a); // Strangely there seems to be no clean way of creating a rgba color, fromRgba does not take 4 parameters as one would expect.
     return c;
@@ -590,12 +590,11 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
     // TODO: This should be pre-computed only once and stored in each block.
     // Statistics should not be recounted at eack redraw...
-    QTextBlock tmpBlock = document()->begin();
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
-    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
-    int bottom = top + (int) blockBoundingRect(block).height();
+    int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
+    int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
     int curLine = textCursor().blockNumber();
 
@@ -606,18 +605,18 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 //            int textTop = top+fontMetrics().leading()+heightDiff;
             int textTop = top+heightDiff;
             // num constraints
-            painter.fillRect(0, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                             heatColor(((double)bd->d.con)/bd->d.totalCon));
+            painter.fillRect(0, top, DEBUG_TAB_SIZE, static_cast<int>(blockBoundingRect(block).height()),
+                             heatColor(static_cast<double>(bd->d.con)/bd->d.totalCon));
             QString numConstraints = QString().number(bd->d.con);
             painter.drawText(0, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numConstraints);
             // num vars
-            painter.fillRect(DEBUG_TAB_SIZE, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                              heatColor(((double)bd->d.var)/bd->d.totalVar));
+            painter.fillRect(DEBUG_TAB_SIZE, top, DEBUG_TAB_SIZE, static_cast<int>(blockBoundingRect(block).height()),
+                              heatColor(static_cast<double>(bd->d.var)/bd->d.totalVar));
             QString numVars = QString().number(bd->d.var);
             painter.drawText(DEBUG_TAB_SIZE, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, numVars);
             // flatten time
-            painter.fillRect(DEBUG_TAB_SIZE*2, top, DEBUG_TAB_SIZE, blockBoundingRect(block).height(),
-                              heatColor(((double)bd->d.ms)/bd->d.totalMs));
+            painter.fillRect(DEBUG_TAB_SIZE*2, top, DEBUG_TAB_SIZE, static_cast<int>(blockBoundingRect(block).height()),
+                              heatColor(static_cast<double>(bd->d.ms)/bd->d.totalMs));
             QString flattenTime = QString().number(bd->d.ms);
             painter.drawText(DEBUG_TAB_SIZE*2, textTop, DEBUG_TAB_SIZE, fm2.height(), Qt::AlignCenter, flattenTime+"ms");
             //            painter.drawText(0, textTop, debugInfo->width(), fm2.height(),
@@ -626,7 +625,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
         block = block.next();
         top = bottom;
-        bottom = top + (int) blockBoundingRect(block).height();
+        bottom = top + static_cast<int>(blockBoundingRect(block).height());
         ++blockNumber;
     }
 
