@@ -35,6 +35,7 @@
 #include <QToolButton>
 #include <QProgressBar>
 #include <QComboBox>
+#include <QVersionNumber>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -418,6 +419,7 @@ private:
     CompileMode compileMode;
     int runTimeout;
     QString minizinc_executable;
+    QVersionNumber minizinc_version;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;

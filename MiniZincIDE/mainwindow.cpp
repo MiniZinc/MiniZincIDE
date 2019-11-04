@@ -2197,7 +2197,10 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             args << df;
     }
     if (compileMode==CM_PROFILE) {
-        args << "--output-paths-to-stdout"; //<< "--output-detailed-timing";
+        args << "--output-paths-to-stdout";
+        if (minizinc_version >= QVersionNumber(2,3,3)) {
+            args << "--output-detailed-timing";
+        }
     }
 
     solutionCount = 0;
@@ -3697,8 +3700,8 @@ void MainWindow::on_actionGo_to_line_triggered()
 
 void MainWindow::checkMznPath()
 {
-    QString ignoreVersionString;
-    SolverDialog::checkMznExecutable(mznDistribPath,minizinc_executable,ignoreVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
+    QString mznVersionString;
+    SolverDialog::checkMznExecutable(mznDistribPath,minizinc_executable,mznVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
 
     if (minizinc_executable.isEmpty()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
@@ -3713,6 +3716,15 @@ void MainWindow::checkMznPath()
     ui->actionSubmit_to_MOOC->setEnabled(haveMzn);
     if (!haveMzn)
         ui->conf_dock_widget->hide();
+    if (haveMzn) {
+        QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
+        QRegularExpressionMatch path_match = version_regexp.match(mznVersionString);
+        if (path_match.hasMatch()) {
+            minizinc_version = QVersionNumber(path_match.captured(1).toInt(),path_match.captured(2).toInt(),path_match.captured(3).toInt());
+        } else {
+            minizinc_version = QVersionNumber(0,0,0);
+        }
+    }
 }
 
 void MainWindow::on_actionShift_left_triggered()
