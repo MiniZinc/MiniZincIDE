@@ -992,6 +992,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
     if (processRunning) {
         fakeRunAction->setEnabled(true);
         ui->actionRun->setEnabled(false);
+        ui->actionProfile_compilation->setEnabled(false);
         fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
@@ -1008,6 +1009,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn));
         ui->actionRun->setEnabled(isMzn || isFzn);
+        ui->actionProfile_compilation->setEnabled(isMzn);
         fakeCompileAction->setEnabled(!isMzn);
         ui->actionCompile->setEnabled(isMzn);
         fakeStopAction->setEnabled(true);
@@ -3712,6 +3714,7 @@ void MainWindow::checkMznPath()
     }
     bool haveMzn = (!minizinc_executable.isEmpty() && solvers.size() > 0);
     ui->actionRun->setEnabled(haveMzn);
+    ui->actionProfile_compilation->setEnabled(haveMzn);
     ui->actionCompile->setEnabled(haveMzn);
     ui->actionEditSolverConfig->setEnabled(haveMzn);
     ui->actionSubmit_to_MOOC->setEnabled(haveMzn);
