@@ -1013,7 +1013,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn || isData));
         ui->actionRun->setEnabled(isMzn || isFzn || isData);
-        ui->actionProfile_compilation->setEnabled(isMzn||isData);
+        ui->actionProfile_compilation->setEnabled(QFileInfo(curEditor->filepath).suffix()=="mzn" || isData);
         fakeCompileAction->setEnabled(!(isMzn||isData));
         ui->actionCompile->setEnabled(isMzn||isData);
         fakeStopAction->setEnabled(true);
@@ -2700,18 +2700,28 @@ void MainWindow::profileCompiledFzn(int exitcode)
         QRegularExpression count_re("([^|;]*)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|([^;]*);");
         QRegularExpression time_re("^%%%mzn-stat: profiling=\\[\"(.*)\",(\\d*),(\\d*)\\]$");
 
-        QVector<BracketData*> coverage;
-        QTextBlock tb = curEditor->document()->begin();
-        while (tb.isValid()) {
-            BracketData* bd = static_cast<BracketData*>(tb.userData());
-            if (bd==nullptr) {
-                bd = new BracketData;
-                tb.setUserData(bd);
+        typedef QMap<QString,QVector<BracketData*>> CoverageMap;
+        CoverageMap ce_coverage;
+
+        for (int i=0; i<ui->tabWidget->count(); i++) {
+            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+            if (ce->filepath.endsWith(".mzn")) {
+                QTextBlock tb = ce->document()->begin();
+                QVector<BracketData*> coverage;
+                while (tb.isValid()) {
+                    BracketData* bd = static_cast<BracketData*>(tb.userData());
+                    if (bd==nullptr) {
+                        bd = new BracketData;
+                        tb.setUserData(bd);
+                    }
+                    bd->d.reset();
+                    coverage.push_back(bd);
+                    tb = tb.next();
+                }
+                ce_coverage.insert(ce->filepath,coverage);
             }
-            bd->d.reset();
-            coverage.push_back(bd);
-            tb = tb.next();
         }
+
         int totalCons=1;
         int totalVars=1;
         int totalTime=1;
@@ -2720,21 +2730,23 @@ void MainWindow::profileCompiledFzn(int exitcode)
             if (path_match.hasMatch()) {
                 QString paths = path_match.captured(3);
                 QRegularExpressionMatchIterator match = count_re.globalMatch(paths);
-                int min_line_covered = -1;
-                QString lastMatch;
                 if (match.hasNext()) {
+                    int min_line_covered = -1;
+                    CoverageMap::iterator fileMatch;
                     while (match.hasNext()) {
                         QRegularExpressionMatch m = match.next();
-                        if (m.captured(1)==curFilePath) {
+                        auto tryMatch = ce_coverage.find(m.captured(1));
+                        if (tryMatch != ce_coverage.end()) {
+                            fileMatch = tryMatch;
                             min_line_covered = m.captured(2).toInt();
                         }
                     }
-                    if (min_line_covered > 0 && min_line_covered <= coverage.size()) {
+                    if (min_line_covered > 0 && min_line_covered <= fileMatch.value().size()) {
                         if (path_match.captured(1)[0].isDigit()) {
-                            coverage[min_line_covered-1]->d.con++;
+                            fileMatch.value()[min_line_covered-1]->d.con++;
                             totalCons++;
                         } else {
-                            coverage[min_line_covered-1]->d.var++;
+                            fileMatch.value()[min_line_covered-1]->d.var++;
                             totalVars++;
                         }
                     }
@@ -2742,20 +2754,23 @@ void MainWindow::profileCompiledFzn(int exitcode)
             } else {
                 QRegularExpressionMatch time_match = time_re.match(line);
                 if (time_match.hasMatch()) {
-                    if (time_match.captured(1)==curFilePath) {
+                    CoverageMap::iterator fileMatch = ce_coverage.find(time_match.captured(1));
+                    if (fileMatch != ce_coverage.end()) {
                         int line_no = time_match.captured(2).toInt();
-                        if (line_no <= coverage.size()) {
-                            coverage[line_no]->d.ms = time_match.captured(3).toInt();
-                            totalTime += coverage[line_no]->d.ms;
+                        if (line_no <= fileMatch.value().size()) {
+                            fileMatch.value()[line_no]->d.ms = time_match.captured(3).toInt();
+                            totalTime += fileMatch.value()[line_no]->d.ms;
                         }
                     }
                 }
             }
         }
-        for(auto data: coverage){
-            data->d.totalCon = totalCons;
-            data->d.totalVar = totalVars;
-            data->d.totalMs = totalTime;
+        for (auto& coverage: ce_coverage) {
+            for(auto data: coverage){
+                data->d.totalCon = totalCons;
+                data->d.totalVar = totalVars;
+                data->d.totalMs = totalTime;
+            }
         }
         curEditor->repaint();
     }
