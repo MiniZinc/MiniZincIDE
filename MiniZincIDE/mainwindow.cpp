@@ -1167,6 +1167,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
         if (readOnly || ce->filename == "_coursera" || ce->filename.endsWith(".mzc"))
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
+        if(profileInfoVisible)
+            ce->showDebugInfo(profileInfoVisible);
         if (focus) {
             ui->tabWidget->setCurrentIndex(tab);
             curEditor->setFocus();
