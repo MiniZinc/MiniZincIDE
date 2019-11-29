@@ -64,7 +64,6 @@ public:
     void toggleDebugInfo();
     void showDebugInfo();
     const static int DEBUG_TAB_SIZE = 70;
-    const static int DEBUG_X_SIZE = 20;
 protected:
     void resizeEvent(QResizeEvent *event);
     void showEvent(QShowEvent *event);
@@ -103,7 +102,6 @@ private:
 
 signals:
     void escPressed();
-    void closeDebugInfo();
 public slots:
     void loadedLargeFile();
     void copy();
@@ -150,7 +148,7 @@ class EditorHeader: public QWidget
 {
     Q_OBJECT
 public:
-    EditorHeader(CodeEditor *e) : QWidget(e), codeEditor(e), _in_x(false) {
+    EditorHeader(CodeEditor *e) : QWidget(e), codeEditor(e) {
         setMouseTracking(true);
     }
 
@@ -158,33 +156,13 @@ public:
         return QSize(0, codeEditor->debugInfoOffset());
     }
 
-    bool in_x(void) const {
-        return _in_x;
-    }
-
 protected:
     void paintEvent(QPaintEvent *event) {
         codeEditor->paintHeader(event);
     }
-    void mouseMoveEvent(QMouseEvent *event) {
-        bool new_in_x = (event->localPos().x() > width()-CodeEditor::DEBUG_X_SIZE);
-        if (new_in_x != _in_x) {
-            _in_x = new_in_x;
-            repaint();
-        }
-    }
-    void mouseReleaseEvent(QMouseEvent *event) {
-        if (event->localPos().x() > width()-CodeEditor::DEBUG_X_SIZE) {
-            emit closeDebugInfo();
-        }
-    }
-
 private:
     CodeEditor *codeEditor;
-    bool _in_x;
 
-signals:
-    void closeDebugInfo();
 };
 
 #endif // CODEEDITOR_H

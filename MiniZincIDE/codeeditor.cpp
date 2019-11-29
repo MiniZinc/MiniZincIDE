@@ -31,7 +31,6 @@ CodeEditor::initUI(QFont& font)
     connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
     connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
     connect(document(), SIGNAL(contentsChanged()), this, SLOT(contentsChanged()));
-    connect(editorHeader, SIGNAL(closeDebugInfo()), this, SIGNAL(closeDebugInfo()));
 
     setViewportWidth(0);
     cursorChange();
@@ -259,7 +258,7 @@ int CodeEditor::lineNumbersWidth()
 
 int CodeEditor::debugInfoWidth()
 {
-    return !debugInfo->isVisible()?0:(3*DEBUG_TAB_SIZE+DEBUG_X_SIZE);
+    return !debugInfo->isVisible()?0:(3*DEBUG_TAB_SIZE);
 }
 
 int CodeEditor::debugInfoOffset()
@@ -630,6 +629,9 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         ++blockNumber;
     }
 
+    painter.setPen(foregroundInactiveColor);
+    painter.drawLine(0,0,0,event->rect().bottom());
+
 //    painter.fillRect(0, 0, debugInfo->width(), debugInfoOffset(), backgroundColor);
 
 //    painter.drawText(0, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
@@ -667,14 +669,6 @@ void CodeEditor::paintHeader(QPaintEvent *event)
     painter.drawText(baseX, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
     painter.drawText(baseX + DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
     painter.drawText(baseX + DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
-    if (editorHeader->in_x()) {
-        painter.setPen(foregroundActiveColor);
-    } else {
-        painter.setPen(foregroundInactiveColor);
-    }
-    lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
-    painter.setFont(lineNoFont);
-    painter.drawText(baseX + DEBUG_TAB_SIZE*3+DEBUG_X_SIZE/4, heightDiff/4, DEBUG_X_SIZE, debugInfoOffset(), Qt::AlignLeft | Qt::AlignVCenter, "X");
 }
 
 void CodeEditor::setEditorFont(QFont& font)

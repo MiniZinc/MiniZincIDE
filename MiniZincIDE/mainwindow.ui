@@ -365,6 +365,7 @@
     <addaction name="actionNext_tab"/>
     <addaction name="separator"/>
     <addaction name="actionHide_tool_bar"/>
+    <addaction name="actionToggle_profiler_info"/>
     <addaction name="separator"/>
     <addaction name="actionShow_project_explorer"/>
     <addaction name="separator"/>
@@ -576,7 +577,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>676</width>
+          <width>661</width>
           <height>1074</height>
          </rect>
         </property>
