@@ -14,6 +14,7 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, cons
 {
     setAttribute( Qt::WA_DeleteOnClose );
     ui->setupUi(this);
+    ui->centralwidget->hide();
     identifier = mw->addHtmlWindow(this);
 
     for (int i=0; i<specs.size(); i++) {
@@ -26,6 +27,7 @@ HTMLWindow::HTMLWindow(const QVector<VisWindowSpec>& specs, MainWindow* mw, cons
         dw->setFeatures(QDockWidget::DockWidgetMovable);
         dw->setWidget(wv);
         addDockWidget(specs[i].area,dw);
+        wv->resize(1,1);
     }
     setWindowTitle("MiniZinc visualisation for "+title);
 }
