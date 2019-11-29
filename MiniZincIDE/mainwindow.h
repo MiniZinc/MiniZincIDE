@@ -417,6 +417,7 @@ private:
     ParamDialog* paramDialog;
     enum CompileMode { CM_RUN, CM_COMPILE, CM_PROFILE };
     CompileMode compileMode;
+    bool profileInfoVisible;
     int runTimeout;
     QString minizinc_executable;
     QVersionNumber minizinc_version;

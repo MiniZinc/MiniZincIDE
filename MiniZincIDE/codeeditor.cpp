@@ -272,17 +272,18 @@ int CodeEditor::debugInfoOffset()
     return heightOffset;
 }
 
-void CodeEditor::toggleDebugInfo()
+void CodeEditor::showDebugInfo(bool show)
 {
-    !debugInfo->isHidden()?debugInfo->hide():debugInfo->show();
-    setViewportWidth(0);
-}
-
-void CodeEditor::showDebugInfo()
-{
-    if(debugInfo->isHidden()){
-     debugInfo->show();
-     setViewportWidth(0);
+    if (show) {
+        if(debugInfo->isHidden()){
+            debugInfo->show();
+            setViewportWidth(0);
+        }
+    } else {
+        if(!debugInfo->isHidden()){
+            debugInfo->hide();
+            setViewportWidth(0);
+        }
     }
 }
 

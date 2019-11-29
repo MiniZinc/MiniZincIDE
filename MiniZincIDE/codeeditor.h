@@ -61,8 +61,7 @@ public:
     Highlighter& getHighlighter();
     bool modifiedSinceLastCheck;
     void checkFile(const QVector<MiniZincError>& errors);
-    void toggleDebugInfo();
-    void showDebugInfo();
+    void showDebugInfo(bool show);
     const static int DEBUG_TAB_SIZE = 70;
 protected:
     void resizeEvent(QResizeEvent *event);

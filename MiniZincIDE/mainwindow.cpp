@@ -802,6 +802,8 @@ void MainWindow::init(const QString& projectFile)
 
     newFileCounter = 1;
 
+    profileInfoVisible = false;
+
     paramDialog = new ParamDialog(this);
 
     fakeRunAction = new QAction(this);
@@ -4564,9 +4566,10 @@ void MainWindow::on_actionHide_tool_bar_triggered()
 
 void MainWindow::on_actionToggle_profiler_info_triggered()
 {
+    profileInfoVisible = !profileInfoVisible;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->toggleDebugInfo();
+        ce->showDebugInfo(profileInfoVisible);
     }
 }
 
@@ -4828,10 +4831,7 @@ void MainWindow::on_actionProfile_compilation_triggered()
     compileMode = CM_PROFILE;
     checkArgsStdout = "";
     compileOrRun();
-
-
-    for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->showDebugInfo();
+    if (!profileInfoVisible) {
+        on_actionToggle_profiler_info_triggered();
     }
 }
