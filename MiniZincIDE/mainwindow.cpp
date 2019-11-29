@@ -1003,15 +1003,17 @@ void MainWindow::updateUiProcessRunning(bool pr)
     } else {
         bool isMzn = false;
         bool isFzn = false;
+        bool isData = false;
         if (curEditor) {
             isMzn = curEditor->filepath=="" || QFileInfo(curEditor->filepath).suffix()=="mzn";
             isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn";
+            isData = QFileInfo(curEditor->filepath).suffix()=="dzn" || QFileInfo(curEditor->filepath).suffix()=="json";
         }
-        fakeRunAction->setEnabled(! (isMzn || isFzn));
-        ui->actionRun->setEnabled(isMzn || isFzn);
-        ui->actionProfile_compilation->setEnabled(isMzn);
-        fakeCompileAction->setEnabled(!isMzn);
-        ui->actionCompile->setEnabled(isMzn);
+        fakeRunAction->setEnabled(! (isMzn || isFzn || isData));
+        ui->actionRun->setEnabled(isMzn || isFzn || isData);
+        ui->actionProfile_compilation->setEnabled(isMzn||isData);
+        fakeCompileAction->setEnabled(!(isMzn||isData));
+        ui->actionCompile->setEnabled(isMzn||isData);
         fakeStopAction->setEnabled(true);
         ui->actionStop->setEnabled(false);
         runButton->removeAction(ui->actionStop);
@@ -1784,10 +1786,42 @@ void MainWindow::compileOrRun()
     }
     if (curEditor) {
         QString filepath;
-        bool docIsModified = false;
+        QVector<CodeEditor*> modifiedDocs;
         if (curEditor->filepath!="") {
-            filepath = curEditor->filepath;
-            docIsModified = curEditor->document()->isModified();
+            if (!curEditor->filepath.endsWith(".mzn")) {
+                // run a data file, find the model file
+                QVector<CodeEditor*> models;
+                for (int i=0; i<ui->tabWidget->count(); i++) {
+                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+                    if (ce->filepath.endsWith(".mzn")) {
+                        models.append(ce);
+                    }
+                }
+                int selectedModel = -1;
+                if (models.size()==1) {
+                    selectedModel = 0;
+                } else {
+                    QStringList modelFiles;
+                    for (auto ce : models) {
+                        modelFiles.append(ce->filepath);
+                    }
+                    selectedModel = paramDialog->getModel(modelFiles);
+                }
+                if (selectedModel==-1)
+                    return;
+                filepath = models[selectedModel]->filepath;
+                if (models[selectedModel]->document()->isModified())
+                    modifiedDocs.append(models[selectedModel]);
+                currentAdditionalDataFiles.append(curEditor->filepath);
+                if (curEditor->document()->isModified()) {
+                    modifiedDocs.append(curEditor);
+                }
+            } else {
+                filepath = curEditor->filepath;
+                if (curEditor->document()->isModified()) {
+                    modifiedDocs.append(curEditor);
+                }
+            }
         } else {
             QTemporaryDir* modelTmpDir = new QTemporaryDir;
             if (!modelTmpDir->isValid()) {
@@ -1807,11 +1841,15 @@ void MainWindow::compileOrRun()
             }
         }
         if (filepath != "") {
-            if (docIsModified) {
+            if (!modifiedDocs.empty()) {
                 if (!saveBeforeRunning) {
                     QMessageBox msgBox;
-                    msgBox.setText("The model has been modified. You have to save it before running.");
-                    msgBox.setInformativeText("Do you want to save it now and then run?");
+                    if (modifiedDocs.size()==1) {
+                        msgBox.setText("One of the files is modified. You have to save it before running.");
+                    } else {
+                        msgBox.setText("Several files have been modified. You have to save them before running.");
+                    }
+                    msgBox.setInformativeText("Do you want to save now and then run?");
                     QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
                     msgBox.addButton(QMessageBox::Cancel);
                     QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
@@ -1821,13 +1859,18 @@ void MainWindow::compileOrRun()
                         saveBeforeRunning = true;
                     }
                     if (msgBox.clickedButton()!=saveButton && msgBox.clickedButton()!=alwaysButton) {
+                        currentAdditionalDataFiles.clear();
                         return;
                     }
                 }
-                on_actionSave_triggered();
+                for (auto ce : modifiedDocs) {
+                    saveFile(ce,ce->filepath);
+                    if (ce->document()->isModified()) {
+                        currentAdditionalDataFiles.clear();
+                        return;
+                    }
+                }
             }
-            if (curEditor->filepath!="" && curEditor->document()->isModified())
-                return;
             if (ui->autoclear_output->isChecked()) {
                 on_actionClear_output_triggered();
             }
@@ -4650,7 +4693,8 @@ void MainWindow::check_code()
 {
     if (check_process==nullptr && minizinc_executable!="" &&
         ui->actionRun->isEnabled() &&
-        curEditor && curEditor->modifiedSinceLastCheck) {
+        curEditor && (curEditor->filepath=="" || curEditor->filepath.endsWith(".mzn"))
+        && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
         curCheckEditor = curEditor;
         check_process = new MznProcess(this);

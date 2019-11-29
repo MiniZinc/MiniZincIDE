@@ -30,6 +30,7 @@ public:
     explicit ParamDialog(QWidget *parent = 0);
     ~ParamDialog();
     void getParams(QStringList params, const QStringList& dataFiles, QStringList& values, QStringList& additionalDataFiles);
+    int getModel(const QStringList& modelFiles);
 private:
     Ui::ParamDialog *ui;
     QFormLayout* formLayout;
@@ -37,6 +38,7 @@ private:
     QStringList previousParams;
     QStringList previousValues;
     QStringList previousDataFiles;
+    QString previousModelFile;
     bool previousWasManual;
 };
 

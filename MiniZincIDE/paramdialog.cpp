@@ -27,6 +27,36 @@ ParamDialog::ParamDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
+int ParamDialog::getModel(const QStringList& modelFiles) {
+    selectedFiles = new QListWidget(this);
+    selectedFiles->setSelectionMode(QAbstractItemView::SingleSelection);
+    for (int i=0; i<modelFiles.size(); i++) {
+        QFileInfo fi(modelFiles[i]);
+        QListWidgetItem* lwi = new QListWidgetItem(fi.fileName());
+        selectedFiles->addItem(lwi);
+        if (previousModelFile==modelFiles[i])
+            lwi->setSelected(true);
+    }
+    if (selectedFiles->selectedItems().size()==0) {
+        selectedFiles->item(0)->setSelected(true);
+    }
+    QFormLayout* mainLayout = new QFormLayout;
+    mainLayout->addRow(selectedFiles);
+    ui->frame->setLayout(mainLayout);
+    int selectedModel = -1;
+    selectedFiles->setFocus();
+    if (QDialog::exec()==QDialog::Accepted) {
+        selectedModel = selectedFiles->currentRow();
+        previousModelFile=modelFiles[selectedModel];
+    }
+    delete ui->frame;
+    ui->frame = new QFrame;
+    ui->frame->setFrameShape(QFrame::StyledPanel);
+    ui->frame->setFrameShadow(QFrame::Raised);
+    ui->verticalLayout->insertWidget(0, ui->frame);
+    return selectedModel;
+}
+
 void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QStringList &values, QStringList &additionalDataFiles)
 {
     QVector<QLineEdit*> le;
