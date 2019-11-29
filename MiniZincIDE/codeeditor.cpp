@@ -274,6 +274,8 @@ int CodeEditor::debugInfoOffset()
 
 void CodeEditor::showDebugInfo(bool show)
 {
+    if (filepath!="" && !filepath.endsWith(".mzn"))
+        show = false;
     if (show) {
         if(debugInfo->isHidden()){
             debugInfo->show();
