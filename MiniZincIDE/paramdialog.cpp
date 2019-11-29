@@ -66,8 +66,10 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
     }
     mainLayout->addRow(tw);
     ui->frame->setLayout(mainLayout);
-    if (selectedFiles==nullptr || selectedFiles->selectedItems().size()==0)
-        le[0]->setFocus();
+    le[0]->setFocus();
+    if (selectedFiles && selectedFiles->selectedItems().size()==0) {
+        selectedFiles->item(0)->setSelected(true);
+    }
     if (QDialog::exec()==QDialog::Accepted) {
         additionalDataFiles.clear();
         previousWasManual = (tw->currentIndex()==0);
