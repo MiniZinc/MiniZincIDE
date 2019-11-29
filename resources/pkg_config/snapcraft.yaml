@@ -17,7 +17,7 @@ apps:
   minizinc:
     command: bin/minizinc
   ide:
-    command: bin/desktop-launch bin/MiniZincIDE
+    command: bin/desktop-launch ${SNAP}/bin/MiniZincIDE
     desktop: share/applications/MiniZincIDE.desktop
     environment:
       # Use GTK3 cursor theme, icon theme and open/save file dialogs.
