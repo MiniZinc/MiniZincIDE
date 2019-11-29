@@ -1801,7 +1801,7 @@ void MainWindow::compileOrRun()
                 int selectedModel = -1;
                 if (models.size()==1) {
                     selectedModel = 0;
-                } else {
+                } else if (models.size() > 1) {
                     QStringList modelFiles;
                     for (auto ce : models) {
                         modelFiles.append(ce->filepath);
