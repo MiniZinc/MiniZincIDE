@@ -28,6 +28,7 @@ ParamDialog::ParamDialog(QWidget *parent) :
 }
 
 int ParamDialog::getModel(const QStringList& modelFiles) {
+    setWindowTitle("Select model to run");
     selectedFiles = new QListWidget(this);
     selectedFiles->setSelectionMode(QAbstractItemView::SingleSelection);
     for (int i=0; i<modelFiles.size(); i++) {
@@ -59,6 +60,7 @@ int ParamDialog::getModel(const QStringList& modelFiles) {
 
 void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QStringList &values, QStringList &additionalDataFiles)
 {
+    setWindowTitle("Model parameters");
     QVector<QLineEdit*> le;
     formLayout = new QFormLayout;
 
