@@ -1,3 +1,25 @@
+2019-12-09
+  v2.4.0
+  - Parse timing and statistics output produced by compiler, and display as
+    profiling information next to each line in the model.
+  - Enable run/compile action on data files. This automatically selects the
+    model file if there is only one, or presents a dialog for selecting the
+    model if there are multiple.
+  - Select first data file in parameter dialog if there was no previous
+    selection, and always focus parameter dialog.
+  - Fix dark mode detection on macOS 10.15, improve dark mode colors a bit
+    and fixed some dark mode bugs.
+  - Make background compilation of a model (used to display syntax and type
+    errors) a bit more stable.
+  - Highlight current line.
+  - Support .json as file extension for data files.
+  - Remember whether wrap around, case sensitivity and regular expression
+    was selected in find/replace dialog, pre-select the find/replace text
+    when find/replace widget is openend, and close find/replace widget when
+    ESC is pressed while editor has focus.
+  - Avoid infinite loop in wrap around replace all.
+  - Fix memory management for HTML visualisation windows, and resize docked
+    HTML visualisation widgets to take up equal space.
 2019-09-12
   v2.3.2
   - Update to MiniZinc 2.3.2.
