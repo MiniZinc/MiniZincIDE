@@ -1230,7 +1230,7 @@ void MainWindow::tabCloseRequest(int tab)
         int ret = msg.exec();
         switch (ret) {
         case QMessageBox::Save:
-            on_actionSave_triggered();
+            saveFile(ce,ce->filepath);
             if (ce->document()->isModified())
                 return;
             break;
