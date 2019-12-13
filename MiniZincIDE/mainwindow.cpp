@@ -2759,9 +2759,9 @@ void MainWindow::profileCompiledFzn(int exitcode)
                     CoverageMap::iterator fileMatch = ce_coverage.find(time_match.captured(1));
                     if (fileMatch != ce_coverage.end()) {
                         int line_no = time_match.captured(2).toInt();
-                        if (line_no <= fileMatch.value().size()) {
-                            fileMatch.value()[line_no]->d.ms = time_match.captured(3).toInt();
-                            totalTime += fileMatch.value()[line_no]->d.ms;
+                        if (line_no > 0 && line_no <= fileMatch.value().size()) {
+                            fileMatch.value()[line_no-1]->d.ms = time_match.captured(3).toInt();
+                            totalTime += fileMatch.value()[line_no-1]->d.ms;
                         }
                     }
                 }
