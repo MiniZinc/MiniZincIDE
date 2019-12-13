@@ -467,7 +467,7 @@ private:
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
     void updateSolverConfigs(void);
     void setCurrentSolverConfig(int idx);
-    void find(bool fwd);
+    void find(bool fwd, bool forceNoWrapAround=false);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

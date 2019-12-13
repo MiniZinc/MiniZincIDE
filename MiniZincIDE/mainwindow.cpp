@@ -3312,7 +3312,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     project.solverConfigs(projectSolverConfigs,false);
 }
 
-void MainWindow::find(bool fwd)
+void MainWindow::find(bool fwd, bool forceNoWrapAround)
 {
     const QString& toFind = ui->find->text();
     QTextDocument::FindFlags flags;
@@ -3321,7 +3321,7 @@ void MainWindow::find(bool fwd)
     bool ignoreCase = ui->check_case->isChecked();
     if (!ignoreCase)
         flags |= QTextDocument::FindCaseSensitively;
-    bool wrap = ui->check_wrap->isChecked();
+    bool wrap = !forceNoWrapAround && ui->check_wrap->isChecked();
 
     QTextCursor cursor(curEditor->textCursor());
     int hasWrapped = wrap ? 0 : 1;
@@ -4805,23 +4805,25 @@ void MainWindow::on_b_replaceall_clicked()
 {
     int counter = 0;
     QTextCursor cursor = curEditor->textCursor();
+    QTextCursor origCursor = curEditor->textCursor();
+    cursor.movePosition(QTextCursor::Start);
+    curEditor->setTextCursor(cursor);
     if (!cursor.hasSelection()) {
-        find(true);
+        find(true,true);
         cursor = curEditor->textCursor();
     }
     cursor.beginEditBlock();
-    int startingBlock = cursor.block().blockNumber();
     while (cursor.hasSelection()) {
         counter++;
         cursor.insertText(ui->replace->text());
-        find(true);
+        find(true,true);
         cursor = curEditor->textCursor();
-        if (cursor.block().blockNumber() >= startingBlock)
-            break;
     }
     cursor.endEditBlock();
     if (counter > 0) {
         ui->not_found->setText(QString().number(counter)+" replaced");
+    } else {
+        curEditor->setTextCursor(origCursor);
     }
     incrementalFindCursor.setPosition(std::min(curEditor->textCursor().anchor(), curEditor->textCursor().position()));
 }
