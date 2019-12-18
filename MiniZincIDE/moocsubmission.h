@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QTextStream>
 #include <QJsonObject>
+#include <QNetworkReply>
 #include "project.h"
 
 class QNetworkReply;
@@ -51,6 +52,7 @@ private slots:
 
     void on_runButton_clicked();
     void rcvLoginCheckResponse();
+    void rcvErrorResponse(QNetworkReply::NetworkError);
 
     void on_storePassword_toggled(bool checked);
 private:

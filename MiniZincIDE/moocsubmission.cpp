@@ -209,6 +209,7 @@ void MOOCSubmission::submitToMOOC()
 
     _cur_phase = S_WAIT_SUBMIT;
     reply = IDE::instance()->networkManager->post(request,doc.toJson());
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
     connect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
     ui->textBrowser->insertPlainText("Submitting to "+project.moocName+" for grading...\n");
 }
@@ -216,6 +217,7 @@ void MOOCSubmission::submitToMOOC()
 void MOOCSubmission::rcvSubmissionResponse()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
+    disconnect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
     reply->deleteLater();
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
@@ -288,6 +290,7 @@ void MOOCSubmission::on_runButton_clicked()
         _cur_phase = S_WAIT_PWD;
         disableUI();
         reply = IDE::instance()->networkManager->post(request,doc.toJson());
+        connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
         connect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
         ui->textBrowser->insertPlainText("Checking login and assignment token...\n");
     } else {
@@ -298,6 +301,7 @@ void MOOCSubmission::on_runButton_clicked()
 void MOOCSubmission::rcvLoginCheckResponse()
 {
     disconnect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+    disconnect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
     reply->deleteLater();
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
@@ -324,6 +328,13 @@ void MOOCSubmission::rcvLoginCheckResponse()
         ui->textBrowser->insertPlainText("Done.\n");
         _cur_phase = S_NONE;
         enableUI();
+    }
+}
+
+void MOOCSubmission::rcvErrorResponse(QNetworkReply::NetworkError)
+{
+    if (!reply->errorString().endsWith("Bad Request")) {
+        ui->textBrowser->insertPlainText("Error:\n"+reply->errorString()+"\n\n");
     }
 }
 
