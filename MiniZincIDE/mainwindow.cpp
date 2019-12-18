@@ -3797,7 +3797,8 @@ void MainWindow::on_actionShift_left_triggered()
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
     QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
-    if (block==endblock || !cursor.atBlockStart())
+    bool atBlockStart = cursor.selectionEnd() == endblock.position();
+    if (block==endblock || !atBlockStart)
         endblock = endblock.next();
     QRegExp white("\\s");
     QRegExp twowhite("\\s\\s");
@@ -3823,7 +3824,8 @@ void MainWindow::on_actionShift_right_triggered()
     QTextCursor cursor = curEditor->textCursor();
     QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
     QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
-    if (block==endblock || !cursor.atBlockStart())
+    bool atBlockStart = cursor.selectionEnd() == endblock.position();
+    if (block==endblock || !atBlockStart)
         endblock = endblock.next();
     cursor.beginEditBlock();
     do {
