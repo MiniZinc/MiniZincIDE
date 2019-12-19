@@ -1,6 +1,10 @@
 2019-12-09
   v2.4.1
   - Display error message when submission to MOOC provider fails.
+  - Fix shift left and shift right indentation behaviour when selecting
+    text backwards.
+  - Make "previous tab" and "next tab" actions cycle rather than stop at
+    first/last tab.
   v2.4.0
   - Parse timing and statistics output produced by compiler, and display as
     profiling information next to each line in the model.
