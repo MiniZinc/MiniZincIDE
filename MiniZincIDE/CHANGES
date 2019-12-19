@@ -5,6 +5,8 @@
     text backwards.
   - Make "previous tab" and "next tab" actions cycle rather than stop at
     first/last tab.
+  - Fix OpenSSL library in binary distribution to enable update checks and
+    submission to MOOCs again.
   v2.4.0
   - Parse timing and statistics output produced by compiler, and display as
     profiling information next to each line in the model.
