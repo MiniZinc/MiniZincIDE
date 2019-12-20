@@ -81,6 +81,11 @@ private:
 
     BgMap fixedBg;
 
+    QColor keywordColor;
+    QColor functionColor;
+    QColor stringColor;
+    QColor commentColor;
+
     QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;
     QRegExp commentStartExp;

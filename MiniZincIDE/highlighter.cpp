@@ -15,16 +15,17 @@
 #include "highlighter.h"
 
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
-    : QSyntaxHighlighter(parent)
+    : QSyntaxHighlighter(parent), keywordColor(Qt::darkGreen), functionColor(Qt::blue), stringColor(Qt::darkRed), commentColor(Qt::red)
+
 {
     Rule rule;
 
-    quoteFormat.setForeground(Qt::darkRed);
+    quoteFormat.setForeground(stringColor);
     rule.pattern = QRegExp("\"([^\"\\\\]|\\\\.)*\"");
     rule.format = quoteFormat;
     rules.append(rule);
 
-    commentFormat.setForeground(Qt::red);
+    commentFormat.setForeground(commentColor);
     rule.pattern = QRegExp("%[^\n]*");
     rule.format = commentFormat;
     rules.append(rule);
@@ -48,19 +49,21 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
              << "\\bwhere\\b" << "\\bxor\\b";
     QTextCharFormat format;
 
+    format.setFontItalic(true);
+    format.setForeground(functionColor);
+    rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\s*\\()");
+    rule.format = format;
+    rules.append(rule);
+
+    format = QTextCharFormat();
     format.setFontWeight(QFont::Bold);
+    format.setForeground(keywordColor);
     for (int i=0; i<patterns.size(); i++) {
         rule.pattern = QRegExp(patterns[i]);
         rule.format = format;
         rules.append(rule);
     }
 
-    format = QTextCharFormat();
-    format.setFontItalic(true);
-    format.setForeground(Qt::blue);
-    rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\s*\\()");
-    rule.format = format;
-    rules.append(rule);
 
     setEditorFont(font);
 
@@ -265,24 +268,21 @@ void Highlighter::setDarkMode(bool enable)
 {
     darkMode = enable;
     if (darkMode) {
-        QColor keywordColor = QColor(0xbb86fc);
-        QColor functionColor = QColor(0x13C4F5);
-        QColor stringColor = QColor(0xF29F05);
-        QColor comment = QColor(0x52514C);
-        rules[0].format.setForeground(stringColor);
-        commentFormat.setForeground(comment);
-        rules[1].format.setForeground(comment);
-        for (int i=2; i<rules.size()-1; i++) {
-            rules[i].format.setForeground(keywordColor);
-        }
-        rules[rules.size()-1].format.setForeground(functionColor);
+        keywordColor = QColor(0xbb86fc);
+        functionColor = QColor(0x13C4F5);
+        stringColor = QColor(0xF29F05);
+        commentColor = QColor(0x52514C);
     } else {
-        rules[0].format.setForeground(Qt::darkRed);
-        rules[1].format.setForeground(Qt::red);
-        commentFormat.setForeground(Qt::red);
-        for (int i=2; i<rules.size()-1; i++) {
-            rules[i].format.setForeground(Qt::darkGreen);
-        }
-        rules[rules.size()-1].format.setForeground(Qt::blue);
+        keywordColor = Qt::darkGreen;
+        functionColor = Qt::blue;
+        stringColor = Qt::darkRed;
+        commentColor = Qt::red;
+    }
+    rules[0].format.setForeground(stringColor);
+    commentFormat.setForeground(commentColor);
+    rules[1].format.setForeground(commentColor);
+    rules[2].format.setForeground(functionColor);
+    for (int i=3; i<rules.size(); i++) {
+        rules[i].format.setForeground(keywordColor);
     }
 }
