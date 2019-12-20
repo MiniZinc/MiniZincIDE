@@ -122,6 +122,7 @@ void Highlighter::highlightBlock(const QString &text)
 
     QTextCharFormat stringFormat;
     stringFormat.setForeground(stringColor);
+    stringFormat.setFontItalic(true);
     QTextCharFormat interpolateFormat;
     interpolateFormat.setFontItalic(true);
 
