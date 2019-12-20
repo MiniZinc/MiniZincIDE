@@ -39,11 +39,14 @@ public:
     }
 };
 
+enum HighlightingState { HS_NONE=-1, HS_STRING, HS_INTERPOLATE, HS_COMMENT };
+
 class BracketData : public QTextBlockUserData
 {
 public:
     QVector<Bracket> brackets;
     DebugInfoData d;
+    QVector<HighlightingState> highlightingState;
 };
 
 struct FixedBg {

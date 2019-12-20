@@ -20,15 +20,7 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
 {
     Rule rule;
 
-    quoteFormat.setForeground(stringColor);
-    rule.pattern = QRegExp("\"([^\"\\\\]|\\\\.)*\"");
-    rule.format = quoteFormat;
-    rules.append(rule);
-
     commentFormat.setForeground(commentColor);
-    rule.pattern = QRegExp("%[^\n]*");
-    rule.format = commentFormat;
-    rules.append(rule);
 
     QStringList patterns;
     patterns << "\\bann\\b" << "\\bannotation\\b" << "\\bany\\b"
@@ -49,7 +41,6 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
              << "\\bwhere\\b" << "\\bxor\\b";
     QTextCharFormat format;
 
-    format.setFontItalic(true);
     format.setForeground(functionColor);
     rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\s*\\()");
     rule.format = format;
@@ -115,6 +106,124 @@ void Highlighter::clearFixedBg() {
 void Highlighter::highlightBlock(const QString &text)
 {
     QTextBlock block = currentBlock();
+
+    BracketData* bd = new BracketData;
+    if (currentBlockUserData()) {
+        bd->d = static_cast<BracketData*>(currentBlockUserData())->d;
+    }
+    if (block.previous().userData()) {
+        bd->highlightingState = static_cast<BracketData*>(block.previous().userData())->highlightingState;
+    }
+
+    QRegExp noneRegExp("\"|%|/\\*");
+    QRegExp stringRegExp("\"|\\\\\\(");
+    QRegExp commentRegexp("\\*/");
+    QRegExp interpolateRegexp("[)\"%(]|/\\*");
+
+    QTextCharFormat stringFormat;
+    stringFormat.setForeground(stringColor);
+    QTextCharFormat interpolateFormat;
+    interpolateFormat.setFontItalic(true);
+
+    // Stage 1: find strings (including interpolations) and comments
+    QVector<HighlightingState>& highlightingState = bd->highlightingState;
+    int curPosition = 0;
+    HighlightingState currentState;
+    while (curPosition >= 0) {
+        currentState = highlightingState.empty() ? HS_NONE : highlightingState.back();
+        switch (currentState) {
+        case HS_NONE:
+            {
+                int nxt = noneRegExp.indexIn(text, curPosition);
+                if (nxt==-1) {
+                    curPosition = -1;
+                } else {
+                    if (text[nxt]=='"') {
+                        highlightingState.push_back(HS_STRING);
+                        curPosition = nxt+1;
+                    } else if (text[nxt]=='%') {
+                        setFormat(nxt, text.size()-nxt, commentFormat);
+                        curPosition = -1;
+                    } else {
+                        // /*
+                        highlightingState.push_back(HS_COMMENT);
+                        curPosition = nxt+1;
+                    }
+                }
+            }
+            break;
+        case HS_STRING:
+            {
+                int nxt = stringRegExp.indexIn(text, curPosition);
+                int stringStartIdx = curPosition==0 ? 0 : curPosition-1;
+                if (nxt==-1) {
+                    setFormat(stringStartIdx, text.size()-stringStartIdx, stringFormat);
+                    highlightingState.clear(); // this is an error, reset to NONE state
+                    curPosition = -1;
+                } else {
+                    if (text[nxt]=='"') {
+                        setFormat(stringStartIdx, nxt-stringStartIdx+1, stringFormat);
+                        curPosition = nxt+1;
+                        highlightingState.pop_back();
+                    } else {
+                        setFormat(stringStartIdx, nxt-stringStartIdx+2, stringFormat);
+                        curPosition = nxt+2;
+                        highlightingState.push_back(HS_INTERPOLATE);
+                    }
+                }
+            }
+            break;
+        case HS_COMMENT:
+            {
+                int nxt = commentRegexp.indexIn(text, curPosition);
+                int commentStartIdx = curPosition==0 ? 0 : curPosition-1;
+                if (nxt==-1) {
+                    // EOL -> stay in COMMENT state
+                    setFormat(commentStartIdx, text.size()-commentStartIdx, commentFormat);
+                    curPosition = -1;
+                } else {
+                    // finish comment
+                    setFormat(commentStartIdx, nxt-commentStartIdx+2, commentFormat);
+                    curPosition = nxt+1;
+                    highlightingState.pop_back();
+                }
+            }
+            break;
+        case HS_INTERPOLATE:
+            {
+                int nxt = interpolateRegexp.indexIn(text, curPosition);
+                if (nxt==-1) {
+                    // EOL -> stay in INTERPOLATE state
+                    setFormat(curPosition, text.size()-curPosition, interpolateFormat);
+                    curPosition = -1;
+                } else {
+                    setFormat(curPosition, nxt-curPosition+1, interpolateFormat);
+                    if (text[nxt]==')') {
+                        curPosition = nxt+1;
+                        highlightingState.pop_back();
+                    } else if (text[nxt]=='(') {
+                        curPosition = nxt+1;
+                        highlightingState.push_back(HS_INTERPOLATE);
+                    } else if (text[nxt]=='%') {
+                        setFormat(nxt, text.size()-nxt, commentFormat);
+                        curPosition = -1;
+                    } else if (text[nxt]=='"') {
+                        curPosition = nxt+1;
+                        highlightingState.push_back(HS_STRING);
+                    } else {
+                        // /*
+                        highlightingState.push_back(HS_COMMENT);
+                        curPosition = nxt+1;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    currentState = highlightingState.empty() ? HS_NONE : highlightingState.back();
+    setCurrentBlockState(currentState);
+
+    // Stage 2: find keywords and functions
     for (int i=0; i<rules.size(); i++) {
         const Rule& rule = rules[i];
         QRegExp expression(rule.pattern);
@@ -122,12 +231,33 @@ void Highlighter::highlightBlock(const QString &text)
         while (index >= 0) {
             int length = expression.matchedLength();
             if (format(index)!=quoteFormat && format(index)!=commentFormat) {
-                setFormat(index, length, rule.format);
+                if (format(index)==interpolateFormat) {
+                    QTextCharFormat interpolateRule = rule.format;
+                    interpolateRule.setFontItalic(true);
+                    setFormat(index, length, interpolateRule);
+                } else {
+                    setFormat(index, length, rule.format);
+                }
             }
             index = expression.indexIn(text, index + length);
         }
     }
 
+    // Stage 3: update bracket data
+    QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
+    int pos = text.indexOf(re);
+    while (pos != -1) {
+        if (format(pos)!=quoteFormat && format(pos)!=commentFormat) {
+            Bracket b;
+            b.b = text.at(pos);
+            b.pos = pos;
+            bd->brackets.append(b);
+        }
+        pos = text.indexOf(re, pos+1);
+    }
+    setCurrentBlockUserData(bd);
+
+    // Stage 4: apply highlighting
     for(QMap<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
         it != fixedBg.end(); ++it) {
       const FixedBg& fb = it.key();
@@ -162,40 +292,6 @@ void Highlighter::highlightBlock(const QString &text)
           //}
         }
       }
-    }
-
-    BracketData* bd = new BracketData;
-    if (currentBlockUserData())
-        bd->d = static_cast<BracketData*>(currentBlockUserData())->d;
-    QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
-    int pos = text.indexOf(re);
-    while (pos != -1) {
-        if (format(pos)!=quoteFormat && format(pos)!=commentFormat) {
-            Bracket b;
-            b.b = text.at(pos);
-            b.pos = pos;
-            bd->brackets.append(b);
-        }
-        pos = text.indexOf(re, pos+1);
-    }
-    setCurrentBlockUserData(bd);
-    setCurrentBlockState(0);
-
-    int commentStartIndex = 0;
-    if (previousBlockState() != 1) {
-        commentStartIndex = commentStartExp.indexIn(text);
-    }
-    while (commentStartIndex >= 0) {
-        int commentEndIndex = commentEndExp.indexIn(text, commentStartIndex);
-        int commentLength;
-        if (commentEndIndex == -1) {
-            setCurrentBlockState(1);
-            commentLength = text.length() - commentStartIndex;
-        } else {
-            commentLength = commentEndIndex - commentStartIndex + commentEndExp.matchedLength();
-        }
-        setFormat(commentStartIndex, commentLength, commentFormat);
-        commentStartIndex = commentStartExp.indexIn(text, commentStartIndex + commentLength);
     }
 }
 
@@ -278,11 +374,9 @@ void Highlighter::setDarkMode(bool enable)
         stringColor = Qt::darkRed;
         commentColor = Qt::red;
     }
-    rules[0].format.setForeground(stringColor);
     commentFormat.setForeground(commentColor);
-    rules[1].format.setForeground(commentColor);
-    rules[2].format.setForeground(functionColor);
-    for (int i=3; i<rules.size(); i++) {
+    rules[0].format.setForeground(functionColor);
+    for (int i=1; i<rules.size(); i++) {
         rules[i].format.setForeground(keywordColor);
     }
 }
