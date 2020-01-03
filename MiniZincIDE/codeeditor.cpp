@@ -671,6 +671,7 @@ void CodeEditor::paintHeader(QPaintEvent *event)
 
     painter.fillRect(event->rect(), backgroundColor);
     int baseX = debugInfo->geometry().x();
+    painter.setPen(darkMode ? QColor(Qt::white) : QColor(Qt::black));
     painter.drawText(baseX, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
     painter.drawText(baseX + DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
     painter.drawText(baseX + DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
