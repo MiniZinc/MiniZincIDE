@@ -1377,6 +1377,7 @@ void MainWindow::tabChange(int tab) {
         connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
         connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
         connect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
+        connect(ui->actionSelect_All, SIGNAL(triggered()), curEditor, SLOT(selectAll()));
         connect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
         connect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
         connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
