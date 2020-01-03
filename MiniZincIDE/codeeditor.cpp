@@ -152,6 +152,8 @@ void CodeEditor::setDarkMode(bool enable)
     } else {
         setStyleSheet("QPlainTextEdit{color: #000000; background-color: #ffffff;}");
     }
+
+    cursorChange(); // Ensure extra selections are the correct colours
 }
 
 Highlighter& CodeEditor::getHighlighter() {
