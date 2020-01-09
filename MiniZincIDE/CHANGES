@@ -1,3 +1,9 @@
+2020-01-10
+  v2.4.2
+  - Fix syntax highlighting of keywords, and add syntax highlighting for
+    interpolated strings.
+  - Redraw when switching to/from dark mode, and fix dark mode header colours.
+  - Fix "Select all" menu item.
 2019-12-09
   v2.4.1
   - Display error message when submission to MOOC provider fails.
