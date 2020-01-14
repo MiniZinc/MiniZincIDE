@@ -1005,17 +1005,19 @@ void MainWindow::updateUiProcessRunning(bool pr)
         runButton->setDefaultAction(ui->actionStop);
         ui->actionSubmit_to_MOOC->setEnabled(false);
     } else {
+        bool isPlayground = false;
         bool isMzn = false;
         bool isFzn = false;
         bool isData = false;
         if (curEditor) {
-            isMzn = curEditor->filepath=="" || QFileInfo(curEditor->filepath).suffix()=="mzn";
+            isPlayground = curEditor->filepath=="";
+            isMzn = isPlayground || QFileInfo(curEditor->filepath).suffix()=="mzn";
             isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn";
             isData = QFileInfo(curEditor->filepath).suffix()=="dzn" || QFileInfo(curEditor->filepath).suffix()=="json";
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn || isData));
         ui->actionRun->setEnabled(isMzn || isFzn || isData);
-        ui->actionProfile_compilation->setEnabled(QFileInfo(curEditor->filepath).suffix()=="mzn" || isData);
+        ui->actionProfile_compilation->setEnabled((!isPlayground && isMzn) || isData);
         fakeCompileAction->setEnabled(!(isMzn||isData));
         ui->actionCompile->setEnabled(isMzn||isData);
         fakeStopAction->setEnabled(true);
