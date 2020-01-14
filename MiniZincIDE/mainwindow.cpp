@@ -47,6 +47,8 @@
 #endif
 #endif
 
+#define BUILD_YEAR  (__DATE__ + 7)
+
 IDEStatistics::IDEStatistics(void)
     : errorsShown(0), errorsClicked(0), modelsRun(0) {}
 
@@ -2944,7 +2946,7 @@ void MainWindow::on_actionAbout_MiniZinc_IDE_triggered()
         buildString += "\n";
     QMessageBox::about(this, "The MiniZinc IDE", QString("The MiniZinc IDE\n\nVersion ")+IDE::instance()->applicationVersion()+"\n"+
                        buildString+"\n"
-                       "Copyright Monash University, NICTA, Data61 2013-2018\n\n"+
+                       "Copyright Monash University, NICTA, Data61 2013-" + BUILD_YEAR + "\n\n"+
                        "This program is provided under the terms of the Mozilla Public License Version 2.0. It uses the Qt toolkit, available from qt-project.org.");
 }
 
