@@ -1372,9 +1372,10 @@ void MainWindow::tabChange(int tab) {
     }
     if (tab==-1) {
         curEditor = nullptr;
-        ui->actionClose->setEnabled(false);
+        setEditorMenuItemsEnabled(false);
+        ui->findFrame->hide();
     } else {
-        ui->actionClose->setEnabled(true);
+        setEditorMenuItemsEnabled(true);
         curEditor = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
         connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
         connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
@@ -4862,4 +4863,28 @@ void MainWindow::on_actionProfile_compilation_triggered()
     if (!profileInfoVisible) {
         on_actionToggle_profiler_info_triggered();
     }
+}
+
+void MainWindow::setEditorMenuItemsEnabled(bool enabled) {
+    // These items only need to be enabled when there is an editor tab open
+    ui->actionClose->setEnabled(enabled);
+    ui->menuFind->setEnabled(enabled);
+    ui->actionFind->setEnabled(enabled);
+    ui->actionReplace->setEnabled(enabled);
+    ui->actionFind_next->setEnabled(enabled);
+    ui->actionFind_previous->setEnabled(enabled);
+    ui->actionShift_left->setEnabled(enabled);
+    ui->actionShift_right->setEnabled(enabled);
+    ui->actionCut->setEnabled(enabled);
+    ui->actionCopy->setEnabled(enabled);
+    ui->actionPaste->setEnabled(enabled);
+    ui->actionSelect_All->setEnabled(enabled);
+    ui->actionGo_to_line->setEnabled(enabled);
+    ui->action_Un_comment->setEnabled(enabled);
+    ui->actionSave->setEnabled(enabled);
+    ui->actionSave_as->setEnabled(enabled);
+    ui->actionSave_all->setEnabled(enabled);
+    ui->actionUndo->setEnabled(enabled);
+    ui->actionRedo->setEnabled(enabled);
+    ui->actionRun->setEnabled(enabled);
 }
