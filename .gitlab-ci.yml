@@ -69,7 +69,7 @@ package:linux:
     DOWNLOAD_FINDMUS: 1
   <<: *packaging_setup
   script:
-    - PACKAGE=MiniZincIDE-${MZNVERSION}-bundle-linux
+    - PACKAGE=MiniZincIDE-${MZNVERSION}-bundle-linux-x86_64
     - mkdir -p $PACKAGE/
     ### Package IDE
     - mv ide/usr/* $PACKAGE/
