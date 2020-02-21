@@ -4675,13 +4675,13 @@ void MainWindow::on_actionCheat_Sheet_triggered()
 
 void MainWindow::checkModelError(QProcess::ProcessError e)
 {
-//    qDebug() << "error: " << e;
+    check_process->deleteLater();
     check_process = nullptr;
 }
 
-void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
+void MainWindow::checkModelFinished(int, QProcess::ExitStatus exit_status)
 {
-    if (curCheckEditor==curEditor) {
+    if (curCheckEditor==curEditor && exit_status == QProcess::ExitStatus::NormalExit) {
         bool inRelevantError = false;
         MiniZincError curError;
         QVector<MiniZincError> mznErrors;
@@ -4710,7 +4710,7 @@ void MainWindow::checkModelFinished(int, QProcess::ExitStatus)
         }
         curEditor->checkFile(mznErrors);
     }
-    delete check_process;
+    check_process->deleteLater();
     check_process = nullptr;
 }
 
