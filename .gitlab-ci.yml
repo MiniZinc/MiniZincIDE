@@ -243,8 +243,8 @@ package:docker_alpine:
     MZNARCH: "musl"
   <<: *packaging_setup
   script:
-    - BASES=("null" "alpine:latest" "alpine:3.10" "alpine:3.9" "alpine:3.8")
-    - EXTS=("null" "-alpine" "-alpine3.10" "-alpine3.9" "-alpine3.8")
+    - BASES=("null" "alpine:latest" "alpine:3.11")
+    - EXTS=("null" "-alpine" "-alpine3.11")
     - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
     - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
     - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
