@@ -238,7 +238,7 @@ package:appimage:
 
 package:docker_alpine:
   stage: package
-  parallel: 4
+  parallel: 2
   variables:
     MZNARCH: "musl"
   <<: *packaging_setup
