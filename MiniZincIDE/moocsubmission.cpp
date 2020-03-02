@@ -173,29 +173,17 @@ void MOOCSubmission::submitToMOOC()
         const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = qobject_cast<QCheckBox*>(ui->modelBox->layout()->itemAt(i)->widget());
         if (cb->isChecked()) {
-            bool foundFile = false;
-            for (int i=0; i<allfiles.size(); i++) {
-                QFileInfo fi(allfiles[i]);
-                if (fi.fileName()==item.model) {
-                    foundFile = true;
-                    QFile file(fi.absoluteFilePath());
-                    if (file.open(QFile::ReadOnly | QFile::Text)) {
-                        QJsonObject output;
-                        QTextStream ts(&file);
-                        output["output"] = ts.readAll();
-                        _parts[item.id] = output;
-                    } else {
-                        ui->textBrowser->insertPlainText("Error: could not open "+item.name+"\n");
-                        ui->textBrowser->insertPlainText("Skipping.\n");
-                        solveNext();
-                        return;
-                    }
-                    break;
-                }
-            }
-            if (!foundFile) {
-                ui->textBrowser->insertPlainText("Error: could not find "+item.name+"\n");
+            QFile file(item.model);
+            if (file.open(QFile::ReadOnly | QFile::Text)) {
+                QJsonObject output;
+                QTextStream ts(&file);
+                output["output"] = ts.readAll();
+                _parts[item.id] = output;
+            } else {
+                ui->textBrowser->insertPlainText("Error: could not open "+item.name+"\n");
                 ui->textBrowser->insertPlainText("Skipping.\n");
+                solveNext();
+                return;
             }
         }
     }

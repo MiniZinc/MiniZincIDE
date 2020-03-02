@@ -2335,31 +2335,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 
 bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
 {
-    bool foundModel = false;
-    bool foundData = false;
-    QString modelFilePath;
-    QString dataFilePath;
-
-    QString dataFileRelative = dataFile;
-    if (dataFileRelative.startsWith("."))
-        dataFileRelative.remove(0,1);
-
-    const QStringList& files = project.files();
-    for (int i=0; i<files.size(); i++) {
-        QFileInfo fi(files[i]);
-        if (fi.fileName() == modelFile) {
-            foundModel = true;
-            modelFilePath = fi.absoluteFilePath();
-        } else if (fi.absoluteFilePath().endsWith(dataFileRelative)) {
-            foundData = true;
-            dataFilePath = fi.absoluteFilePath();
-        }
-    }
-
-    if (!foundModel || !foundData) {
+    if (!QFileInfo(modelFile).exists() || !QFileInfo(dataFile).exists())
         return false;
-    }
-
     outputBuffer = &outstream;
     compileMode = CM_RUN;
     runTimeout = timeout;
@@ -2367,8 +2344,8 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     updateUiProcessRunning(true);
     on_actionSplit_triggered();
     QStringList dataFiles;
-    dataFiles.push_back(dataFilePath);
-    compileAndRun(modelFilePath,"",dataFiles);
+    dataFiles.push_back(dataFile);
+    compileAndRun(modelFile, "", dataFiles);
     return true;
 }
 

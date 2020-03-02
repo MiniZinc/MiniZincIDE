@@ -186,7 +186,9 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                     moocA = nullptr;
                     goto coursera_done;
                 }
-                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed(),
+                QFileInfo model_fi(fi.dir(), tokens[1].trimmed());
+                QFileInfo data_fi(fi.dir(), tokens[2].trimmed());
+                MOOCAssignmentItem item(tokens[0].trimmed(),model_fi.absoluteFilePath(),data_fi.absoluteFilePath(),
                                   tokens[3].trimmed(),tokens[4].trimmed());
                 moocA->problems.append(item);
             }
@@ -210,7 +212,8 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                     moocA = nullptr;
                     goto coursera_done;
                 }
-                MOOCAssignmentItem item(tokens[0].trimmed(),tokens[1].trimmed(),tokens[2].trimmed());
+                QFileInfo model_fi(fi.dir(), tokens[1].trimmed());
+                MOOCAssignmentItem item(tokens[0].trimmed(),model_fi.absoluteFilePath(),tokens[2].trimmed());
                 moocA->models.append(item);
             }
         } else {
@@ -238,7 +241,9 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                                 hadError = true;
                             } else {
                                 QString timeout = solO["timeout"].isDouble() ? QString::number(solO["timeout"].toInt()) : solO["timeout"].toString();
-                                MOOCAssignmentItem item(solO["id"].toString(), solO["model"].toString(), solO["data"].toString(),
+                                QFileInfo model_fi(fi.dir(), solO["model"].toString());
+                                QFileInfo data_fi(fi.dir(), solO["data"].toString());
+                                MOOCAssignmentItem item(solO["id"].toString(), model_fi.absoluteFilePath(), data_fi.absoluteFilePath(),
                                                         timeout, solO["name"].toString());
                                 moocA->problems.append(item);
                             }
@@ -246,7 +251,8 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
                         QJsonArray models = moocO["modelAssignments"].toArray();
                         for (int i=0; i<models.size(); i++) {
                             QJsonObject modelO = models[i].toObject();
-                            MOOCAssignmentItem item(modelO["id"].toString(), modelO["model"].toString(), modelO["name"].toString());
+                            QFileInfo model_fi(fi.dir(), modelO["model"].toString());
+                            MOOCAssignmentItem item(modelO["id"].toString(), model_fi.absoluteFilePath(), modelO["name"].toString());
                             moocA->models.append(item);
                         }
                     }
