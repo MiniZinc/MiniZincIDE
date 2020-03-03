@@ -1,3 +1,13 @@
+2020-03-03
+  v2.4.3
+  - Disable menu items that don't make sense when all tabs are closed,
+    fix behaviour of stop button when all tabs closed (fixes several crashes).
+  - Add x86_64 suffix to linux package name (#96).
+  - Make boolean extra solver options with a default of true functional.
+  - Only read linter results if it exited normally (#97).
+  - Update alpine version to 3.11
+  - Resolve paths in _mooc to paths
+    (allowing submission of models in subdirectories).
 2020-01-10
   v2.4.2
   - Fix syntax highlighting of keywords, and add syntax highlighting for
