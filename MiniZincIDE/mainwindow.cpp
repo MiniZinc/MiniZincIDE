@@ -2626,6 +2626,14 @@ void MainWindow::on_actionStop_triggered()
         addOutput("<div class='mznnotice'>Stopped.</div>");
         procFinished(0);
     }
+    if (outputProcess) {
+        disconnect(outputProcess, SIGNAL(readyReadStandardOutput()), this, nullptr);
+        disconnect(outputProcess, SIGNAL(readyReadStandardError()), this, nullptr);
+        disconnect(outputProcess, SIGNAL(error(QProcess::ProcessError)), this, nullptr);
+        outputProcess->terminate();
+        outputProcess->deleteLater();
+        outputProcess = nullptr;
+    }
 }
 
 void MainWindow::openCompiledFzn(int exitcode)
