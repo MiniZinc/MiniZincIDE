@@ -638,7 +638,7 @@ void MznProcess::start(const QString &program, const QStringList &arguments, con
 void MznProcess::terminate()
 {
 #ifdef Q_OS_WIN
-        AttachConsole(pid()->dwProcessId);
+        AttachConsole(static_cast<DWORD>(processId()));
         SetConsoleCtrlHandler(nullptr, TRUE);
         GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
 #else
