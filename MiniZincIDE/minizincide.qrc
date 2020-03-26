@@ -4,6 +4,7 @@
         <file>images/mznicon.png</file>
         <file>cheat_sheet.mzn</file>
         <file>mznide.ico</file>
+        <file>dark_mode.css</file>
     </qresource>
     <qresource prefix="/icons">
         <file>images/document-new.png</file>

@@ -4740,8 +4740,16 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
 
     if (darkMode) {
+#ifdef Q_OS_WIN
+        QFile sheet(":/dark_mode.css");
+        sheet.open(QFile::ReadOnly);
+        qApp->setStyleSheet(sheet.readAll());
+#endif
         ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : #13C4F5 }");
     } else {
+#ifdef Q_OS_WIN
+        qApp->setStyleSheet("");
+#endif
         ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
     }
 }

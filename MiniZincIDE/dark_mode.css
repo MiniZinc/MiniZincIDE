@@ -1,0 +1,127 @@
+* {
+    background-color: #333333;
+    border-color: #444444;
+    color: #FFFFFF;
+}
+
+QMenuBar, QPushButton {
+    background-color: #444444;
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+    background-color: #555555;
+}
+
+QMenuBar::item:pressed {
+    background-color: #666666;
+}
+
+QMenu {
+    background-color: #3D3D3D;
+}
+
+QTabWidget::tab-bar, QTabWidget::pane, QTabBar {
+    border: 0;
+}
+
+QTabWidget::tab-bar {
+    background-color: #3F3F3F;
+}
+
+QTabBar::tab {
+    background-color: #3A3A3A;
+}
+
+QTabBar::tab:selected {
+    background-color: #222222;
+}
+
+QTabBar::tab:hover {
+    background-color: #2A2A2A;
+}
+
+QTextEdit, QLineEdit, QComboBox, QAbstractSlider, QAbstractSpinBox {
+    background-color: #222222;
+    padding: 3px;
+    border: 1px solid #666666;
+}
+
+QGroupBox {
+    border: 1px solid #666666;
+    margin-top: 1.5ex;
+    margin-bottom: 1.5ex;
+    padding: 1ex;
+    padding-top: 2ex;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 5px;
+    padding: 0 1ex;
+}
+
+QToolTip {
+    color: #000000;
+}
+
+QDockWidget::title {
+    background-color: #222222;
+    text-align: left center;
+}
+
+QDockWidget::close-button, QDockWidget::float-button {
+    background-color: #000000;
+}
+
+QStatusBar QLabel {
+    padding-left: 1ex;
+    padding-right: 1ex;
+}
+
+QStatusBar::item {
+    border: 0;
+}
+
+QScrollBar:vertical {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+QScrollBar:horizontal {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+QScrollBar::handle {
+    border: 0;
+    background: #666666;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: none;
+}
+
+QScrollBar::add-line:vertical {
+    height: 16px;
+    subcontrol-position: bottom;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical {
+    height: 16px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:horizontal {
+    width: 16px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal {
+    width: 16px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
