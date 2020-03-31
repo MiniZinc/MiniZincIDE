@@ -231,7 +231,7 @@ void Highlighter::highlightBlock(const QString &text)
         int index = expression.indexIn(text);
         while (index >= 0) {
             int length = expression.matchedLength();
-            if (format(index)!=quoteFormat && format(index)!=commentFormat) {
+            if (format(index)!=quoteFormat && format(index)!=commentFormat && format(index)!=stringFormat) {
                 if (format(index)==interpolateFormat) {
                     QTextCharFormat interpolateRule = rule.format;
                     interpolateRule.setFontItalic(true);
