@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1490</width>
+    <width>1520</width>
     <height>1609</height>
    </rect>
   </property>
@@ -257,7 +257,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1490</width>
+     <width>1520</width>
      <height>22</height>
     </rect>
    </property>
@@ -353,10 +353,19 @@
     <property name="title">
      <string>View</string>
     </property>
+    <widget class="QMenu" name="menuTheme">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <addaction name="actionDefaultTheme"/>
+     <addaction name="actionLilacTheme"/>
+     <addaction name="actionYellowTheme"/>
+    </widget>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
+    <addaction name="menuTheme"/>
     <addaction name="actionDark_mode"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
@@ -577,7 +586,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>661</width>
+          <width>676</width>
           <height>1074</height>
          </rect>
         </property>
@@ -1791,6 +1800,24 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+.</string>
+   </property>
+  </action>
+  <action name="actionDefaultTheme">
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="actionLilacTheme">
+   <property name="text">
+    <string>Lilac</string>
+   </property>
+  </action>
+  <action name="actionYellowTheme">
+   <property name="text">
+    <string>Yellow</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::TextHeuristicRole</enum>
    </property>
   </action>
  </widget>

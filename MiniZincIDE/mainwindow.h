@@ -299,6 +299,11 @@ private slots:
 
     void on_actionDark_mode_toggled(bool arg1);
 
+    //Themes
+    void on_actionYellowTheme_triggered();
+    void on_actionLilacTheme_triggered();
+    void on_actionDefaultTheme_triggered();
+
     void moocFinished(int);
 
     void on_defaultBehaviourButton_toggled(bool checked);

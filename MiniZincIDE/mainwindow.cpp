@@ -754,10 +754,10 @@ void MainWindow::init(const QString& projectFile)
     ui->tabWidget->removeTab(0);
 #ifndef Q_OS_MAC
     ui->menuFile->addAction(ui->actionQuit);
-#else
-    if (hasDarkMode()) {
-        ui->menuView->removeAction(ui->actionDark_mode);
-    }
+//#else
+//    if (hasDarkMode()) {
+//        ui->menuView->removeAction(ui->actionDark_mode);
+//    }
 #endif
 
     // initialise find widget
@@ -785,6 +785,13 @@ void MainWindow::init(const QString& projectFile)
     ui->toolBar->insertWidget(solverConfComboAction, runButton);
 
     ui->outputConsole->installEventFilter(this);
+
+    auto palette = ui->outputConsole->palette();
+    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
+    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+    ui->outputConsole->setPalette(palette);
+
+
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
@@ -4752,6 +4759,28 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
 #endif
         ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
     }
+    auto palette = ui->outputConsole->palette();
+    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
+    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+    ui->outputConsole->setPalette(palette);
+}
+
+void MainWindow::on_actionYellowTheme_triggered()
+{
+    Themes::currentTheme = Themes::banana;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
+
+}
+
+void MainWindow::on_actionLilacTheme_triggered()
+{
+    Themes::currentTheme = Themes::lilac;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
+}
+void MainWindow::on_actionDefaultTheme_triggered()
+{
+    Themes::currentTheme = Themes::defaultTheme;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
