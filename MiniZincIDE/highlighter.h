@@ -41,7 +41,7 @@ public:
         dark = d;
     }
     QColor get(bool darkMode){
-        return !darkMode?dark:light;
+        return darkMode?dark:light;
     }
 };
 
