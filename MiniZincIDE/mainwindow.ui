@@ -358,8 +358,9 @@
       <string>Theme</string>
      </property>
      <addaction name="actionDefaultTheme"/>
-     <addaction name="actionLilacTheme"/>
-     <addaction name="actionYellowTheme"/>
+     <addaction name="actionBlueberryTheme"/>
+     <addaction name="actionMangoTheme"/>
+     <addaction name="actionBananaTheme"/>
     </widget>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
@@ -1807,17 +1808,22 @@
     <string>Default</string>
    </property>
   </action>
-  <action name="actionLilacTheme">
+  <action name="actionBlueberryTheme">
    <property name="text">
-    <string>Lilac</string>
+    <string>Blueberry</string>
    </property>
   </action>
-  <action name="actionYellowTheme">
+  <action name="actionBananaTheme">
    <property name="text">
-    <string>Yellow</string>
+    <string>Banana</string>
    </property>
    <property name="menuRole">
     <enum>QAction::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionMangoTheme">
+   <property name="text">
+    <string>Mango</string>
    </property>
   </action>
  </widget>

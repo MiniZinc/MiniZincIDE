@@ -14,7 +14,7 @@
 
 #include "highlighter.h"
 
-Theme Themes::currentTheme = Themes::lilac;
+Theme Themes::currentTheme = Themes::minizinc;
 
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent), keywordColor(Qt::darkGreen), functionColor(Qt::blue), stringColor(Qt::darkRed), commentColor(Qt::red)

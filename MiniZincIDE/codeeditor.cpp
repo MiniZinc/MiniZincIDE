@@ -44,7 +44,6 @@ CodeEditor::initUI(QFont& font)
 //                         ThemeColor(Qt::white,QColor(0x181820)), //background
 //                         ThemeColor(QColor(0xF0F0F0),QColor(0x181820)) // line highlight
 //                         );
-//    Themes::currentTheme = Themes::lilac;
     highlighter = new Highlighter(font,darkMode,document());
     setDarkMode(darkMode);
 
@@ -160,6 +159,8 @@ void CodeEditor::setDarkMode(bool enable)
     auto palette = this->palette();
     palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
     palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+    palette.setColor(QPalette::Highlight, Themes::currentTheme.textHighlightColor.get(darkMode));
+    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
     this->setPalette(palette);
     cursorChange(); // Ensure extra selections are the correct colours
 }
@@ -405,7 +406,7 @@ void CodeEditor::cursorChange()
             if (parenPos0 != -1 && parenPos1 != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                darkMode?format.setBackground(QColor(0x45588F).lighter(140)):format.setBackground(Qt::green);
+                format.setBackground(Themes::currentTheme.bracketsMatchColor.get(darkMode));
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(parenPos0);
@@ -420,7 +421,7 @@ void CodeEditor::cursorChange()
             if (errPos != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                darkMode?format.setBackground(QColor(0xC24223)):format.setBackground(Qt::red);
+                format.setBackground(Themes::currentTheme.bracketsNoMatchColor.get(darkMode));
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(errPos);

@@ -31,6 +31,11 @@ public:
         dark = Qt::red;
     }
 
+    ThemeColor(QColor lightAndDark){
+        light = lightAndDark;
+        dark = lightAndDark;
+    }
+
     ThemeColor(QColor l, QColor d){
         light = l;
         dark = d;
@@ -51,7 +56,10 @@ struct Theme
         errorColor, //Color of error messages
         lineHighlightColor,  // Color of highlighted line
         foregroundActiveColor, // color of active line number
-        foregroundInactiveColor // color of inactive line number
+        foregroundInactiveColor, // color of inactive line number
+        textHighlightColor,      // color of highlighted text
+        bracketsMatchColor, // Color of matching brackets
+        bracketsNoMatchColor //Colors of dangling brackets
         ;
         Theme(): Theme(Qt::white,Qt::darkGreen, Qt::blue, Qt::darkRed, Qt::red, Qt::white, Qt::lightGray) {}
 
@@ -68,7 +76,8 @@ struct Theme
             ThemeColor( _stringColor,_stringColor),
             ThemeColor(_commentColor,_commentColor),
             ThemeColor(_backgroundColor,_backgroundColor),
-            ThemeColor(_lineHighlightColor,_lineHighlightColor))
+            ThemeColor(_lineHighlightColor,_lineHighlightColor),
+            ThemeColor(Qt::red,Qt::red))
             {}
 
         Theme(ThemeColor _textColor,
@@ -77,16 +86,22 @@ struct Theme
               ThemeColor _stringColor,
               ThemeColor _commentColor,
               ThemeColor _backgroundColor,
-              ThemeColor _lineHighlightColor):
+              ThemeColor _lineHighlightColor,
+              ThemeColor _errorColor):
             textColor(_textColor),
             keywordColor(_keywordColor),
             functionColor(_functionColor),
             stringColor( _stringColor),
             commentColor(_commentColor),
             backgroundColor(_backgroundColor),
-            errorColor(ThemeColor(Qt::red,Qt::red)),
+            errorColor(_errorColor),
             lineHighlightColor(_lineHighlightColor){
 
+            bracketsMatchColor = ThemeColor(keywordColor.light.lighter(200), keywordColor.dark.darker(150));
+            bracketsNoMatchColor = ThemeColor(errorColor.light, errorColor.dark);//QColor(0xC24223)
+
+            //Todo: text highlight color probably needs to be theme specific.
+            textHighlightColor = ThemeColor(lineHighlightColor.light, backgroundColor.dark.darker());
             foregroundActiveColor = textColor;
             foregroundInactiveColor = ThemeColor(textColor.light.lighter(), textColor.dark.darker());
         }
@@ -94,29 +109,43 @@ struct Theme
 
 namespace Themes{
     static Theme banana = Theme(ThemeColor(QColor(0x1A0703), QColor(0xF5CC38)), // text
-                                ThemeColor(QColor(0x2A6139), QColor(0x2A6139)), //keywords
+                                ThemeColor(QColor(0x2A6139), QColor(0x2A6139)), //keywords //0x2A6139
                                 ThemeColor(QColor(0x5E1F01), QColor(0x993102)), // function
-                                ThemeColor(QColor(0xF52C2E), QColor(0xF54547)), // string
+                                ThemeColor(QColor(0xF25C05), QColor(0xF54547)), // string //0xF52C2E
                                 ThemeColor(Qt::black, QColor(0xF5E4A9)), //comment
                                 ThemeColor(QColor(0xF5CC38),QColor(0x260A05)), //background
-                                ThemeColor(QColor(0xF5C720),QColor(0x1C0400)) // line highlight
+                                ThemeColor(QColor(0xF5C720),QColor(0x1C0400)), // line highlight
+                                ThemeColor(QColor(0xF23A1E)) // error color
                                 );
-    static Theme lilac = Theme(ThemeColor(QColor(0x0B1224), QColor(0x8EBBED)), // text
+
+    static Theme blueberry = Theme(ThemeColor(QColor(0x0B1224), QColor(0x8EBBED)), // text
                                 ThemeColor(QColor(0x3354A7), QColor(0x1172A6)), //keywords
                                 ThemeColor(QColor(0x9147A6), QColor(0xD676CC)), // function
                                 ThemeColor(QColor(0x132F6B), QColor(0xA192E8)), // string
                                 ThemeColor(QColor(0x83B9F5), QColor(0x225773)), //comment
                                 ThemeColor(QColor(0xE9ECFF),QColor(0x001926)), //background
-                                ThemeColor(QColor(0xE7E3FF),QColor(0x001D2B)) // line highlight
+                                ThemeColor(QColor(0xE7E3FF),QColor(0x001D2B)), // line highlight
+                                ThemeColor(Qt::red) // error color
                                 );
 
-    static Theme defaultTheme = Theme(ThemeColor(Qt::black, Qt::white), // text
+    static Theme mango = Theme(ThemeColor(QColor(0x375327), QColor(0xF2DC6D)), // text
+                                ThemeColor(QColor(0xF27B35), QColor(0xF2385A)), //keywords
+                                ThemeColor(QColor(0xF2385A), QColor(0xF29F05)), // function
+                                ThemeColor(QColor(0x51C0BF), QColor(0xF48985)), // string
+                                ThemeColor(QColor(0x6A8F2F), QColor(0xF4503F)), //comment
+                                ThemeColor(QColor(0xEFDC9B),QColor(0x030500)), //background
+                                ThemeColor(QColor(0xD9C78D),QColor(0x070D00)), // line highlight
+                                ThemeColor(Qt::red, QColor(0x51C0BF)) // error color
+                                );
+
+    static Theme minizinc = Theme(ThemeColor(Qt::black, Qt::white), // text
                                   ThemeColor(Qt::darkGreen, QColor(0xbb86fc)), //keywords
                                   ThemeColor(Qt::blue, QColor(0x13C4F5)), // function
                                   ThemeColor(Qt::darkRed, QColor(0xF29F05)), // string
                                   ThemeColor(Qt::red, QColor(0x52514C)), //comment
                                   ThemeColor(Qt::white,QColor(0x181820)), //background
-                                  ThemeColor(QColor(0xF0F0F0),QColor(0x181820)) // line highlight
+                                  ThemeColor(QColor(0xF0F0F0),QColor(0x181820)), // line highlight
+                                  ThemeColor(Qt::red) // error color
                                   );
     extern Theme currentTheme;
 };

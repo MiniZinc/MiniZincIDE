@@ -4752,34 +4752,40 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         sheet.open(QFile::ReadOnly);
         qApp->setStyleSheet(sheet.readAll());
 #endif
-        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : #13C4F5 }");
     } else {
 #ifdef Q_OS_WIN
         qApp->setStyleSheet("");
 #endif
-        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
     }
+    ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : "+Themes::currentTheme.functionColor.get(darkMode).name()+" }");
     auto palette = ui->outputConsole->palette();
     palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
     palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
     ui->outputConsole->setPalette(palette);
 }
 
-void MainWindow::on_actionYellowTheme_triggered()
+void MainWindow::on_actionBananaTheme_triggered()
 {
     Themes::currentTheme = Themes::banana;
     on_actionDark_mode_toggled(darkMode); // Update all colors
 
 }
 
-void MainWindow::on_actionLilacTheme_triggered()
+void MainWindow::on_actionMangoTheme_triggered()
 {
-    Themes::currentTheme = Themes::lilac;
+    Themes::currentTheme = Themes::mango;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
+
+}
+
+void MainWindow::on_actionBlueberryTheme_triggered()
+{
+    Themes::currentTheme = Themes::blueberry;
     on_actionDark_mode_toggled(darkMode); // Update all colors
 }
 void MainWindow::on_actionDefaultTheme_triggered()
 {
-    Themes::currentTheme = Themes::defaultTheme;
+    Themes::currentTheme = Themes::minizinc;
     on_actionDark_mode_toggled(darkMode); // Update all colors
 }
 
