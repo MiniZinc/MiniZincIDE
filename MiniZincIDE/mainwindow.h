@@ -203,6 +203,11 @@ private slots:
 
     void on_actionDark_mode_toggled(bool arg1);
 
+    //Themes
+    void on_actionMangoTheme_triggered();
+    void on_actionBlueberryTheme_triggered();
+    void on_actionDefaultTheme_triggered();
+
     void moocFinished(int);
 
     void on_actionEditSolverConfig_triggered();

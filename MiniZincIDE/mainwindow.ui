@@ -357,10 +357,19 @@
     <property name="title">
      <string>View</string>
     </property>
+    <widget class="QMenu" name="menuTheme">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <addaction name="actionDefaultTheme"/>
+     <addaction name="actionBlueberryTheme"/>
+     <addaction name="actionMangoTheme"/>
+    </widget>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
+    <addaction name="menuTheme"/>
     <addaction name="actionDark_mode"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
@@ -1123,6 +1132,21 @@
    </property>
    <property name="text">
     <string>Profile search</string>
+   </property>
+  </action>
+  <action name="actionDefaultTheme">
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="actionBlueberryTheme">
+   <property name="text">
+    <string>Blueberry</string>
+   </property>
+  </action>
+  <action name="actionMangoTheme">
+   <property name="text">
+    <string>Mango</string>
    </property>
   </action>
  </widget>

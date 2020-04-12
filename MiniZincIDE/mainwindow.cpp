@@ -145,6 +145,13 @@ void MainWindow::init(const QString& projectFile)
     ui->toolBar->insertWidget(solverConfComboAction, runButton);
 
     ui->outputConsole->installEventFilter(this);
+
+    auto palette = ui->outputConsole->palette();
+    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
+    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+    ui->outputConsole->setPalette(palette);
+
+
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
@@ -2377,13 +2384,43 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         sheet.open(QFile::ReadOnly);
         qApp->setStyleSheet(sheet.readAll());
 #endif
-        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : #13C4F5 }");
     } else {
 #ifndef Q_OS_MAC
         qApp->setStyleSheet("");
 #endif
-        ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : blue }");
     }
+    ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : "+Themes::currentTheme.functionColor.get(darkMode).name()+" }");
+    auto style_sheet = QString("background-color: #%1;"
+                               "color: #%2;"
+                               "selection-background-color: #%3;"
+                               "selection-color: #%4;")
+      .arg(Themes::currentTheme.backgroundColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textHighlightColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16);
+    ui->outputConsole->setStyleSheet(style_sheet);
+//    auto palette = ui->outputConsole->palette();
+//    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
+//    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+//    ui->outputConsole->setPalette(palette);
+}
+
+void MainWindow::on_actionMangoTheme_triggered()
+{
+    Themes::currentTheme = Themes::mango;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
+
+}
+
+void MainWindow::on_actionBlueberryTheme_triggered()
+{
+    Themes::currentTheme = Themes::blueberry;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
+}
+void MainWindow::on_actionDefaultTheme_triggered()
+{
+    Themes::currentTheme = Themes::minizinc;
+    on_actionDark_mode_toggled(darkMode); // Update all colors
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()

@@ -14,6 +14,8 @@
 
 #include "highlighter.h"
 
+Theme Themes::currentTheme = Themes::minizinc;
+
 Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent), keywordColor(Qt::darkGreen), functionColor(Qt::blue), stringColor(Qt::darkRed), commentColor(Qt::red)
 
@@ -363,17 +365,10 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
 void Highlighter::setDarkMode(bool enable)
 {
     darkMode = enable;
-    if (darkMode) {
-        keywordColor = QColor(0xbb86fc);
-        functionColor = QColor(0x13C4F5);
-        stringColor = QColor(0xF29F05);
-        commentColor = QColor(0x52514C);
-    } else {
-        keywordColor = Qt::darkGreen;
-        functionColor = Qt::blue;
-        stringColor = Qt::darkRed;
-        commentColor = Qt::red;
-    }
+    keywordColor = Themes::currentTheme.keywordColor.get(darkMode);
+    functionColor = Themes::currentTheme.functionColor.get(darkMode);
+    stringColor = Themes::currentTheme.stringColor.get(darkMode);
+    commentColor = Themes::currentTheme.commentColor.get(darkMode);
     commentFormat.setForeground(commentColor);
     rules[0].format.setForeground(functionColor);
     for (int i=1; i<rules.size(); i++) {
