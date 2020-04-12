@@ -101,7 +101,7 @@ struct Theme
             bracketsNoMatchColor = ThemeColor(errorColor.light, errorColor.dark);//QColor(0xC24223)
 
             //Todo: text highlight color probably needs to be theme specific.
-            textHighlightColor = ThemeColor(lineHighlightColor.light, backgroundColor.dark.darker());
+            textHighlightColor = ThemeColor(lineHighlightColor.light, lineHighlightColor.dark.lighter(180));
             foregroundActiveColor = textColor;
             foregroundInactiveColor = ThemeColor(textColor.light.lighter(), textColor.dark.darker());
         }
@@ -144,7 +144,7 @@ namespace Themes{
                                   ThemeColor(Qt::darkRed, QColor(0xF29F05)), // string
                                   ThemeColor(Qt::red, QColor(0x52514C)), //comment
                                   ThemeColor(Qt::white,QColor(0x181820)), //background
-                                  ThemeColor(QColor(0xF0F0F0),QColor(0x181820)), // line highlight
+                                  ThemeColor(QColor(0xF0F0F0),QColor(0x1D1D26)), // line highlight
                                   ThemeColor(Qt::red) // error color
                                   );
     extern Theme currentTheme;
