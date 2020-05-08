@@ -353,13 +353,15 @@ protected:
     SolverConfiguration* getCurrentSolverConfig(void);
     Solver* getCurrentSolver(void);
 
-    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles);
+    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
-    bool runWithOutput(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
+    bool runForSubmission(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
     void resolve(int htmlWindowIdentifier, const QString &data);
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
     int addHtmlWindow(HTMLWindow* w);
+    bool checkSolutions(void) const;
+    void setCheckSolutions(bool b);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

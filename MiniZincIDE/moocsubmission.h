@@ -41,6 +41,8 @@ protected:
     void cancelOperation(void);
     void solveNext(void);
 
+    bool checkerEnabled;
+
 public slots:
     void reject();
 

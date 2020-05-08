@@ -1737,7 +1737,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
         additionalDataFiles.append(dzn);
     currentAdditionalDataFiles.clear();
     runTimeout = ui->conf_timeLimit->value();
-    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles);
+    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles, {});
 }
 
 void MainWindow::checkArgs(QString filepath)
@@ -2206,7 +2206,7 @@ Solver* MainWindow::getCurrentSolver(void) {
     return s;
 }
 
-void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles)
+void MainWindow::compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams)
 {
     Solver& currentSolver = *getCurrentSolver();
     progressBar->setHidden(true);
@@ -2257,7 +2257,9 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
             args << "--output-detailed-timing";
         }
     }
-
+    for (auto arg : additionalMznParams) {
+        args << arg;
+    }
     solutionCount = 0;
     solutionLimit = ui->conf_compressSolutionLimit->value();
     hiddenSolutions.clear();
@@ -2333,7 +2335,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
 }
 
-bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
+bool MainWindow::runForSubmission(const QString &modelFile, const QString &dataFile, int timeout, QTextStream &outstream)
 {
     if (!QFileInfo(modelFile).exists() || !QFileInfo(dataFile).exists())
         return false;
@@ -2345,7 +2347,17 @@ bool MainWindow::runWithOutput(const QString &modelFile, const QString &dataFile
     on_actionSplit_triggered();
     QStringList dataFiles;
     dataFiles.push_back(dataFile);
-    compileAndRun(modelFile, "", dataFiles);
+
+    QString checkFile = modelFile;
+    checkFile.replace(checkFile.length()-1,1,"c");
+    bool haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
+
+    QStringList outputModeArgs;
+    if (haveChecker && ui->conf_check_solutions->isChecked() && minizinc_version >= QVersionNumber(2,4,4)) {
+        outputModeArgs.push_back("--output-mode");
+        outputModeArgs.push_back("checker");
+    }
+    compileAndRun(modelFile, "", dataFiles, outputModeArgs);
     return true;
 }
 
@@ -2373,7 +2385,7 @@ void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
                 outputProcess = nullptr;
             }
             on_actionStop_triggered();
-            compileAndRun(htmlWindowModels[htmlWindowIdentifier],"",dataFiles);
+            compileAndRun(htmlWindowModels[htmlWindowIdentifier],"",dataFiles,{});
         } else {
             QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
         }
@@ -2396,6 +2408,16 @@ int MainWindow::addHtmlWindow(HTMLWindow *w)
     htmlWindows.push_back(w);
     htmlWindowModels.push_back(curFilePath);
     return htmlWindows.size()-1;
+}
+
+bool MainWindow::checkSolutions() const
+{
+    return ui->conf_check_solutions->isChecked();
+}
+
+void MainWindow::setCheckSolutions(bool b)
+{
+    ui->conf_check_solutions->setChecked(b);
 }
 
 void MainWindow::closeHTMLWindow(int identifier)
