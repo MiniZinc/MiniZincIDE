@@ -4647,6 +4647,48 @@ void MainWindow::editor_cursor_position_changed()
 
 void MainWindow::on_actionSubmit_to_MOOC_triggered()
 {
+    // Check if any documents need saving
+    QVector<CodeEditor*> modifiedDocs;
+    QSet<QString> files;
+    for (auto problem : project.moocAssignment().problems) {
+        files.insert(problem.model);
+        files.insert(problem.data);
+    }
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        auto ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce->document()->isModified() && files.contains(ce->filepath)) {
+            modifiedDocs.append(ce);
+        }
+    }
+    if (!modifiedDocs.empty()) {
+        if (!saveBeforeRunning) {
+            QMessageBox msgBox;
+            if (modifiedDocs.size()==1) {
+                msgBox.setText("One of the files has been modified. You must save it before submitting.");
+            } else {
+                msgBox.setText("Several files have been modified. You must save them before submitting.");
+            }
+            msgBox.setInformativeText("Do you want to save now and then submit?");
+            QAbstractButton *saveButton = msgBox.addButton(QMessageBox::Save);
+            msgBox.addButton(QMessageBox::Cancel);
+            QAbstractButton *alwaysButton = msgBox.addButton("Always save", QMessageBox::AcceptRole);
+            msgBox.setDefaultButton(QMessageBox::Save);
+            msgBox.exec();
+            if (msgBox.clickedButton() == alwaysButton) {
+                saveBeforeRunning = true;
+            }
+            else if (msgBox.clickedButton() != saveButton) {
+                return;
+            }
+        }
+        for (auto ce : modifiedDocs) {
+            saveFile(ce,ce->filepath);
+            if (ce->document()->isModified()) {
+                return;
+            }
+        }
+    }
+
     moocSubmission = new MOOCSubmission(this, project.moocAssignment());
     connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
     setEnabled(false);
