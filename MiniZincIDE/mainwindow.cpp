@@ -2647,7 +2647,7 @@ void MainWindow::on_actionStop_triggered()
         processWasStopped = true;
 
         process->terminate();
-        delete process;
+        process->deleteLater();
         process = nullptr;
         addOutput("<div class='mznnotice'>Stopped.</div>");
         procFinished(0);
