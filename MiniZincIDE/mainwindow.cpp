@@ -1700,7 +1700,7 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
                 isOptimisation = (jdoc.object()["method"].toString() != "sat");
                 QJsonObject inputArgs = jdoc.object()["input"].toObject();
                 QStringList undefinedArgs = inputArgs.keys();
-                if (undefinedArgs.size() > 0) {
+                if (promptForData && undefinedArgs.size() > 0) {
                     QStringList params;
                     paramDialog->getParams(undefinedArgs, project.dataFiles(), params, additionalDataFiles);
                     if (additionalDataFiles.isEmpty()) {
@@ -1736,11 +1736,12 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
     for (QString dzn: currentAdditionalDataFiles)
         additionalDataFiles.append(dzn);
     currentAdditionalDataFiles.clear();
-    runTimeout = ui->conf_timeLimit->value();
-    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles, {});
+
+    compileAndRun(curModelFilepath, additionalCmdlineParams, additionalDataFiles, curAdditionalMznParams);
+    curAdditionalMznParams.clear();
 }
 
-void MainWindow::checkArgs(QString filepath)
+void MainWindow::checkArgs(QString filepath, bool dataPrompt, const QStringList& additionalMznParams)
 {
     if (minizinc_executable=="") {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
@@ -1751,9 +1752,11 @@ void MainWindow::checkArgs(QString filepath)
     }
     processName = minizinc_executable;
     curModelFilepath = filepath;
+    curAdditionalMznParams = additionalMznParams;
     processWasStopped = false;
     compileErrors = "";
     checkArgsStdout = "";
+    promptForData = dataPrompt;
     if (compileMode!=CM_RUN && filepath.endsWith(".mzc.mzn")) {
         // We are compiling a solution checker
         process = nullptr;
@@ -1924,7 +1927,8 @@ void MainWindow::compileOrRun()
                     return;
                 }
             }
-            checkArgs(filepath);
+            runTimeout = ui->conf_timeLimit->value();
+            checkArgs(filepath, true, {});
         }
     }
 }
@@ -2345,8 +2349,8 @@ bool MainWindow::runForSubmission(const QString &modelFile, const QString &dataF
     curHtmlWindow = -1;
     updateUiProcessRunning(true);
     on_actionSplit_triggered();
-    QStringList dataFiles;
-    dataFiles.push_back(dataFile);
+    currentAdditionalDataFiles.clear();
+    currentAdditionalDataFiles.push_back(dataFile);
 
     QString checkFile = modelFile;
     checkFile.replace(checkFile.length()-1,1,"c");
@@ -2357,7 +2361,7 @@ bool MainWindow::runForSubmission(const QString &modelFile, const QString &dataF
         outputModeArgs.push_back("--output-mode");
         outputModeArgs.push_back("checker");
     }
-    compileAndRun(modelFile, "", dataFiles, outputModeArgs);
+    checkArgs(modelFile, false, outputModeArgs);
     return true;
 }
 

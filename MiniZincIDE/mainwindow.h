@@ -167,7 +167,7 @@ private slots:
 
     void on_actionRun_triggered();
 
-    void checkArgs(QString filepath);
+    void checkArgs(QString filepath, bool dataPrompt, const QStringList& additionalMznParams);
     void checkArgsOutput();
     void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
 
@@ -443,6 +443,8 @@ private:
     QTextStream* outputBuffer;
     MOOCSubmission* moocSubmission;
     bool processRunning;
+    QStringList curAdditionalMznParams;
+    bool promptForData;
 
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
