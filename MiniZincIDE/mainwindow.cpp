@@ -1844,6 +1844,7 @@ void MainWindow::compileOrRun()
                 QFile modelFile(filepath);
                 if (modelFile.open(QIODevice::ReadWrite)) {
                     QTextStream ts(&modelFile);
+                    ts.setCodec("UTF-8");
                     ts << curEditor->document()->toPlainText();
                     modelFile.close();
                 } else {
