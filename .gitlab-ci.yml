@@ -13,9 +13,8 @@ build:linux:
     - make -j4
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
-    - linuxdeployqt ide/usr/bin/MiniZincIDE -bundle-non-qt-libs -no-translations -no-copy-copyright-files
     # Workaround for: https://github.com/probonopd/linuxdeployqt/issues/35
-    - "repoquery -l nss-softokn | grep lib64 | grep '.so\\|.chk' | xargs -i cp -R {} ./ide/usr/lib/"
+    - linuxdeployqt ide/usr/bin/MiniZincIDE -bundle-non-qt-libs -no-translations -no-copy-copyright-files -exclude-libs=libnss3.so,libnssutil3.so
   tags: [linux, docker]
   artifacts:
     paths: [ide/]
