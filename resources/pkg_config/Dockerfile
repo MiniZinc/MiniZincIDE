@@ -14,9 +14,6 @@ COPY vendor/chuffed/bin/fzn-chuffed /usr/local/bin/
 COPY vendor/chuffed/share/chuffed/mznlib /usr/local/share/minizinc/chuffed
 COPY resources/solvers/chuffed.msc /usr/local/share/minizinc/solvers/
 
-# Copy MiniZinc settings files
-COPY resources/Preferences.json /usr/local/share/minizinc/
-
 # Strip all binaries
 RUN [ -f "/etc/alpine-release" ] && apk add --no-cache binutils || (apt-get update -y && apt-get install -y binutils)
 RUN cd /usr/local/bin && strip minizinc mzn2doc fzn-chuffed fzn-gecode
