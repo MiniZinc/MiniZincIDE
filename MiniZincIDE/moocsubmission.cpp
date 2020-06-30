@@ -186,8 +186,6 @@ void MOOCSubmission::submitToMOOC()
             } else {
                 ui->textBrowser->insertPlainText("Error: could not open "+item.name+"\n");
                 ui->textBrowser->insertPlainText("Skipping.\n");
-                solveNext();
-                return;
             }
         }
     }
