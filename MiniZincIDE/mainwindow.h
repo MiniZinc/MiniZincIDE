@@ -44,6 +44,7 @@
 #include "htmlwindow.h"
 #include "moocsubmission.h"
 #include "solverconfiguration.h"
+#include "process.h"
 
 namespace Ui {
 class MainWindow;

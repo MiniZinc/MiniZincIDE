@@ -50,6 +50,7 @@ SOURCES += main.cpp\
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
+    process.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
     paramdialog.cpp \
@@ -68,6 +69,7 @@ HEADERS  += mainwindow.h \
     fzndoc.h \
     ide.h \
     macos_extras.h \
+    process.h \
     solverdialog.h \
     gotolinedialog.h \
     paramdialog.h \

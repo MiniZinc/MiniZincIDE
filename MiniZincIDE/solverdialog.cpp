@@ -14,6 +14,7 @@
 #include "ui_solverdialog.h"
 #include "ide.h"
 #include "mainwindow.h"
+#include "process.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -611,70 +612,6 @@ void SolverDialog::on_mznDistribPath_returnPressed()
 {
     editingFinished(true);
 }
-
-void MznProcess::start(const QString &program, const QStringList &arguments, const QString &path)
-{
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    QString curPath = env.value("PATH");
-    QString addPath = IDE::instance()->appDir();
-    if (!path.isEmpty())
-        addPath = path + pathSep + addPath;
-    env.insert("PATH", addPath + pathSep + curPath);
-    setProcessEnvironment(env);
-#ifdef Q_OS_WIN
-    _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
-    jobObject = CreateJobObject(nullptr, nullptr);
-    connect(this, SIGNAL(started()), this, SLOT(attachJob()));
-#else
-    setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
-#endif
-    QProcess::start(program,arguments, QIODevice::Unbuffered | QIODevice::ReadWrite);
-#ifdef Q_OS_WIN
-    _putenv_s("PATH", curPath.toStdString().c_str());
-#else
-    setenv("PATH", curPath.toStdString().c_str(), 1);
-#endif
-}
-
-void MznProcess::terminate()
-{
-#ifdef Q_OS_WIN
-        AttachConsole(static_cast<DWORD>(processId()));
-        SetConsoleCtrlHandler(nullptr, TRUE);
-        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
-#else
-        ::killpg(processId(), SIGINT);
-#endif
-        if (!waitForFinished(500)) {
-            if (state() != QProcess::NotRunning) {
-#ifdef Q_OS_WIN
-                TerminateJobObject(jobObject, EXIT_FAILURE);
-#else
-                ::killpg(processId(), SIGKILL);
-#endif
-                if (!waitForFinished(500)) {
-                    kill();
-                    waitForFinished();
-                }
-            }
-        }
-}
-
-void MznProcess::setupChildProcess()
-{
-#ifndef Q_OS_WIN
-    if (::setpgid(0,0)) {
-        std::cerr << "Error: Failed to create sub-process\n";
-    }
-#endif
-}
-
-#ifdef Q_OS_WIN
-void MznProcess::attachJob()
-{
-    AssignProcessToJobObject(jobObject, pid()->hProcess);
-}
-#endif
 
 void SolverDialog::on_check_solver_clicked()
 {
