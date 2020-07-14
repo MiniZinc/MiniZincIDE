@@ -65,6 +65,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     codeeditor.h \
+    exception.h \
     highlighter.h \
     fzndoc.h \
     ide.h \

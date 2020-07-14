@@ -15,6 +15,7 @@
 #include "ide.h"
 #include "mainwindow.h"
 #include "process.h"
+#include "exception.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -204,7 +205,7 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
     auto& solvers = driver.solvers();
     QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
     clearRequiredFlagsLayout(rfLayout);
-    QString userSolverConfigCanonical = QFileInfo(MznDriver::get().userSolverConfigDir()).canonicalPath();
+    QString userSolverConfigCanonical = QFileInfo(driver.userSolverConfigDir()).canonicalPath();
     if (index<solvers.size()) {
         ui->name->setText(solvers[index].name);
         ui->solverId->setText(solvers[index].id);
@@ -529,11 +530,11 @@ void SolverDialog::editingFinished(bool showError)
             ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
         }
         ui->solvers_combo->setCurrentIndex(0);
-    } catch (QString message) {
+    } catch (Exception& e) {
         if (showError) {
-            QMessageBox::warning(this, "MiniZinc IDE", message, QMessageBox::Ok);
+            QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
         }
-        ui->mzn2fzn_version->setText(message);
+        ui->mzn2fzn_version->setText(e.message());
     }
 }
 

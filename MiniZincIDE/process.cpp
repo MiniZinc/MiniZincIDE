@@ -13,6 +13,7 @@
 #include "process.h"
 #include "ide.h"
 #include "mainwindow.h"
+#include "exception.h"
 
 #ifdef Q_OS_WIN
 #define pathSep ";"
@@ -101,7 +102,7 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     p.run({"--version"});
     if (!p.waitForStarted() || !p.waitForFinished()) {
         clear();
-        throw QString("Failed to find or launch MiniZinc executable");
+        throw ProcessError("Failed to find or launch MiniZinc executable.");
     }
 
     _versionString = p.readAllStandardOutput() + p.readAllStandardError();
@@ -116,12 +117,13 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     } else {
         QString message = _versionString;
         clear();
-        throw message;
+        throw DriverError(message);
     }
 
-    if (_version < QVersionNumber(2, 2, 0)) {
+    auto minVersion = QVersionNumber(2, 2, 0);
+    if (_version < minVersion) {
         clear();
-        throw QString("Versions of MiniZinc < 2.2.0 are not supported");
+        throw DriverError("Versions of MiniZinc before " + minVersion.toString() + " are not supported.");
     }
 
     p.run({"--config-dirs"});

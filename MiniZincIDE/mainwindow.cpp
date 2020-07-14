@@ -30,6 +30,7 @@
 #include "checkupdatedialog.h"
 #include "moocsubmission.h"
 #include "highlighter.h"
+#include "exception.h"
 
 #include <QtGlobal>
 
@@ -2354,7 +2355,7 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
           ces[p] = ce;
         } else {
-          throw -1;
+          throw InternalError("Code editor file path does not match URL file path");
         }
       }
     } else {
@@ -3138,8 +3139,9 @@ void MainWindow::checkMznPath(const QString& mznPath)
     auto& driver = MznDriver::get();
     try {
         driver.setLocation(mznPath);
-    } catch (QString message) {
-        int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
+    } catch (Exception& e) {
+        int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                       e.message() + "\nDo you want to open the settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
