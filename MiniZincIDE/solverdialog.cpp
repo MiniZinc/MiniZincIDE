@@ -12,6 +12,7 @@
 
 #include "solverdialog.h"
 #include "ui_solverdialog.h"
+#include "ide.h"
 #include "mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>

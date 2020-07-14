@@ -12,6 +12,7 @@
 
 #include <QtWidgets>
 #include "codeeditor.h"
+#include "ide.h"
 #include "mainwindow.h"
 
 void

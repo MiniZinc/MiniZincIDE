@@ -1,5 +1,6 @@
 #include "moocsubmission.h"
 #include "ui_moocsubmission.h"
+#include "ide.h"
 #include "mainwindow.h"
 
 #include <QCheckBox>

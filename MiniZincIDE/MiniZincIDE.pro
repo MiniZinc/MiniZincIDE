@@ -45,6 +45,7 @@ RC_ICONS = mznide.ico
 CONFIG += embed_manifest_exe
 
 SOURCES += main.cpp\
+    ide.cpp \
     mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
@@ -65,6 +66,7 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     highlighter.h \
     fzndoc.h \
+    ide.h \
     macos_extras.h \
     solverdialog.h \
     gotolinedialog.h \
