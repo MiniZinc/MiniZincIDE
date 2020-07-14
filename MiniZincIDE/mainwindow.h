@@ -291,7 +291,7 @@ private:
     int curHtmlWindow;
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
-    MznProcess* process;
+    Process* process;
     MznProcess* check_process;
     QString processName;
     QString curModelFilepath;
@@ -319,12 +319,7 @@ private:
     QLabel* statusLineColLabel;
     QFont editorFont;
     bool darkMode;
-    QVector<Solver> solvers;
-    QString userSolverConfigDir;
-    QString userConfigFile;
-    QString mznStdlibDir;
     int defaultSolverIdx;
-    QString mznDistribPath;
     QString getMznDistribPath(void) const;
     QString currentFznTarget;
     QString currentPathsTarget;
@@ -333,7 +328,7 @@ private:
     bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
-    QVector<MznProcess*> cleanupProcesses;
+    QVector<Process*> cleanupProcesses;
     QTextCursor incrementalFindCursor;
     QString projectPath;
     bool saveBeforeRunning;
@@ -344,8 +339,6 @@ private:
     CompileMode compileMode;
     bool profileInfoVisible;
     int runTimeout;
-    QString minizinc_executable;
-    QVersionNumber minizinc_version;
     Project project;
     QSortFilterProxyModel* projectSort;
     QMenu* projectContextMenu;
@@ -385,7 +378,7 @@ private:
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime();
-    void checkMznPath();
+    void checkMznPath(const QString& mznPath);
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void addFileToProject(bool dznOnly);

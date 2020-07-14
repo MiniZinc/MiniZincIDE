@@ -49,19 +49,113 @@
 #endif
 #endif
 
-SolverDialog::SolverDialog(QVector<Solver>& solvers0,
-                           QString& userSolverConfigDir0,
-                           QString& userConfigFile0,
-                           QString& mznStdlibDir0,
-                           bool openAsAddNew,
-                           const QString& mznPath, QWidget *parent) :
+Solver::Solver(const QJsonObject& sj) {
+    json = sj;
+    name = sj["name"].toString();
+    QJsonObject extraInfo = sj["extraInfo"].toObject();
+    executable_resolved = extraInfo["executable"].toString("");
+    mznlib_resolved = extraInfo["mznlib"].toString("");
+    configFile = extraInfo["configFile"].toString("");
+    if (extraInfo["defaultFlags"].isArray()) {
+        QJsonArray ei = extraInfo["defaultFlags"].toArray();
+        for (auto df : ei) {
+            defaultFlags.push_back(df.toString());
+        }
+    }
+    isDefaultSolver = (extraInfo["isDefault"].isBool() && extraInfo["isDefault"].toBool());
+    contact = sj["contact"].toString("");
+    website = sj["website"].toString("");
+    supportsFzn = sj["supportsFzn"].toBool(true);
+    supportsMzn = sj["supportsMzn"].toBool(false);
+    if (sj["requiredFlags"].isArray()) {
+        QJsonArray rfs = sj["requiredFlags"].toArray();
+        for (auto rf : rfs) {
+            requiredFlags.push_back(rf.toString());
+        }
+    }
+    if (sj["stdFlags"].isArray()) {
+        QJsonArray sfs = sj["stdFlags"].toArray();
+        for (auto sf : sfs) {
+            stdFlags.push_back(sf.toString());
+        }
+    }
+    if (sj["extraFlags"].isArray()) {
+        QJsonArray sfs = sj["extraFlags"].toArray();
+        for (auto sf : sfs) {
+            if (sf.isArray()) {
+                QJsonArray extraFlagA = sf.toArray();
+                if (extraFlagA.size()==4) {
+                    SolverFlag extraFlag;
+                    extraFlag.min=1.0;
+                    extraFlag.max=0.0;
+                    extraFlag.name = extraFlagA[0].toString();
+                    QRegularExpression re_opt("^(int|float|bool)(:([0-9a-zA-Z.-]+):([0-9a-zA-Z.-]+))?");
+                    QRegularExpressionMatch re_opt_match = re_opt.match(extraFlagA[2].toString());
+                    if (re_opt_match.hasMatch()) {
+                        if (re_opt_match.captured(1)=="int") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_INT;
+                            } else {
+                                extraFlag.t = SolverFlag::T_INT_RANGE;
+                                extraFlag.min = re_opt_match.captured(3).toInt();
+                                extraFlag.max = re_opt_match.captured(4).toInt();
+                            }
+                        } else if (re_opt_match.captured(1)=="float") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_FLOAT;
+                            } else {
+                                extraFlag.t = SolverFlag::T_FLOAT_RANGE;
+                                extraFlag.min = re_opt_match.captured(3).toDouble();
+                                extraFlag.max = re_opt_match.captured(4).toDouble();
+                            }
+                        } else if (re_opt_match.captured(1)=="bool") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_BOOL;
+                            } else {
+                                extraFlag.t = SolverFlag::T_BOOL_ONOFF;
+                                extraFlag.options = QStringList({re_opt_match.captured(3),re_opt_match.captured(4)});
+                            }
+                        }
+                    } else {
+                        if (extraFlagA[2].toString()=="string") {
+                            extraFlag.t = SolverFlag::T_STRING;
+                        } else if (extraFlagA[2].toString().startsWith("opt:")) {
+                            extraFlag.t = SolverFlag::T_OPT;
+                            extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
+//                                        } else if (extraFlagA[2].toString()=="solver") {
+//                                            extraFlag.t = SolverFlag::T_SOLVER;
+                        } else {
+                            continue;
+                        }
+                    }
+                    extraFlag.description = extraFlagA[1].toString();
+                    extraFlag.def = extraFlagA[3].toString();
+                    extraFlags.push_back(extraFlag);
+                }
+            }
+        }
+    }
+    isGUIApplication = sj["isGUIApplication"].toBool(false);
+    needsMznExecutable = sj["needsMznExecutable"].toBool(false);
+    needsStdlibDir = sj["needsStdlibDir"].toBool(false);
+    needsPathsFile = sj["needsPathsFile"].toBool(false);
+    needsSolns2Out = sj["needsSolns2Out"].toBool(true);
+    executable = sj["executable"].toString("");
+    id = sj["id"].toString();
+    version = sj["version"].toString();
+    mznlib = sj["mznlib"].toString();
+    mznLibVersion = sj["mznlibVersion"].toInt();
+}
+
+SolverDialog::SolverDialog(bool openAsAddNew, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::SolverDialog),
-    solvers(solvers0), userSolverConfigDir(userSolverConfigDir0), userConfigFile(userConfigFile0), mznStdlibDir(mznStdlibDir0)
+    ui(new Ui::SolverDialog)
 {
     ui->setupUi(this);
 
-    ui->mznDistribPath->setText(mznPath);
+    auto& driver = MznDriver::get();
+    auto& solvers = driver.solvers();
+    ui->mznDistribPath->setText(driver.mznDistribPath());
     for (int i=solvers.size(); i--;) {
         ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
     }
@@ -79,11 +173,6 @@ SolverDialog::SolverDialog(QVector<Solver>& solvers0,
 SolverDialog::~SolverDialog()
 {
     delete ui;
-}
-
-QString SolverDialog::mznPath()
-{
-    return ui->mznDistribPath->text();
 }
 
 namespace {
@@ -111,9 +200,11 @@ namespace {
 
 void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 {
+    auto& driver = MznDriver::get();
+    auto& solvers = driver.solvers();
     QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
     clearRequiredFlagsLayout(rfLayout);
-    QString userSolverConfigCanonical = QFileInfo(userSolverConfigDir).canonicalPath();
+    QString userSolverConfigCanonical = QFileInfo(MznDriver::get().userSolverConfigDir()).canonicalPath();
     if (index<solvers.size()) {
         ui->name->setText(solvers[index].name);
         ui->solverId->setText(solvers[index].id);
@@ -189,6 +280,11 @@ void SolverDialog::on_solvers_combo_currentIndexChanged(int index)
 
 void SolverDialog::on_updateButton_clicked()
 {
+    auto& driver = MznDriver::get();
+    auto& solvers = driver.solvers();
+    auto& userConfigFile = driver.userConfigFile();
+    auto& userSolverConfigDir = driver.userSolverConfigDir();
+
     if (!ui->requiredFlags->isHidden()) {
         // This is an internal solver, we are only updating the required flags
 
@@ -373,6 +469,8 @@ void SolverDialog::on_updateButton_clicked()
 
 void SolverDialog::on_deleteButton_clicked()
 {
+    auto& driver = MznDriver::get();
+    auto& solvers = driver.solvers();
     int index = ui->solvers_combo->currentIndex();
     if (QMessageBox::warning(this,"MiniZinc IDE","Delete solver "+solvers[index].name+"?",QMessageBox::Ok | QMessageBox::Cancel)
             == QMessageBox::Ok) {
@@ -417,194 +515,25 @@ void SolverDialog::on_check_updates_stateChanged(int checkstate)
     settings.endGroup();
 }
 
-void SolverDialog::checkMznExecutable(const QString& mznDistribPath,
-                                      QString& minizinc_executable,
-                                      QString& minizinc_version_string,
-                                      QVector<Solver>& solvers,
-                                      QString& userSolverConfigDir,
-                                      QString& userConfigFile,
-                                      QString& mznStdlibDir)
-{
-    MznProcess p;
-    QStringList args;
-    args << "--version";
-    minizinc_executable = "";
-    minizinc_version_string = "";
-    p.start("minizinc", args, mznDistribPath);
-    if (!p.waitForStarted() || !p.waitForFinished()) {
-        return;
-    } else {
-        minizinc_executable = "minizinc";
-    }
-    minizinc_version_string = p.readAllStandardOutput()+p.readAllStandardError();
-    QRegExp reVersion("version ([0-9]+)\\.([0-9]+)\\.\\S+");
-    if (reVersion.indexIn(minizinc_version_string)==-1) {
-        minizinc_executable = "";
-        return;
-    } else {
-        bool ok;
-        int curVersionMajor = reVersion.cap(1).toInt(&ok);
-        if (ok) {
-            int curVersionMinor = reVersion.cap(2).toInt(&ok);
-            if (curVersionMajor<2 || (curVersionMajor<3 && curVersionMinor<2)) {
-                minizinc_executable = "";
-                return;
-            }
-        }
-    }
-    if (!minizinc_executable.isEmpty()) {
-        args.clear();
-        args << "--config-dirs";
-        p.start(minizinc_executable, args, mznDistribPath);
-        if (p.waitForStarted() && p.waitForFinished()) {
-            QString allOutput = p.readAllStandardOutput();
-            QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
-            if (!jd.isNull()) {
-                QJsonObject sj = jd.object();
-                userSolverConfigDir = sj["userSolverConfigDir"].toString();
-                userConfigFile = sj["userConfigFile"].toString();
-                mznStdlibDir = sj["mznStdlibDir"].toString();
-            }
-        }
-        args.clear();
-        args << "--solvers-json";
-        p.start(minizinc_executable, args, mznDistribPath);
-        if (p.waitForStarted() && p.waitForFinished()) {
-            QString allOutput = p.readAllStandardOutput();
-            QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
-            if (!jd.isNull()) {
-                solvers.clear();
-                QJsonArray allSolvers = jd.array();
-                for (int i=0; i<allSolvers.size(); i++) {
-                    QJsonObject sj = allSolvers[i].toObject();
-                    Solver s;
-                    s.json = sj;
-                    s.name = sj["name"].toString();
-                    QJsonObject extraInfo = sj["extraInfo"].toObject();
-                    s.executable_resolved = extraInfo["executable"].toString("");
-                    s.mznlib_resolved = extraInfo["mznlib"].toString("");
-                    s.configFile = extraInfo["configFile"].toString("");
-                    if (extraInfo["defaultFlags"].isArray()) {
-                        QJsonArray ei = extraInfo["defaultFlags"].toArray();
-                        for (auto df : ei) {
-                            s.defaultFlags.push_back(df.toString());
-                        }
-                    }
-                    s.isDefaultSolver = (extraInfo["isDefault"].isBool() && extraInfo["isDefault"].toBool());
-                    s.contact = sj["contact"].toString("");
-                    s.website = sj["website"].toString("");
-                    s.supportsFzn = sj["supportsFzn"].toBool(true);
-                    s.supportsMzn = sj["supportsMzn"].toBool(false);
-                    if (sj["requiredFlags"].isArray()) {
-                        QJsonArray rfs = sj["requiredFlags"].toArray();
-                        for (auto rf : rfs) {
-                            s.requiredFlags.push_back(rf.toString());
-                        }
-                    }
-                    if (sj["stdFlags"].isArray()) {
-                        QJsonArray sfs = sj["stdFlags"].toArray();
-                        for (auto sf : sfs) {
-                            s.stdFlags.push_back(sf.toString());
-                        }
-                    }
-                    if (sj["extraFlags"].isArray()) {
-                        QJsonArray sfs = sj["extraFlags"].toArray();
-                        for (auto sf : sfs) {
-                            if (sf.isArray()) {
-                                QJsonArray extraFlagA = sf.toArray();
-                                if (extraFlagA.size()==4) {
-                                    SolverFlag extraFlag;
-                                    extraFlag.min=1.0;
-                                    extraFlag.max=0.0;
-                                    extraFlag.name = extraFlagA[0].toString();
-                                    QRegularExpression re_opt("^(int|float|bool)(:([0-9a-zA-Z.-]+):([0-9a-zA-Z.-]+))?");
-                                    QRegularExpressionMatch re_opt_match = re_opt.match(extraFlagA[2].toString());
-                                    if (re_opt_match.hasMatch()) {
-                                        if (re_opt_match.captured(1)=="int") {
-                                            if (re_opt_match.captured(3).isEmpty()) {
-                                                extraFlag.t = SolverFlag::T_INT;
-                                            } else {
-                                                extraFlag.t = SolverFlag::T_INT_RANGE;
-                                                extraFlag.min = re_opt_match.captured(3).toInt();
-                                                extraFlag.max = re_opt_match.captured(4).toInt();
-                                            }
-                                        } else if (re_opt_match.captured(1)=="float") {
-                                            if (re_opt_match.captured(3).isEmpty()) {
-                                                extraFlag.t = SolverFlag::T_FLOAT;
-                                            } else {
-                                                extraFlag.t = SolverFlag::T_FLOAT_RANGE;
-                                                extraFlag.min = re_opt_match.captured(3).toDouble();
-                                                extraFlag.max = re_opt_match.captured(4).toDouble();
-                                            }
-                                        } else if (re_opt_match.captured(1)=="bool") {
-                                            if (re_opt_match.captured(3).isEmpty()) {
-                                                extraFlag.t = SolverFlag::T_BOOL;
-                                            } else {
-                                                extraFlag.t = SolverFlag::T_BOOL_ONOFF;
-                                                extraFlag.options = QStringList({re_opt_match.captured(3),re_opt_match.captured(4)});
-                                            }
-                                        }
-                                    } else {
-                                        if (extraFlagA[2].toString()=="string") {
-                                            extraFlag.t = SolverFlag::T_STRING;
-                                        } else if (extraFlagA[2].toString().startsWith("opt:")) {
-                                            extraFlag.t = SolverFlag::T_OPT;
-                                            extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
-//                                        } else if (extraFlagA[2].toString()=="solver") {
-//                                            extraFlag.t = SolverFlag::T_SOLVER;
-                                        } else {
-                                            continue;
-                                        }
-                                    }
-                                    extraFlag.description = extraFlagA[1].toString();
-                                    extraFlag.def = extraFlagA[3].toString();
-                                    s.extraFlags.push_back(extraFlag);
-                                }
-                            }
-                        }
-                    }
-                    s.isGUIApplication = sj["isGUIApplication"].toBool(false);
-                    s.needsMznExecutable = sj["needsMznExecutable"].toBool(false);
-                    s.needsStdlibDir = sj["needsStdlibDir"].toBool(false);
-                    s.needsPathsFile = sj["needsPathsFile"].toBool(false);
-                    s.needsSolns2Out = sj["needsSolns2Out"].toBool(true);
-                    s.executable = sj["executable"].toString("");
-                    s.id = sj["id"].toString();
-                    s.version = sj["version"].toString();
-                    s.mznlib = sj["mznlib"].toString();
-                    s.mznLibVersion = sj["mznlibVersion"].toInt();
-                    solvers.append(s);
-                }
-            }
-        }
-    }
-}
-
 void SolverDialog::editingFinished(bool showError)
 {
-    QString minizinc_executable;
-    QString minizinc_version;
+    auto& driver = MznDriver::get();
+    auto& solvers = driver.solvers();
     for (int i=0; i<solvers.size(); i++) {
         ui->solvers_combo->removeItem(0);
     }
-    solvers.clear();
-    checkMznExecutable(ui->mznDistribPath->text(),minizinc_executable,minizinc_version,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
-    if (minizinc_executable.isEmpty()) {
-        if (showError) {
-            QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.",
-                                 QMessageBox::Ok);
-        }
-        if (minizinc_version.isEmpty()) {
-            ui->mzn2fzn_version->setText("None");
-        } else {
-            ui->mzn2fzn_version->setText("None. Error message:\n"+minizinc_version);
-        }
-    } else {
-        ui->mzn2fzn_version->setText(minizinc_version);
+    try {
+        driver.setLocation(ui->mznDistribPath->text());
+        ui->mzn2fzn_version->setText(driver.minizincVersionString());
         for (int i=solvers.size(); i--;) {
             ui->solvers_combo->insertItem(0,solvers[i].name+" "+solvers[i].version,i);
         }
         ui->solvers_combo->setCurrentIndex(0);
+    } catch (QString message) {
+        if (showError) {
+            QMessageBox::warning(this, "MiniZinc IDE", message, QMessageBox::Ok);
+        }
+        ui->mzn2fzn_version->setText(message);
     }
 }
 

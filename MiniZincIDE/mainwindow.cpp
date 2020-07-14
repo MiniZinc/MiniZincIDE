@@ -244,13 +244,13 @@ void MainWindow::init(const QString& projectFile)
     IDE::instance()->setEditorFont(editorFont);
 
     settings.beginGroup("minizinc");
-    mznDistribPath = settings.value("mznpath","").toString();
+    QString mznDistribPath = settings.value("mznpath","").toString();
     settings.endGroup();
-    checkMznPath();
+    checkMznPath(mznDistribPath);
 
     QVector<SolverConfiguration> builtinConfigs;
     defaultSolverIdx = 0;
-    SolverConfiguration::defaultConfigs(solvers, builtinConfigs, defaultSolverIdx);
+    SolverConfiguration::defaultConfigs(MznDriver::get().solvers(), builtinConfigs, defaultSolverIdx);
     for (int i=0; i<builtinConfigs.size(); i++)
         builtinSolverConfigs.push_back(builtinConfigs[i]);
     updateSolverConfigs();
@@ -1033,7 +1033,7 @@ void MainWindow::readRrofileOutput()
 }
 
 QString MainWindow::getMznDistribPath(void) const {
-    return mznDistribPath;
+    return MznDriver::get().mznDistribPath();
 }
 
 void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus)
@@ -1097,14 +1097,14 @@ void MainWindow::checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus
 
 void MainWindow::checkArgs(QString filepath, bool dataPrompt, const QStringList& additionalMznParams)
 {
-    if (minizinc_executable=="") {
+    if (!MznDriver::get().isValid()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
         return;
     }
-    processName = minizinc_executable;
+    processName = MznDriver::get().minizincExecutable();
     curModelFilepath = filepath;
     curAdditionalMznParams = additionalMznParams;
     processWasStopped = false;
@@ -1116,7 +1116,7 @@ void MainWindow::checkArgs(QString filepath, bool dataPrompt, const QStringList&
         process = nullptr;
         checkArgsFinished(0, QProcess::NormalExit);
     } else {
-        process = new MznProcess(this);
+        process = new Process(this);
         process->setWorkingDirectory(QFileInfo(filepath).absolutePath());
         connect(process, SIGNAL(readyRead()), this, SLOT(checkArgsOutput()));
         connect(process, SIGNAL(readyReadStandardError()), this, SLOT(checkArgsOutput()));
@@ -1130,7 +1130,7 @@ void MainWindow::checkArgs(QString filepath, bool dataPrompt, const QStringList&
             args << dzn;
         args << filepath;
         elapsedTime.start();
-        process->start(minizinc_executable,args,getMznDistribPath());
+        process->start(MznDriver::get().minizincExecutable(),args,getMznDistribPath());
     }
 }
 
@@ -1143,7 +1143,7 @@ void MainWindow::on_actionRun_triggered()
 
 void MainWindow::compileOrRun()
 {
-    if (minizinc_executable=="") {
+    if (!MznDriver::get().isValid()) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the solver settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
@@ -1331,7 +1331,7 @@ void MainWindow::statusTimerEvent()
 
 void MainWindow::readOutput()
 {
-    MznProcess* readProc = (outputProcess==nullptr ? process : outputProcess);
+    Process* readProc = (outputProcess==nullptr ? process : outputProcess);
     if (readProc != nullptr) {
         readProc->setReadChannel(QProcess::StandardOutput);
         while (readProc->canReadLine()) {
@@ -1555,6 +1555,7 @@ SolverConfiguration* MainWindow::getCurrentSolverConfig(void) {
 Solver* MainWindow::getCurrentSolver(void) {
     SolverConfiguration* conf = getCurrentSolverConfig();
     Solver* s = nullptr;
+    auto& solvers = MznDriver::get().solvers();
     for (int i=0; i<solvers.size(); i++) {
         if (conf->solverId==solvers[i].id) {
             s = &solvers[i];
@@ -1569,8 +1570,8 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
 {
     Solver& currentSolver = *getCurrentSolver();
     progressBar->setHidden(true);
-    process = new MznProcess(this);
-    processName = minizinc_executable;
+    process = new Process(this);
+    processName = MznDriver::get().minizincExecutable();
 
     bool standalone = false;
     if (compileMode==CM_RUN) {
@@ -1612,7 +1613,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     }
     if (compileMode==CM_PROFILE) {
         args << "--output-paths-to-stdout";
-        if (minizinc_version >= QVersionNumber(2,3,3)) {
+        if (MznDriver::get().version() >= QVersionNumber(2,3,3)) {
             args << "--output-detailed-timing";
         }
     }
@@ -1712,7 +1713,7 @@ bool MainWindow::runForSubmission(const QString &modelFile, const QString &dataF
     bool haveChecker = project.containsFile(checkFile) || project.containsFile(checkFile+".mzn");
 
     QStringList outputModeArgs;
-    if (haveChecker && ui->conf_check_solutions->isChecked() && minizinc_version >= QVersionNumber(2,4,4)) {
+    if (haveChecker && ui->conf_check_solutions->isChecked() && MznDriver::get().version() >= QVersionNumber(2,4,4)) {
         outputModeArgs.push_back("--output-mode");
         outputModeArgs.push_back("checker");
     }
@@ -2172,7 +2173,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
         if (s->isGUIApplication) {
             addOutput("<div class='mznnotice'>Running "+curEditor->filename+" (detached)</div>");
 
-            MznProcess* detached_process = new MznProcess(this);
+            Process* detached_process = new Process(this);
             detached_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
 
             QString executable = s->executable_resolved;
@@ -2202,7 +2203,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                 connect(outputProcess, SIGNAL(error(QProcess::ProcessError)),
                         this, SLOT(outputProcError(QProcess::ProcessError)));
             }
-            process = new MznProcess(this);
+            process = new Process(this);
             processName = s->executable_resolved;
             processWasStopped = false;
             process->setWorkingDirectory(QFileInfo(curFilePath).absolutePath());
@@ -2246,7 +2247,7 @@ void MainWindow::runCompiledFzn(int exitcode, QProcess::ExitStatus exitstatus)
                     outargs << "--output-time";
                 }
                 outargs << "--ozn-file" << currentFznTarget.left(currentFznTarget.length()-4)+".ozn";
-                outputProcess->start(minizinc_executable,outargs,getMznDistribPath());
+                outputProcess->run(outargs);
             }
             time = 0;
             timer->start(500);
@@ -2477,6 +2478,7 @@ void MainWindow::setCurrentSolverConfig(int idx)
     currentSolverConfig = idx;
     SolverConfiguration& conf = idx < projectSolverConfigs.size() ? projectSolverConfigs[idx] : builtinSolverConfigs[idx-projectSolverConfigs.size()];
 
+    auto& solvers = MznDriver::get().solvers();
     int solverIdx = 0;
     for (int i=solvers.size(); i--;) {
         Solver& s = solvers[i];
@@ -2998,13 +3000,11 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
-    SolverDialog sd(solvers,userSolverConfigDir,userConfigFile,mznStdlibDir,addNew,mznDistribPath);
+    SolverDialog sd(addNew);
     sd.exec();
-    mznDistribPath = sd.mznPath();
-    if (!mznDistribPath.isEmpty() && ! (mznDistribPath.endsWith("/") || mznDistribPath.endsWith("\\")))
-        mznDistribPath += "/";
-    checkMznPath();
-    SolverConfiguration::defaultConfigs(solvers, builtinSolverConfigs, defaultSolverIdx);
+
+    checkMznPath(MznDriver::get().mznDistribPath());
+    SolverConfiguration::defaultConfigs(MznDriver::get().solvers(), builtinSolverConfigs, defaultSolverIdx);
     updateSolverConfigs();
 
     settings.beginGroup("ide");
@@ -3015,9 +3015,8 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     settings.endGroup();
 
     settings.beginGroup("minizinc");
-    settings.setValue("mznpath",mznDistribPath);
+    settings.setValue("mznpath", MznDriver::get().mznDistribPath());
     settings.endGroup();
-
 }
 
 
@@ -3029,13 +3028,13 @@ void MainWindow::on_conf_default_toggled(bool checked)
         if (newDefaultSolverIdx==defaultSolverIdx)
             return;
         QString newDefaultSolver = builtinSolverConfigs[newDefaultSolverIdx].solverId;
-        QFile uc(userConfigFile);
+        QFile uc(MznDriver::get().userConfigFile());
         QJsonObject jo;
         if (uc.exists()) {
             if (uc.open(QFile::ReadOnly)) {
                 QJsonDocument doc = QJsonDocument::fromJson(uc.readAll());
                 if (doc.isNull()) {
-                    QMessageBox::warning(this,"MiniZinc IDE","Cannot modify user configuration file "+userConfigFile,QMessageBox::Ok);
+                    QMessageBox::warning(this,"MiniZinc IDE","Cannot modify user configuration file "+MznDriver::get().userConfigFile(),QMessageBox::Ok);
                     return;
                 }
                 jo = doc.object();
@@ -3062,7 +3061,7 @@ void MainWindow::on_conf_default_toggled(bool checked)
         jo["tagDefaults"] = tagdefs;
         QJsonDocument doc;
         doc.setObject(jo);
-        QFileInfo uc_info(userConfigFile);
+        QFileInfo uc_info(MznDriver::get().userConfigFile());
         if (!QDir().mkpath(uc_info.absoluteDir().absolutePath())) {
             QMessageBox::warning(this,"MiniZinc IDE","Cannot create user configuration directory "+uc_info.absoluteDir().absolutePath(),QMessageBox::Ok);
             return;
@@ -3071,7 +3070,7 @@ void MainWindow::on_conf_default_toggled(bool checked)
             uc.write(doc.toJson());
             uc.close();
         } else {
-            QMessageBox::warning(this,"MiniZinc IDE","Cannot write user configuration file "+userConfigFile,QMessageBox::Ok);
+            QMessageBox::warning(this,"MiniZinc IDE","Cannot write user configuration file "+MznDriver::get().userConfigFile(),QMessageBox::Ok);
             return;
         }
         defaultSolverIdx = newDefaultSolverIdx;
@@ -3134,18 +3133,19 @@ void MainWindow::on_actionGo_to_line_triggered()
     }
 }
 
-void MainWindow::checkMznPath()
+void MainWindow::checkMznPath(const QString& mznPath)
 {
-    QString mznVersionString;
-    SolverDialog::checkMznExecutable(mznDistribPath,minizinc_executable,mznVersionString,solvers,userSolverConfigDir,userConfigFile,mznStdlibDir);
-
-    if (minizinc_executable.isEmpty()) {
+    auto& driver = MznDriver::get();
+    try {
+        driver.setLocation(mznPath);
+    } catch (QString message) {
         int ret = QMessageBox::warning(this,"MiniZinc IDE","Could not find the minizinc executable.\nDo you want to open the settings dialog?",
                                        QMessageBox::Ok | QMessageBox::Cancel);
         if (ret == QMessageBox::Ok)
             on_actionManage_solvers_triggered();
     }
-    bool haveMzn = (!minizinc_executable.isEmpty() && solvers.size() > 0);
+
+    bool haveMzn = (driver.isValid() && driver.solvers().size() > 0);
     ui->actionRun->setEnabled(haveMzn);
     ui->actionProfile_compilation->setEnabled(haveMzn);
     ui->actionCompile->setEnabled(haveMzn);
@@ -3153,15 +3153,6 @@ void MainWindow::checkMznPath()
     ui->actionSubmit_to_MOOC->setEnabled(haveMzn);
     if (!haveMzn)
         ui->conf_dock_widget->hide();
-    if (haveMzn) {
-        QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
-        QRegularExpressionMatch path_match = version_regexp.match(mznVersionString);
-        if (path_match.hasMatch()) {
-            minizinc_version = QVersionNumber(path_match.captured(1).toInt(),path_match.captured(2).toInt(),path_match.captured(3).toInt());
-        } else {
-            minizinc_version = QVersionNumber(0,0,0);
-        }
-    }
 }
 
 void MainWindow::on_actionShift_left_triggered()
@@ -4130,14 +4121,13 @@ void MainWindow::checkModelStarted()
 
 void MainWindow::check_code()
 {
-    if (check_process==nullptr && minizinc_executable!="" &&
+    if (check_process==nullptr && MznDriver::get().isValid() &&
         ui->actionRun->isEnabled() &&
         curEditor && (curEditor->filepath=="" || curEditor->filepath.endsWith(".mzn"))
         && curEditor->modifiedSinceLastCheck) {
         curEditor->modifiedSinceLastCheck = false;
         curCheckEditor = curEditor;
         check_process = new MznProcess(this);
-        check_process->setWorkingDirectory(QFileInfo(curEditor->filepath).absolutePath());
         check_process->setProcessChannelMode(QProcess::MergedChannels);
         connect(check_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(checkModelFinished(int,QProcess::ExitStatus)));
         connect(check_process, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(checkModelError(QProcess::ProcessError)));
@@ -4145,7 +4135,7 @@ void MainWindow::check_code()
 
         QStringList args = parseConf(CONF_CHECKARGS, "", false);
         args << "-c" << "--model-check-only" << "-";
-        check_process->start(minizinc_executable,args,getMznDistribPath());
+        check_process->run(args, QFileInfo(curEditor->filepath).absolutePath());
     }
 }
 

@@ -58,6 +58,7 @@ struct Solver {
     QJsonObject json;
     bool isDefaultSolver;
     Solver(void) {}
+    Solver(const QJsonObject& json);
 };
 
 class SolverDialog : public QDialog
@@ -65,22 +66,9 @@ class SolverDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SolverDialog(QVector<Solver>& solvers,
-                          QString& userSolverConfigDir,
-                          QString& userConfigFile,
-                          QString& mznStdlibDir,
-                          bool openAsAddNew,
-                          const QString& mznPath,
-                          QWidget *parent = 0);
+    explicit SolverDialog(bool openAsAddNew, QWidget *parent = nullptr);
     ~SolverDialog();
-    QString mznPath();
-    static void checkMznExecutable(const QString& mznDistribPath,
-                                   QString& mzn_executable,
-                                   QString& mzn_version_string,
-                                   QVector<Solver>& solvers,
-                                   QString& userSolverConfigDir,
-                                   QString& userConfigFile,
-                                   QString& mznStdlibDir);
+
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -102,10 +90,7 @@ private slots:
 
 private:
     Ui::SolverDialog *ui;
-    QVector<Solver>& solvers;
-    QString& userSolverConfigDir;
-    QString& userConfigFile;
-    QString& mznStdlibDir;
+
     void editingFinished(bool showError);
 };
 

@@ -11,16 +11,18 @@
 #include <Windows.h>
 #endif
 
+#include "solverdialog.h"
+
 ///
 /// \brief The Process class
 /// Extends QProcess with the ability to handle child processes.
 ///
-class MznProcess : public QProcess {
+class Process : public QProcess {
 #ifdef Q_OS_WIN
     Q_OBJECT
 #endif
 public:
-    MznProcess(QObject* parent=nullptr) : QProcess(parent) {}
+    Process(QObject* parent=nullptr) : QProcess(parent) {}
     void start(const QString& program, const QStringList& arguments, const QString& path);
     void terminate(void);
 protected:
@@ -31,6 +33,154 @@ private:
 private slots:
     void attachJob();
 #endif
+};
+
+///
+/// \brief The MznDriver class
+/// Central store of minizinc executable information.
+/// Singleton class instantiated with MznDriver::get().
+///
+class MznDriver {
+public:
+    static MznDriver& get()
+    {
+        static MznDriver d;
+        return d;
+    }
+
+    ///
+    /// \brief Set the location of the MiniZinc executable to the given directory
+    /// \param mznDistribPath The MiniZinc binary directory
+    ///
+    void setLocation(const QString& mznDistribPath);
+
+    ///
+    /// \brief Returns the validity of the current MiniZinc installation
+    /// \return Whether or not a valid MiniZinc installation was found
+    ///
+    bool isValid(void);
+
+    MznDriver(MznDriver const&) = delete;
+    void operator=(MznDriver const&) = delete;
+
+    ///
+    /// \brief The name of the minizinc executable
+    /// \return The executable name, or an empty string if not found
+    ///
+    const QString& minizincExecutable(void)
+    {
+        return _minizincExecutable;
+    }
+    ///
+    /// \brief The directory that contains the minizinc executable
+    /// \return The directory as a string
+    ///
+    const QString& mznDistribPath(void)
+    {
+        return _mznDistribPath;
+    }
+    ///
+    /// \brief The output from running with --version
+    /// \return The full output string including stderr
+    ///
+    const QString& minizincVersionString(void)
+    {
+        return _versionString;
+    }
+    ///
+    /// \brief The user solver config directory
+    /// \return The directory as a string
+    ///
+    const QString& userSolverConfigDir(void)
+    {
+        return _userSolverConfigDir;
+    }
+    ///
+    /// \brief The location of the user's config file
+    /// \return The file location as a string
+    ///
+    const QString& userConfigFile(void)
+    {
+        return _userConfigFile;
+    }
+    ///
+    /// \brief The directory which contains stdlib
+    /// \return The directory as a string
+    ///
+    const QString& mznStdlibDir(void)
+    {
+        return _mznStdlibDir;
+    }
+    ///
+    /// \brief The built-in solvers as found by running with --solvers-json
+    /// \return The built-in solvers
+    ///
+    QVector<Solver>& solvers(void)
+    {
+        return _solvers;
+    }
+
+    ///
+    /// \brief Returns the version number of MiniZinc
+    /// \return The version number
+    ///
+    const QVersionNumber& version(void)
+    {
+        return _version;
+    }
+
+private:
+    MznDriver() {}
+
+    QString _minizincExecutable;
+    QString _mznDistribPath;
+    QString _versionString;
+    QString _userSolverConfigDir;
+    QString _userConfigFile;
+    QString _mznStdlibDir;
+    QVector<Solver> _solvers;
+    QVersionNumber _version;
+
+    void clear()
+    {
+        _minizincExecutable.clear();
+        _mznDistribPath.clear();
+        _versionString.clear();
+        _userSolverConfigDir.clear();
+        _userConfigFile.clear();
+        _mznStdlibDir.clear();
+        _solvers.clear();
+        _version = QVersionNumber();
+    }
+};
+
+///
+/// \brief The MznProcess class
+/// Runs MiniZinc using the current MznDriver
+///
+class MznProcess : public Process {
+    Q_OBJECT
+public:
+    MznProcess(QObject* parent=nullptr);
+
+    ///
+    /// \brief Start minizinc.
+    /// \param args Command line arguments
+    /// \param cwd Working directory
+    ///
+    void run(const QStringList& args, const QString& cwd = QString());
+
+    ///
+    /// \brief Give the amount of time since solving started
+    /// \return Amount of time elapsed in nanoseconds
+    ///
+    qint64 timeElapsed(void);
+private:
+    using Process::start;
+    QElapsedTimer elapsedTimer;
+    qint64 finalTime = 0;
+    QTemporaryFile* temp = nullptr;
+    void onExited(void);
 };
 
 #endif // PROCESS_H
