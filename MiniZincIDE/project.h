@@ -18,10 +18,6 @@
 #include <QTreeView>
 #include "solverconfiguration.h"
 
-namespace Ui {
-    class MainWindow;
-}
-
 class QSortFilterProxyModel;
 
 class MOOCAssignmentItem {
@@ -52,7 +48,7 @@ class Project : public QStandardItemModel
 {
     Q_OBJECT
 public:
-    Project(Ui::MainWindow *ui0);
+    Project(void);
     ~Project(void);
     void setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QString& fileName);
     QVariant data(const QModelIndex &index, int role) const;
@@ -75,8 +71,8 @@ public:
 signals:
     void fileRenamed(const QString& oldName, const QString& newName);
     void modificationChanged(bool);
+    void moocButtonChanged(bool visible, const QString& label, const QIcon& icon);
 protected:
-    Ui::MainWindow *ui;
     bool _isModified;
     bool _filesModified;
     QString projectRoot;

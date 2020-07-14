@@ -45,7 +45,6 @@ MainWindow::MainWindow(const QString& project) :
     outputProcess(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
-    project(ui),
     outputBuffer(nullptr),
     processRunning(false),
     currentSolverConfig(-1)
@@ -62,7 +61,6 @@ MainWindow::MainWindow(const QStringList& files) :
     outputProcess(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
-    project(ui),
     outputBuffer(nullptr),
     processRunning(false),
     currentSolverConfig(-1)
@@ -286,6 +284,7 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->projectView, SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(onProjectCustomContextMenu(QPoint)));
     connect(&project, SIGNAL(fileRenamed(QString,QString)), this, SLOT(fileRenamed(QString,QString)));
+    connect(&project, &Project::moocButtonChanged, this, &MainWindow::on_moocButtonChanged);
 
     ui->actionNext_tab->setShortcuts(QKeySequence::NextChild);
     ui->actionPrevious_tab->setShortcuts(QKeySequence::PreviousChild);
@@ -4297,4 +4296,10 @@ void MainWindow::setEditorMenuItemsEnabled(bool enabled) {
     ui->actionUndo->setEnabled(enabled);
     ui->actionRedo->setEnabled(enabled);
     ui->actionRun->setEnabled(enabled);
+}
+void MainWindow::on_moocButtonChanged(bool visible, const QString& label, const QIcon& icon)
+{
+    ui->actionSubmit_to_MOOC->setVisible(visible);
+    ui->actionSubmit_to_MOOC->setText(label);
+    ui->actionSubmit_to_MOOC->setIcon(icon);
 }

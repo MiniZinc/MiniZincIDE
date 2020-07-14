@@ -261,6 +261,8 @@ private slots:
 
     void on_actionProfile_compilation_triggered();
 
+    void on_moocButtonChanged(bool visible, const QString& label, const QIcon& icon);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

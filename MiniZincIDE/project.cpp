@@ -11,7 +11,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "project.h"
-#include "ui_mainwindow.h"
 #include "moocsubmission.h"
 
 #include <QFileInfo>
@@ -22,7 +21,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-Project::Project(Ui::MainWindow *ui0) : ui(ui0), _moocAssignment(nullptr), _courseraAssignment(nullptr)
+Project::Project() : _moocAssignment(nullptr), _courseraAssignment(nullptr)
 {
     projectFile = new QStandardItem("Untitled Project");
     invisibleRootItem()->appendRow(projectFile);
@@ -275,15 +274,10 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
             _moocAssignment = moocA;
         }
         if (moocA) {
-            ui->actionSubmit_to_MOOC->setVisible(true);
             QString moocName = _moocAssignment ? _moocAssignment->moocName : _courseraAssignment->moocName;
-            ui->actionSubmit_to_MOOC->setText("Submit to "+moocName);
-            if (moocName=="Coursera") {
-                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
-            } else {
-                ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/application-certificate.png"));
-            }
-
+            QString label = "Submit to " + moocName;
+            QIcon icon = moocName == "Coursera" ? QIcon(":/icons/images/coursera.png") : QIcon(":/icons/images/application-certificate.png");
+            emit moocButtonChanged(true, label, icon);
         }
     }
 coursera_done:
@@ -386,16 +380,15 @@ void Project::removeFile(const QString &fileName)
         delete _courseraAssignment;
         _courseraAssignment = nullptr;
         if (_moocAssignment==nullptr) {
-            ui->actionSubmit_to_MOOC->setVisible(false);
+            moocButtonChanged(false, "", QIcon());
         }
     } else if (fi.fileName()=="_mooc") {
         delete _moocAssignment;
         _moocAssignment = nullptr;
         if (_courseraAssignment!=nullptr) {
-            ui->actionSubmit_to_MOOC->setText("Submit to "+_courseraAssignment->moocName);
-            ui->actionSubmit_to_MOOC->setIcon(QIcon(":/icons/images/coursera.png"));
+            moocButtonChanged(true, "Submit to " + _courseraAssignment->moocName, QIcon(":/icons/images/coursera.png"));
         } else {
-            ui->actionSubmit_to_MOOC->setVisible(false);
+            moocButtonChanged(false, "", QIcon());
         }
     }
 }
