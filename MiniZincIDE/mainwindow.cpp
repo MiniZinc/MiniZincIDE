@@ -869,7 +869,7 @@ QStringList MainWindow::parseConf(const ConfMode& confMode, const QString& model
     bool haveOutputHtml = currentSolver.stdFlags.contains("--output-html");
     bool haveNeedsPaths = currentSolver.needsPathsFile;
 
-    bool isMiniZinc = (confMode!=CONF_RUN && !currentSolver.supportsMzn) || currentSolver.executable.isEmpty() || !currentSolver.supportsFzn;
+    bool isMiniZinc = true || (confMode!=CONF_RUN && !currentSolver.supportsMzn) || currentSolver.executable.isEmpty() || !currentSolver.supportsFzn;
     bool haveCompilerVerbose =  isMiniZinc || (currentSolver.supportsMzn && currentSolver.stdFlags.contains("-v"));
     bool haveCompilerStats =  isMiniZinc || currentSolver.stdFlags.contains("-s");
     bool haveCompilerOpt[6];
@@ -1573,7 +1573,7 @@ void MainWindow::compileAndRun(const QString& modelPath, const QString& addition
     process = new Process(this);
     processName = MznDriver::get().minizincExecutable();
 
-    bool standalone = false;
+    bool standalone = true;
     if (compileMode==CM_RUN) {
         // Check if we need to run a stand-alone solver (no mzn2fzn or solns2out)
         if (currentSolver.supportsMzn || !currentSolver.supportsFzn) {
