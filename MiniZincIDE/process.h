@@ -11,7 +11,7 @@
 #include <Windows.h>
 #endif
 
-#include "solverdialog.h"
+#include "solverconfiguration.h"
 
 ///
 /// \brief The Process class
@@ -58,7 +58,10 @@ public:
     /// \brief Returns the validity of the current MiniZinc installation
     /// \return Whether or not a valid MiniZinc installation was found
     ///
-    bool isValid(void);
+    bool isValid(void) const
+    {
+        return !minizincExecutable().isEmpty();
+    }
 
     MznDriver(MznDriver const&) = delete;
     void operator=(MznDriver const&) = delete;
@@ -67,7 +70,7 @@ public:
     /// \brief The name of the minizinc executable
     /// \return The executable name, or an empty string if not found
     ///
-    const QString& minizincExecutable(void)
+    const QString& minizincExecutable(void) const
     {
         return _minizincExecutable;
     }
@@ -75,7 +78,7 @@ public:
     /// \brief The directory that contains the minizinc executable
     /// \return The directory as a string
     ///
-    const QString& mznDistribPath(void)
+    const QString& mznDistribPath(void) const
     {
         return _mznDistribPath;
     }
@@ -83,7 +86,7 @@ public:
     /// \brief The output from running with --version
     /// \return The full output string including stderr
     ///
-    const QString& minizincVersionString(void)
+    const QString& minizincVersionString(void) const
     {
         return _versionString;
     }
@@ -91,7 +94,7 @@ public:
     /// \brief The user solver config directory
     /// \return The directory as a string
     ///
-    const QString& userSolverConfigDir(void)
+    const QString& userSolverConfigDir(void) const
     {
         return _userSolverConfigDir;
     }
@@ -99,7 +102,7 @@ public:
     /// \brief The location of the user's config file
     /// \return The file location as a string
     ///
-    const QString& userConfigFile(void)
+    const QString& userConfigFile(void) const
     {
         return _userConfigFile;
     }
@@ -107,7 +110,7 @@ public:
     /// \brief The directory which contains stdlib
     /// \return The directory as a string
     ///
-    const QString& mznStdlibDir(void)
+    const QString& mznStdlibDir(void) const
     {
         return _mznStdlibDir;
     }
@@ -119,6 +122,12 @@ public:
     {
         return _solvers;
     }
+
+    ///
+    /// \brief Get a reference to the default Solver
+    /// \return The default solver or nullptr if there is none
+    ///
+    Solver* defaultSolver(void);
 
     ///
     /// \brief Returns the version number of MiniZinc
@@ -171,6 +180,14 @@ public:
     void run(const QStringList& args, const QString& cwd = QString());
 
     ///
+    /// \brief Start minizinc and use the given solver configuration.
+    /// \param sc The solver configuration to use
+    /// \param args Command line arguments
+    /// \param cwd Working directory
+    ///
+    void run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString());
+
+    ///
     /// \brief Give the amount of time since solving started
     /// \return Amount of time elapsed in nanoseconds
     ///
@@ -181,6 +198,93 @@ private:
     qint64 finalTime = 0;
     QTemporaryFile* temp = nullptr;
     void onExited(void);
+};
+
+///
+/// \brief Runs the minizinc executable and processes solution output.
+///
+class SolveProcess : public MznProcess {
+    Q_OBJECT
+
+public:
+    SolveProcess(QObject* parent=nullptr);
+
+    ///
+    /// \brief Solve an instance using minizinc, processing solutions
+    /// \param sc The solver configuration
+    /// \param modelFile The model file path
+    /// \param dataFiles The data file paths
+    /// \param extraArgs Extra command line arguments
+    ///
+    void solve(const SolverConfiguration& sc, const QString& modelFile, const QStringList& dataFiles = QStringList(), const QStringList& extraArgs = QStringList());
+
+signals:
+    ///
+    /// \brief Emitted when ---------- is read.
+    /// \param solution The solution including ----------\n
+    ///
+    void solutionOutput(const QString& solution);
+    ///
+    /// \brief Emitted when %%%mzn-stat is read.
+    /// \param statistic The statistic read
+    ///
+    void statisticOutput(const QString& statistic);
+    ///
+    /// \brief Emitted when %%%mzn-html-end is read.
+    /// \param html The HTML read
+    ///
+    void htmlOutput(const QString& html);
+    ///
+    /// \brief Emitted when %%%mzn-progress is read.
+    /// \param progress The progress value
+    ///
+    void progressOutput(float progress);
+    ///
+    /// \brief Emitted when %%%mzn-json-init is read.
+    /// \param data The data to be sent to the HTML page
+    ///
+    void jsonInit(const QString& path, Qt::DockWidgetArea area, const QString& data);
+    ///
+    /// \brief Emitted when %%%mzn-json-end is read.
+    /// \param data The data to be sent to the HTML page
+    ///
+    void jsonOutput(const QString& path, Qt::DockWidgetArea area, const QString& data);
+    ///
+    /// \brief Emitted when ========== is read.
+    /// \param data The data that was read (usually should be just ==========\n)
+    ///
+    void optimal(const QString& data);
+    ///
+    /// \brief Emitted when a line is written to stderr.
+    /// \param error The data in stderr.
+    ///
+    void stdErrorOutput(const QString& error);
+
+private:
+    enum State {
+        Output,
+        HTML,
+        JSONInit,
+        JSON
+    };
+
+    QStringList outputBuffer;
+    QStringList htmlBuffer;
+    QStringList jsonBuffer;
+    QString jsonPath;
+    Qt::DockWidgetArea jsonArea;
+    State state;
+
+    using MznProcess::run;
+
+private slots:
+    void onStdout(void);
+    void onStderr(void);
+
+    void processStdout(QString line);
+    void processStderr(QString line);
+
+    void onFinished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
 #endif // PROCESS_H

@@ -3,44 +3,69 @@
 
 #include "solverdialog.h"
 
+#include <QJsonDocument>
 #include <QString>
 #include <QVariant>
 #include <QVector>
 
-class SolverConfiguration
-{
+class SolverConfiguration {
 public:
-    SolverConfiguration();
-    QString name;
-    bool isBuiltin;
-    QString solverId;
-    QString solverVersion;
-    int timeLimit;
-    bool defaultBehaviour;
-    bool printIntermediate;
-    int stopAfter;
-    int compressSolutionOutput;
-    bool clearOutputWindow;
-    bool verboseFlattening;
-    bool flatteningStats;
-    int optimizationLevel;
-    QString additionalData;
-    QString additionalCompilerCommandline;
-    int nThreads;
-    QVariant randomSeed;
-    QString solverFlags;
-    bool freeSearch;
-    bool verboseSolving;
-    bool outputTiming;
-    bool solvingStats;
-    bool runSolutionChecker;
-    bool useExtraOptions;
-    QMap<QString,QString> extraOptions;
+    SolverConfiguration(const Solver& solver, bool builtin = false);
 
-    static void defaultConfigs(const QVector<Solver>& solvers, QVector<SolverConfiguration>& solverConfigs, int& defaultSolverIdx);
-    static SolverConfiguration defaultConfig(void);
+    static SolverConfiguration loadJSON(const QString& filename);
+    static SolverConfiguration loadJSON(const QJsonDocument& jsons);
+
+    QString solver;
+    const Solver& solverDefinition;
+    QString paramFile;
+    bool isBuiltin;
+    int timeLimit;
+    bool printIntermediate;
+    int numSolutions;
+    int numOptimal;
+    bool verboseCompilation;
+    bool verboseSolving;
+    bool compilationStats;
+    bool solvingStats;
+    bool outputTiming;
+    int optimizationLevel;
+    QStringList additionalData;
+    int numThreads;
+    QVariant randomSeed;
+    bool freeSearch;
+    bool useExtraOptions;
+    QVariantMap extraOptions;
+    QVariantMap unknownOptions;
+    bool modified;
+
+    ///
+    /// \brief Gets the name of this solver config
+    /// \return The name of the config
+    ///
+    QString name(void) const;
+
+    ///
+    /// \brief Give the JSON representation of this SolverConfiguration
+    /// \return This solver config in JSON format
+    ///
+    QByteArray toJSON(void) const;
+
+    ///
+    /// \brief Determines if these two solver configs have compatible basic options
+    /// \param sc Another solver configuration
+    /// \return Whether the basic options match
+    ///
+    bool syncedOptionsMatch(const SolverConfiguration& sc) const;
+
+    ///
+    /// \brief Returns whether the given stdFlag is supported by the solver for this config
+    /// \param flag The standard flag
+    /// \return True if the flag is supported and false otherwise
+    ///
+    bool supports(const QString& flag) const;
 
     bool operator==(const SolverConfiguration& sc) const;
 };
+
 
 #endif // SOLVERCONFIGURATION_H

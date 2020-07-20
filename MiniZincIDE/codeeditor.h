@@ -59,7 +59,6 @@ public:
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
     Highlighter& getHighlighter();
-    bool modifiedSinceLastCheck;
     void checkFile(const QVector<MiniZincError>& errors);
     void showDebugInfo(bool show);
     const static int DEBUG_TAB_SIZE = 70;
@@ -101,6 +100,7 @@ private:
 
 signals:
     void escPressed();
+    void changedDebounced();
 public slots:
     void loadedLargeFile();
     void copy();

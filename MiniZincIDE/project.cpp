@@ -12,6 +12,9 @@
 
 #include "project.h"
 #include "moocsubmission.h"
+#include "solverdialog.h"
+#include "exception.h"
+#include "process.h"
 
 #include <QFileInfo>
 #include <QDir>
@@ -33,6 +36,9 @@ Project::Project() : _moocAssignment(nullptr), _courseraAssignment(nullptr)
     dzn = new QStandardItem("Data (right-click to run)");
     dzn->setFont(font);
     invisibleRootItem()->appendRow(dzn);
+    mpc = new QStandardItem("Solver Configurations");
+    mpc->setFont(font);
+    invisibleRootItem()->appendRow(mpc);
     other = new QStandardItem("Other");
     other->setFont(font);
     invisibleRootItem()->appendRow(other);
@@ -56,6 +62,8 @@ void Project::setRoot(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
         mzn->removeRows(0,mzn->rowCount());
     if (dzn->rowCount() > 0)
         dzn->removeRows(0,dzn->rowCount());
+    if (mpc->rowCount() > 0)
+        mpc->removeRows(0,mpc->rowCount());
     if (other->rowCount() > 0)
         other->removeRows(0,other->rowCount());
     projectRoot = fileName;
@@ -78,6 +86,9 @@ QVariant Project::data(const QModelIndex &index, int role) const
             }
             if (item==dzn) {
                 return "02 - dzn";
+            }
+            if (item==mpc) {
+                return "04 - mpc";
             }
             if (item==other) {
                 return "03 - other";
@@ -116,6 +127,8 @@ void Project::addFile(QTreeView* treeView, QSortFilterProxyModel* sort, const QS
         curItem = dzn;
     } else if (fi.suffix()=="fzn") {
         return;
+    } else if (fi.suffix()=="mpc") {
+        curItem = mpc;
     } else {
         curItem = other;
         isMiniZinc = false;
@@ -343,7 +356,7 @@ QString Project::fileAtIndex(const QModelIndex &index)
 Qt::ItemFlags Project::flags(const QModelIndex& index) const
 {
     QStandardItem* item = itemFromIndex(index);
-    if (!item->hasChildren() && (item==mzn || item==dzn || item==other) )
+    if (!item->hasChildren() && (item==mzn || item==dzn || item==mpc || item==other) )
         return Qt::ItemIsSelectable;
     return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
 }
@@ -443,20 +456,244 @@ bool Project::isUndefined() const
 
 void Project::solverConfigs(const QVector<SolverConfiguration> &sc, bool init)
 {
-    if (init) {
-        _solverConfigs = sc;
-    } else {
-        if (sc.size() != _solverConfigs.size()) {
-            setModified(true);
-        } else {
-            bool modified = false;
-            for (int i=0; i<sc.size(); i++) {
-                if (!(sc[i]==_solverConfigs[i])) {
-                    modified = true;
-                    _solverConfigs[i] = sc[i];
-                }
+//    if (init) {
+//        _solverConfigs = sc;
+//    } else {
+//        if (sc.size() != _solverConfigs.size()) {
+//            setModified(true);
+//        } else {
+//            bool modified = false;
+//            for (int i=0; i<sc.size(); i++) {
+//                if (!(sc[i]==_solverConfigs[i])) {
+//                    modified = true;
+//                    _solverConfigs[i] = sc[i];
+//                }
+//            }
+//            setModified(modified);
+//        }
+//    }
+}
+
+
+void Project::save(const QString& filepath, const QStringList& openFiles, int openTab)
+{
+    QFile file(filepath);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        throw ProjectError("Failed to save project");
+    }
+    QJsonObject confObject;
+
+    confObject["version"] = 106;
+    confObject["openFiles"] = QJsonArray::fromStringList(openFiles);
+    confObject["openTab"] = openTab;
+
+    QDir projectDir = QFileInfo(filepath).absoluteDir();
+
+    QStringList projectFilesRelPath;
+    QStringList projectFiles = files();
+    for (QList<QString>::const_iterator it = projectFiles.begin();
+         it != projectFiles.end(); ++it) {
+        projectFilesRelPath << projectDir.relativeFilePath(*it);
+    }
+    confObject["projectFiles"] = QJsonArray::fromStringList(projectFilesRelPath);
+
+    QJsonDocument jdoc(confObject);
+    file.write(jdoc.toJson());
+    file.close();
+}
+
+namespace {
+    // Upgrades a solver config from a project file into new format
+    SolverConfiguration scFromJson(QJsonObject sco) {
+        QString solver = sco["version"].isString() ? sco["id"].toString() + "@" + sco["version"].toString() : sco["id"].toString();
+        SolverConfiguration newSc(Solver::lookup(solver));
+        bool defaultBehaviour = false;
+        if (sco["name"].isString()) {
+//            newSc.name = sco["name"].toString();
+        }
+        if (sco["timeLimit"].isDouble()) {
+            newSc.timeLimit = sco["timeLimit"].toInt();
+        }
+        if (sco["defaultBehavior"].isBool()) {
+            defaultBehaviour = sco["defaultBehavior"].toBool();
+        }
+        if (sco["printIntermediate"].isBool()) {
+            newSc.printIntermediate = sco["printIntermediate"].toBool();
+        }
+        if (sco["stopAfter"].isDouble()) {
+            newSc.numSolutions = sco["stopAfter"].toInt();
+        }
+        if (sco["verboseFlattening"].isBool()) {
+            newSc.verboseCompilation = sco["verboseFlattening"].toBool();
+        }
+        if (sco["flatteningStats"].isBool()) {
+            newSc.compilationStats = sco["flatteningStats"].toBool();
+        }
+        if (sco["optimizationLevel"].isDouble()) {
+            newSc.optimizationLevel = sco["optimizationLevel"].toInt();
+        }
+        if (sco["additionalData"].isString()) {
+            newSc.additionalData.append(sco["additionalData"].toString());
+        }
+        if (sco["additionalCompilerCommandline"].isString()) {
+            // TODO: Implement
+        }
+        if (sco["nThreads"].isDouble()) {
+            newSc.numThreads = sco["nThreads"].toInt();
+        }
+        if (sco["randomSeed"].isDouble()) {
+            newSc.randomSeed = sco["randomSeed"].toDouble();
+        }
+        if (sco["solverFlags"].isString()) {
+            // TODO: Implement
+        }
+        if (sco["freeSearch"].isBool()) {
+            newSc.freeSearch = sco["freeSearch"].toBool();
+        }
+        if (sco["verboseSolving"].isBool()) {
+            newSc.verboseSolving = sco["verboseSolving"].toBool();
+        }
+        if (sco["outputTiming"].isBool()) {
+            newSc.outputTiming = sco["outputTiming"].toBool();
+        }
+        if (sco["solvingStats"].isBool()) {
+            newSc.solvingStats = sco["solvingStats"].toBool();
+        }
+        if (sco["useExtraOptions"].isBool()) {
+            newSc.useExtraOptions = sco["useExtraOptions"].toBool();
+        }
+        if (sco["extraOptions"].isObject()) {
+            QJsonObject extraOptions = sco["extraOptions"].toObject();
+            for (auto& k : extraOptions.keys()) {
+                newSc.extraOptions.insert(k, extraOptions[k].toString());
             }
-            setModified(modified);
+        }
+        return newSc;
+    }
+}
+
+void Project::load(const QString& filepath, QStringList& openFiles, int& openTab, QStringList& missingFiles)
+{
+    QFile pfile(filepath);
+    pfile.open(QIODevice::ReadOnly);
+    if (!pfile.isOpen()) {
+        throw FileError("Could not open project file");
+    }
+    QString basePath = QFileInfo(filepath).absolutePath() + "/";
+    QByteArray jsonData = pfile.readAll();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    if (!jsonDoc.isObject()) {
+        pfile.reset();
+        QDataStream in(&pfile);
+        loadLegacy(basePath, in, openFiles, openTab, missingFiles);
+        return;
+    }
+
+
+
+    QJsonObject obj = jsonDoc.object();
+    if (obj["openFiles"].isArray()) {
+        for (auto f : obj["openFiles"].toArray()) {
+            if (!f.isString()) {
+                throw ProjectError("Invalid project file");
+            }
+            openFiles << f.toString();
         }
     }
+    openTab = obj["openTab"].toInt(-1);
+
+    QStringList projectFilesRelPath;
+    if (obj["projectFiles"].isArray()) {
+        for (auto f : obj["projectFiles"].toArray()) {
+            if (!f.isString()) {
+                throw ProjectError("Invalid project file");
+            }
+            projectFilesRelPath << f.toString();
+        }
+    }
+
+
+
+}
+
+void Project::loadLegacy(const QString& basePath, QDataStream& in, QStringList &openFiles, int &openTab, QStringList& missingFiles)
+{
+    quint32 magic;
+    in >> magic;
+    if (magic != 0xD539EA12) {
+        throw ProjectError("Invalid project file");
+    }
+    quint32 version;
+    in >> version;
+    if (version < 101 || version > 104) {
+        throw ProjectError("Unsupported version");
+    }
+    in.setVersion(QDataStream::Qt_5_0);
+
+    QString prefix = version >= 103 ? basePath : "";
+
+    in >> openFiles;
+    QString p_s;
+    bool p_b;
+
+    int dataFileIndex;
+
+    Solver* s = MznDriver::get().defaultSolver();
+    if (!s) {
+        throw ConfigError("No default solver found");
+    }
+    SolverConfiguration newConf(*s);
+
+    in >> p_s;
+    in >> dataFileIndex;
+    in >> p_b;
+    in >> p_s;
+    newConf.additionalData << p_s;
+    in >> p_b;
+    // Ignore, not used any longer
+    in >> p_s;
+    // TODO: Implement turning into unknownOptions
+    if (version == 104) {
+        in >> p_b; // Ignore clear output window option
+    }
+    in >> newConf.verboseCompilation;
+    in >> p_b;
+    newConf.optimizationLevel = p_b ? 1 : 0;
+    in >> p_s; // Used to be solver name
+    in >> newConf.numSolutions;
+    in >> newConf.printIntermediate;
+    in >> newConf.solvingStats;
+    in >> p_b; // Ignore
+    in >> p_s; // TODO: This is solver flags
+    in >> newConf.numThreads;
+    in >> p_b;
+    in >> p_s;
+    newConf.randomSeed = p_b ? QVariant::fromValue(p_s.toInt()) : QVariant();
+    in >> p_b; // used to be whether time limit is checked
+    in >> newConf.timeLimit;
+    openTab = -1;
+    if (version >= 102) {
+        in >> newConf.verboseSolving;
+        in >> openTab;
+    }
+    QStringList projectFilesRelPath;
+    if (version==103 || version==104) {
+        in >> projectFilesRelPath;
+    } else {
+        projectFilesRelPath = openFiles;
+    }
+    if (version >= 103 && !in.atEnd()) {
+        in >> p_b; // Ignore default behaviour option
+    }
+    if (version == 104 && !in.atEnd()) {
+        in >> newConf.compilationStats;
+    }
+    if (version == 104 && !in.atEnd()) {
+        in >> p_b; // Ignore compress solution option
+    }
+    if (version==104 && !in.atEnd()) {
+        in >> newConf.outputTiming;
+    }
+
+
 }

@@ -25,12 +25,8 @@
 #endif
 #include <QSet>
 #include <QTemporaryDir>
-#include <QElapsedTimer>
-#include <QApplication>
 #include <QMap>
 #include <QSet>
-#include <QFileSystemWatcher>
-#include <QNetworkAccessManager>
 #include <QSortFilterProxyModel>
 #include <QToolButton>
 #include <QProgressBar>
@@ -45,6 +41,7 @@
 #include "moocsubmission.h"
 #include "solverconfiguration.h"
 #include "process.h"
+#include "codechecker.h"
 
 namespace Ui {
 class MainWindow;
@@ -65,8 +62,10 @@ public:
     ~MainWindow();
 
 private:
+    enum CompileMode { CM_RUN, CM_COMPILE, CM_PROFILE };
+
     void init(const QString& project);
-    void compileOrRun();
+    void compileOrRun(CompileMode cm);
     void setEditorMenuItemsEnabled(bool enabled);
 signals:
     /// emitted when compilation and running of a model has finished
@@ -89,24 +88,7 @@ private slots:
 
     void on_actionRun_triggered();
 
-    void checkArgs(QString filepath, bool dataPrompt, const QStringList& additionalMznParams);
-    void checkArgsOutput();
-    void checkArgsFinished(int exitcode, QProcess::ExitStatus exitstatus);
-
-    void checkModelStarted();
-    void checkModelFinished(int exitcode, QProcess::ExitStatus exitstatus);
-    void checkModelError(QProcess::ProcessError);
-
-    void readOutput();
-    void readRrofileOutput();
-
     void procFinished(int, bool showTime=true);
-
-    void outputProcFinished(int, bool showTime=true);
-
-    void procError(QProcess::ProcessError);
-    void checkArgsError(QProcess::ProcessError);
-    void outputProcError(QProcess::ProcessError);
 
     void on_actionSave_triggered();
     void on_actionQuit_triggered();
@@ -115,11 +97,9 @@ private slots:
 
     void on_actionCompile_triggered();
 
-    void openCompiledFzn(int);
+    void openCompiledFzn(const QString& file);
 
-    void profileCompiledFzn(int);
-
-    void runCompiledFzn(int,QProcess::ExitStatus);
+    void profileCompiledFzn(const QString& output);
 
     void on_actionSave_as_triggered();
 
@@ -207,8 +187,6 @@ private slots:
 
     void fileRenamed(const QString&, const QString&);
 
-    void on_conf_timeLimit_valueChanged(int arg1);
-
     void onClipboardChanged();
 
     void editor_cursor_position_changed();
@@ -223,25 +201,7 @@ private slots:
 
     void moocFinished(int);
 
-    void on_defaultBehaviourButton_toggled(bool checked);
-
     void on_actionEditSolverConfig_triggered();
-
-    void on_conf_solver_conf_currentIndexChanged(int index);
-
-    void on_solverConfigurationSelected(QAction*);
-
-    void on_cloneSolverConfButton_clicked();
-    void on_deleteSolverConfButton_clicked();
-    void on_renameSolverConfButton_clicked();
-
-    void on_solverConfNameEdit_returnPressed();
-    void on_solverConfNameEdit_escPressed();
-
-    void on_conf_default_toggled(bool checked);
-    void on_conf_dock_widget_visibilityChanged(bool visible);
-
-    void on_conf_check_solutions_toggled(bool checked);
 
     void on_b_next_clicked();
 
@@ -257,9 +217,13 @@ private slots:
 
     void on_find_textEdited(const QString &arg1);
 
-    void on_extraOptionsBox_toggled(bool arg1);
-
     void on_actionProfile_compilation_triggered();
+
+    void on_configWindow_dockWidget_visibilityChanged(bool visible);
+
+    void on_config_window_itemsChanged(const QStringList& items);
+
+    void on_config_window_selectedIndexChanged(int );
 
     void on_moocButtonChanged(bool visible, const QString& label, const QIcon& icon);
 
@@ -271,11 +235,9 @@ protected:
     virtual void paintEvent(QPaintEvent *);
 #endif
     bool eventFilter(QObject *, QEvent *);
-    void openJSONViewer(void);
-    void finishJSONViewer(void);
 
     SolverConfiguration* getCurrentSolverConfig(void);
-    Solver* getCurrentSolver(void);
+    const Solver* getCurrentSolver(void);
 
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
@@ -293,52 +255,31 @@ private:
     int curHtmlWindow;
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
-    Process* process;
-    MznProcess* check_process;
-    QString processName;
-    QString curModelFilepath;
+    MznProcess* compileProcess;
+    SolveProcess* solveProcess;
+    CodeChecker* code_checker;
     CodeEditor* curCheckEditor;
-    MznProcess* outputProcess;
-    bool processWasStopped;
     int solutionCount;
     int solutionLimit;
     QTimer solutionLimitTimer;
     QVector<QString> hiddenSolutions;
-    int curJSONHandler;
-    bool inJSONHandler;
-    bool isJSONinitHandler;
-    QStringList htmlBuffer;
-    bool inHTMLHandler {false};
-    bool hadNonJSONOutput;
-    QVector<QStringList> JSONOutput;
     QTimer* timer;
     QTimer* solverTimeout;
-    QTimer* checkTimer;
     int time;
-    QElapsedTimer elapsedTime;
     QProgressBar* progressBar;
     QLabel* statusLabel;
     QLabel* statusLineColLabel;
     QFont editorFont;
     bool darkMode;
-    int defaultSolverIdx;
-    QString getMznDistribPath(void) const;
-    QString currentFznTarget;
-    QString currentPathsTarget;
-    bool isOptimisation;
+    QVector<Solver> solvers;
     QStringList currentAdditionalDataFiles;
-    bool runSolns2Out;
     QTemporaryDir* tmpDir;
     QVector<QTemporaryDir*> cleanupTmpDirs;
     QVector<Process*> cleanupProcesses;
     QTextCursor incrementalFindCursor;
     QString projectPath;
     bool saveBeforeRunning;
-    QString compileErrors;
-    QString checkArgsStdout;
     ParamDialog* paramDialog;
-    enum CompileMode { CM_RUN, CM_COMPILE, CM_PROFILE };
-    CompileMode compileMode;
     bool profileInfoVisible;
     int runTimeout;
     Project project;
@@ -360,8 +301,6 @@ private:
     QTextStream* outputBuffer;
     MOOCSubmission* moocSubmission;
     bool processRunning;
-    QStringList curAdditionalMznParams;
-    bool promptForData;
 
     QToolButton* runButton;
     QVector<SolverConfiguration> projectSolverConfigs;
@@ -372,14 +311,14 @@ private:
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };
-    QStringList parseConf(const ConfMode& confMode, const QString& modelFile, bool isOptimisation);
+    QStringList parseConf(const ConfMode& confMode, const QString& modelFile);
     void saveFile(CodeEditor* ce, const QString& filepath);
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
     void setLastPath(const QString& s);
     QString getLastPath(void);
-    QString setElapsedTime();
+    QString setElapsedTime(qint64 elapsed_t);
     void checkMznPath(const QString& mznPath);
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
@@ -390,6 +329,10 @@ private:
     void updateSolverConfigs(void);
     void setCurrentSolverConfig(int idx);
     void find(bool fwd, bool forceNoWrapAround=false);
+    bool requireMiniZinc(void);
+    void compile(const QString& model, const QStringList& data = QStringList(), bool profile = false);
+    void run(const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList());
+    void outputStdErr(const QString& line);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

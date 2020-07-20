@@ -84,8 +84,6 @@ void MOOCSubmission::disableUI()
     ui->modelBox->setEnabled(false);
     ui->problemBox->setEnabled(false);
     ui->runButton->setText("Abort");
-    checkerEnabled = mw->checkSolutions();
-    mw->setCheckSolutions(true);
 }
 
 void MOOCSubmission::enableUI()
@@ -94,7 +92,6 @@ void MOOCSubmission::enableUI()
     ui->modelBox->setEnabled(true);
     ui->problemBox->setEnabled(true);
     ui->runButton->setText("Run and submit");
-    mw->setCheckSolutions(checkerEnabled);
 }
 
 void MOOCSubmission::cancelOperation()
@@ -165,7 +162,6 @@ void MOOCSubmission::solveNext() {
 
 void MOOCSubmission::submitToMOOC()
 {
-    mw->setCheckSolutions(checkerEnabled);
     QUrl url(project.submissionURL);
     QNetworkRequest request;
     request.setUrl(url);

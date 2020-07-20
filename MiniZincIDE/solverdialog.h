@@ -58,7 +58,11 @@ struct Solver {
     QJsonObject json;
     bool isDefaultSolver;
     Solver(void) {}
+
     Solver(const QJsonObject& json);
+    static Solver lookup(const QString& str);
+
+    bool operator==(const Solver&) const;
 };
 
 class SolverDialog : public QDialog
@@ -68,7 +72,6 @@ class SolverDialog : public QDialog
 public:
     explicit SolverDialog(bool openAsAddNew, QWidget *parent = nullptr);
     ~SolverDialog();
-
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -87,6 +90,14 @@ private slots:
     void on_check_solver_clicked();
 
     void on_mznlib_select_clicked();
+
+    void on_checkSolutions_checkBox_stateChanged(int arg1);
+
+    void on_clearOutput_checkBox_stateChanged(int arg1);
+
+    void on_compressSolutions_checkBox_stateChanged(int arg1);
+
+    void on_compressSolutions_spinBox_valueChanged(int arg1);
 
 private:
     Ui::SolverDialog *ui;

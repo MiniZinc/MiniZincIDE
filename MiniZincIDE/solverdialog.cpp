@@ -148,6 +148,27 @@ Solver::Solver(const QJsonObject& sj) {
     mznLibVersion = sj["mznlibVersion"].toInt();
 }
 
+Solver Solver::lookup(const QString& str)
+{
+    MznProcess p;
+    p.run({ "--solver-json", str });
+    if (p.waitForStarted() && p.waitForFinished()) {
+        auto solver_doc = QJsonDocument::fromJson(p.readAllStandardOutput());
+        if (!solver_doc.isObject()) {
+            throw ConfigError("Failed to find solver " + str);
+        }
+        return Solver(solver_doc.object());
+    }
+    throw DriverError("Failed to lookup solver " + str);
+}
+
+bool Solver::operator==(const Solver& s) const {
+    if (configFile.isEmpty() && s.configFile.isEmpty()) {
+        return id == s.id && version == s.version;
+    }
+    return configFile == s.configFile;
+}
+
 SolverDialog::SolverDialog(bool openAsAddNew, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog)
@@ -164,6 +185,16 @@ SolverDialog::SolverDialog(bool openAsAddNew, QWidget *parent) :
     QSettings settings;
     settings.beginGroup("ide");
     ui->check_updates->setChecked(settings.value("checkforupdates21",false).toBool());
+    ui->checkSolutions_checkBox->setChecked(settings.value("checkSolutions", true).toBool());
+    ui->clearOutput_checkBox->setChecked(settings.value("clearOutput", false).toBool());
+    int compressSolutions = settings.value("compressSolutions", 100).toInt();
+    if (compressSolutions > 0) {
+        ui->compressSolutions_spinBox->setValue(compressSolutions);
+        ui->compressSolutions_checkBox->setChecked(true);
+    }
+    else {
+        ui->compressSolutions_checkBox->setChecked(false);
+    }
     settings.endGroup();
     if (openAsAddNew)
         ui->solvers_combo->setCurrentIndex(ui->solvers_combo->count()-1);
@@ -559,4 +590,38 @@ void SolverDialog::on_mznlib_select_clicked()
         ui->mznpath->setText(fd.selectedFiles().first());
     }
 
+}
+
+void SolverDialog::on_checkSolutions_checkBox_stateChanged(int checkState)
+{
+    QSettings settings;
+    settings.beginGroup("ide");
+    settings.setValue("checkSolutions", checkState == Qt::Checked);
+    settings.endGroup();
+}
+
+void SolverDialog::on_clearOutput_checkBox_stateChanged(int checkState)
+{
+    QSettings settings;
+    settings.beginGroup("ide");
+    settings.setValue("clearOutput", checkState == Qt::Checked);
+    settings.endGroup();
+}
+
+void SolverDialog::on_compressSolutions_checkBox_stateChanged(int checkState)
+{
+    bool checked = checkState == Qt::Checked;
+    ui->compressSolutions_spinBox->setEnabled(checked);
+    QSettings settings;
+    settings.beginGroup("ide");
+    settings.setValue("compressSolutions", checked ? ui->compressSolutions_spinBox->value() : 0);
+    settings.endGroup();
+}
+
+void SolverDialog::on_compressSolutions_spinBox_valueChanged(int value)
+{
+    QSettings settings;
+    settings.beginGroup("ide");
+    settings.setValue("compressSolutions", value);
+    settings.endGroup();
 }

@@ -48,7 +48,7 @@ CodeEditor::initUI(QFont& font)
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
                        QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), modifiedSinceLastCheck(true), loadContentsButton(nullptr), tabs(t), darkMode(darkMode0)
+    QPlainTextEdit(parent), loadContentsButton(nullptr), tabs(t), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -175,14 +175,12 @@ void CodeEditor::docChanged(bool c)
 
 void CodeEditor::contentsChanged()
 {
-    if (!modifiedSinceLastCheck) {
-        modificationTimer.start(500);
-    }
+    modificationTimer.start(500);
 }
 
 void CodeEditor::contentsChangedWithTimeout()
 {
-    modifiedSinceLastCheck = true;
+    emit changedDebounced();
 }
 
 void CodeEditor::keyPressEvent(QKeyEvent *e)

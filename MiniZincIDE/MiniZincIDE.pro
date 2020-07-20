@@ -45,6 +45,8 @@ RC_ICONS = mznide.ico
 CONFIG += embed_manifest_exe
 
 SOURCES += main.cpp\
+    codechecker.cpp \
+    configwindow.cpp \
     ide.cpp \
     mainwindow.cpp \
     codeeditor.cpp \
@@ -64,7 +66,9 @@ SOURCES += main.cpp\
     esclineedit.cpp
 
 HEADERS  += mainwindow.h \
+    codechecker.h \
     codeeditor.h \
+    configwindow.h \
     exception.h \
     highlighter.h \
     fzndoc.h \
@@ -84,6 +88,7 @@ HEADERS  += mainwindow.h \
     esclineedit.h
 
 FORMS    += \
+    configwindow.ui \
     mainwindow.ui \
     solverdialog.ui \
     gotolinedialog.ui \

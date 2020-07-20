@@ -68,6 +68,9 @@ public:
     bool isUndefined(void) const;
     const QVector<SolverConfiguration>& solverConfigs(void) const;
     void solverConfigs(const QVector<SolverConfiguration>& sc,bool init);
+
+    void save(const QString& filepath, const QStringList& openFiles, int openTab);
+    void load(const QString& filepath, QStringList& openFiles, int& openTab, QStringList& missingFiles);
 signals:
     void fileRenamed(const QString& oldName, const QString& newName);
     void modificationChanged(bool);
@@ -80,10 +83,13 @@ protected:
     QStandardItem* projectFile;
     QStandardItem* mzn;
     QStandardItem* dzn;
+    QStandardItem* mpc;
     QStandardItem* other;
     QVector<SolverConfiguration> _solverConfigs;
     MOOCAssignment* _moocAssignment;
     MOOCAssignment* _courseraAssignment;
+private:
+    void loadLegacy(const QString& basePath, QDataStream& in, QStringList& openFiles, int& openTab, QStringList& missingFiles);
 };
 
 #endif // PROJECT_H

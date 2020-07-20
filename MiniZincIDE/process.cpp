@@ -9,7 +9,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <QJsonArray>
-#include <QJsonDocument>
 #include "process.h"
 #include "ide.h"
 #include "mainwindow.h"
@@ -144,8 +143,8 @@ void MznDriver::setLocation(const QString &mznDistribPath)
         if (!jd.isNull()) {
             _solvers.clear();
             QJsonArray allSolvers = jd.array();
-            for (int i=0; i<allSolvers.size(); i++) {
-                QJsonObject sj = allSolvers[i].toObject();
+            for (auto item : allSolvers) {
+                QJsonObject sj = item.toObject();
                 Solver s(sj);
                 _solvers.append(s);
             }
@@ -153,9 +152,14 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     }
 }
 
-bool MznDriver::isValid()
+Solver* MznDriver::defaultSolver(void)
 {
-    return !minizincExecutable().isEmpty();
+    for (auto& solver : solvers()) {
+        if (solver.isDefaultSolver) {
+            return &solver;
+        }
+    }
+    return nullptr;
 }
 
 MznProcess::MznProcess(QObject* parent) :
@@ -179,6 +183,22 @@ void MznProcess::run(const QStringList& args, const QString& cwd)
     Process::start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
 }
 
+void MznProcess::run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
+{
+    temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.json");
+    if (!temp->open()) {
+        emit errorOccurred(QProcess::FailedToStart);
+        return;
+    }
+    QString paramFile = temp->fileName();
+    temp->write(sc.toJSON());
+    temp->close();
+    QStringList newArgs;
+    newArgs << "--param-file" << paramFile << args;
+    setWorkingDirectory(cwd);
+    Process::start(MznDriver::get().minizincExecutable(), newArgs, MznDriver::get().mznDistribPath());
+}
+
 qint64 MznProcess::timeElapsed()
 {
     if (elapsedTimer.isValid()) {
@@ -193,4 +213,142 @@ void MznProcess::onExited()
     elapsedTimer.invalidate();
     delete temp;
     temp = nullptr;
+}
+
+SolveProcess::SolveProcess(QObject* parent) :
+    MznProcess(parent)
+{
+    connect(this, &SolveProcess::readyReadStandardOutput, this, &SolveProcess::onStdout);
+    connect(this, &SolveProcess::readyReadStandardError, this, &SolveProcess::onStderr);
+    connect(this, qOverload<int, QProcess::ExitStatus>(&SolveProcess::finished), this, &SolveProcess::onFinished);
+}
+
+void SolveProcess::solve(const SolverConfiguration& sc, const QString& modelFile, const QStringList& dataFiles, const QStringList& extraArgs)
+{
+    state = State::Output;
+    outputBuffer.clear();
+    htmlBuffer.clear();
+    jsonBuffer.clear();
+
+    QFileInfo fi(modelFile);
+    QStringList args;
+    args << extraArgs << modelFile << dataFiles;
+    MznProcess::run(sc, args, fi.canonicalPath());
+}
+
+void SolveProcess::onStdout()
+{
+    setReadChannel(QProcess::ProcessChannel::StandardOutput);
+
+    while (canReadLine()) {
+        auto line = QString::fromUtf8(readLine());
+        processStdout(line);
+    }
+}
+
+void SolveProcess::onStderr()
+{
+    setReadChannel(QProcess::ProcessChannel::StandardError);
+
+    while (canReadLine()) {
+        auto line = QString::fromUtf8(readLine());
+        processStderr(line);
+    }
+}
+
+void SolveProcess::processStdout(QString line)
+{
+    auto trimmed = line.trimmed();
+    QRegExp jsonPattern("^(?:%%%(top|bottom))?%%%mzn-json(-init)?:(.*)");
+
+    // Can appear in any state
+    if (trimmed.startsWith("%%%mzn-stat")) {
+        emit statisticOutput(line);
+        return;
+    } else if (trimmed.startsWith("%%%mzn-progress")) {
+        auto split = trimmed.split(" ");
+        bool ok = split.length() == 2;
+        if (ok) {
+            auto progress = split[1].toFloat(&ok);
+            if (ok) {
+                emit progressOutput(progress);
+                return;
+            }
+        }
+    }
+
+    switch (state) {
+    case State::Output: // Normal solution output
+        if (trimmed == "----------") {
+            outputBuffer << line;
+            emit solutionOutput(outputBuffer.join(""));
+            outputBuffer.clear();
+        } else if (trimmed == "==========") {
+            outputBuffer << line;
+            emit optimal(outputBuffer.join(""));
+            outputBuffer.clear();
+        } else if (jsonPattern.exactMatch(trimmed)) {
+            auto captures = jsonPattern.capturedTexts();
+            state = captures[2] == "-init" ? State::JSONInit : State::JSON;
+            QString area = captures[1].isEmpty() ? "top" : captures[1];
+            jsonArea = area == "bottom" ? Qt::BottomDockWidgetArea : Qt::TopDockWidgetArea;
+            jsonPath = captures[3];
+        } else if (trimmed == "%%%mzn-html-start") {
+            state = State::HTML;
+        } else {
+            outputBuffer << line;
+        }
+        break;
+    case State::HTML: // Seen %%%mzn-html-start
+        if (trimmed.startsWith("%%%mzn-html-end")) {
+            emit htmlOutput(htmlBuffer.join(""));
+            state = State::Output;
+            htmlBuffer.clear();
+        } else {
+            htmlBuffer << line;
+        }
+        break;
+    case State::JSONInit: // Seen %%%mzn-json-init
+        if (trimmed == "%%%mzn-json-init-end") {
+            emit jsonInit(jsonPath, jsonArea, jsonBuffer.join(" "));
+            state = State::Output;
+            jsonBuffer.clear();
+        } else {
+            jsonBuffer << trimmed;
+        }
+        break;
+    case State::JSON: // Seen %%%mzn-json
+        if (trimmed == "%%%mzn-json-end") {
+            emit jsonOutput(jsonPath, jsonArea, jsonBuffer.join(" "));
+            state = State::Output;
+            jsonBuffer.clear();
+        } else if (trimmed == "%%%mzn-json-time") {
+            // Wrap current buffer in array with elapsed time
+            jsonBuffer.prepend("[");
+            jsonBuffer << "," << QString().number(timeElapsed()) << "]";
+        } else {
+            jsonBuffer << trimmed;
+        }
+        break;
+    }
+}
+
+void SolveProcess::processStderr(QString line)
+{
+    auto trimmed = line.trimmed();
+    emit stdErrorOutput(line);
+}
+
+void SolveProcess::onFinished(int, QProcess::ExitStatus)
+{
+    // Finish processing remaining stdout
+    onStdout();
+    if (!atEnd()) {
+        processStdout(readAll());
+    }
+    // Finish processing remaining stderr
+    onStderr();
+    if (!atEnd()) {
+        processStdout(readAll());
+    }
 }
