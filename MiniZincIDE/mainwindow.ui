@@ -292,6 +292,9 @@
     <addaction name="actionSave_as"/>
     <addaction name="actionSave_all"/>
     <addaction name="separator"/>
+    <addaction name="actionSave_solver_configuration"/>
+    <addaction name="actionSave_all_solver_configurations"/>
+    <addaction name="separator"/>
     <addaction name="actionClose"/>
     <addaction name="separator"/>
     <addaction name="actionNew_project"/>
@@ -504,32 +507,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QTreeView" name="projectView">
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAsNeeded</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAsNeeded</enum>
-       </property>
-       <property name="indentation">
-        <number>10</number>
-       </property>
-       <property name="uniformRowHeights">
-        <bool>true</bool>
-       </property>
-       <property name="sortingEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="animated">
-        <bool>true</bool>
-       </property>
-       <property name="headerHidden">
-        <bool>true</bool>
-       </property>
-       <attribute name="headerVisible">
-        <bool>false</bool>
-       </attribute>
-      </widget>
+      <widget class="ProjectBrowser" name="projectBrowser" native="true"/>
      </item>
     </layout>
    </widget>
@@ -568,7 +546,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>256</width>
+          <width>80</width>
           <height>357</height>
          </rect>
         </property>
@@ -1094,6 +1072,16 @@
     <string>Ctrl+.</string>
    </property>
   </action>
+  <action name="actionSave_solver_configuration">
+   <property name="text">
+    <string>Save solver configuration</string>
+   </property>
+  </action>
+  <action name="actionSave_all_solver_configurations">
+   <property name="text">
+    <string>Save all solver configurations</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1108,43 +1096,19 @@
    <header>esclineedit.h</header>
   </customwidget>
   <customwidget>
+   <class>ProjectBrowser</class>
+   <extends>QWidget</extends>
+   <header>projectbrowser.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>ConfigWindow</class>
    <extends>QWidget</extends>
    <header>configwindow.h</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
-  <tabstop>scrollArea</tabstop>
-  <tabstop>conf_solver_conf</tabstop>
-  <tabstop>solverConfNameEdit</tabstop>
-  <tabstop>cloneSolverConfButton</tabstop>
-  <tabstop>renameSolverConfButton</tabstop>
-  <tabstop>deleteSolverConfButton</tabstop>
-  <tabstop>conf_default</tabstop>
-  <tabstop>conf_timeLimit</tabstop>
-  <tabstop>defaultBehaviourButton</tabstop>
-  <tabstop>userBehaviourButton</tabstop>
-  <tabstop>conf_printall</tabstop>
-  <tabstop>conf_nsol</tabstop>
-  <tabstop>conf_verbose</tabstop>
-  <tabstop>conf_flatten_stats</tabstop>
-  <tabstop>conf_optlevel</tabstop>
-  <tabstop>conf_cmd_params</tabstop>
-  <tabstop>conf_mzn2fzn_params</tabstop>
-  <tabstop>conf_nthreads</tabstop>
-  <tabstop>conf_have_seed</tabstop>
-  <tabstop>conf_seed</tabstop>
-  <tabstop>conf_solverFlags</tabstop>
-  <tabstop>conf_solver_free</tabstop>
-  <tabstop>conf_solver_verbose</tabstop>
-  <tabstop>conf_stats</tabstop>
-  <tabstop>conf_solver_timing</tabstop>
-  <tabstop>autoclear_output</tabstop>
-  <tabstop>conf_check_solutions</tabstop>
-  <tabstop>conf_compressSolutionLimit</tabstop>
-  <tabstop>projectView</tabstop>
   <tabstop>outputConsole</tabstop>
   <tabstop>find</tabstop>
   <tabstop>replace</tabstop>
@@ -1157,13 +1121,9 @@
   <tabstop>check_re</tabstop>
   <tabstop>check_case</tabstop>
   <tabstop>check_wrap</tabstop>
-  <tabstop>extraOptionsBox</tabstop>
  </tabstops>
  <resources>
   <include location="minizincide.qrc"/>
  </resources>
  <connections/>
- <buttongroups>
-  <buttongroup name="buttonGroup"/>
- </buttongroups>
 </ui>

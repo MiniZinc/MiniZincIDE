@@ -5,7 +5,7 @@
 #include <QTextStream>
 #include <QJsonObject>
 #include <QNetworkReply>
-#include "project.h"
+#include <QFileInfo>
 
 class QNetworkReply;
 class MainWindow;
@@ -13,6 +13,36 @@ class MainWindow;
 namespace Ui {
 class MOOCSubmission;
 }
+
+class MOOCAssignmentItem {
+public:
+    QString id;
+    QString model;
+    QString data;
+    int timeout;
+    QString name;
+    MOOCAssignmentItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
+        : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0) {}
+    MOOCAssignmentItem(QString id0, QString model0, QString name0)
+        : id(id0), model(model0), timeout(-1), name(name0) {}
+};
+
+class MOOCAssignment {
+public:
+    QString name;
+    QString assignmentKey;
+    QString moocName;
+    QString moocPasswordString;
+    QString submissionURL;
+    QList<MOOCAssignmentItem> problems;
+    QList<MOOCAssignmentItem> models;
+
+    MOOCAssignment(void) {}
+    MOOCAssignment(const QString& file);
+
+private:
+    void loadJSON(const QJsonObject& obj, const QFileInfo& fi);
+};
 
 class MOOCSubmission : public QDialog
 {

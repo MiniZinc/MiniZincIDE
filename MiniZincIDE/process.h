@@ -250,10 +250,15 @@ signals:
     ///
     void jsonOutput(const QString& path, Qt::DockWidgetArea area, const QString& data);
     ///
-    /// \brief Emitted when ========== is read.
-    /// \param data The data that was read (usually should be just ==========\n)
+    /// \brief Emitted when a final status string is read.
+    /// \param data The data that was read (==========\n or =====UNKNOWN=====\n or =====ERROR=====\n)
     ///
-    void optimal(const QString& data);
+    void finalStatus(const QString& data);
+    ///
+    /// \brief Emitted when an unknown fragment is output
+    /// \param data The data that was read
+    ///
+    void fragment(const QString& data);
     ///
     /// \brief Emitted when a line is written to stderr.
     /// \param error The data in stderr.

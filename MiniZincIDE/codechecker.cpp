@@ -4,7 +4,7 @@
 CodeChecker::CodeChecker(QObject *parent) : QObject(parent), p(this)
 {
     connect(&p, &MznProcess::started, this, &CodeChecker::onStarted);
-    connect(&p, qOverload<int, QProcess::ExitStatus>(&MznProcess::finished), this, &CodeChecker::onFinished);
+    connect(&p, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), this, &CodeChecker::onFinished);
     connect(&p, &MznProcess::errorOccurred, this, &CodeChecker::onErrorOccurred);
 
     p.setProcessChannelMode(QProcess::MergedChannels);

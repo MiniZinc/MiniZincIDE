@@ -13,7 +13,8 @@ public:
     SolverConfiguration(const Solver& solver, bool builtin = false);
 
     static SolverConfiguration loadJSON(const QString& filename);
-    static SolverConfiguration loadJSON(const QJsonDocument& jsons);
+    static SolverConfiguration loadJSON(const QJsonDocument& json);
+    static SolverConfiguration loadLegacy(const QJsonDocument& json);
 
     QString solver;
     const Solver& solverDefinition;
@@ -51,6 +52,12 @@ public:
     QByteArray toJSON(void) const;
 
     ///
+    /// \brief Give the JSON representation of this SolverConfiguration
+    /// \return This solver config as a JSON object
+    ///
+    QJsonObject toJSONObject(void) const;
+
+    ///
     /// \brief Determines if these two solver configs have compatible basic options
     /// \param sc Another solver configuration
     /// \return Whether the basic options match
@@ -65,6 +72,7 @@ public:
     bool supports(const QString& flag) const;
 
     bool operator==(const SolverConfiguration& sc) const;
+    bool operator!=(const SolverConfiguration& sc) const { return !(*this == sc); }
 };
 
 

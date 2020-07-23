@@ -141,26 +141,108 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
     return sc;
 }
 
-QString SolverConfiguration::name() const
+SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
 {
-    if (isBuiltin) {
-        return solverDefinition.name + " " + solverDefinition.version;
+    auto sco = json.object();
+    auto solver = Solver::lookup(sco["id"].toString() + "@" + sco["version"].toString());
+
+    SolverConfiguration newSc(solver);
+//    if (sco["name"].isString()) {
+//        newSc.name = sco["name"].toString();
+//    }
+    if (sco["timeLimit"].isDouble()) {
+        newSc.timeLimit = sco["timeLimit"].toInt();
     }
-
-    QString file = paramFile.isEmpty() ?
-                "Unsaved Configuration" :
-                QFileInfo(paramFile).completeBaseName();
-
-    return file + "(" + solverDefinition.name + " " + solverDefinition.version + ")";
+//    if (sco["defaultBehavior"].isBool()) {
+//        newSc.defaultBehaviour = sco["defaultBehavior"].toBool();
+//    }
+    if (sco["printIntermediate"].isBool()) {
+        newSc.printIntermediate = sco["printIntermediate"].toBool();
+    }
+    if (sco["stopAfter"].isDouble()) {
+        newSc.numSolutions = sco["stopAfter"].toInt();
+    }
+    if (sco["verboseFlattening"].isBool()) {
+        newSc.verboseCompilation = sco["verboseFlattening"].toBool();
+    }
+    if (sco["flatteningStats"].isBool()) {
+        newSc.compilationStats = sco["flatteningStats"].toBool();
+    }
+    if (sco["optimizationLevel"].isDouble()) {
+        newSc.optimizationLevel = sco["optimizationLevel"].toInt();
+    }
+    if (sco["additionalData"].isString()) {
+        newSc.additionalData << sco["additionalData"].toString();
+    }
+//    if (sco["additionalCompilerCommandline"].isString()) {
+//        newSc.additionalCompilerCommandline = sco["additionalCompilerCommandline"].toString();
+//    }
+    if (sco["nThreads"].isDouble()) {
+        newSc.numThreads = sco["nThreads"].toInt();
+    }
+    if (sco["randomSeed"].isDouble()) {
+        newSc.randomSeed = sco["randomSeed"].toDouble();
+    }
+//    if (sco["solverFlags"].isString()) {
+//        newSc.solverFlags = sco["solverFlags"].toString();
+//    }
+    if (sco["freeSearch"].isBool()) {
+        newSc.freeSearch = sco["freeSearch"].toBool();
+    }
+    if (sco["verboseSolving"].isBool()) {
+        newSc.verboseSolving = sco["verboseSolving"].toBool();
+    }
+    if (sco["outputTiming"].isBool()) {
+        newSc.outputTiming = sco["outputTiming"].toBool();
+    }
+    if (sco["solvingStats"].isBool()) {
+        newSc.solvingStats = sco["solvingStats"].toBool();
+    }
+    if (sco["useExtraOptions"].isBool()) {
+        newSc.useExtraOptions = sco["useExtraOptions"].toBool();
+    }
+    if (sco["extraOptions"].isObject()) {
+        QJsonObject extraOptions = sco["extraOptions"].toObject();
+        for (auto& k : extraOptions.keys()) {
+            newSc.extraOptions[k] = extraOptions[k].toString();
+        }
+    }
+    return newSc;
 }
 
-///
-/// \brief SolverConfiguration::toJSON
-/// \return This solver config in JSON format
-///
+QString SolverConfiguration::name() const
+{
+    QStringList parts;
+
+    if (isBuiltin) {
+        parts << solverDefinition.name
+              << solverDefinition.version
+              << "[built-in]";
+    } else {
+        if (paramFile.isEmpty()) {
+            parts << "Unsaved Configuration";
+        } else {
+            parts << QFileInfo(paramFile).completeBaseName();
+        }
+        parts << "(" + solverDefinition.name + " " + solverDefinition.version + ")";
+    }
+
+    if (modified) {
+        parts << "*";
+    }
+
+    return parts.join(" ");
+}
+
 QByteArray SolverConfiguration::toJSON(void) const
 {
     QJsonDocument jsonDoc;
+    jsonDoc.setObject(toJSONObject());
+    return jsonDoc.toJson();
+}
+
+QJsonObject SolverConfiguration::toJSONObject(void) const
+{
     QJsonObject config;
     config["solver"] = solver;
     if (timeLimit > 0) {
@@ -221,8 +303,7 @@ QByteArray SolverConfiguration::toJSON(void) const
     for (auto it = unknownOptions.begin(); it != unknownOptions.end(); it++) {
         config[it.key()] = QJsonValue::fromVariant(it.value());
     }
-    jsonDoc.setObject(config);
-    return jsonDoc.toJson();
+    return config;
 }
 
 bool SolverConfiguration::syncedOptionsMatch(const SolverConfiguration& sc) const

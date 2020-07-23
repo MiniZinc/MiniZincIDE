@@ -10,6 +10,8 @@
 #ifndef CONFIGWINDOW_H
 #define CONFIGWINDOW_H
 
+#include <functional>
+
 #include <QWidget>
 #include <QVariant>
 #include <QJsonDocument>
@@ -45,19 +47,28 @@ public:
     void addConfig(const QString& fileName);
 
     ///
+    /// \brief Adds/merges in existing solver configurations
+    /// \param configs The configurations to add
+    ///
+    void mergeConfigs(const QList<SolverConfiguration*> configs);
+
+    int findBuiltinConfig(const QString& id, const QString& version);
+    int findConfigFile(const QString& file);
+
+    void removeConfig(int i);
+
+    ///
     /// \brief Saves the solver configuration with the given index
     /// \param index The index of the solver configuration to save
-    /// \param saveAs Whether or not to always prompt for save location rather than overwrite existing
-    /// \return The location of the saved file
+    /// \return The location of the saved file or empty if cancelled
     ///
-    QString saveConfig(int index, bool saveAs = false);
+    QString saveConfig(int index);
 
     ///
     /// \brief Saves the currently solver configuration
-    /// \param saveAs Whether or not to always prompt for save location rather than overwrite existing
-    /// \return The location of the saved file
+    /// \return The location of the saved file or empty if cancelled
     ///
-    QString saveConfig(bool saveAs = false);
+    QString saveConfig(void);
 
     ///
     /// \brief Gets the index of the current solver configuration
@@ -81,10 +92,12 @@ public:
     /// \brief Gets a list of all loaded solver configurations
     /// \return A list of solver configurations
     ///
-    const QVector<SolverConfiguration>& solverConfigs(void);
+    const QList<SolverConfiguration*>& solverConfigs(void);
 signals:
     void selectedIndexChanged(int index);
+    void selectedSolverConfigurationChanged(const SolverConfiguration& sc);
     void itemsChanged(const QStringList& items);
+    void configSaved(const QString& filename);
 
 private slots:
     void on_numSolutions_checkBox_stateChanged(int arg1);
@@ -109,10 +122,12 @@ private slots:
 
     void on_numOptimal_checkBox_stateChanged(int arg1);
 
+    void on_clone_pushButton_clicked();
+
 private:
     Ui::ConfigWindow *ui;
 
-    QVector<SolverConfiguration> configs;
+    QList<SolverConfiguration*> configs;
 
     int lastIndex = -1;
     bool initialized = false;
@@ -120,8 +135,8 @@ private:
 
     QStringListModel* comboBoxModel;
 
-    void updateSolverConfig(SolverConfiguration& sc);
-    void addExtraParam(const QString& key, const QVariant& value);
+    void updateSolverConfig(SolverConfiguration* sc);
+    void addExtraParam(const QString& key = "", const QVariant& value = "");
     void watchChanges(const QList<QWidget*>& objects, std::function<void()> action);
     void invalidate(bool all);
     void populateComboBox(void);

@@ -53,6 +53,7 @@ SOURCES += main.cpp\
     highlighter.cpp \
     fzndoc.cpp \
     process.cpp \
+    projectbrowser.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
     paramdialog.cpp \
@@ -75,6 +76,7 @@ HEADERS  += mainwindow.h \
     ide.h \
     macos_extras.h \
     process.h \
+    projectbrowser.h \
     solverdialog.h \
     gotolinedialog.h \
     paramdialog.h \
@@ -90,6 +92,7 @@ HEADERS  += mainwindow.h \
 FORMS    += \
     configwindow.ui \
     mainwindow.ui \
+    projectbrowser.ui \
     solverdialog.ui \
     gotolinedialog.ui \
     paramdialog.ui \

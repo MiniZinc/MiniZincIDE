@@ -65,7 +65,15 @@ private:
     enum CompileMode { CM_RUN, CM_COMPILE, CM_PROFILE };
 
     void init(const QString& project);
-    void compileOrRun(CompileMode cm);
+    void compileOrRun(
+            CompileMode cm,
+            const SolverConfiguration* sc = nullptr,
+            const QString& model = QString(),
+            const QStringList& data = QStringList(),
+            const QStringList& extraArgs = QStringList());
+    bool getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, QStringList& extraArgs);
+    QString currentModelFile(void);
+    bool promptSaveModified(void);
     void setEditorMenuItemsEnabled(bool enabled);
 signals:
     /// emitted when compilation and running of a model has finished
@@ -145,6 +153,10 @@ private slots:
 
     void on_actionSave_all_triggered();
 
+    void on_actionSave_solver_configuration_triggered();
+
+    void on_actionSave_all_solver_configurations_triggered();
+
     void on_action_Un_comment_triggered();
 
     void on_actionOnly_editor_triggered();
@@ -164,20 +176,6 @@ private slots:
     void on_actionToggle_profiler_info_triggered();
 
     void on_actionShow_project_explorer_triggered();
-
-    void activateFileInProject(const QModelIndex&);
-
-    void onProjectCustomContextMenu(const QPoint&);
-
-    void onActionProjectOpen_triggered();
-
-    void onActionProjectRemove_triggered();
-
-    void onActionProjectRename_triggered();
-
-    void onActionProjectRunWith_triggered();
-
-    void onActionProjectAdd_triggered();
 
     void on_actionNewModel_file_triggered();
 
@@ -225,7 +223,13 @@ private slots:
 
     void on_config_window_selectedIndexChanged(int );
 
-    void on_moocButtonChanged(bool visible, const QString& label, const QIcon& icon);
+    void on_moocChanged(const MOOCAssignment* mooc);
+
+    void on_projectBrowser_runRequested(const QStringList& files);
+
+    void on_projectBrowser_openRequested(const QStringList& files);
+
+    void on_projectBrowser_removeRequested(const QStringList& files);
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -235,19 +239,18 @@ protected:
     virtual void paintEvent(QPaintEvent *);
 #endif
     bool eventFilter(QObject *, QEvent *);
-
-    SolverConfiguration* getCurrentSolverConfig(void);
-    const Solver* getCurrentSolver(void);
-
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
-    bool runForSubmission(const QString& modelFile, const QString& dataFile, int timeout, QTextStream& outstream);
     void resolve(int htmlWindowIdentifier, const QString &data);
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
     int addHtmlWindow(HTMLWindow* w);
     bool checkSolutions(void) const;
     void setCheckSolutions(bool b);
+    SolverConfiguration* getCurrentSolverConfig(void);
+    const Solver* getCurrentSolver(void);
+    void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), bool profile = false);
+    void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), QTextStream* ts = nullptr);
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
@@ -282,16 +285,7 @@ private:
     ParamDialog* paramDialog;
     bool profileInfoVisible;
     int runTimeout;
-    Project project;
-    QSortFilterProxyModel* projectSort;
-    QMenu* projectContextMenu;
-    QAction* projectOpen;
-    QAction* projectRemove;
-    QAction* projectRename;
-    QAction* projectRunWith;
-    QAction* projectAdd;
-    QString projectSelectedFile;
-    QModelIndex projectSelectedIndex;
+    Project* project;
     int newFileCounter;
     QComboBox* solverConfCombo;
     QAction* fakeRunAction;
@@ -303,8 +297,6 @@ private:
     bool processRunning;
 
     QToolButton* runButton;
-    QVector<SolverConfiguration> projectSolverConfigs;
-    QVector<SolverConfiguration> builtinSolverConfigs;
     QVector<QPair<SolverFlag,QWidget*>> extraSolverFlags;
     int currentSolverConfig;
     bool renamingSolverConf;
@@ -322,7 +314,6 @@ private:
     void checkMznPath(const QString& mznPath);
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
-    void addFileToProject(bool dznOnly);
     void updateUiProcessRunning(bool pr);
     void highlightPath(QString& path, int index);
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
@@ -330,15 +321,14 @@ private:
     void setCurrentSolverConfig(int idx);
     void find(bool fwd, bool forceNoWrapAround=false);
     bool requireMiniZinc(void);
-    void compile(const QString& model, const QStringList& data = QStringList(), bool profile = false);
-    void run(const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList());
     void outputStdErr(const QString& line);
+    QStringList getOpenFiles(void);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
     void selectJSONSolution(HTMLPage* source, int n);
-    const Project& getProject(void) { return project; }
+    Project& getProject(void) { return *project; }
 };
 
 #endif // MAINWINDOW_H

@@ -48,6 +48,9 @@ ConfigWindow::~ConfigWindow()
 {
     delete ui;
     delete comboBoxModel;
+    for (auto sc : configs) {
+        delete sc;
+    }
 }
 
 void ConfigWindow::init()
@@ -55,8 +58,8 @@ void ConfigWindow::init()
     loadConfigs();
     initialized = true;
     int i = 0;
-    for (auto& config : configs) {
-        if (config.solverDefinition.isDefaultSolver) {
+    for (auto config : configs) {
+        if (config->solverDefinition.isDefaultSolver) {
             setCurrentIndex(i);
             break;
         }
@@ -66,31 +69,41 @@ void ConfigWindow::init()
 
 void ConfigWindow::loadConfigs(void)
 {
-    QStringList files;
-    for (auto& config : configs) {
-        if (!config.paramFile.isEmpty()) {
-            files.append(config.paramFile);
+    try {
+        QStringList files;
+        for (auto config : configs) {
+            if (!config->paramFile.isEmpty()) {
+                files.append(config->paramFile);
+            }
+            delete config;
         }
-    }
-    configs.clear();
-    for (auto& solver : MznDriver::get().solvers()) {
-        configs.append(SolverConfiguration(solver, true));
-    }
-    if (!files.empty()) {
-        for (auto fileName : files) {
-            configs.append(SolverConfiguration::loadJSON(fileName));
+        configs.clear();
+        for (auto& solver : MznDriver::get().solvers()) {
+            configs.append(new SolverConfiguration(solver, true));
         }
+        if (!files.empty()) {
+            for (auto fileName : files) {
+                configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName)));
+            }
+        }
+        populateComboBox();
+    } catch (Exception& e) {
+        QMessageBox::warning(this, "Parameter configuration error", e.message(), QMessageBox::Ok);
     }
-    populateComboBox();
 }
 
 void ConfigWindow::addConfig(const QString &fileName)
 {
+    if (findConfigFile(fileName) != -1) {
+        // Already have this config
+        return;
+    }
+
     try {
         updateSolverConfig(configs[currentIndex()]);
-        configs.append(SolverConfiguration::loadJSON(fileName));
-        for (auto& sc : configs) {
-            if (!sc.syncedOptionsMatch(configs[configs.length() - 1])) {
+        configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName)));
+        for (auto sc : configs) {
+            if (!sc->syncedOptionsMatch(*(configs.last()))) {
                 ui->sync_checkBox->setChecked(false);
                 break;
             }
@@ -102,27 +115,86 @@ void ConfigWindow::addConfig(const QString &fileName)
     }
 }
 
-QString ConfigWindow::saveConfig(int index, bool saveAs)
+void ConfigWindow::mergeConfigs(const QList<SolverConfiguration*> confs)
 {
-    auto& sc = configs[index];
-    updateSolverConfig(configs[currentIndex()]);
+    for (auto sc : confs) {
+        int swapAt = sc->isBuiltin ?
+                    findBuiltinConfig(sc->solverDefinition.id, sc->solverDefinition.version) :
+                    findConfigFile(sc->paramFile);
 
-    if (sc.paramFile.isEmpty() || saveAs) {
-        QFileInfo fi(sc.paramFile);
-        sc.paramFile = QFileDialog::getSaveFileName(this, "Save configuration", fi.canonicalFilePath(), "Solver configuration files (*.mpc)");
+        if (swapAt == -1) {
+            sc->isBuiltin = false;
+            configs.append(sc);
+        } else {
+            delete configs[swapAt];
+            configs.replace(swapAt, sc);
+        }
     }
-
-    QFile f(sc.paramFile);
-    f.open(QFile::WriteOnly | QFile::Truncate);
-    f.write(sc.toJSON());
-    f.close();
-
-    return sc.paramFile;
+    populateComboBox();
 }
 
-QString ConfigWindow::saveConfig(bool saveAs)
+int ConfigWindow::findBuiltinConfig(const QString &id, const QString &version)
 {
-    return saveConfig(currentIndex(), saveAs);
+    int matchId = -1;
+    int i = 0;
+    for (auto sc : solverConfigs()) {
+        if (sc->isBuiltin && sc->solverDefinition.id == id) {
+            matchId = i;
+            if (sc->solverDefinition.version == version) {
+                return i;
+            }
+        }
+        i++;
+    }
+    return matchId;
+}
+
+int ConfigWindow::findConfigFile(const QString &file)
+{
+    int i = 0;
+    for (auto sc : solverConfigs()) {
+        if (sc->paramFile == file) {
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
+QString ConfigWindow::saveConfig(int index)
+{
+    auto sc = configs[index];
+    updateSolverConfig(configs[currentIndex()]);
+
+    QString target = sc->paramFile;
+    if (sc->paramFile.isEmpty()) {
+        QFileInfo fi(sc->paramFile);
+        target = QFileDialog::getSaveFileName(this,
+                                              "Save configuration",
+                                              fi.canonicalFilePath(),
+                                              "Solver configuration files (*.mpc)");
+    }
+
+    if (target.isEmpty()) {
+        return "";
+    }
+
+    QFile f(target);
+    f.open(QFile::WriteOnly | QFile::Truncate);
+    f.write(sc->toJSON());
+    f.close();
+
+    sc->modified = false;
+    sc->paramFile = target;
+    populateComboBox();
+
+    emit configSaved(target);
+    return target;
+}
+
+QString ConfigWindow::saveConfig()
+{
+    return saveConfig(currentIndex());
 }
 
 SolverConfiguration* ConfigWindow::currentSolverConfig(void)
@@ -131,12 +203,12 @@ SolverConfiguration* ConfigWindow::currentSolverConfig(void)
     if (i < 0 || i >= configs.length()) {
         return nullptr;
     }
-    auto& sc = configs[i];
+    auto sc = configs[i];
     updateSolverConfig(sc);
-    return &sc;
+    return sc;
 }
 
-const QVector<SolverConfiguration>& ConfigWindow::solverConfigs()
+const QList<SolverConfiguration*>& ConfigWindow::solverConfigs()
 {
     currentSolverConfig();
     return configs;
@@ -201,7 +273,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
         return;
     }
 
-    auto& sc = configs[index];
+    auto sc = configs[index];
 
     ui->solver_controls->setVisible(true);
     ui->options_groupBox->setVisible(true);
@@ -209,71 +281,71 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
 
     populating = true;
 
-    ui->solver_label->setText(sc.solverDefinition.name + " " + sc.solverDefinition.version);
+    ui->solver_label->setText(sc->solverDefinition.name + " " + sc->solverDefinition.version);
 
     if (!ui->sync_checkBox->isChecked()) {
-        ui->timeLimit_doubleSpinBox->setValue(sc.timeLimit / 1000.0);
-        ui->timeLimit_checkBox->setChecked(sc.timeLimit != 0);
+        ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
+        ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
 
-        if (sc.printIntermediate && sc.numSolutions == 1) {
+        if (sc->printIntermediate && sc->numSolutions == 1) {
             ui->defaultBehavior_radioButton->setChecked(true);
         } else {
             ui->userDefinedBehavior_radioButton->setChecked(true);
         }
 
-        ui->intermediateSolutions_checkBox->setChecked(sc.printIntermediate);
+        ui->intermediateSolutions_checkBox->setChecked(sc->printIntermediate);
 
-        ui->numSolutions_spinBox->setValue(sc.numSolutions);
-        ui->numSolutions_checkBox->setChecked(sc.numSolutions != 0);
+        ui->numSolutions_spinBox->setValue(sc->numSolutions);
+        ui->numSolutions_checkBox->setChecked(sc->numSolutions != 0);
 
-        ui->numOptimal_spinBox->setValue(sc.numOptimal);
-        ui->numOptimal_checkBox->setChecked(sc.numOptimal != 0);
+        ui->numOptimal_spinBox->setValue(sc->numOptimal);
+        ui->numOptimal_checkBox->setChecked(sc->numOptimal != 0);
 
-        ui->verboseCompilation_checkBox->setChecked(sc.verboseCompilation);
-        ui->verboseSolving_checkBox->setChecked(sc.verboseSolving);
+        ui->verboseCompilation_checkBox->setChecked(sc->verboseCompilation);
+        ui->verboseSolving_checkBox->setChecked(sc->verboseSolving);
 
-        ui->compilationStats_checkBox->setChecked(sc.compilationStats);
-        ui->solvingStats_checkBox->setChecked(sc.solvingStats);
-        ui->timingInfo_checkBox->setChecked(sc.outputTiming);
+        ui->compilationStats_checkBox->setChecked(sc->compilationStats);
+        ui->solvingStats_checkBox->setChecked(sc->solvingStats);
+        ui->timingInfo_checkBox->setChecked(sc->outputTiming);
     }
 
     ui->intermediateSolutions_checkBox->setEnabled(
-                sc.solverDefinition.stdFlags.contains("-a") ||
-                sc.solverDefinition.stdFlags.contains("-i"));
+                sc->solverDefinition.stdFlags.contains("-a") ||
+                sc->solverDefinition.stdFlags.contains("-i"));
 
-    ui->numSolutions_checkBox->setEnabled(sc.solverDefinition.stdFlags.contains("-a"));
-    ui->numSolutions_spinBox->setEnabled(sc.solverDefinition.stdFlags.contains("-n"));
+    ui->numSolutions_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-a"));
+    ui->numSolutions_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-n"));
 
-    ui->numOptimal_checkBox->setEnabled(sc.solverDefinition.stdFlags.contains("-a-o"));
-    ui->numOptimal_spinBox->setEnabled(sc.solverDefinition.stdFlags.contains("-n-o"));
+    ui->numOptimal_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-a-o"));
+    ui->numOptimal_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-n-o"));
 
-    ui->verboseSolving_checkBox->setEnabled(sc.solverDefinition.stdFlags.contains("-v"));
+    ui->verboseSolving_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-v"));
 
-    ui->solvingStats_checkBox->setEnabled(sc.solverDefinition.stdFlags.contains("-s"));
+    ui->solvingStats_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-s"));
 
-    ui->optimizationLevel_comboBox->setCurrentIndex(sc.optimizationLevel);
-    ui->additionalData_plainTextEdit->setPlainText(sc.additionalData.join("\n"));
+    ui->optimizationLevel_comboBox->setCurrentIndex(sc->optimizationLevel);
+    ui->additionalData_plainTextEdit->setPlainText(sc->additionalData.join("\n"));
 
-    ui->numThreads_spinBox->setEnabled(sc.solverDefinition.stdFlags.contains("-p"));
-    ui->numThreads_spinBox->setValue(sc.numThreads);
+    ui->numThreads_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-p"));
+    ui->numThreads_spinBox->setValue(sc->numThreads);
 
-    bool enableRandomSeed = sc.solverDefinition.stdFlags.contains("-r");
-    ui->randomSeed_lineEdit->setText(sc.randomSeed.toString());
-    ui->randomSeed_checkBox->setChecked(!sc.randomSeed.isNull());
+    bool enableRandomSeed = sc->solverDefinition.stdFlags.contains("-r");
+    ui->randomSeed_lineEdit->setText(sc->randomSeed.toString());
+    ui->randomSeed_checkBox->setChecked(!sc->randomSeed.isNull());
     ui->randomSeed_checkBox->setEnabled(enableRandomSeed);
-    ui->randomSeed_lineEdit->setEnabled(enableRandomSeed && !sc.randomSeed.isNull());
+    ui->randomSeed_lineEdit->setEnabled(enableRandomSeed && !sc->randomSeed.isNull());
 
-    bool enableFreeSearch = sc.solverDefinition.stdFlags.contains("-f");
+    bool enableFreeSearch = sc->solverDefinition.stdFlags.contains("-f");
     ui->freeSearch_checkBox->setEnabled(enableFreeSearch);
-    ui->freeSearch_checkBox->setChecked(sc.freeSearch);
+    ui->freeSearch_checkBox->setChecked(sc->freeSearch);
 
-    bool hasExtraFlags = sc.solverDefinition.extraFlags.length();
+    bool hasExtraFlags = sc->solverDefinition.extraFlags.length();
     ui->extraFlags_groupBox->setVisible(hasExtraFlags);
     for (int i = ui->extraFlags_formLayout->rowCount() - 1; i >= 0; i--) {
         ui->extraFlags_formLayout->removeRow(i);
     }
-    auto& used = sc.extraOptions;
-    for (auto& f : sc.solverDefinition.extraFlags) {
+    auto& used = sc->extraOptions;
+    for (auto& f : sc->solverDefinition.extraFlags) {
         auto label = new QLabel(f.description);
         label->setToolTip(f.name);
 //        label->setWordWrap(true);
@@ -362,77 +434,78 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
         }
         }
     }
-    ui->extraFlags_groupBox->setChecked(sc.useExtraOptions);
+    ui->extraFlags_groupBox->setChecked(sc->useExtraOptions);
 
     watchChanges(ui->extraFlags_formLayout->findChildren<QWidget*>(),
                   std::bind(&ConfigWindow::invalidate, this, false));
 
     ui->extraParams_tableWidget->clearContents();
 
-    for (auto it = sc.unknownOptions.begin(); it != sc.unknownOptions.end(); it++) {
+    for (auto it = sc->unknownOptions.begin(); it != sc->unknownOptions.end(); it++) {
         addExtraParam(it.key(), it.value());
     }
 
     populating = false;
 
     emit selectedIndexChanged(index);
+    emit selectedSolverConfigurationChanged(*sc);
 }
 
-void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
-    if (!sc.modified) {
+void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
+    if (!sc->modified) {
         return;
     }
 
     if (ui->sync_checkBox->isChecked()) {
-        for (auto& s : configs) {
-            s.timeLimit = ui->timeLimit_checkBox->isChecked() ? static_cast<int>(ui->timeLimit_doubleSpinBox->value() * 1000.0) : 0;
+        for (auto s : configs) {
+            s->timeLimit = ui->timeLimit_checkBox->isChecked() ? static_cast<int>(ui->timeLimit_doubleSpinBox->value() * 1000.0) : 0;
             if (ui->defaultBehavior_radioButton->isChecked()) {
-                s.printIntermediate = true;
-                s.numSolutions = 1;
-                s.numOptimal = 1;
+                s->printIntermediate = true;
+                s->numSolutions = 1;
+                s->numOptimal = 1;
             } else {
-                s.printIntermediate = ui->intermediateSolutions_checkBox->isChecked();
-                s.numSolutions = ui->numSolutions_checkBox->isChecked() ? ui->numSolutions_spinBox->value() : 0;
-                s.numOptimal = ui->numOptimal_checkBox->isChecked() ? ui->numOptimal_spinBox->value() : 0;
+                s->printIntermediate = ui->intermediateSolutions_checkBox->isChecked();
+                s->numSolutions = ui->numSolutions_checkBox->isChecked() ? ui->numSolutions_spinBox->value() : 0;
+                s->numOptimal = ui->numOptimal_checkBox->isChecked() ? ui->numOptimal_spinBox->value() : 0;
             }
 
-            s.verboseCompilation = ui->verboseCompilation_checkBox->isChecked();
-            s.verboseSolving = ui->verboseSolving_checkBox->isChecked();
-            s.compilationStats = ui->compilationStats_checkBox->isChecked();
-            s.solvingStats = ui->solvingStats_checkBox->isChecked();
-            s.outputTiming = ui->timingInfo_checkBox->isChecked();
+            s->verboseCompilation = ui->verboseCompilation_checkBox->isChecked();
+            s->verboseSolving = ui->verboseSolving_checkBox->isChecked();
+            s->compilationStats = ui->compilationStats_checkBox->isChecked();
+            s->solvingStats = ui->solvingStats_checkBox->isChecked();
+            s->outputTiming = ui->timingInfo_checkBox->isChecked();
         }
     }
 
-    sc.optimizationLevel = ui->optimizationLevel_comboBox->currentIndex();
+    sc->optimizationLevel = ui->optimizationLevel_comboBox->currentIndex();
     QString additionalData = ui->additionalData_plainTextEdit->toPlainText();
-    sc.additionalData = additionalData.length() > 0 ? additionalData.split("\n") : QStringList();
-    sc.numThreads = ui->numThreads_spinBox->value();
-    sc.randomSeed = ui->randomSeed_checkBox->isChecked() ? ui->randomSeed_lineEdit->text() : nullptr;
-    sc.freeSearch = ui->freeSearch_checkBox->isChecked();
+    sc->additionalData = additionalData.length() > 0 ? additionalData.split("\n") : QStringList();
+    sc->numThreads = ui->numThreads_spinBox->value();
+    sc->randomSeed = ui->randomSeed_checkBox->isChecked() ? ui->randomSeed_lineEdit->text() : nullptr;
+    sc->freeSearch = ui->freeSearch_checkBox->isChecked();
 
-    sc.unknownOptions.clear();
+    sc->unknownOptions.clear();
     for (int row = 0; row < ui->extraParams_tableWidget->rowCount(); row++) {
         auto keyItem = ui->extraParams_tableWidget->item(row, 0);
         auto valueItem = ui->extraParams_tableWidget->item(row, 2);
         if (keyItem && valueItem) {
             auto key = keyItem->data(Qt::DisplayRole).toString();
             auto value = valueItem->data(Qt::DisplayRole);
-            sc.unknownOptions.insert(key, value);
+            sc->unknownOptions.insert(key, value);
         }
     }
 
-    sc.useExtraOptions = ui->extraFlags_groupBox->isChecked();
-    sc.extraOptions.clear();
+    sc->useExtraOptions = ui->extraFlags_groupBox->isChecked();
+    sc->extraOptions.clear();
     int i = 0;
-    for (auto& f : sc.solverDefinition.extraFlags) {
+    for (auto& f : sc->solverDefinition.extraFlags) {
         auto field = ui->extraFlags_formLayout->itemAt(i, QFormLayout::FieldRole)->widget();
         switch (f.t) {
         case SolverFlag::T_INT:
         {
             auto value = static_cast<QLineEdit*>(field)->text();
             if (!value.isEmpty()) {
-                sc.extraOptions[f.name] = value.toInt();
+                sc->extraOptions[f.name] = value.toInt();
             }
             break;
         }
@@ -440,7 +513,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QSpinBox*>(field)->value();
             if (value != f.def.toInt()) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -448,7 +521,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             bool value = static_cast<QCheckBox*>(field)->isChecked();
             if (value != (f.def == "true")) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -456,7 +529,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QCheckBox*>(field)->isChecked() ? f.options[0] : f.options[1];
             if (value != f.def) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -464,7 +537,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QLineEdit*>(field)->text();
             if (!value.isEmpty()) {
-                sc.extraOptions[f.name] = value.toDouble();
+                sc->extraOptions[f.name] = value.toDouble();
             }
             break;
         }
@@ -472,7 +545,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QDoubleSpinBox*>(field)->value();
             if (value != f.def.toDouble()) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -480,7 +553,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QLineEdit*>(field)->text();
             if (!value.isEmpty()) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -489,7 +562,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
         {
             auto value = static_cast<QComboBox*>(field)->currentText();
             if (value != f.def) {
-                sc.extraOptions[f.name] = value;
+                sc->extraOptions[f.name] = value;
             }
             break;
         }
@@ -501,7 +574,8 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration& sc) {
 
 void ConfigWindow::on_addExtraParam_pushButton_clicked()
 {
-    addExtraParam("", "");
+    addExtraParam();
+    invalidate(false);
 }
 
 void ConfigWindow::on_removeExtraParam_pushButton_clicked()
@@ -512,9 +586,12 @@ void ConfigWindow::on_removeExtraParam_pushButton_clicked()
             toBeRemoved.append(i);
         }
     }
-    std::sort(toBeRemoved.begin(), toBeRemoved.end(), std::greater<>());
+    std::sort(toBeRemoved.begin(), toBeRemoved.end(), std::greater<int>());
     for (auto i : toBeRemoved) {
         ui->extraParams_tableWidget->removeRow(i);
+    }
+    if (!toBeRemoved.isEmpty()) {
+        invalidate(false);
     }
 }
 
@@ -560,7 +637,7 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
         break;
     }
 
-    connect(typeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), [=] (int typeIndex) mutable {
+    connect(typeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=] (int typeIndex) mutable {
         QVariant::Type types[] = {QVariant::String, QVariant::Bool, QVariant::Int, QVariant::Double};
         auto target = types[typeIndex];
         auto data = valItem->data(Qt::DisplayRole);
@@ -590,11 +667,11 @@ void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<vo
         } else if ((lineEdit = qobject_cast<QLineEdit*>(widget))) {
             connect(lineEdit, &QLineEdit::textChanged, [=] (const QString&) { action(); });
         } else if ((spinBox = qobject_cast<QSpinBox*>(widget))) {
-            connect(spinBox, qOverload<int>(&QSpinBox::valueChanged), [=] (int) { action(); });
+            connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=] (int) { action(); });
         } else if ((doubleSpinBox = qobject_cast<QDoubleSpinBox*>(widget))) {
-            connect(doubleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=] (double) { action(); });
+            connect(doubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=] (double) { action(); });
         } else if ((comboBox = qobject_cast<QComboBox*>(widget))) {
-            connect(comboBox, qOverload<int>(&QComboBox::currentIndexChanged), [=] (int) { action(); });
+            connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=] (int) { action(); });
         } else if ((groupBox = qobject_cast<QGroupBox*>(widget))) {
             connect(groupBox, &QGroupBox::toggled, [=] (bool) { action(); });
         } else if ((tableWidget = qobject_cast<QTableWidget*>(widget))) {
@@ -613,16 +690,16 @@ void ConfigWindow::invalidate(bool all)
     bool refreshComboBox = false;
 
     int i = currentIndex();
-    if (i >= 0 && i < configs.length() && !configs[i].modified) {
-        configs[i].modified = true;
+    if (i >= 0 && i < configs.length() && !configs[i]->modified) {
+        configs[i]->modified = true;
         refreshComboBox = true;
     }
 
     if (all && ui->sync_checkBox->isChecked()) {
-        for (auto& sc : configs) {
+        for (auto sc : configs) {
             // Only non-builtin configs really need to be saved after modifying basic options
-            if (!sc.isBuiltin && !sc.modified) {
-                sc.modified = true;
+            if (!sc->isBuiltin && !sc->modified) {
+                sc->modified = true;
                 refreshComboBox = true;
             }
         }
@@ -638,16 +715,8 @@ void ConfigWindow::populateComboBox()
     bool oldInitialized = initialized;
     int oldIndex = currentIndex();
     QStringList items;
-    for (auto& sc : configs) {
-        QStringList label;
-        label << sc.name();
-        if (sc.isBuiltin) {
-            label << "[built-in]";
-        }
-        if (sc.modified) {
-            label << "*";
-        }
-        items << label.join(" ");
+    for (auto sc : configs) {
+        items << sc->name();
     }
 
     initialized = false;
@@ -656,4 +725,26 @@ void ConfigWindow::populateComboBox()
     setCurrentIndex(oldIndex);
     emit itemsChanged(items);
     initialized = oldInitialized;
+}
+
+void ConfigWindow::removeConfig(int i)
+{
+    bool targetIndex = i < currentIndex() ? currentIndex() - 1 : currentIndex();
+    delete configs[i];
+    configs.removeAt(i);
+    populateComboBox();
+    setCurrentIndex(targetIndex);
+}
+
+void ConfigWindow::on_clone_pushButton_clicked()
+{
+    auto sc = configs[currentIndex()];
+    updateSolverConfig(sc);
+    auto clone = new SolverConfiguration(*sc);
+    clone->paramFile = "";
+    clone->isBuiltin = false;
+    clone->modified = true;
+    configs << clone;
+    populateComboBox();
+    setCurrentIndex(configs.length() - 1);
 }

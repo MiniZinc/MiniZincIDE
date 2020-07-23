@@ -168,7 +168,7 @@ MznProcess::MznProcess(QObject* parent) :
     connect(this, &MznProcess::started, [=] {
         elapsedTimer.start();
     });
-    connect(this, qOverload<int, QProcess::ExitStatus>(&MznProcess::finished), [=](int, QProcess::ExitStatus) {
+    connect(this, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int, QProcess::ExitStatus) {
         onExited();
     });
     connect(this, &MznProcess::errorOccurred, [=](QProcess::ProcessError) {
@@ -220,7 +220,7 @@ SolveProcess::SolveProcess(QObject* parent) :
 {
     connect(this, &SolveProcess::readyReadStandardOutput, this, &SolveProcess::onStdout);
     connect(this, &SolveProcess::readyReadStandardError, this, &SolveProcess::onStderr);
-    connect(this, qOverload<int, QProcess::ExitStatus>(&SolveProcess::finished), this, &SolveProcess::onFinished);
+    connect(this, QOverload<int, QProcess::ExitStatus>::of(&SolveProcess::finished), this, &SolveProcess::onFinished);
 }
 
 void SolveProcess::solve(const SolverConfiguration& sc, const QString& modelFile, const QStringList& dataFiles, const QStringList& extraArgs)
@@ -283,9 +283,9 @@ void SolveProcess::processStdout(QString line)
             outputBuffer << line;
             emit solutionOutput(outputBuffer.join(""));
             outputBuffer.clear();
-        } else if (trimmed == "==========") {
+        } else if (trimmed == "==========" || trimmed == "=====UNKNOWN=====" || trimmed == "=====ERROR=====") {
             outputBuffer << line;
-            emit optimal(outputBuffer.join(""));
+            emit finalStatus(outputBuffer.join(""));
             outputBuffer.clear();
         } else if (jsonPattern.exactMatch(trimmed)) {
             auto captures = jsonPattern.capturedTexts();
@@ -345,6 +345,10 @@ void SolveProcess::onFinished(int, QProcess::ExitStatus)
     onStdout();
     if (!atEnd()) {
         processStdout(readAll());
+    }
+    if (!outputBuffer.isEmpty()) {
+        emit fragment(outputBuffer.join(""));
+        outputBuffer.clear();
     }
     // Finish processing remaining stderr
     onStderr();
