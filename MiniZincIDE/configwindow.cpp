@@ -347,6 +347,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
     ui->extraFlagsOuter_layout->addWidget(extraFlagsWidget);
 
     extraFlagsForm = new QFormLayout(this);
+    extraFlagsForm->setContentsMargins(0, 0, 0, 0);
     extraFlagsWidget->setLayout(extraFlagsForm);
 
     auto& used = sc->extraOptions;
