@@ -185,7 +185,7 @@ MznProcess::MznProcess(QObject* parent) :
 
 void MznProcess::run(const QStringList& args, const QString& cwd)
 {
-    assert(state() == NotRunning);
+    Q_ASSERT(state() == NotRunning);
     setWorkingDirectory(cwd);
     Process::start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
 }
