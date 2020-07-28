@@ -341,9 +341,14 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
 
     bool hasExtraFlags = sc->solverDefinition.extraFlags.length();
     ui->extraFlags_groupBox->setVisible(hasExtraFlags);
-    for (int i = ui->extraFlags_formLayout->rowCount() - 1; i >= 0; i--) {
-        ui->extraFlags_formLayout->removeRow(i);
-    }
+
+    delete extraFlagsWidget;
+    extraFlagsWidget = new QWidget(this);
+    ui->extraFlagsOuter_layout->addWidget(extraFlagsWidget);
+
+    extraFlagsForm = new QFormLayout(this);
+    extraFlagsWidget->setLayout(extraFlagsForm);
+
     auto& used = sc->extraOptions;
     for (auto& f : sc->solverDefinition.extraFlags) {
         auto label = new QLabel(f.description);
@@ -359,7 +364,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
                  field->setText(used[f.name].toString());
             }
             field->setValidator(new QIntValidator());
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_INT_RANGE:
@@ -367,21 +372,21 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
             auto field = new QSpinBox();
             field->setRange(static_cast<int>(f.min), static_cast<int>(f.max));
             field->setValue(used.contains(f.name) ? used[f.name].toInt() : f.def.toInt());
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_BOOL:
         {
             auto field = new QCheckBox();
             field->setChecked(used.contains(f.name) ? used[f.name].toBool() : f.def == "true");
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_BOOL_ONOFF:
         {
             auto field = new QCheckBox();
             field->setChecked(used.contains(f.name) ? used[f.name] == f.options[0] : f.def == f.options[0]);
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_FLOAT:
@@ -393,7 +398,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
                 field->setText(used[f.name].toString());
             }
             field->setValidator(new QDoubleValidator());
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_FLOAT_RANGE:
@@ -401,7 +406,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
             auto field = new QDoubleSpinBox();
             field->setRange(f.min, f.max);
             field->setValue(used.contains(f.name) ? used[f.name].toDouble() : f.def.toDouble());
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_STRING:
@@ -411,7 +416,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
             if (used.contains(f.name)) {
                 field->setText(used[f.name].toString());
             }
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_OPT:
@@ -419,7 +424,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
             auto field = new QComboBox();
             field->addItems(f.options);
             field->setCurrentText(used.contains(f.name) ? used[f.name].toString() : f.def);
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         case SolverFlag::T_SOLVER:
@@ -429,14 +434,14 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
                 field->addItem(solver.name);
             }
             field->setCurrentText(used.contains(f.name) ? used[f.name].toString() : f.def);
-            ui->extraFlags_formLayout->addRow(label, field);
+            extraFlagsForm->addRow(label, field);
             break;
         }
         }
     }
     ui->extraFlags_groupBox->setChecked(sc->useExtraOptions);
 
-    watchChanges(ui->extraFlags_formLayout->findChildren<QWidget*>(),
+    watchChanges(extraFlagsForm->findChildren<QWidget*>(),
                   std::bind(&ConfigWindow::invalidate, this, false));
 
     ui->extraParams_tableWidget->clearContents();
@@ -499,7 +504,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
     sc->extraOptions.clear();
     int i = 0;
     for (auto& f : sc->solverDefinition.extraFlags) {
-        auto field = ui->extraFlags_formLayout->itemAt(i, QFormLayout::FieldRole)->widget();
+        auto field = extraFlagsForm->itemAt(i, QFormLayout::FieldRole)->widget();
         switch (f.t) {
         case SolverFlag::T_INT:
         {
@@ -597,7 +602,9 @@ void ConfigWindow::on_removeExtraParam_pushButton_clicked()
 
 void ConfigWindow::on_extraFlags_groupBox_toggled(bool arg1)
 {
-    ui->extraFlags_widget->setVisible(arg1);
+    if (extraFlagsWidget) {
+        extraFlagsWidget->setVisible(arg1);
+    }
 }
 
 void ConfigWindow::on_extraParams_tableWidget_itemSelectionChanged()

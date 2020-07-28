@@ -16,6 +16,7 @@
 #include <QVariant>
 #include <QJsonDocument>
 #include <QStringListModel>
+#include <QFormLayout>
 
 #include "solverconfiguration.h"
 #include "solverdialog.h"
@@ -140,6 +141,9 @@ private:
     void watchChanges(const QList<QWidget*>& objects, std::function<void()> action);
     void invalidate(bool all);
     void populateComboBox(void);
+
+    QWidget* extraFlagsWidget = nullptr;
+    QFormLayout* extraFlagsForm = nullptr;
 };
 
 
