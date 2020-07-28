@@ -14,6 +14,13 @@
 #include "mainwindow.h"
 #include "exception.h"
 
+#ifndef Q_OS_WIN
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
+#include <iostream>
+#endif
+
 #ifdef Q_OS_WIN
 #define pathSep ";"
 #else

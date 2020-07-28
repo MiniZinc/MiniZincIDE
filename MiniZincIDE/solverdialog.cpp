@@ -27,13 +27,6 @@
 #include <QGridLayout>
 #include <QLineEdit>
 
-#ifndef Q_OS_WIN
-#include <sys/types.h>
-#include <unistd.h>
-#include <signal.h>
-#include <iostream>
-#endif
-
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 #define pathSep ";"

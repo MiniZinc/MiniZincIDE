@@ -17,8 +17,6 @@
 #include <QNetworkReply>
 #include <QBoxLayout>
 #include <QTemporaryFile>
-#include <csignal>
-#include <sstream>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
