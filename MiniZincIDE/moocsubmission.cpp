@@ -160,7 +160,7 @@ void MOOCSubmission::cancelOperation()
         break;
     case S_WAIT_SOLVE:
         disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
-        mw->on_actionStop_triggered();
+        mw->stop();
         break;
     case S_WAIT_SUBMIT:
         disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));

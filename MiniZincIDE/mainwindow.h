@@ -82,7 +82,7 @@ signals:
 public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
-    void on_actionStop_triggered();
+    void stop();
 
 private slots:
 
@@ -96,12 +96,13 @@ private slots:
 
     void on_actionRun_triggered();
 
-    void procFinished(int, bool showTime=true);
+    void procFinished(int, qint64 time);
+    void procFinished(int);
 
     void on_actionSave_triggered();
     void on_actionQuit_triggered();
 
-    void statusTimerEvent();
+    void statusTimerEvent(qint64 time);
 
     void on_actionCompile_triggered();
 
@@ -258,17 +259,12 @@ private:
     int curHtmlWindow;
     QVector<HTMLWindow*> htmlWindows;
     QVector<QString> htmlWindowModels;
-    MznProcess* compileProcess;
-    SolveProcess* solveProcess;
     CodeChecker* code_checker;
     CodeEditor* curCheckEditor;
     int solutionCount;
     int solutionLimit;
     QTimer solutionLimitTimer;
     QVector<QString> hiddenSolutions;
-    QTimer* timer;
-    QTimer* solverTimeout;
-    int time;
     QProgressBar* progressBar;
     QLabel* statusLabel;
     QLabel* statusLineColLabel;

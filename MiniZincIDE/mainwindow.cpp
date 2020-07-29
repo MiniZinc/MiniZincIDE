@@ -38,8 +38,6 @@ MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(nullptr),
     curHtmlWindow(-1),
-    compileProcess(nullptr),
-    solveProcess(nullptr),
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
@@ -54,8 +52,6 @@ MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(nullptr),
     curHtmlWindow(-1),
-    compileProcess(nullptr),
-    solveProcess(nullptr),
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
@@ -181,11 +177,6 @@ void MainWindow::init(const QString& projectFile)
 
     connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
-    timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(statusTimerEvent()));
-    solverTimeout = new QTimer(this);
-    solverTimeout->setSingleShot(true);
-    connect(solverTimeout, SIGNAL(timeout()), this, SLOT(on_actionStop_triggered()));
 
     progressBar = new QProgressBar;
     progressBar->setRange(0, 100);
@@ -322,10 +313,6 @@ MainWindow::~MainWindow()
     for (int i=0; i<cleanupProcesses.size(); i++) {
         cleanupProcesses[i]->terminate();
         delete cleanupProcesses[i];
-    }
-    if (solveProcess) {
-        solveProcess->terminate();
-        solveProcess->deleteLater();
     }
     delete project;
     delete ui;
@@ -521,7 +508,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
             return;
         }
     }
-    if (solveProcess) {
+    if (processRunning) {
         int ret = QMessageBox::warning(this, "MiniZinc IDE",
                                        "MiniZinc is currently running a solver.\nDo you want to quit anyway and stop the current process?",
                                        QMessageBox::Yes| QMessageBox::No);
@@ -530,13 +517,7 @@ void MainWindow::closeEvent(QCloseEvent* e) {
             return;
         }
     }
-    if (solveProcess) {
-        disconnect(solveProcess, SIGNAL(error(QProcess::ProcessError)),
-                   this, 0);
-        solveProcess->terminate();
-        solveProcess->deleteLater();
-        solveProcess = nullptr;
-    }
+
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
         ce->setDocument(nullptr);
@@ -549,6 +530,14 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     projectPath = "";
 
     IDE::instance()->mainWindows.remove(this);
+
+    // Stop running subprocesses
+    if (code_checker) {
+        code_checker->disconnect();
+        code_checker->cancel();
+        code_checker->deleteLater();
+    }
+    stop(); // Stop solver if one is running
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -953,15 +942,9 @@ QString MainWindow::setElapsedTime(qint64 elapsed_t)
     return elapsed;
 }
 
-void MainWindow::statusTimerEvent()
+void MainWindow::statusTimerEvent(qint64 time)
 {
     QString txt = "Running.";
-    qint64 time = 0;
-    if (compileProcess) {
-        time = compileProcess->timeElapsed();
-    } else if (solveProcess) {
-        time = solveProcess->timeElapsed();
-    }
     int dots = time / 5000000000;
     for (int i = 0; i < dots; i++) {
         txt += ".";
@@ -1028,13 +1011,8 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     cleanupTmpDirs.append(fznTmpDir);
     QString fzn = fznTmpDir->path() + "/" + fi.baseName() + ".fzn";
 
-    if (compileProcess) {
-        compileProcess->disconnect();
-        compileProcess->terminate();
-        compileProcess->deleteLater();
-    }
-
-    compileProcess = new MznProcess(this);
+    auto timer = new QTimer(this);
+    auto compileProcess = new MznProcess(this);
     QStringList args;
     args << "-c"
          << "-o" << fzn
@@ -1044,6 +1022,16 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         args << "--output-paths-to-stdout"
              << "--output-detailed-timing";
     }
+
+    connect(ui->actionStop, &QAction::triggered, [=] () {
+        ui->actionStop->setDisabled(true);
+        compileProcess->disconnect();
+        compileProcess->terminate();
+        addOutput("<div class='mznnotice'>Stopped.</div>");
+        procFinished(0, compileProcess->timeElapsed());
+        compileProcess->deleteLater();
+        timer->deleteLater();
+    });
     connect(compileProcess, &MznProcess::readyReadStandardError, [=]() {
        compileProcess->setReadChannel(QProcess::StandardError);
        while (compileProcess->canReadLine()) {
@@ -1052,36 +1040,40 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
        }
     });
     connect(compileProcess, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        timer->stop();
-        auto output = QString::fromUtf8(compileProcess->readAllStandardOutput());
-        compileProcess->deleteLater();
-        compileProcess = nullptr;
-
         if (exitStatus == QProcess::CrashExit) {
             QMessageBox::critical(this, "MiniZinc IDE", "MiniZinc crashed unexpectedly.");
-            return;
-        }
-
-        if (exitCode == 0) {
-            if (profile) {
-                profileCompiledFzn(output);
-            } else {
-                openCompiledFzn(fzn);
+            procFinished(0, compileProcess->timeElapsed());
+        } else {
+            procFinished(exitCode, compileProcess->timeElapsed());
+            if (exitCode == 0) {
+                if (profile) {
+                    auto output = QString::fromUtf8(compileProcess->readAllStandardOutput());
+                    profileCompiledFzn(output);
+                } else {
+                    openCompiledFzn(fzn);
+                }
             }
         }
-
-        procFinished(exitCode);
+        compileProcess->deleteLater();
+        timer->stop();
+        timer->deleteLater();
     });
     connect(compileProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
         timer->stop();
-        compileProcess->deleteLater();
-        compileProcess = nullptr;
         if (e == QProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
         } else {
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: error code " + QString().number(e));
         }
+        procFinished(0, compileProcess->timeElapsed());
+        compileProcess->deleteLater();
+        timer->stop();
+        timer->deleteLater();
     });
+    connect(timer, &QTimer::timeout, compileProcess, [=] () {
+        statusTimerEvent(compileProcess->timeElapsed());
+    });
+    updateUiProcessRunning(true);
     compileProcess->run(sc, args, fi.absolutePath());
     timer->start(1000);
 }
@@ -1092,12 +1084,8 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         return;
     }
 
-    if (solveProcess) {
-        solveProcess->terminate();
-        solveProcess->deleteLater();
-    }
-
-    solveProcess = new SolveProcess(this);
+    auto timer = new QTimer(this);
+    auto solveProcess = new SolveProcess(this);
     auto writeOutput = [=](const QString& d) {
         addOutput(d, false);
         if (ts) {
@@ -1105,6 +1093,14 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         }
     };
 
+    connect(ui->actionStop, &QAction::triggered, solveProcess, [=] () {
+        ui->actionStop->setDisabled(true);
+        solveProcess->disconnect();
+        solveProcess->terminate();
+        addOutput("<div class='mznnotice'>Stopped.</div>");
+        procFinished(0, solveProcess->timeElapsed());
+        solveProcess->deleteLater();
+    });
     connect(solveProcess, &SolveProcess::solutionOutput, writeOutput);
     connect(solveProcess, &SolveProcess::finalStatus, writeOutput);
     connect(solveProcess, &SolveProcess::fragment, writeOutput);
@@ -1119,26 +1115,31 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     });
     connect(solveProcess, &SolveProcess::stdErrorOutput, this, &MainWindow::outputStdErr);
     connect(solveProcess, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        timer->stop();
-        solveProcess->deleteLater();
-        solveProcess = nullptr;
         if (exitStatus == QProcess::CrashExit) {
             QMessageBox::critical(this, "MiniZinc IDE", "MiniZinc crashed unexpectedly.");
-            procFinished(0);
-            return;
+            procFinished(0, solveProcess->timeElapsed());
+        } else {
+            procFinished(exitCode, solveProcess->timeElapsed());
         }
-        procFinished(exitCode);
+        solveProcess->deleteLater();
+        timer->stop();
+        timer->deleteLater();
     });
     connect(solveProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
-        timer->stop();
-        solveProcess->deleteLater();
-        solveProcess = nullptr;
         if (e == QProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
         } else {
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: error code " + QString().number(e));
         }
+        procFinished(0, solveProcess->timeElapsed());
+        solveProcess->deleteLater();
+        timer->stop();
+        timer->deleteLater();
     });
+    connect(timer, &QTimer::timeout, solveProcess, [=] () {
+        statusTimerEvent(solveProcess->timeElapsed());
+    });
+    updateUiProcessRunning(true);
     solveProcess->solve(sc, model, data, extraArgs);
     timer->start(1000);
 }
@@ -1181,7 +1182,7 @@ int MainWindow::addHtmlWindow(HTMLWindow *w)
 
 void MainWindow::closeHTMLWindow(int identifier)
 {
-    on_actionStop_triggered();
+    stop();
     if (identifier==curHtmlWindow) {
         curHtmlWindow = -1;
     }
@@ -1195,22 +1196,19 @@ void MainWindow::selectJSONSolution(HTMLPage* source, int n)
     }
 }
 
-void MainWindow::procFinished(int exitCode, bool showTime) {
+void MainWindow::procFinished(int exitCode, qint64 time) {
+    procFinished(exitCode);
+    QString elapsedTime = setElapsedTime(time);
+    ui->statusbar->clearMessage();
+    addOutput("<div class='mznnotice'>Finished in " + elapsedTime + "</div>");
+}
+
+void MainWindow::procFinished(int exitCode) {
     if (exitCode != 0) {
         addOutput("<div style='color:red;'>Process finished with non-zero exit code "+QString().number(exitCode)+"</div>");
     }
     updateUiProcessRunning(false);
-    qint64 time = 0;
-    if (solveProcess) {
-        time = solveProcess->timeElapsed();
-    } else if (compileProcess) {
-        time = compileProcess->timeElapsed();
-    }
-    QString elapsedTime = setElapsedTime(time);
     ui->statusbar->clearMessage();
-    if (showTime) {
-        addOutput("<div class='mznnotice'>Finished in "+elapsedTime+"</div>");
-    }
     delete tmpDir;
     tmpDir = nullptr;
     outputBuffer = nullptr;
@@ -1313,29 +1311,6 @@ void MainWindow::on_actionQuit_triggered()
     qApp->closeAllWindows();
     if (IDE::instance()->mainWindows.size()==0) {
         IDE::instance()->quit();
-    }
-}
-
-void MainWindow::on_actionStop_triggered()
-{
-    ui->actionStop->setEnabled(false);
-
-    if (solveProcess) {
-        solveProcess->disconnect();
-        solveProcess->terminate();
-        solveProcess->deleteLater();
-        solveProcess = nullptr;
-        addOutput("<div class='mznnotice'>Stopped.</div>");
-        procFinished(0);
-    }
-
-    if (compileProcess) {
-        compileProcess->disconnect();
-        compileProcess->terminate();
-        compileProcess->deleteLater();
-        compileProcess = nullptr;
-        addOutput("<div class='mznnotice'>Stopped.</div>");
-        procFinished(0);
     }
 }
 
@@ -2649,4 +2624,9 @@ void MainWindow::on_actionSave_all_solver_configurations_triggered()
             ui->config_window->saveConfig(i);
         }
     }
+}
+
+void MainWindow::stop()
+{
+    ui->actionStop->trigger();
 }
