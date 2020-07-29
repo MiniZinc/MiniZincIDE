@@ -953,47 +953,37 @@ void MainWindow::statusTimerEvent(qint64 time)
     setElapsedTime(time);
 }
 
-//void MainWindow::openJSONViewer(void)
-//{
-//    if (curHtmlWindow==-1) {
-//        QVector<VisWindowSpec> specs;
-//        for (int i=0; i<JSONOutput.size(); i++) {
-//            QString url = JSONOutput[i].first();
-//            Qt::DockWidgetArea area = Qt::TopDockWidgetArea;
-//            if (JSONOutput[i][1]=="top") {
-//                area = Qt::TopDockWidgetArea;
-//            } else if (JSONOutput[i][1]=="bottom") {
-//                area = Qt::BottomDockWidgetArea;
-//            }
-//            url.remove(QRegExp("[\\n\\t\\r]"));
-//            specs.append(VisWindowSpec(url,area));
-//        }
-//        QFileInfo htmlWindowTitleFile(curFilePath);
-//        HTMLWindow* htmlWindow = new HTMLWindow(specs, this, htmlWindowTitleFile.fileName());
-//        curHtmlWindow = htmlWindow->getId();
-//        htmlWindow->init();
-//        connect(htmlWindow, SIGNAL(closeWindow(int)), this, SLOT(closeHTMLWindow(int)));
-//        htmlWindow->show();
-//    }
-//    for (int i=0; i<JSONOutput.size(); i++) {
-//        JSONOutput[i].pop_front();
-//        JSONOutput[i].pop_front();
-//        if (htmlWindows[curHtmlWindow]) {
-//            if (isJSONinitHandler) {
-//                htmlWindows[curHtmlWindow]->initJSON(i, JSONOutput[i].join(' '));
-//            } else {
-//                htmlWindows[curHtmlWindow]->addSolution(i, JSONOutput[i].join(' '));
-//            }
-//        }
-//    }
-//}
+void MainWindow::openJSONViewer(bool isJSONinitHandler, const QVector<MznProcess::VisOutput>& output)
+{
+    if (curHtmlWindow==-1) {
+        QVector<VisWindowSpec> specs;
+        for (auto& item : output) {
+            specs << item.spec;
+        }
+        QFileInfo htmlWindowTitleFile(curFilePath);
+        HTMLWindow* htmlWindow = new HTMLWindow(specs, this, htmlWindowTitleFile.fileName());
+        curHtmlWindow = htmlWindow->getId();
+        htmlWindow->init();
+        connect(htmlWindow, SIGNAL(closeWindow(int)), this, SLOT(closeHTMLWindow(int)));
+        htmlWindow->show();
+    }
+    for (int i=0; i<output.size(); i++) {
+        if (htmlWindows[curHtmlWindow]) {
+            if (isJSONinitHandler) {
+                htmlWindows[curHtmlWindow]->initJSON(i, output[i].data);
+            } else {
+                htmlWindows[curHtmlWindow]->addSolution(i, output[i].data);
+            }
+        }
+    }
+}
 
-//void MainWindow::finishJSONViewer(void)
-//{
-//    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
-//        htmlWindows[curHtmlWindow]->finish(elapsedTime.elapsed());
-//    }
-//}
+void MainWindow::finishJSONViewer(qint64 time)
+{
+    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
+        htmlWindows[curHtmlWindow]->finish(time);
+    }
+}
 
 void MainWindow::compile(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, bool profile)
 {
@@ -1107,12 +1097,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(solveProcess, &SolveProcess::htmlOutput, [=](const QString& html) {
         addOutput(html, true);
     });
-    connect(solveProcess, &SolveProcess::jsonInit, [=](const QString& path, Qt::DockWidgetArea area, const QString& data) {
-
-    });
-    connect(solveProcess, &SolveProcess::jsonOutput, [=](const QString& path, Qt::DockWidgetArea area, const QString& data) {
-
-    });
+    connect(solveProcess, &SolveProcess::jsonOutput, this, &MainWindow::openJSONViewer);
     connect(solveProcess, &SolveProcess::stdErrorOutput, this, &MainWindow::outputStdErr);
     connect(solveProcess, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitStatus == QProcess::CrashExit) {
@@ -1139,6 +1124,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(timer, &QTimer::timeout, solveProcess, [=] () {
         statusTimerEvent(solveProcess->timeElapsed());
     });
+    curFilePath = model; // TODO: Fix the JSON visualization handling to not require this
     updateUiProcessRunning(true);
     solveProcess->solve(sc, model, data, extraArgs);
     timer->start(1000);
@@ -1201,6 +1187,7 @@ void MainWindow::procFinished(int exitCode, qint64 time) {
     QString elapsedTime = setElapsedTime(time);
     ui->statusbar->clearMessage();
     addOutput("<div class='mznnotice'>Finished in " + elapsedTime + "</div>");
+    finishJSONViewer(time);
 }
 
 void MainWindow::procFinished(int exitCode) {

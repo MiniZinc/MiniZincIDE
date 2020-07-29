@@ -12,6 +12,7 @@
 #endif
 
 #include "solverconfiguration.h"
+#include "htmlwindow.h"
 
 ///
 /// \brief The Process class
@@ -170,6 +171,13 @@ private:
 class MznProcess : public Process {
     Q_OBJECT
 public:
+    struct VisOutput {
+        VisWindowSpec spec;
+        QString data;
+
+        VisOutput(const VisWindowSpec& s = VisWindowSpec(), const QString& d = "") : spec(s), data(d) {}
+    };
+
     MznProcess(QObject* parent=nullptr);
 
     ///
@@ -240,15 +248,11 @@ signals:
     ///
     void progressOutput(float progress);
     ///
-    /// \brief Emitted when %%%mzn-json-init is read.
-    /// \param data The data to be sent to the HTML page
+    /// \brief Emitted when a new solution is produced with visualization data.
+    /// \param isInitHandler True if this is an initialization handler
+    /// \param output The JSON visualization output
     ///
-    void jsonInit(const QString& path, Qt::DockWidgetArea area, const QString& data);
-    ///
-    /// \brief Emitted when %%%mzn-json-end is read.
-    /// \param data The data to be sent to the HTML page
-    ///
-    void jsonOutput(const QString& path, Qt::DockWidgetArea area, const QString& data);
+    void jsonOutput(bool isInitHandler, const QVector<VisOutput>& output);
     ///
     /// \brief Emitted when a final status string is read.
     /// \param data The data that was read (==========\n or =====UNKNOWN=====\n or =====ERROR=====\n)
@@ -276,8 +280,8 @@ private:
     QStringList outputBuffer;
     QStringList htmlBuffer;
     QStringList jsonBuffer;
-    QString jsonPath;
-    Qt::DockWidgetArea jsonArea;
+    QVector<VisOutput> visBuffer;
+
     State state;
 
     using MznProcess::run;

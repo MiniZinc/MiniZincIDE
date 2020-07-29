@@ -289,6 +289,10 @@ void SolveProcess::processStdout(QString line)
         if (trimmed == "----------") {
             outputBuffer << line;
             emit solutionOutput(outputBuffer.join(""));
+            if (!visBuffer.isEmpty()) {
+                emit jsonOutput(false, visBuffer);
+                visBuffer.clear();
+            }
             outputBuffer.clear();
         } else if (trimmed == "==========" || trimmed == "=====UNKNOWN=====" || trimmed == "=====ERROR=====") {
             outputBuffer << line;
@@ -298,8 +302,9 @@ void SolveProcess::processStdout(QString line)
             auto captures = jsonPattern.capturedTexts();
             state = captures[2] == "-init" ? State::JSONInit : State::JSON;
             QString area = captures[1].isEmpty() ? "top" : captures[1];
-            jsonArea = area == "bottom" ? Qt::BottomDockWidgetArea : Qt::TopDockWidgetArea;
-            jsonPath = captures[3];
+            auto jsonArea = area == "bottom" ? Qt::BottomDockWidgetArea : Qt::TopDockWidgetArea;
+            auto jsonPath = captures[3];
+            visBuffer << VisOutput(VisWindowSpec(jsonPath, jsonArea));
         } else if (trimmed == "%%%mzn-html-start") {
             state = State::HTML;
         } else {
@@ -316,17 +321,23 @@ void SolveProcess::processStdout(QString line)
         }
         break;
     case State::JSONInit: // Seen %%%mzn-json-init
-        if (trimmed == "%%%mzn-json-init-end") {
-            emit jsonInit(jsonPath, jsonArea, jsonBuffer.join(" "));
+        if (trimmed == "%%%mzn-json-end") {
+            visBuffer.last().data = jsonBuffer.join(" ");
             state = State::Output;
             jsonBuffer.clear();
+        } else if (trimmed == "%%%mzn-json-init-end") {
+            visBuffer.last().data = jsonBuffer.join(" ");
+            emit jsonOutput(true, visBuffer);
+            state = State::Output;
+            jsonBuffer.clear();
+            visBuffer.clear();
         } else {
             jsonBuffer << trimmed;
         }
         break;
     case State::JSON: // Seen %%%mzn-json
         if (trimmed == "%%%mzn-json-end") {
-            emit jsonOutput(jsonPath, jsonArea, jsonBuffer.join(" "));
+            visBuffer.last().data = jsonBuffer.join(" ");
             state = State::Output;
             jsonBuffer.clear();
         } else if (trimmed == "%%%mzn-json-time") {

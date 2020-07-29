@@ -319,6 +319,9 @@ private:
     bool requireMiniZinc(void);
     void outputStdErr(const QString& line);
     QStringList getOpenFiles(void);
+
+    void openJSONViewer(bool isJSONinitHandler, const QVector<MznProcess::VisOutput>& output);
+    void finishJSONViewer(qint64 time);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
