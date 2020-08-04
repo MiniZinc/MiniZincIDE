@@ -246,7 +246,6 @@ void MainWindow::init(const QString& projectFile)
     connect(ui->config_window, &ConfigWindow::selectedSolverConfigurationChanged, project, &Project::activeSolverConfigChanged);
     connect(ui->config_window, &ConfigWindow::configSaved, [=] (const QString& f) { openFile(f); });
     ui->projectBrowser->project(project);
-//    connect(ui->projectBrowser, &ProjectBrowser::runRequested, this, )
 
     connect(project, &Project::moocChanged, this, &MainWindow::on_moocChanged);
 
@@ -711,6 +710,7 @@ void MainWindow::compileOrRun(
         const SolverConfiguration* sc,
         const QString& model,
         const QStringList& data,
+        const QString& checker,
         const QStringList& extraArgs)
 {
     if (!promptSaveModified()) {
@@ -732,6 +732,7 @@ void MainWindow::compileOrRun(
     }
 
     auto dataFiles = data;
+    auto checkerFile = checker;
     auto extraArguments = extraArgs;
 
     // If we didn't specify any data but the current file is a data file, use it
@@ -742,6 +743,29 @@ void MainWindow::compileOrRun(
     // Prompt for data if necessary
     if (!getModelParameters(*solverConfig, modelFile, dataFiles, extraArguments)) {
         return;
+    }
+
+    // If we didn't specify a checker but the current file is one, use it
+    if (checkerFile.isEmpty() && curEditor && (curEditor->filepath.endsWith(".mzc") || curEditor->filepath.endsWith(".mzc.mzn"))) {
+        checkerFile = curEditor->filepath;
+    }
+
+    // Use checker that matches model file if it exists and checking is on
+    QSettings settings;
+    settings.beginGroup("ide");
+    if (checkerFile.isEmpty() && settings.value("checkSolutions", true).toBool()) {
+        auto mzc = modelFile;
+        mzc.replace(mzc.length() - 1, 1, "c");
+        if (getProject().contains(mzc)) {
+            checkerFile = mzc;
+        } else if (getProject().contains(mzc + ".mzn")) {
+            checkerFile = mzc + ".mzn";
+        }
+    }
+    settings.endGroup();
+
+    if (!checkerFile.isEmpty()) {
+        dataFiles << checkerFile;
     }
 
     // Compile/run
@@ -825,7 +849,7 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
 QString MainWindow::currentModelFile()
 {
     if (curEditor) {
-        if (curEditor->filepath.endsWith(".mzn")) {
+        if (curEditor->filepath.endsWith(".mzn") && !curEditor->filepath.endsWith(".mzc.mzn")) {
             // The current file is a model
             return curEditor->filepath;
         }
@@ -2507,21 +2531,24 @@ void MainWindow::on_projectBrowser_runRequested(const QStringList& files)
 {
     QString model;
     QStringList data;
+    QString checker;
     auto sc = getCurrentSolverConfig();
     for (auto& f : files) {
-        if (model.isEmpty() && !f.endsWith(".mzc.mzn") && f.endsWith(".mzn")) {
-            model = f;
-        } else if (f.endsWith(".mpc")) {
+        if (f.endsWith(".mpc")) {
             int i = ui->config_window->findConfigFile(f);
             if (i == -1) {
                 sc = ui->config_window->solverConfigs()[i];
             }
+        } else if (f.endsWith(".mzc.mzn") || f.endsWith(".mzc")) {
+            checker = f;
+        } else if (model.isEmpty() && f.endsWith(".mzn")) {
+            model = f;
         } else {
             data << f;
         }
     }
 
-    compileOrRun(CM_RUN, sc, model, data);
+    compileOrRun(CM_RUN, sc, model, data, checker);
 }
 
 void MainWindow::on_projectBrowser_openRequested(const QStringList& files)

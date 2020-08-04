@@ -70,6 +70,7 @@ private:
             const SolverConfiguration* sc = nullptr,
             const QString& model = QString(),
             const QStringList& data = QStringList(),
+            const QString& checker = QString(),
             const QStringList& extraArgs = QStringList());
     bool getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, QStringList& extraArgs);
     QString currentModelFile(void);
