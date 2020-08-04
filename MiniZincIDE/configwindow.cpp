@@ -441,6 +441,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
         }
     }
     ui->extraFlags_groupBox->setChecked(sc->useExtraOptions);
+    extraFlagsWidget->setVisible(sc->useExtraOptions);
 
     watchChanges(extraFlagsForm->findChildren<QWidget*>(),
                   std::bind(&ConfigWindow::invalidate, this, false));
