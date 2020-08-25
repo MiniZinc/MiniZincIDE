@@ -52,7 +52,7 @@ Source: "{#MyAppDirectory}\vendor\gecode\share\gecode\mznlib\*"; DestDir: "{app}
 Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\bin"; DestName: "qt.conf"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\vendor\chuffed\share\chuffed\mznlib\*"; DestDir: "{app}\share\minizinc\chuffed"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\globalizer\share\globalizer\mznlib\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs

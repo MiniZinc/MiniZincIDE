@@ -45,7 +45,7 @@ parts:
       gecode_gist/bin/fzn-gecode: bin/fzn-gecode-gist
       gecode/share/gecode/mznlib: share/minizinc/gecode
       chuffed/bin/fzn-chuffed: bin/
-      chuffed/share/chuffed/mznlib: share/minizinc/chuffed
+      chuffed/share/minizinc/*: share/minizinc/
     stage: [bin/, share/minizinc/]
   globalizer:
     plugin: dump

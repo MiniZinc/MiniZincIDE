@@ -81,7 +81,7 @@ package:linux:
     - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/bin/fzn-gecode-gist
     - mv vendor/gecode/share/gecode/mznlib $PACKAGE/share/minizinc/gecode
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
-    - mv vendor/chuffed/share/chuffed/mznlib $PACKAGE/share/minizinc/chuffed
+    - mv vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/bin/
     - mv globalizer/share/globalizer/mznlib $PACKAGE/share/minizinc/globalizer
@@ -127,7 +127,7 @@ package:osx:
     - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
 
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
-    - mv vendor/chuffed/share/chuffed/mznlib $MZNDIR/chuffed
+    - mv vendor/chuffed/share/minizinc/* $MZNDIR/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $DIR/bin/
     - mv globalizer/share/globalizer/mznlib $MZNDIR/globalizer
@@ -204,7 +204,7 @@ package:appimage:
     - mv vendor/gecode/share/gecode/mznlib $PACKAGE/usr/share/minizinc/gecode
 
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
-    - mv vendor/chuffed/share/chuffed/mznlib $PACKAGE/usr/share/minizinc/chuffed
+    - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
     - mv globalizer/share/globalizer/mznlib $PACKAGE/usr/share/minizinc/globalizer
