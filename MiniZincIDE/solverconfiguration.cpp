@@ -77,8 +77,11 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
             sc.timeLimit = it.value().toInt();
         } else if (key == "-a" || key == "--all-solutions") {
             sc.numSolutions = 0;
+            sc.printIntermediate = true;
         } else if (key == "-i" || key == "--intermediate" || key == "--intermediate-solutions") {
             sc.printIntermediate = it.value().toBool(true);
+        } else if (key == "--all-satisfaction") {
+            sc.numSolutions = 0;
         } else if (key == "-n" || key == "--num-solutions") {
             sc.numSolutions = it.value().toInt(1);
         } else if (key == "-a-o" || key == "--all-optimal") {
@@ -248,14 +251,14 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
     if (timeLimit > 0) {
         config["time-limit"] = timeLimit;
     }
-    if (printIntermediate && (supports("-a") || supports("-i"))) {
+    if ((supports("-a") || supports("-i"))) {
         config["intermediate-solutions"] = printIntermediate;
     }
     if (numSolutions > 1 && supports("-n")) {
         config["num-solutions"] = numSolutions;
     }
     if (numSolutions == 0 && supports("-a")) {
-        config["all-solutions"] = true;
+        config["all-satisfaction"] = true;
     }
     if (numOptimal > 1 && supports("-n-o")) {
         config["num-optimal"] = numOptimal;
