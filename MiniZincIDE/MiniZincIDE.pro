@@ -103,5 +103,8 @@ FORMS    += \
 RESOURCES += \
     minizincide.qrc
 
+include($$PWD/../cp-profiler/cp-profiler.pri)
+QT += network sql
+
 target.path = $$PREFIX/bin
 INSTALLS += target

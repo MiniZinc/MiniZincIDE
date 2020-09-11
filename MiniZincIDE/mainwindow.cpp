@@ -30,6 +30,8 @@
 #include "highlighter.h"
 #include "exception.h"
 
+#include "../cp-profiler/src/cpprofiler/options.hh"
+
 #include <QtGlobal>
 
 #define BUILD_YEAR  (__DATE__ + 7)
@@ -263,6 +265,8 @@ void MainWindow::init(const QString& projectFile)
     }
 
     getProject().setModified(false);
+
+    ui->cpprofiler_dockWidget->hide();
 }
 
 void MainWindow::updateUiProcessRunning(bool pr)
@@ -674,6 +678,9 @@ void MainWindow::tabChange(int tab) {
 
         MainWindow::check_code();
     }
+
+    auto sc = getCurrentSolverConfig();
+    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
 }
 
 void MainWindow::on_actionClose_triggered()
@@ -2444,6 +2451,7 @@ void MainWindow::on_config_window_selectedIndexChanged(int index)
 
     auto sc = getCurrentSolverConfig();
     ui->actionSave_solver_configuration->setDisabled(!sc);
+    ui->actionProfile_search->setDisabled(!sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
 }
 
 SolverConfiguration* MainWindow::getCurrentSolverConfig()
@@ -2643,4 +2651,38 @@ void MainWindow::on_actionSave_all_solver_configurations_triggered()
 void MainWindow::stop()
 {
     ui->actionStop->trigger();
+}
+
+void MainWindow::on_actionShow_search_profiler_triggered()
+{
+    if (!conductor) {
+        auto profiler_layout = new QGridLayout(this);
+        ui->cpprofiler->setLayout(profiler_layout);
+
+        cpprofiler::Options opts;
+        conductor = new cpprofiler::Conductor(opts);
+        conductor->setWindowFlags(Qt::Widget);
+        profiler_layout->addWidget(conductor);
+
+        ex_id = 0;
+    }
+    if (ui->cpprofiler_dockWidget->isVisible()) {
+        ui->cpprofiler_dockWidget->hide();
+        ui->actionShow_search_profiler->setText("Show search profiler");
+    } else {
+        ui->cpprofiler_dockWidget->show();
+        ui->actionShow_search_profiler->setText("Hide search profiler");
+    }
+}
+
+void MainWindow::on_actionProfile_search_triggered()
+{
+    if (!ui->cpprofiler_dockWidget->isVisible()) {
+        on_actionShow_search_profiler_triggered();
+    }
+    curHtmlWindow = -1;
+    QStringList args;
+    args << "--cp-profiler"
+         << QString::number(ex_id++) + "," + QString::number(conductor->getListenPort());
+    compileOrRun(CM_RUN, nullptr, QString(), QStringList(), QString(), args);
 }

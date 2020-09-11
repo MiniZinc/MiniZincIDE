@@ -43,6 +43,8 @@
 #include "process.h"
 #include "codechecker.h"
 
+#include "../cp-profiler/src/cpprofiler/conductor.hh"
+
 namespace Ui {
 class MainWindow;
 }
@@ -233,6 +235,10 @@ private slots:
 
     void on_projectBrowser_removeRequested(const QStringList& files);
 
+    void on_actionShow_search_profiler_triggered();
+
+    void on_actionProfile_search_triggered();
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -297,6 +303,9 @@ private:
     QVector<QPair<SolverFlag,QWidget*>> extraSolverFlags;
     int currentSolverConfig;
     bool renamingSolverConf;
+
+    cpprofiler::Conductor* conductor = nullptr;
+    int ex_id;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };
