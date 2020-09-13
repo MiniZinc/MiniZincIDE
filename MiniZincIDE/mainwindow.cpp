@@ -30,6 +30,7 @@
 #include "highlighter.h"
 #include "exception.h"
 
+#include "../cp-profiler/src/cpprofiler/execution.hh"
 #include "../cp-profiler/src/cpprofiler/options.hh"
 
 #include <QtGlobal>
@@ -319,7 +320,6 @@ MainWindow::~MainWindow()
     }
     delete project;
     delete ui;
-    delete paramDialog;
 }
 
 void MainWindow::on_actionNewModel_file_triggered()
@@ -373,8 +373,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     if (doc || !fileContents.isEmpty() || isNewFile) {
         int closeTab = -1;
         if (!isNewFile && ui->tabWidget->count()==1) {
-            CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(0));
-            if (ce->filepath == "" && !ce->document()->isModified()) {
+            CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(0));
+            if (ce && ce->filepath == "" && !ce->document()->isModified()) {
                 closeTab = 0;
             }
         }
@@ -440,34 +440,37 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
 
 void MainWindow::tabCloseRequest(int tab)
 {
-    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
-    if (ce->document()->isModified()) {
-        QMessageBox msg;
-        msg.setText("The document has been modified.");
-        msg.setInformativeText("Do you want to save your changes?");
-        msg.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-        msg.setDefaultButton(QMessageBox::Save);
-        int ret = msg.exec();
-        switch (ret) {
-        case QMessageBox::Save:
-            saveFile(ce,ce->filepath);
-            if (ce->document()->isModified())
+    CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(tab));
+    if (ce) {
+        if (ce->document()->isModified()) {
+            QMessageBox msg;
+            msg.setText("The document has been modified.");
+            msg.setInformativeText("Do you want to save your changes?");
+            msg.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+            msg.setDefaultButton(QMessageBox::Save);
+            int ret = msg.exec();
+            switch (ret) {
+            case QMessageBox::Save:
+                saveFile(ce,ce->filepath);
+                if (ce->document()->isModified())
+                    return;
+                break;
+            case QMessageBox::Discard:
+                break;
+            case QMessageBox::Cancel:
                 return;
-            break;
-        case QMessageBox::Discard:
-            break;
-        case QMessageBox::Cancel:
-            return;
-        default:
-            return;
+            default:
+                return;
+            }
         }
+        ce->document()->setModified(false);
+        if (!ce->filepath.isEmpty()) {
+            IDE::instance()->removeEditor(ce->filepath,ce);
+        }
+        delete ce;
     }
-    ce->document()->setModified(false);
     ui->tabWidget->removeTab(tab);
-    if (!ce->filepath.isEmpty())
-        IDE::instance()->removeEditor(ce->filepath,ce);
     getProject().openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
-    delete ce;
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
@@ -476,7 +479,8 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     bool modified = false;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        if (static_cast<CodeEditor*>(ui->tabWidget->widget(i))->document()->isModified()) {
+        auto ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && ce->document()->isModified()) {
             modified = true;
             break;
         }
@@ -522,11 +526,14 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
 
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->setDocument(nullptr);
-        ce->filepath = "";
-        if (ce->filepath != "")
-            IDE::instance()->removeEditor(ce->filepath,ce);
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->setDocument(nullptr);
+            ce->filepath = "";
+//            if (ce->filepath != "") { // TODO: How is this possible?
+//                IDE::instance()->removeEditor(ce->filepath,ce);
+//            }
+        }
     }
     if (!projectPath.isEmpty())
         IDE::instance()->projects.remove(projectPath);
@@ -604,13 +611,12 @@ void MainWindow::tabChange(int tab) {
         disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
         disconnect(curEditor, &CodeEditor::changedDebounced, this, &MainWindow::check_code);
     }
-    if (tab==-1) {
-        curEditor = nullptr;
+    curEditor = tab == -1 ? nullptr : qobject_cast<CodeEditor*>(ui->tabWidget->widget(tab));
+    if (!curEditor) {
         setEditorMenuItemsEnabled(false);
         ui->findFrame->hide();
     } else {
         setEditorMenuItemsEnabled(true);
-        curEditor = static_cast<CodeEditor*>(ui->tabWidget->widget(tab));
         connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
         connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
         connect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
@@ -675,6 +681,9 @@ void MainWindow::tabChange(int tab) {
         ui->actionShift_left->setEnabled(true);
         ui->actionShift_right->setEnabled(true);
         curEditor->setFocus();
+
+        auto sc = getCurrentSolverConfig();
+        ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
 
         MainWindow::check_code();
     }
@@ -902,8 +911,8 @@ bool MainWindow::promptSaveModified()
 {
     QVector<CodeEditor*> modifiedDocs;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (!ce->filepath.isEmpty() && ce->document()->isModified()) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && !ce->filepath.isEmpty() && ce->document()->isModified()) {
             modifiedDocs << ce;
         }
     }
@@ -1297,8 +1306,8 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
 void MainWindow::fileRenamed(const QString& oldPath, const QString& newPath)
 {
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (ce->filepath==oldPath) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && ce->filepath==oldPath) {
             ce->filepath = newPath;
             ce->filename = QFileInfo(newPath).fileName();
             IDE::instance()->renameFile(oldPath,newPath);
@@ -1383,8 +1392,8 @@ void MainWindow::profileCompiledFzn(const QString& output)
     CoverageMap ce_coverage;
 
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (ce->filepath.endsWith(".mzn")) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && ce->filepath.endsWith(".mzn")) {
             QTextBlock tb = ce->document()->begin();
             QVector<BracketData*> coverage;
             while (tb.isValid()) {
@@ -1476,8 +1485,10 @@ void MainWindow::setEditorFont(QFont font)
     cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
     cursor.mergeCharFormat(format);
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->setEditorFont(font);
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->setEditorFont(font);
+        }
     }
 }
 
@@ -1528,7 +1539,11 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
     bool notOpen = true;
     if (filename != "") {
       for (int i=0; i<ui->tabWidget->count(); i++) {
-          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          if (!ce) {
+              continue;
+          }
+
           QFileInfo ceinfo(ce->filepath);
 
           if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
@@ -1543,6 +1558,7 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
       if (notOpen && filename.size() > 0) {
         openFile(url.toLocalFile(), false, false);
         CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->count()-1));
+
         QFileInfo ceinfo(ce->filepath);
 
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
@@ -1552,7 +1568,7 @@ QVector<CodeEditor*> MainWindow::collectCodeEditors(QVector<QStringList>& locs) 
         }
       }
     } else {
-       CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->currentIndex()));
+       CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(ui->tabWidget->currentIndex()));
        ces[p] = ce;
     }
   }
@@ -1638,7 +1654,9 @@ void MainWindow::highlightPath(QString& path, int index) {
   for(int p = 0; p < locs.size(); p++) {
     QStringList& elements = locs[p];
     CodeEditor* ce = ces[p];
-
+    if (!ce) {
+        continue;
+    }
     bool ok;
     int sl = elements[1].toInt(&ok);
     int sc = elements[2].toInt(&ok);
@@ -1666,10 +1684,12 @@ void MainWindow::errorClicked(const QUrl & anUrl)
     if(url.scheme() == "highlight") {
       // Reset the highlighters
       for (int i=0; i<ui->tabWidget->count(); i++) {
-          CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-          Highlighter& hl = ce->getHighlighter();
-          hl.clearFixedBg();
-          hl.rehighlight();
+          CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+          if (ce) {
+              Highlighter& hl = ce->getHighlighter();
+              hl.clearFixedBg();
+              hl.rehighlight();
+          }
       }
 
       QString query = url.query();
@@ -1688,7 +1708,10 @@ void MainWindow::errorClicked(const QUrl & anUrl)
     QFileInfo urlinfo(url.toLocalFile());
     IDE::instance()->stats.errorsClicked++;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (!ce) {
+            continue;
+        }
         QFileInfo ceinfo(ce->filepath);
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
             QRegExp re_line("line=([0-9]+)");
@@ -1885,9 +1908,14 @@ bool MainWindow::isEmptyProject(void)
     if (ui->tabWidget->count() == 0) {
         return !getProject().hasProjectFile();
     }
-    if (ui->tabWidget->count() == 1) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(0));
-        return ce->filepath == "" && !ce->document()->isModified() && !getProject().isModified();
+    if (getProject().isModified()) {
+        return true;
+    }
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && (!ce->filepath.isEmpty() || ce->document()->isModified())) {
+            return true;
+        }
     }
     return false;
 }
@@ -1902,8 +1930,8 @@ void MainWindow::openProject(const QString& fileName)
                 int closeTab = ui->tabWidget->count()==1 ? 0 : -1;
                 loadProject(fileName);
                 if (closeTab > 0 && ui->tabWidget->count()>1) {
-                    CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(closeTab));
-                    if (ce->filepath == "")
+                    CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(closeTab));
+                    if (ce && ce->filepath == "")
                         tabCloseRequest(closeTab);
                 }
             } else {
@@ -2044,8 +2072,8 @@ void MainWindow::on_actionFind_previous_triggered()
 void MainWindow::on_actionSave_all_triggered()
 {
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (ce->document()->isModified())
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && ce->document()->isModified())
             saveFile(ce,ce->filepath);
     }
 }
@@ -2143,8 +2171,10 @@ void MainWindow::on_actionToggle_profiler_info_triggered()
 {
     profileInfoVisible = !profileInfoVisible;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->showDebugInfo(profileInfoVisible);
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->showDebugInfo(profileInfoVisible);
+        }
     }
 }
 
@@ -2181,8 +2211,8 @@ void MainWindow::on_actionSubmit_to_MOOC_triggered()
         files.insert(problem.data);
     }
     for (int i = 0; i < ui->tabWidget->count(); i++) {
-        auto ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (ce->document()->isModified() && files.contains(ce->filepath)) {
+        auto ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && ce->document()->isModified() && files.contains(ce->filepath)) {
             modifiedDocs.append(ce);
         }
     }
@@ -2286,8 +2316,10 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     settings.setValue("darkMode",darkMode);
     settings.endGroup();
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ce->setDarkMode(darkMode);
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->setDarkMode(darkMode);
+        }
     }
     static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
 
@@ -2451,7 +2483,7 @@ void MainWindow::on_config_window_selectedIndexChanged(int index)
 
     auto sc = getCurrentSolverConfig();
     ui->actionSave_solver_configuration->setDisabled(!sc);
-    ui->actionProfile_search->setDisabled(!sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
+    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
 }
 
 SolverConfiguration* MainWindow::getCurrentSolverConfig()
@@ -2529,8 +2561,12 @@ QStringList MainWindow::getOpenFiles()
 {
     QStringList ret;
     for (int i=0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        ret << ce->filepath;
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ret << ce->filepath;
+        } else {
+            ret << "";
+        }
     }
     return ret;
 }
@@ -2589,8 +2625,8 @@ void MainWindow::on_projectBrowser_removeRequested(const QStringList& files)
     bool modified = false;
     QList<CodeEditor*> editors;
     for (int i = 0; i<ui->tabWidget->count(); i++) {
-        CodeEditor* ce = static_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (files.contains(QFileInfo(ce->filepath).absoluteFilePath())) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce && files.contains(QFileInfo(ce->filepath).absoluteFilePath())) {
             editors << ce;
             if (ce->document()->isModified()) {
                 modified = true;
@@ -2660,8 +2696,10 @@ void MainWindow::on_actionShow_search_profiler_triggered()
         ui->cpprofiler->setLayout(profiler_layout);
 
         cpprofiler::Options opts;
-        conductor = new cpprofiler::Conductor(opts);
+        conductor = new cpprofiler::Conductor(opts, this);
         conductor->setWindowFlags(Qt::Widget);
+        connect(conductor, &cpprofiler::Conductor::showExecutionWindow, this, &MainWindow::showExecutionWindow);
+        connect(conductor, &cpprofiler::Conductor::showMergeWindow, this, &MainWindow::showMergeWindow);
         profiler_layout->addWidget(conductor);
 
         ex_id = 0;
@@ -2685,4 +2723,34 @@ void MainWindow::on_actionProfile_search_triggered()
     args << "--cp-profiler"
          << QString::number(ex_id++) + "," + QString::number(conductor->getListenPort());
     compileOrRun(CM_RUN, nullptr, QString(), QStringList(), QString(), args);
+}
+
+void MainWindow::showExecutionWindow(cpprofiler::ExecutionWindow& e)
+{
+    e.setWindowFlags(Qt::Widget);
+    e.setParent(this);
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) == &e) {
+            ui->tabWidget->setCurrentIndex(i);
+            return;
+        }
+    }
+    auto name = QString::fromStdString(e.execution().name());
+    ui->tabWidget->addTab(&e, name);
+    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+}
+
+void MainWindow::showMergeWindow(cpprofiler::analysis::MergeWindow& m)
+{
+    m.setWindowFlags(Qt::Widget);
+    m.setParent(this);
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        if (ui->tabWidget->widget(i) == &m) {
+            ui->tabWidget->setCurrentIndex(i);
+            return;
+        }
+    }
+    auto name = QString::fromStdString("Merge result");
+    ui->tabWidget->addTab(&m, name);
+    ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
 }

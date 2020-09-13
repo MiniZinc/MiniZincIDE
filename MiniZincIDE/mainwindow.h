@@ -44,6 +44,8 @@
 #include "codechecker.h"
 
 #include "../cp-profiler/src/cpprofiler/conductor.hh"
+#include "../cp-profiler/src/cpprofiler/execution_window.hh"
+#include "../cp-profiler/src/cpprofiler/analysis/merge_window.hh"
 
 namespace Ui {
 class MainWindow;
@@ -238,6 +240,9 @@ private slots:
     void on_actionShow_search_profiler_triggered();
 
     void on_actionProfile_search_triggered();
+
+    void showExecutionWindow(cpprofiler::ExecutionWindow& e);
+    void showMergeWindow(cpprofiler::analysis::MergeWindow& m);
 
 protected:
     virtual void closeEvent(QCloseEvent*);
