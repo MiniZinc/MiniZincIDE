@@ -244,6 +244,8 @@ private slots:
     void showExecutionWindow(cpprofiler::ExecutionWindow& e);
     void showMergeWindow(cpprofiler::analysis::MergeWindow& m);
 
+    void on_cpprofiler_dockWidget_visibilityChanged(bool visible);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

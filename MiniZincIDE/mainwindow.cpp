@@ -2706,10 +2706,8 @@ void MainWindow::on_actionShow_search_profiler_triggered()
     }
     if (ui->cpprofiler_dockWidget->isVisible()) {
         ui->cpprofiler_dockWidget->hide();
-        ui->actionShow_search_profiler->setText("Show search profiler");
     } else {
         ui->cpprofiler_dockWidget->show();
-        ui->actionShow_search_profiler->setText("Hide search profiler");
     }
 }
 
@@ -2753,4 +2751,13 @@ void MainWindow::showMergeWindow(cpprofiler::analysis::MergeWindow& m)
     auto name = QString::fromStdString("Merge result");
     ui->tabWidget->addTab(&m, name);
     ui->tabWidget->setCurrentIndex(ui->tabWidget->count()-1);
+}
+
+void MainWindow::on_cpprofiler_dockWidget_visibilityChanged(bool visible)
+{
+    if (visible) {
+        ui->actionShow_search_profiler->setText("Hide search profiler");
+    } else {
+        ui->actionShow_search_profiler->setText("Show search profiler");
+    }
 }
