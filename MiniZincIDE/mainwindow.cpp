@@ -1053,7 +1053,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
              << "--output-detailed-timing";
     }
 
-    connect(ui->actionStop, &QAction::triggered, [=] () {
+    connect(ui->actionStop, &QAction::triggered, compileProcess, [=] () {
         ui->actionStop->setDisabled(true);
         compileProcess->disconnect();
         compileProcess->terminate();
