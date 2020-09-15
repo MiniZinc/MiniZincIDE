@@ -9,6 +9,7 @@ build:linux:
   image: dekker1/minibuild:Qt
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
+    GIT_STRATEGY: clone
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" PREFIX=/usr ../MiniZincIDE/MiniZincIDE.pro
@@ -25,6 +26,7 @@ build:osx:
   stage: build
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
+    GIT_STRATEGY: clone
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
