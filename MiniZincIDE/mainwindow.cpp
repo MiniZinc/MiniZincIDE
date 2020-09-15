@@ -682,14 +682,10 @@ void MainWindow::tabChange(int tab) {
         ui->actionShift_right->setEnabled(true);
         curEditor->setFocus();
 
-        auto sc = getCurrentSolverConfig();
-        ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
-
         MainWindow::check_code();
     }
 
-    auto sc = getCurrentSolverConfig();
-    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
+    updateProfileSearchButton();
 }
 
 void MainWindow::on_actionClose_triggered()
@@ -2483,7 +2479,8 @@ void MainWindow::on_config_window_selectedIndexChanged(int index)
 
     auto sc = getCurrentSolverConfig();
     ui->actionSave_solver_configuration->setDisabled(!sc);
-    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("-cpprofiler"));
+
+    updateProfileSearchButton();
 }
 
 SolverConfiguration* MainWindow::getCurrentSolverConfig()
@@ -2760,4 +2757,10 @@ void MainWindow::on_cpprofiler_dockWidget_visibilityChanged(bool visible)
     } else {
         ui->actionShow_search_profiler->setText("Show search profiler");
     }
+}
+
+void MainWindow::updateProfileSearchButton()
+{
+    auto sc = getCurrentSolverConfig();
+    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("--cp-profiler"));
 }
