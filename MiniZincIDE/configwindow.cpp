@@ -395,25 +395,24 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
         return;
     }
 
-    if (ui->sync_checkBox->isChecked()) {
-        for (auto s : configs) {
-            s->timeLimit = ui->timeLimit_checkBox->isChecked() ? static_cast<int>(ui->timeLimit_doubleSpinBox->value() * 1000.0) : 0;
-            if (ui->defaultBehavior_radioButton->isChecked()) {
-                s->printIntermediate = true;
-                s->numSolutions = 1;
-                s->numOptimal = 1;
-            } else {
-                s->printIntermediate = ui->intermediateSolutions_checkBox->isChecked();
-                s->numSolutions = ui->numSolutions_checkBox->isChecked() ? ui->numSolutions_spinBox->value() : 0;
-                s->numOptimal = ui->numOptimal_checkBox->isChecked() ? ui->numOptimal_spinBox->value() : 0;
-            }
-
-            s->verboseCompilation = ui->verboseCompilation_checkBox->isChecked();
-            s->verboseSolving = ui->verboseSolving_checkBox->isChecked();
-            s->compilationStats = ui->compilationStats_checkBox->isChecked();
-            s->solvingStats = ui->solvingStats_checkBox->isChecked();
-            s->outputTiming = ui->timingInfo_checkBox->isChecked();
+    auto cfgs = ui->sync_checkBox->isChecked() ? configs : (QList<SolverConfiguration*>() << sc);
+    for (auto s : cfgs) {
+        s->timeLimit = ui->timeLimit_checkBox->isChecked() ? static_cast<int>(ui->timeLimit_doubleSpinBox->value() * 1000.0) : 0;
+        if (ui->defaultBehavior_radioButton->isChecked()) {
+            s->printIntermediate = true;
+            s->numSolutions = 1;
+            s->numOptimal = 1;
+        } else {
+            s->printIntermediate = ui->intermediateSolutions_checkBox->isChecked();
+            s->numSolutions = ui->numSolutions_checkBox->isChecked() ? ui->numSolutions_spinBox->value() : 0;
+            s->numOptimal = ui->numOptimal_checkBox->isChecked() ? ui->numOptimal_spinBox->value() : 0;
         }
+
+        s->verboseCompilation = ui->verboseCompilation_checkBox->isChecked();
+        s->verboseSolving = ui->verboseSolving_checkBox->isChecked();
+        s->compilationStats = ui->compilationStats_checkBox->isChecked();
+        s->solvingStats = ui->solvingStats_checkBox->isChecked();
+        s->outputTiming = ui->timingInfo_checkBox->isChecked();
     }
 
     sc->optimizationLevel = ui->optimizationLevel_comboBox->currentIndex();
