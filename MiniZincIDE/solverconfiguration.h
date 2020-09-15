@@ -34,9 +34,7 @@ public:
     int numThreads;
     QVariant randomSeed;
     bool freeSearch;
-    bool useExtraOptions;
     QVariantMap extraOptions;
-    QVariantMap unknownOptions;
     bool modified;
 
     ///

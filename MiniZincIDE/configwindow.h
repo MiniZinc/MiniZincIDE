@@ -17,6 +17,8 @@
 #include <QJsonDocument>
 #include <QStringListModel>
 #include <QFormLayout>
+#include <QMenu>
+#include <QStyledItemDelegate>
 
 #include "solverconfiguration.h"
 #include "solverdialog.h"
@@ -113,17 +115,15 @@ private slots:
 
     void on_config_comboBox_currentIndexChanged(int index);
 
-    void on_addExtraParam_pushButton_clicked();
-
     void on_removeExtraParam_pushButton_clicked();
-
-    void on_extraFlags_groupBox_toggled(bool arg1);
 
     void on_extraParams_tableWidget_itemSelectionChanged();
 
     void on_numOptimal_checkBox_stateChanged(int arg1);
 
     void on_clone_pushButton_clicked();
+
+    void on_actionCustom_Parameter_triggered();
 
 private:
     Ui::ConfigWindow *ui;
@@ -138,13 +138,25 @@ private:
 
     void updateSolverConfig(SolverConfiguration* sc);
     void addExtraParam(const QString& key = "", const QVariant& value = "");
+    void addExtraParam(const SolverFlag& f, const QVariant& value = QVariant());
     void watchChanges(const QList<QWidget*>& objects, std::function<void()> action);
     void invalidate(bool all);
     void populateComboBox(void);
+    void resizeExtraFlagsTable(void);
 
     QWidget* extraFlagsWidget = nullptr;
     QFormLayout* extraFlagsForm = nullptr;
+    QMenu* extraFlagsMenu;
 };
 
+class ExtraOptionDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void setEditorData(QWidget* editor, const QModelIndex& index) const override;
+    void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
+};
 
 #endif // CONFIGWINDOW_H

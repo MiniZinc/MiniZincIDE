@@ -22,7 +22,6 @@ SolverConfiguration::SolverConfiguration(const Solver& _solver, bool builtin) :
     optimizationLevel(1),
     numThreads(1),
     freeSearch(false),
-    useExtraOptions(false),
     modified(false)
 {
     solver = _solver.id + "@" + _solver.version;
@@ -125,20 +124,14 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
         } else if (key == "-f" || key == "--free-search") {
             sc.freeSearch = it.value().toBool();
         } else {
-            bool matched = false;
-            for (auto flag : sc.solverDefinition.extraFlags) {
-                if (key == flag.name || key == "_" + flag.name) {
-                    matched = true;
-                    sc.extraOptions[flag.name] = it.value().toVariant();
-                    if (!key.startsWith("_")) {
-                        sc.useExtraOptions = true;
-                    }
-                    break;
-                }
-            }
-            if (!matched) {
-                sc.unknownOptions[key] = it.value().toVariant();
-            }
+            sc.extraOptions[key] = it.value().toVariant();
+        }
+    }
+
+    for (auto f : solver.extraFlags) {
+        if (f.t == SolverFlag::T_BOOL_ONOFF && sc.extraOptions.contains(f.name)) {
+            // Convert on/off string to bool (TODO: would be nice to handle this in minizinc)
+            sc.extraOptions[f.name] = sc.extraOptions[f.name] == f.options[0];
         }
     }
     return sc;
@@ -200,9 +193,6 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     }
     if (sco["solvingStats"].isBool()) {
         newSc.solvingStats = sco["solvingStats"].toBool();
-    }
-    if (sco["useExtraOptions"].isBool()) {
-        newSc.useExtraOptions = sco["useExtraOptions"].toBool();
     }
     if (sco["extraOptions"].isObject()) {
         QJsonObject extraOptions = sco["extraOptions"].toObject();
@@ -303,8 +293,11 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
     for (auto it = extraOptions.begin(); it != extraOptions.end(); it++) {
         config[it.key()] = QJsonValue::fromVariant(it.value());
     }
-    for (auto it = unknownOptions.begin(); it != unknownOptions.end(); it++) {
-        config[it.key()] = QJsonValue::fromVariant(it.value());
+    for (auto f : solverDefinition.extraFlags) {
+        if (f.t == SolverFlag::T_BOOL_ONOFF && extraOptions.contains(f.name)) {
+            // Convert to on/off string instead of bool (TODO: would be nice to handle this in minizinc)
+            config[f.name] = extraOptions[f.name].toBool() ? f.options[0] : f.options[1];
+        }
     }
     return config;
 }
@@ -399,7 +392,5 @@ bool SolverConfiguration::operator==(const SolverConfiguration& sc) const
             numThreads == sc.numThreads &&
             randomSeed == sc.randomSeed &&
             freeSearch == sc.freeSearch &&
-            useExtraOptions == sc.useExtraOptions &&
-            extraOptions == sc.extraOptions &&
-            unknownOptions == sc.unknownOptions;
+            extraOptions == sc.extraOptions;
 }

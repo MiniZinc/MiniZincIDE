@@ -14,6 +14,8 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QMenu>
+#include <QScrollBar>
 
 #include "process.h"
 #include "exception.h"
@@ -27,10 +29,16 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->userDefinedBehavior_frame->setVisible(false);
 
+    extraFlagsMenu = new QMenu(this);
+    ui->addExtraParam_toolButton->setMenu(extraFlagsMenu);
+
     ui->extraParams_tableWidget->setColumnCount(3);
     ui->extraParams_tableWidget->setHorizontalHeaderLabels(QStringList() << "Parameter" << "Type" << "Value");
+    ui->extraParams_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->extraParams_tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->extraParams_tableWidget->verticalHeader()->hide();
+
+    ui->extraParams_tableWidget->setItemDelegateForColumn(2, new ExtraOptionDelegate);
 
     comboBoxModel = new QStringListModel(this);
 
@@ -339,117 +347,34 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
     ui->freeSearch_checkBox->setEnabled(enableFreeSearch);
     ui->freeSearch_checkBox->setChecked(sc->freeSearch);
 
-    bool hasExtraFlags = sc->solverDefinition.extraFlags.length();
-    ui->extraFlags_groupBox->setVisible(hasExtraFlags);
-
-    delete extraFlagsWidget;
-    extraFlagsWidget = new QWidget(this);
-    ui->extraFlagsOuter_layout->addWidget(extraFlagsWidget);
-
-    extraFlagsForm = new QFormLayout(this);
-    extraFlagsForm->setContentsMargins(0, 0, 0, 0);
-    extraFlagsWidget->setLayout(extraFlagsForm);
-
-    auto& used = sc->extraOptions;
+    extraFlagsMenu->clear();
     for (auto& f : sc->solverDefinition.extraFlags) {
-        auto label = new QLabel(f.description);
-        label->setToolTip(f.name);
-//        label->setWordWrap(true);
-        switch (f.t) {
-        case SolverFlag::T_INT:
-        {
-            auto field = new QLineEdit();
-            field->setAlignment(Qt::AlignRight);
-            field->setPlaceholderText(f.def);
-            if (used.contains(f.name)) {
-                 field->setText(used[f.name].toString());
-            }
-            field->setValidator(new QIntValidator());
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_INT_RANGE:
-        {
-            auto field = new QSpinBox();
-            field->setRange(static_cast<int>(f.min), static_cast<int>(f.max));
-            field->setValue(used.contains(f.name) ? used[f.name].toInt() : f.def.toInt());
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_BOOL:
-        {
-            auto field = new QCheckBox();
-            field->setChecked(used.contains(f.name) ? used[f.name].toBool() : f.def == "true");
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_BOOL_ONOFF:
-        {
-            auto field = new QCheckBox();
-            field->setChecked(used.contains(f.name) ? used[f.name] == f.options[0] : f.def == f.options[0]);
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_FLOAT:
-        {
-            auto field = new QLineEdit();
-            field->setAlignment(Qt::AlignRight);
-            field->setPlaceholderText(f.def);
-            if (used.contains(f.name)) {
-                field->setText(used[f.name].toString());
-            }
-            field->setValidator(new QDoubleValidator());
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_FLOAT_RANGE:
-        {
-            auto field = new QDoubleSpinBox();
-            field->setRange(f.min, f.max);
-            field->setValue(used.contains(f.name) ? used[f.name].toDouble() : f.def.toDouble());
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_STRING:
-        {
-            auto field = new QLineEdit();
-            field->setPlaceholderText(f.def);
-            if (used.contains(f.name)) {
-                field->setText(used[f.name].toString());
-            }
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_OPT:
-        {
-            auto field = new QComboBox();
-            field->addItems(f.options);
-            field->setCurrentText(used.contains(f.name) ? used[f.name].toString() : f.def);
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        case SolverFlag::T_SOLVER:
-        {
-            auto field = new QComboBox();
-            for (auto& solver : MznDriver::get().solvers()) {
-                field->addItem(solver.name);
-            }
-            field->setCurrentText(used.contains(f.name) ? used[f.name].toString() : f.def);
-            extraFlagsForm->addRow(label, field);
-            break;
-        }
-        }
+        auto action = extraFlagsMenu->addAction(f.description);
+        action->setData(f.name);
+        connect(action, &QAction::triggered, [=] (bool) {
+            addExtraParam(f);
+            action->setDisabled(true);
+        });
     }
-    ui->extraFlags_groupBox->setChecked(sc->useExtraOptions);
-    extraFlagsWidget->setVisible(sc->useExtraOptions);
+    extraFlagsMenu->addSeparator();
+    extraFlagsMenu->addAction(ui->actionCustom_Parameter);
 
-    watchChanges(extraFlagsForm->findChildren<QWidget*>(),
-                  std::bind(&ConfigWindow::invalidate, this, false));
+    while (ui->extraParams_tableWidget->rowCount() > 0) {
+        ui->extraParams_tableWidget->removeRow(0);
+    }
 
-    ui->extraParams_tableWidget->clearContents();
-
-    for (auto it = sc->unknownOptions.begin(); it != sc->unknownOptions.end(); it++) {
-        addExtraParam(it.key(), it.value());
+    for (auto it = sc->extraOptions.begin(); it != sc->extraOptions.end(); it++) {
+        bool matched = false;
+        for (auto& f : sc->solverDefinition.extraFlags) {
+            if (f.name == it.key()) {
+                addExtraParam(f, it.value());
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            addExtraParam(it.key(), it.value());
+        }
     }
 
     populating = false;
@@ -491,98 +416,16 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
     sc->randomSeed = ui->randomSeed_checkBox->isChecked() ? ui->randomSeed_lineEdit->text() : nullptr;
     sc->freeSearch = ui->freeSearch_checkBox->isChecked();
 
-    sc->unknownOptions.clear();
+    sc->extraOptions.clear();
     for (int row = 0; row < ui->extraParams_tableWidget->rowCount(); row++) {
         auto keyItem = ui->extraParams_tableWidget->item(row, 0);
         auto valueItem = ui->extraParams_tableWidget->item(row, 2);
         if (keyItem && valueItem) {
-            auto key = keyItem->data(Qt::DisplayRole).toString();
+            auto key = keyItem->data(Qt::UserRole).toString();
             auto value = valueItem->data(Qt::DisplayRole);
-            sc->unknownOptions.insert(key, value);
+            sc->extraOptions.insert(key, value);
         }
     }
-
-    sc->useExtraOptions = ui->extraFlags_groupBox->isChecked();
-    sc->extraOptions.clear();
-    int i = 0;
-    for (auto& f : sc->solverDefinition.extraFlags) {
-        auto field = extraFlagsForm->itemAt(i, QFormLayout::FieldRole)->widget();
-        switch (f.t) {
-        case SolverFlag::T_INT:
-        {
-            auto value = static_cast<QLineEdit*>(field)->text();
-            if (!value.isEmpty()) {
-                sc->extraOptions[f.name] = value.toInt();
-            }
-            break;
-        }
-        case SolverFlag::T_INT_RANGE:
-        {
-            auto value = static_cast<QSpinBox*>(field)->value();
-            if (value != f.def.toInt()) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        case SolverFlag::T_BOOL:
-        {
-            bool value = static_cast<QCheckBox*>(field)->isChecked();
-            if (value != (f.def == "true")) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        case SolverFlag::T_BOOL_ONOFF:
-        {
-            auto value = static_cast<QCheckBox*>(field)->isChecked() ? f.options[0] : f.options[1];
-            if (value != f.def) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        case SolverFlag::T_FLOAT:
-        {
-            auto value = static_cast<QLineEdit*>(field)->text();
-            if (!value.isEmpty()) {
-                sc->extraOptions[f.name] = value.toDouble();
-            }
-            break;
-        }
-        case SolverFlag::T_FLOAT_RANGE:
-        {
-            auto value = static_cast<QDoubleSpinBox*>(field)->value();
-            if (value != f.def.toDouble()) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        case SolverFlag::T_STRING:
-        {
-            auto value = static_cast<QLineEdit*>(field)->text();
-            if (!value.isEmpty()) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        case SolverFlag::T_OPT:
-        case SolverFlag::T_SOLVER:
-        {
-            auto value = static_cast<QComboBox*>(field)->currentText();
-            if (value != f.def) {
-                sc->extraOptions[f.name] = value;
-            }
-            break;
-        }
-        }
-        i++;
-    }
-}
-
-
-void ConfigWindow::on_addExtraParam_pushButton_clicked()
-{
-    addExtraParam();
-    invalidate(false);
 }
 
 void ConfigWindow::on_removeExtraParam_pushButton_clicked()
@@ -595,17 +438,19 @@ void ConfigWindow::on_removeExtraParam_pushButton_clicked()
     }
     std::sort(toBeRemoved.begin(), toBeRemoved.end(), std::greater<int>());
     for (auto i : toBeRemoved) {
+        auto name = ui->extraParams_tableWidget->item(i, 0)->data(Qt::UserRole).toString();
+        for (auto action : extraFlagsMenu->actions()) {
+            // Re-enable adding of this flag
+            if (name == action->data().toString()) {
+                action->setEnabled(true);
+                break;
+            }
+        }
         ui->extraParams_tableWidget->removeRow(i);
     }
     if (!toBeRemoved.isEmpty()) {
+        resizeExtraFlagsTable();
         invalidate(false);
-    }
-}
-
-void ConfigWindow::on_extraFlags_groupBox_toggled(bool arg1)
-{
-    if (extraFlagsWidget) {
-        extraFlagsWidget->setVisible(arg1);
     }
 }
 
@@ -615,12 +460,43 @@ void ConfigWindow::on_extraParams_tableWidget_itemSelectionChanged()
     ui->removeExtraParam_pushButton->setEnabled(hasSelection);
 }
 
+void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
+{
+    int i = ui->extraParams_tableWidget->rowCount();
+    ui->extraParams_tableWidget->insertRow(i);
+
+    auto keyItem = new QTableWidgetItem(f.description);
+    keyItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    keyItem->setData(Qt::UserRole, f.name);
+
+    auto typeItem = new QTableWidgetItem;
+    typeItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    auto valueItem = new QTableWidgetItem;
+    valueItem->setData(Qt::UserRole, QVariant::fromValue(f));
+    if (value.isNull()) {
+        valueItem->setData(Qt::DisplayRole, f.def);
+    } else {
+        valueItem->setData(Qt::DisplayRole, value);
+    }
+
+    ui->extraParams_tableWidget->setItem(i, 0, keyItem);
+    ui->extraParams_tableWidget->setItem(i, 1, typeItem);
+    ui->extraParams_tableWidget->setItem(i, 2, valueItem);
+
+    resizeExtraFlagsTable();
+
+    invalidate(false);
+}
+
 void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
 {
     int i = ui->extraParams_tableWidget->rowCount();
     ui->extraParams_tableWidget->insertRow(i);
 
-    auto keyItem = new QTableWidgetItem(key.startsWith("--") ? key.right(key.length() - 2) : key);
+    auto flag = key.startsWith("--") ? key.right(key.length() - 2) : key;
+    auto keyItem = new QTableWidgetItem(flag);
+    keyItem->setData(Qt::UserRole, flag);
     auto valItem = new QTableWidgetItem;
     valItem->setData(Qt::DisplayRole, value);
     ui->extraParams_tableWidget->setItem(i, 0, keyItem);
@@ -658,6 +534,8 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
     });
 
     ui->extraParams_tableWidget->setCellWidget(i, 1, typeComboBox);
+
+    resizeExtraFlagsTable();
 }
 
 void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<void()> action)
@@ -756,4 +634,144 @@ void ConfigWindow::on_clone_pushButton_clicked()
     configs << clone;
     populateComboBox();
     setCurrentIndex(configs.length() - 1);
+}
+
+void ConfigWindow::on_actionCustom_Parameter_triggered()
+{
+    addExtraParam();
+    invalidate(false);
+}
+
+void ConfigWindow::resizeExtraFlagsTable()
+{
+    int total_height = ui->extraParams_tableWidget->horizontalHeader()->height();
+    if (!ui->extraParams_tableWidget->horizontalScrollBar()->isHidden()) {
+        total_height += ui->extraParams_tableWidget->horizontalScrollBar()->height();
+    }
+    for (int row = 0; row < ui->extraParams_tableWidget->rowCount(); row++) {
+        total_height += ui->extraParams_tableWidget->rowHeight(row);
+    }
+    ui->extraParams_tableWidget->setMinimumHeight(total_height);
+
+}
+
+QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+    if (index.data(Qt::UserRole).canConvert<SolverFlag>()) {
+        auto f = qvariant_cast<SolverFlag>(index.data(Qt::UserRole));
+        switch (f.t) {
+        case SolverFlag::T_INT:
+        {
+            auto field = new QLineEdit(parent);
+            field->setAlignment(Qt::AlignRight);
+            field->setValidator(new QIntValidator());
+            return field;
+        }
+        case SolverFlag::T_INT_RANGE:
+        {
+            auto field = new QSpinBox(parent);
+            field->setRange(static_cast<int>(f.min), static_cast<int>(f.max));
+            return field;
+        }
+        case SolverFlag::T_FLOAT:
+        {
+            auto field = new QLineEdit(parent);
+            field->setAlignment(Qt::AlignRight);
+            field->setValidator(new QDoubleValidator());
+            return field;
+        }
+        case SolverFlag::T_FLOAT_RANGE:
+        {
+            auto field = new QDoubleSpinBox(parent);
+            field->setRange(f.min, f.max);
+            return field;
+        }
+        case SolverFlag::T_OPT:
+        {
+            auto field = new QComboBox(parent);
+            field->addItems(f.options);
+            return field;
+        }
+        case SolverFlag::T_SOLVER:
+        {
+            auto field = new QComboBox(parent);
+            for (auto& solver : MznDriver::get().solvers()) {
+                field->addItem(solver.name);
+            }
+            return field;
+        }
+        case SolverFlag::T_BOOL:
+        case SolverFlag::T_BOOL_ONOFF:
+        case SolverFlag::T_STRING:
+            return QStyledItemDelegate::createEditor(parent, option, index);
+        }
+    } else {
+        return QStyledItemDelegate::createEditor(parent, option, index);
+    }
+}
+
+void ExtraOptionDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const
+{
+    if (index.data(Qt::UserRole).canConvert<SolverFlag>()) {
+        auto f = qvariant_cast<SolverFlag>(index.data(Qt::UserRole));
+        switch (f.t) {
+        case SolverFlag::T_INT:
+            static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toInt()));
+            break;
+        case SolverFlag::T_INT_RANGE:
+            static_cast<QSpinBox*>(editor)->setValue(index.data().toInt());
+            break;
+        case SolverFlag::T_FLOAT:
+            static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toDouble()));
+            break;
+        case SolverFlag::T_FLOAT_RANGE:
+            static_cast<QDoubleSpinBox*>(editor)->setValue(index.data().toDouble());
+            break;
+        case SolverFlag::T_OPT:
+        case SolverFlag::T_SOLVER:
+            static_cast<QComboBox*>(editor)->setCurrentText(index.data().toString());
+            break;
+        case SolverFlag::T_BOOL:
+        case SolverFlag::T_BOOL_ONOFF:
+        case SolverFlag::T_STRING:
+            QStyledItemDelegate::setEditorData(editor, index);
+            break;
+        }
+    } else {
+        QStyledItemDelegate::setEditorData(editor, index);
+    }
+}
+
+void ExtraOptionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    if (index.data(Qt::UserRole).canConvert<SolverFlag>()) {
+        auto f = qvariant_cast<SolverFlag>(index.data(Qt::UserRole));
+        switch (f.t) {
+        case SolverFlag::T_INT:
+            model->setData(index, static_cast<QLineEdit*>(editor)->text().toInt());
+            break;
+        case SolverFlag::T_INT_RANGE:
+            model->setData(index, static_cast<QSpinBox*>(editor)->value());
+            break;
+        case SolverFlag::T_BOOL:
+        case SolverFlag::T_BOOL_ONOFF:
+            model->setData(index, static_cast<QCheckBox*>(editor)->isChecked());
+            break;
+        case SolverFlag::T_FLOAT:
+            model->setData(index, static_cast<QLineEdit*>(editor)->text().toDouble());
+            break;
+        case SolverFlag::T_FLOAT_RANGE:
+            model->setData(index, static_cast<QDoubleSpinBox*>(editor)->value());
+            break;
+        case SolverFlag::T_STRING:
+            model->setData(index, static_cast<QLineEdit*>(editor)->text());
+            break;
+        case SolverFlag::T_OPT:
+        case SolverFlag::T_SOLVER:
+            model->setData(index, static_cast<QComboBox*>(editor)->currentText());
+            break;
+        }
+    } else {
+        QStyledItemDelegate::setModelData(editor, model, index);
+    }
 }

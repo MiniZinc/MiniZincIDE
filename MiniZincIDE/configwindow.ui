@@ -551,24 +551,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="extraFlags_groupBox">
-        <property name="title">
-         <string>Extra solver options</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <layout class="QVBoxLayout" name="extraFlagsOuter_layout"/>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
        <widget class="QGroupBox" name="unknownOptions_groupBox">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Extra parameters passed to MiniZinc&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -578,7 +560,23 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <widget class="QTableWidget" name="extraParams_tableWidget"/>
+          <widget class="QTableWidget" name="extraParams_tableWidget">
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QAbstractScrollArea::AdjustToContents</enum>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::AllEditTriggers</set>
+           </property>
+           <property name="columnCount">
+            <number>3</number>
+           </property>
+           <column/>
+           <column/>
+           <column/>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -596,9 +594,24 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="addExtraParam_pushButton">
+            <widget class="QToolButton" name="addExtraParam_toolButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
               <string>Add parameter</string>
+             </property>
+             <property name="popupMode">
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonTextOnly</enum>
+             </property>
+             <property name="arrowType">
+              <enum>Qt::DownArrow</enum>
              </property>
             </widget>
            </item>
@@ -606,6 +619,12 @@
             <widget class="QPushButton" name="removeExtraParam_pushButton">
              <property name="enabled">
               <bool>false</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
              <property name="text">
               <string>Remove parameter</string>
@@ -634,6 +653,14 @@
     </spacer>
    </item>
   </layout>
+  <action name="actionCustom_Parameter">
+   <property name="text">
+    <string>Custom parameter</string>
+   </property>
+   <property name="toolTip">
+    <string>Add custom parameter to configuration</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

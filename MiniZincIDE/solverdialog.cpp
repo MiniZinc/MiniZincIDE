@@ -123,7 +123,28 @@ Solver::Solver(const QJsonObject& sj) {
                         }
                     }
                     extraFlag.description = extraFlagA[1].toString();
-                    extraFlag.def = extraFlagA[3].toString();
+                    auto def = extraFlagA[3].toString();
+                    switch (extraFlag.t) {
+                    case SolverFlag::T_INT:
+                    case SolverFlag::T_INT_RANGE:
+                        extraFlag.def = def.toInt();
+                        break;
+                    case SolverFlag::T_BOOL:
+                        extraFlag.def = def == "true";
+                        break;
+                    case SolverFlag::T_BOOL_ONOFF:
+                        extraFlag.def = def == extraFlag.options[0];
+                        break;
+                    case SolverFlag::T_FLOAT:
+                    case SolverFlag::T_FLOAT_RANGE:
+                        extraFlag.def = def.toDouble();
+                        break;
+                    case SolverFlag::T_STRING:
+                    case SolverFlag::T_OPT:
+                    case SolverFlag::T_SOLVER:
+                        extraFlag.def = def;
+                        break;
+                    }
                     extraFlags.push_back(extraFlag);
                 }
             }

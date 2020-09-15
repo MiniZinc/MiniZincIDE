@@ -15,6 +15,7 @@
 
 #include <QDialog>
 #include <QJsonObject>
+#include <QVariant>
 
 namespace Ui {
 class SolverDialog;
@@ -27,8 +28,10 @@ struct SolverFlag {
     double min;
     double max;
     QStringList options;
-    QString def;
+    QVariant def;
 };
+
+Q_DECLARE_METATYPE(SolverFlag)
 
 struct Solver {
     QString configFile;
