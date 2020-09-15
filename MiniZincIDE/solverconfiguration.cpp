@@ -7,6 +7,76 @@
 #include <QJsonArray>
 #include <QDir>
 
+namespace {
+
+void parseArgList(const QString& s, QVariantMap& map) {
+    QStringList ret;
+    bool hadEscape = false;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+    QString currentArg;
+    foreach (const QChar c, s) {
+        if (hadEscape) {
+            currentArg += c;
+            hadEscape = false;
+        } else {
+            if (c=='\\') {
+                hadEscape = true;
+            } else if (c=='"') {
+                if (inDoubleQuote) {
+                    inDoubleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inSingleQuote) {
+                    currentArg += c;
+                } else {
+                    inDoubleQuote = true;
+                }
+            } else if (c=='\'') {
+                if (inSingleQuote) {
+                    inSingleQuote=false;
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                } else if (inDoubleQuote) {
+                    currentArg += c;
+                } else {
+                    inSingleQuote = true;
+                }
+            } else if (!inSingleQuote && !inDoubleQuote && c==' ') {
+                if (currentArg.size() > 0) {
+                    ret.push_back(currentArg);
+                    currentArg = "";
+                }
+            } else {
+                currentArg += c;
+            }
+        }
+    }
+    if (currentArg.size() > 0) {
+        ret.push_back(currentArg);
+    }
+
+    QString flag;
+    for (auto& arg : ret) {
+        if (arg.startsWith("-")) {
+            if (!flag.isEmpty()) {
+                // Must be a boolean switch
+                map[flag] = true;
+            }
+            flag = arg;
+        } else if (!flag.isEmpty()) {
+            // Flag with arg
+            map[flag] = arg;
+            flag.clear();
+        } else {
+            // Arg with no flag
+            map[arg] = true;
+        }
+    }
+}
+
+}
+
 SolverConfiguration::SolverConfiguration(const Solver& _solver, bool builtin) :
     solverDefinition(_solver),
     isBuiltin(builtin),
@@ -172,18 +242,18 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     if (sco["additionalData"].isString()) {
         newSc.additionalData << sco["additionalData"].toString();
     }
-//    if (sco["additionalCompilerCommandline"].isString()) {
-//        newSc.additionalCompilerCommandline = sco["additionalCompilerCommandline"].toString();
-//    }
+    if (sco["additionalCompilerCommandline"].isString()) {
+       parseArgList(sco["additionalCompilerCommandline"].toString(), newSc.extraOptions);
+    }
     if (sco["nThreads"].isDouble()) {
         newSc.numThreads = sco["nThreads"].toInt();
     }
     if (sco["randomSeed"].isDouble()) {
         newSc.randomSeed = sco["randomSeed"].toDouble();
     }
-//    if (sco["solverFlags"].isString()) {
-//        newSc.solverFlags = sco["solverFlags"].toString();
-//    }
+    if (sco["solverFlags"].isString()) {
+        parseArgList(sco["solverFlags"].toString(), newSc.extraOptions);
+    }
     if (sco["freeSearch"].isBool()) {
         newSc.freeSearch = sco["freeSearch"].toBool();
     }
