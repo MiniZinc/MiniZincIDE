@@ -109,6 +109,8 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
             sc.optimizationLevel = 4;
         } else if (key == "-O5" && it.value().toBool()) {
             sc.optimizationLevel = 5;
+        } else if (key == "-O") {
+            sc.optimizationLevel = it.value().toInt();
         } else if (key == "-D" || key == "--cmdline-data") {
             if (it.value().isArray()) {
                 for (auto v : it.value().toArray()) {
@@ -272,7 +274,7 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
         config["output-time"] = outputTiming;
     }
     if (optimizationLevel != 1) {
-        config["-O" + QString::number(optimizationLevel)] = true;
+        config["-O"] = optimizationLevel;
     }
     QJsonArray arr;
     for (auto d : additionalData) {
