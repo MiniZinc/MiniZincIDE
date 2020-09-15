@@ -211,8 +211,7 @@ QString SolverConfiguration::name() const
 
     if (isBuiltin) {
         parts << solverDefinition.name
-              << solverDefinition.version
-              << "[built-in]";
+              << solverDefinition.version;
     } else {
         if (paramFile.isEmpty()) {
             parts << "Unsaved Configuration";
