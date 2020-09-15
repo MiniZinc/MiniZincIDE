@@ -1,4 +1,0 @@
-[submodule "cp-profiler"]
-	path = cp-profiler
-	url = https://github.com/cyderize/cp-profiler.git
-	branch = master
