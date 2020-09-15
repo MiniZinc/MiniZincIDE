@@ -2443,7 +2443,7 @@ void MainWindow::on_config_window_selectedIndexChanged(int index)
     solverConfCombo->setCurrentIndex(index);
 
     auto sc = getCurrentSolverConfig();
-    ui->actionSave_solver_configuration->setDisabled(!sc || sc->isBuiltin);
+    ui->actionSave_solver_configuration->setDisabled(!sc);
 }
 
 SolverConfiguration* MainWindow::getCurrentSolverConfig()

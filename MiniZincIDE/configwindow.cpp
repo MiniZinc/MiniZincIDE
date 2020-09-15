@@ -172,7 +172,13 @@ int ConfigWindow::findConfigFile(const QString &file)
 QString ConfigWindow::saveConfig(int index)
 {
     auto sc = configs[index];
+    auto oldSc = sc;
     updateSolverConfig(configs[currentIndex()]);
+
+    if (sc->isBuiltin) {
+        // Must clone built-in configs
+        sc = new SolverConfiguration(*sc);
+    }
 
     QString target = sc->paramFile;
     if (sc->paramFile.isEmpty()) {
@@ -192,6 +198,7 @@ QString ConfigWindow::saveConfig(int index)
     f.write(sc->toJSON());
     f.close();
 
+    oldSc->modified = false;
     sc->modified = false;
     sc->paramFile = target;
     populateComboBox();
