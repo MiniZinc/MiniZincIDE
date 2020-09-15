@@ -467,9 +467,13 @@ void MainWindow::tabCloseRequest(int tab)
         if (!ce->filepath.isEmpty()) {
             IDE::instance()->removeEditor(ce->filepath,ce);
         }
-        delete ce;
+        if (ce == curEditor) {
+            curEditor = nullptr;
+        }
+        ce->deleteLater();
+    } else {
+        ui->tabWidget->removeTab(tab);
     }
-    ui->tabWidget->removeTab(tab);
     getProject().openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
 }
 
