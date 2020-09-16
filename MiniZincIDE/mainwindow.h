@@ -341,6 +341,8 @@ private:
     void finishJSONViewer(qint64 time);
 
     void updateProfileSearchButton(void);
+
+    QString runMessage(const QString& action, const QString& model, const QStringList& data, const QStringList& extraArgs);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

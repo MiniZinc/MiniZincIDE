@@ -1113,6 +1113,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     connect(timer, &QTimer::timeout, compileProcess, [=] () {
         statusTimerEvent(compileProcess->timeElapsed());
     });
+    addOutput(runMessage("Compiling", model, data, extraArgs));
     updateUiProcessRunning(true);
     compileProcess->run(sc, args, fi.absolutePath());
     timer->start(1000);
@@ -1174,6 +1175,9 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(timer, &QTimer::timeout, solveProcess, [=] () {
         statusTimerEvent(solveProcess->timeElapsed());
     });
+
+    addOutput(runMessage("Running", model, data, extraArgs));
+
     curFilePath = model; // TODO: Fix the JSON visualization handling to not require this
     updateUiProcessRunning(true);
     solveProcess->solve(sc, model, data, extraArgs);
@@ -2800,4 +2804,33 @@ void MainWindow::updateProfileSearchButton()
 {
     auto sc = getCurrentSolverConfig();
     ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("--cp-profiler"));
+}
+
+QString MainWindow::runMessage(const QString& action, const QString& model, const QStringList& data, const QStringList& extraArgs)
+{
+    QString message;
+    QTextStream msg(&message);
+    msg << "<div class='mznnotice'>"
+        << action
+        << " "
+        << QFileInfo(model).fileName();
+    if (!data.isEmpty()) {
+        msg << " with ";
+        bool first = true;
+        for (auto df: data) {
+            QFileInfo fi(df);
+            if (first) {
+                first = false;
+            } else {
+                msg << ", ";
+            }
+            msg << fi.fileName();
+        }
+    }
+    if (!extraArgs.isEmpty()) {
+        msg << ", additional arguments "
+            << extraArgs.join(" ");
+    }
+    msg << "</div>";
+    return message;
 }
