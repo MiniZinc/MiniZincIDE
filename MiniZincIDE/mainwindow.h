@@ -246,6 +246,8 @@ private slots:
 
     void on_cpprofiler_dockWidget_visibilityChanged(bool visible);
 
+    void on_menuSolver_configurations_triggered(QAction* action);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
@@ -330,8 +332,6 @@ private:
     void updateUiProcessRunning(bool pr);
     void highlightPath(QString& path, int index);
     QVector<CodeEditor*> collectCodeEditors(QVector<QStringList>& locs);
-    void updateSolverConfigs(void);
-    void setCurrentSolverConfig(int idx);
     void find(bool fwd, bool forceNoWrapAround=false);
     bool requireMiniZinc(void);
     void outputStdErr(const QString& line);

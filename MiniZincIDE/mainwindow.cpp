@@ -2472,6 +2472,15 @@ void MainWindow::on_config_window_itemsChanged(const QStringList& items)
     solverConfCombo->setCurrentIndex(oldIndex);
     connect(solverConfCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), ui->config_window, &ConfigWindow::setCurrentIndex);
 
+    ui->menuSolver_configurations->clear();
+    for (auto& item: items) {
+        auto action = ui->menuSolver_configurations->addAction(item);
+        action->setCheckable(true);
+        action->setChecked(solverConfCombo->currentText() == item);
+    }
+    ui->menuSolver_configurations->addSeparator();
+    ui->menuSolver_configurations->addAction(ui->actionEditSolverConfig);
+
     bool canSaveAll = false;
     for (auto sc : ui->config_window->solverConfigs()) {
         if (!sc->isBuiltin && sc->modified) {
@@ -2490,10 +2499,24 @@ void MainWindow::on_config_window_selectedIndexChanged(int index)
 {
     solverConfCombo->setCurrentIndex(index);
 
+    for (auto action : ui->menuSolver_configurations->actions()) {
+        action->setChecked(solverConfCombo->currentText() == action->text());
+    }
+
     auto sc = getCurrentSolverConfig();
     ui->actionSave_solver_configuration->setDisabled(!sc);
 
     updateProfileSearchButton();
+}
+
+void MainWindow::on_menuSolver_configurations_triggered(QAction* action)
+{
+    if (action == ui->actionEditSolverConfig) {
+        return;
+    }
+
+    auto actions = ui->menuSolver_configurations->actions();
+    ui->config_window->setCurrentIndex(actions.indexOf(action));
 }
 
 SolverConfiguration* MainWindow::getCurrentSolverConfig()
