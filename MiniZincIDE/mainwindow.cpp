@@ -1924,10 +1924,10 @@ bool MainWindow::isEmptyProject(void)
     for (int i = 0; i < ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
         if (ce && (!ce->filepath.isEmpty() || ce->document()->isModified())) {
-            return true;
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 void MainWindow::openProject(const QString& fileName)
