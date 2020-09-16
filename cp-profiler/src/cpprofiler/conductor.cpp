@@ -146,6 +146,14 @@ Conductor::Conductor(Options opt, QWidget* parent) : QMainWindow(parent), option
         listen_port_ = server_->serverPort();
     }
 
+    QString listen_message;
+    QTextStream ts(&listen_message);
+    ts << "Listening on port "
+       << QString::number(listen_port_)
+       << ".";
+    auto portLabel = new QLabel(listen_message);
+    layout->addWidget(portLabel);
+
     std::cerr << "Ready to listen on: " << listen_port_ << std::endl;
 }
 
