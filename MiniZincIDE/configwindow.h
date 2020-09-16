@@ -127,6 +127,8 @@ private slots:
 
     void on_makeConfigDefault_pushButton_clicked();
 
+    void on_actionAdd_all_known_parameters_triggered();
+
 private:
     Ui::ConfigWindow *ui;
 
@@ -144,8 +146,6 @@ private:
     void populateComboBox(void);
     void resizeExtraFlagsTable(void);
 
-    QWidget* extraFlagsWidget = nullptr;
-    QFormLayout* extraFlagsForm = nullptr;
     QMenu* extraFlagsMenu;
 };
 

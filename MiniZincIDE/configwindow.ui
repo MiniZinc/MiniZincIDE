@@ -654,6 +654,11 @@
     <string>Add custom parameter to configuration</string>
    </property>
   </action>
+  <action name="actionAdd_all_known_parameters">
+   <property name="text">
+    <string>Add all known parameters</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

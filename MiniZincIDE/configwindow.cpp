@@ -356,13 +356,14 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
     extraFlagsMenu->clear();
     for (auto& f : sc->solverDefinition.extraFlags) {
         auto action = extraFlagsMenu->addAction(f.description);
-        action->setData(f.name);
+        action->setData(QVariant::fromValue(f));
         connect(action, &QAction::triggered, [=] (bool) {
             addExtraParam(f);
             action->setDisabled(true);
         });
     }
     extraFlagsMenu->addSeparator();
+    extraFlagsMenu->addAction(ui->actionAdd_all_known_parameters);
     extraFlagsMenu->addAction(ui->actionCustom_Parameter);
 
     while (ui->extraParams_tableWidget->rowCount() > 0) {
@@ -382,6 +383,8 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
             addExtraParam(it.key(), it.value());
         }
     }
+
+    resizeExtraFlagsTable();
 
     populating = false;
 
@@ -448,7 +451,7 @@ void ConfigWindow::on_removeExtraParam_pushButton_clicked()
         auto name = ui->extraParams_tableWidget->item(i, 0)->data(Qt::UserRole).toString();
         for (auto action : extraFlagsMenu->actions()) {
             // Re-enable adding of this flag
-            if (name == action->data().toString()) {
+            if (name == qvariant_cast<SolverFlag>(action->data()).name) {
                 action->setEnabled(true);
                 break;
             }
@@ -793,5 +796,17 @@ void ConfigWindow::on_makeConfigDefault_pushButton_clicked()
         ui->makeConfigDefault_pushButton->setDisabled(true);
     } catch (Exception& e) {
         QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
+    }
+}
+
+void ConfigWindow::on_actionAdd_all_known_parameters_triggered()
+{
+    for (auto action : extraFlagsMenu->actions()) {
+        if (!action->isEnabled() ||
+                action == ui->actionCustom_Parameter ||
+                action == ui->actionAdd_all_known_parameters) {
+            continue;
+        }
+        action->trigger();
     }
 }
