@@ -98,13 +98,6 @@
              </property>
             </spacer>
            </item>
-           <item>
-            <widget class="QPushButton" name="changeSolver_pushButton">
-             <property name="text">
-              <string>Change solver</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </item>
         </layout>
