@@ -129,9 +129,18 @@ void MainWindow::init(const QString& projectFile)
     solverConfFrame->setLayout(solverConfFrameLayout);
     QAction* solverConfComboAction = ui->toolBar->insertWidget(ui->actionSubmit_to_MOOC, solverConfFrame);
 
+    auto runMenu = new QMenu(this);
+    runMenu->addAction(ui->actionRun);
+    runMenu->addAction(ui->actionCompile);
+    runMenu->addAction(ui->actionProfile_compilation);
+    runMenu->addAction(ui->actionProfile_search);
+
     runButton = new QToolButton;
     runButton->setDefaultAction(ui->actionRun);
     runButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    runButton->setPopupMode(QToolButton::MenuButtonPopup);
+    runButton->setMenu(runMenu);
+
     ui->toolBar->insertWidget(solverConfComboAction, runButton);
 
     ui->outputConsole->installEventFilter(this);
