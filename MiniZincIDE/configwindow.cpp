@@ -295,6 +295,8 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
 
     ui->solver_label->setText(sc->solverDefinition.name + " " + sc->solverDefinition.version);
 
+    ui->makeConfigDefault_pushButton->setEnabled(sc->isBuiltin && !sc->solverDefinition.isDefaultSolver);
+
     if (!ui->sync_checkBox->isChecked()) {
         ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
         ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
@@ -777,5 +779,19 @@ void ExtraOptionDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
         }
     } else {
         QStyledItemDelegate::setModelData(editor, model, index);
+    }
+}
+
+void ConfigWindow::on_makeConfigDefault_pushButton_clicked()
+{
+    auto sc = currentSolverConfig();
+    if (!sc) {
+        return;
+    }
+    try {
+        MznDriver::get().setDefaultSolver(sc->solverDefinition);
+        ui->makeConfigDefault_pushButton->setDisabled(true);
+    } catch (Exception& e) {
+        QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
     }
 }

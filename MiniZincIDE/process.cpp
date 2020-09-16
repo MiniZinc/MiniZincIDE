@@ -169,6 +169,56 @@ Solver* MznDriver::defaultSolver(void)
     return nullptr;
 }
 
+void MznDriver::setDefaultSolver(const Solver& s)
+{
+    for (auto& solver : solvers()) {
+        solver.isDefaultSolver = &solver == &s;
+    }
+
+    QFile uc(userConfigFile());
+    QJsonObject jo;
+    if (uc.exists()) {
+        if (uc.open(QFile::ReadOnly)) {
+            QJsonDocument doc = QJsonDocument::fromJson(uc.readAll());
+            if (doc.isNull()) {
+                throw DriverError("Cannot modify user configuration file " + userConfigFile());
+            }
+            jo = doc.object();
+            uc.close();
+        }
+    }
+    QJsonArray tagdefs = jo.contains("tagDefaults") ? jo["tagDefaults"].toArray() : QJsonArray();
+    bool hadDefault = false;
+    for (int i=0; i<tagdefs.size(); i++) {
+        if (tagdefs[i].isArray() && tagdefs[i].toArray()[0].isString() && tagdefs[i].toArray()[0].toString().isEmpty()) {
+            QJsonArray def = tagdefs[i].toArray();
+            def[1] = s.id;
+            tagdefs[i] = def;
+            hadDefault = true;
+            break;
+        }
+    }
+    if (!hadDefault) {
+        QJsonArray def;
+        def.append("");
+        def.append(s.id);
+        tagdefs.append(def);
+    }
+    jo["tagDefaults"] = tagdefs;
+    QJsonDocument doc;
+    doc.setObject(jo);
+    QFileInfo uc_info(userConfigFile());
+    if (!QDir().mkpath(uc_info.absoluteDir().absolutePath())) {
+        throw DriverError("Cannot create user configuration directory " + uc_info.absoluteDir().absolutePath());
+    }
+    if (uc.open(QFile::ReadWrite | QIODevice::Truncate)) {
+        uc.write(doc.toJson());
+        uc.close();
+    } else {
+        throw DriverError("Cannot write user configuration file " + userConfigFile());
+    }
+}
+
 MznProcess::MznProcess(QObject* parent) :
     Process(parent)
 {

@@ -131,6 +131,12 @@ public:
     Solver* defaultSolver(void);
 
     ///
+    /// \brief Sets the default solver
+    /// \param s The new default solver
+    ///
+    void setDefaultSolver(const Solver& s);
+
+    ///
     /// \brief Returns the version number of MiniZinc
     /// \return The version number
     ///
