@@ -6,7 +6,7 @@
   "mznlib": "-Ggecode",
   "executable": "../../../bin/fzn-gecode",
   "tags": ["cp","int", "float", "set", "restart"],
-  "stdFlags": ["-a","-f","-n","-p","-r","-s","-t","-cpprofiler"],
+  "stdFlags": ["-a","-f","-n","-p","-r","-s","-t","--cp-profiler"],
   "extraFlags": [
       ["-c-d", "Recomputation commit distance", "int", "8"],
       ["-a-d", "Recomputation adaption distance", "int", "2"],
