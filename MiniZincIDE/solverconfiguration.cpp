@@ -239,10 +239,10 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     if (sco["optimizationLevel"].isDouble()) {
         newSc.optimizationLevel = sco["optimizationLevel"].toInt();
     }
-    if (sco["additionalData"].isString()) {
+    if (sco["additionalData"].isString() && !sco["additionalData"].toString().isEmpty()) {
         newSc.additionalData << sco["additionalData"].toString();
     }
-    if (sco["additionalCompilerCommandline"].isString()) {
+    if (sco["additionalCompilerCommandline"].isString() && !sco["additionalCompilerCommandline"].toString().isEmpty()) {
        parseArgList(sco["additionalCompilerCommandline"].toString(), newSc.extraOptions);
     }
     if (sco["nThreads"].isDouble()) {
@@ -251,7 +251,7 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     if (sco["randomSeed"].isDouble()) {
         newSc.randomSeed = sco["randomSeed"].toDouble();
     }
-    if (sco["solverFlags"].isString()) {
+    if (sco["solverFlags"].isString() && !sco["solverFlags"].toString().isEmpty()) {
         parseArgList(sco["solverFlags"].toString(), newSc.extraOptions);
     }
     if (sco["freeSearch"].isBool()) {
