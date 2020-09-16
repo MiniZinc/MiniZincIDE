@@ -84,7 +84,9 @@ void ConfigWindow::loadConfigs(void)
         }
         configs.clear();
         for (auto& solver : MznDriver::get().solvers()) {
-            configs.append(new SolverConfiguration(solver, true));
+            if (solver.hasAllRequiredFlags()) {
+                configs.append(new SolverConfiguration(solver, true));
+            }
         }
         if (!files.empty()) {
             for (auto fileName : files) {

@@ -203,6 +203,16 @@ bool Solver::operator==(const Solver& s) const {
     return configFile == s.configFile;
 }
 
+bool Solver::hasAllRequiredFlags()
+{
+    for (auto& rf : requiredFlags) {
+        if (!defaultFlags.contains(rf)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 SolverDialog::SolverDialog(bool openAsAddNew, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SolverDialog)

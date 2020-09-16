@@ -66,6 +66,8 @@ struct Solver {
     static Solver& lookup(const QString& str);
     static Solver& lookup(const QString& id, const QString& version, bool strict = true);
 
+    bool hasAllRequiredFlags(void);
+
     bool operator==(const Solver&) const;
 };
 
