@@ -427,7 +427,9 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
         auto keyItem = ui->extraParams_tableWidget->item(row, 0);
         auto valueItem = ui->extraParams_tableWidget->item(row, 2);
         if (keyItem && valueItem) {
-            auto key = keyItem->data(Qt::UserRole).toString();
+            auto key = keyItem->data(Qt::UserRole).isNull() ?
+                        keyItem->data(Qt::DisplayRole).toString() :
+                        keyItem->data(Qt::UserRole).toString();
             auto value = valueItem->data(Qt::DisplayRole);
             sc->extraOptions.insert(key, value);
         }
@@ -502,7 +504,6 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
 
     auto flag = key.startsWith("--") ? key.right(key.length() - 2) : key;
     auto keyItem = new QTableWidgetItem(flag);
-    keyItem->setData(Qt::UserRole, flag);
     auto valItem = new QTableWidgetItem;
     valItem->setData(Qt::DisplayRole, value);
     ui->extraParams_tableWidget->setItem(i, 0, keyItem);
