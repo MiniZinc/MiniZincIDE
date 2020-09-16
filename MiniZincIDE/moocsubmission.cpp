@@ -208,9 +208,22 @@ void MOOCSubmission::solveNext() {
 
         auto sc = mw->getCurrentSolverConfig();
         SolverConfiguration solverConfig(*sc);
-        solverConfig.timeLimit = item.timeout; // Override config time limit
+        solverConfig.timeLimit = item.timeout * 1000; // Override config time limit
 
-        mw->run(solverConfig, item.model, { item.data }, {"--output-mode", "checker"}, &_output_stream);
+        QStringList files = { item.data };
+
+        // When we have a checker, use --output-mode checker
+        auto mzc = item.model;
+        mzc.replace(mzc.length() - 1, 1, "c");
+        if (mw->getProject().contains(mzc)) {
+            files << mzc;
+            solverConfig.extraOptions["output-mode"] = "checker";
+        } else if (mw->getProject().contains(mzc + ".mzn")) {
+            files << mzc + ".mzn";
+            solverConfig.extraOptions["output-mode"] = "checker";
+        }
+
+        mw->run(solverConfig, item.model, files, QStringList(), &_output_stream);
         return;
     } else {
         submitToMOOC();
