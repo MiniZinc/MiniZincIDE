@@ -63,7 +63,8 @@ struct Solver {
     Solver(void) {}
 
     Solver(const QJsonObject& json);
-    static Solver lookup(const QString& str);
+    static Solver& lookup(const QString& str);
+    static Solver& lookup(const QString& id, const QString& version, bool strict = true);
 
     bool operator==(const Solver&) const;
 };

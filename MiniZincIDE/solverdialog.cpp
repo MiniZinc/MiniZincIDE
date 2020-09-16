@@ -162,7 +162,7 @@ Solver::Solver(const QJsonObject& sj) {
     mznLibVersion = sj["mznlibVersion"].toInt();
 }
 
-Solver Solver::lookup(const QString& str)
+Solver& Solver::lookup(const QString& str)
 {
     MznProcess p;
     p.run({ "--solver-json", str });
@@ -171,9 +171,29 @@ Solver Solver::lookup(const QString& str)
         if (!solver_doc.isObject()) {
             throw ConfigError("Failed to find solver " + str);
         }
-        return Solver(solver_doc.object());
+        auto solver = Solver(solver_doc.object());
+        for (auto& s: MznDriver::get().solvers()) {
+            if (solver == s) {
+                return s;
+            }
+        }
+        MznDriver::get().solvers() << solver;
+        return MznDriver::get().solvers().last();
     }
     throw DriverError("Failed to lookup solver " + str);
+}
+
+Solver& Solver::lookup(const QString& id, const QString& version, bool strict)
+{
+    if (strict) {
+        return lookup(id + "@" + version);
+    }
+
+    try {
+        return lookup(id + "@" + version);
+    } catch (ConfigError&) {
+        return lookup(id);
+    }
 }
 
 bool Solver::operator==(const Solver& s) const {

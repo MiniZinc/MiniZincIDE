@@ -212,7 +212,7 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
 SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
 {
     auto sco = json.object();
-    auto solver = Solver::lookup(sco["id"].toString() + "@" + sco["version"].toString());
+    auto& solver = Solver::lookup(sco["id"].toString(), sco["version"].toString(), false);
 
     SolverConfiguration newSc(solver);
 //    if (sco["name"].isString()) {

@@ -103,7 +103,11 @@ QStringList Project::loadProject(const QString& file, ConfigWindow* configWindow
 
     if (!selectedBuiltinConfigId.isEmpty() && !selectedBuiltinConfigVersion.isEmpty()) {
         int index = configWindow->findBuiltinConfig(selectedBuiltinConfigId, selectedBuiltinConfigVersion);
-        configWindow->setCurrentIndex(index);
+        if (index == -1) {
+            warnings << "Could not find solver " + selectedBuiltinConfigId + "@" + selectedBuiltinConfigVersion;
+        } else {
+            configWindow->setCurrentIndex(index);
+        }
     } else if (!selectedSolverConfigFile.isEmpty()) {
         int index = configWindow->findConfigFile(rootDir().absolutePath() + "/" + selectedSolverConfigFile);
         configWindow->setCurrentIndex(index);
