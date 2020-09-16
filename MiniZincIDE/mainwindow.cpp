@@ -119,6 +119,7 @@ void MainWindow::init(const QString& projectFile)
     QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;
 
     solverConfCombo = new QComboBox;
+    solverConfCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     solverConfCombo->setMinimumWidth(100);
     QLabel* solverConfLabel = new QLabel("Solver configuration:");
     QFont solverConfLabelFont = solverConfLabel->font();
