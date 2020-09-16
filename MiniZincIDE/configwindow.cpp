@@ -127,6 +127,7 @@ void ConfigWindow::mergeConfigs(const QList<SolverConfiguration*> confs)
                     findBuiltinConfig(sc->solverDefinition.id, sc->solverDefinition.version) :
                     findConfigFile(sc->paramFile);
 
+        sc->modified = true;
         if (swapAt == -1) {
             sc->isBuiltin = false;
             configs.append(sc);
