@@ -277,7 +277,7 @@ void Project::add(const QString& fileName)
         type = NodeType::SolverConfig;
     } else if (file == "_mooc" || file == "_coursera") {
         if (mooc) {
-            throw ProjectError("Cannot add a second mooc file to project");
+            delete mooc;
         }
         mooc = new MOOCAssignment(fileName);
         emit moocChanged(mooc);
