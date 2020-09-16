@@ -40,8 +40,6 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
 
     ui->extraParams_tableWidget->setItemDelegateForColumn(2, new ExtraOptionDelegate);
 
-    comboBoxModel = new QStringListModel(this);
-
     QList<QWidget*> toBeWatched;
     for (auto child : findChildren<QWidget*>()) {
         if (child != ui->config_comboBox) {
@@ -55,7 +53,6 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
 ConfigWindow::~ConfigWindow()
 {
     delete ui;
-    delete comboBoxModel;
     for (auto sc : configs) {
         delete sc;
     }

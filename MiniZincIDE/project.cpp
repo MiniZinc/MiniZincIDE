@@ -481,14 +481,11 @@ QString Project::relativeToProject(const QString& fileName)
 
 void Project::openTabsChanged(const QStringList& files, int currentTab)
 {
-    int offset = 0;
     openTabs.clear();
     for (auto& file : files) {
         auto abs = QFileInfo(file).absoluteFilePath();
         if (contains(abs)) {
             openTabs << abs;
-        } else {
-            offset++;
         }
     }
 

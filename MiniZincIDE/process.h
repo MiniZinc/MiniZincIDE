@@ -125,7 +125,7 @@ public:
     }
 
     ///
-    /// \brief Get a reference to the default Solver
+    /// \brief Get a pointer to the default Solver
     /// \return The default solver or nullptr if there is none
     ///
     Solver* defaultSolver(void);
