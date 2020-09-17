@@ -321,6 +321,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
 
 MainWindow::~MainWindow()
 {
+    delete code_checker;
     for (int i=0; i<cleanupTmpDirs.size(); i++) {
         delete cleanupTmpDirs[i];
     }
