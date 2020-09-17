@@ -115,7 +115,7 @@ private slots:
 
     void on_config_comboBox_currentIndexChanged(int index);
 
-    void on_removeExtraParam_pushButton_clicked();
+    void on_removeExtraParam_toolButton_clicked();
 
     void on_extraParams_tableWidget_itemSelectionChanged();
 

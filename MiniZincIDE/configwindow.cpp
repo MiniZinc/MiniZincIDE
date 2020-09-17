@@ -441,7 +441,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
     }
 }
 
-void ConfigWindow::on_removeExtraParam_pushButton_clicked()
+void ConfigWindow::on_removeExtraParam_toolButton_clicked()
 {
     QVector<int> toBeRemoved;
     for (auto& range : ui->extraParams_tableWidget->selectedRanges()) {
@@ -470,7 +470,7 @@ void ConfigWindow::on_removeExtraParam_pushButton_clicked()
 void ConfigWindow::on_extraParams_tableWidget_itemSelectionChanged()
 {
     bool hasSelection = ui->extraParams_tableWidget->selectedRanges().length();
-    ui->removeExtraParam_pushButton->setEnabled(hasSelection);
+    ui->removeExtraParam_toolButton->setEnabled(hasSelection);
 }
 
 void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
