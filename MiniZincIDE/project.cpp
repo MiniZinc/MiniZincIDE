@@ -502,16 +502,21 @@ void Project::openTabsChanged(const QStringList& files, int currentTab)
 //    setModified(true);
 }
 
-void Project::activeSolverConfigChanged(const SolverConfiguration &sc)
+void Project::activeSolverConfigChanged(const SolverConfiguration* sc)
 {
-    if (sc.isBuiltin) {
+    if (!sc) {
         selectedSolverConfigFile = "";
-        selectedBuiltinConfigId = sc.solverDefinition.id;
-        selectedBuiltinConfigVersion = sc.solverDefinition.version;
+        selectedBuiltinConfigId = "";
+        selectedBuiltinConfigVersion = "";
+    }
+    if (sc->isBuiltin) {
+        selectedSolverConfigFile = "";
+        selectedBuiltinConfigId = sc->solverDefinition.id;
+        selectedBuiltinConfigVersion = sc->solverDefinition.version;
     } else {
         selectedBuiltinConfigId = "";
         selectedBuiltinConfigVersion = "";
-        selectedSolverConfigFile = relativeToProject(sc.paramFile);
+        selectedSolverConfigFile = relativeToProject(sc->paramFile);
     }
 //    setModified(true);
 }

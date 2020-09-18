@@ -98,7 +98,7 @@ public:
     const QList<SolverConfiguration*>& solverConfigs(void);
 signals:
     void selectedIndexChanged(int index);
-    void selectedSolverConfigurationChanged(const SolverConfiguration& sc);
+    void selectedSolverConfigurationChanged(const SolverConfiguration* sc);
     void itemsChanged(const QStringList& items);
     void configSaved(const QString& filename);
 

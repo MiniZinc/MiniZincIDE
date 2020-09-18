@@ -221,7 +221,7 @@ signals:
     void moocChanged(const MOOCAssignment* mooc);
 public slots:
     void openTabsChanged(const QStringList& files, int currentTab);
-    void activeSolverConfigChanged(const SolverConfiguration& sc);
+    void activeSolverConfigChanged(const SolverConfiguration* sc);
 private slots:
     void on_itemChanged(QStandardItem* item);
 private:

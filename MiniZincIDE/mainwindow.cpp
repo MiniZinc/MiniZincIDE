@@ -2030,6 +2030,7 @@ void MainWindow::saveProject(const QString& f)
     }
     p.openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
     p.saveProject();
+    updateRecentProjects(p.projectFile());
 }
 
 void MainWindow::loadProject(const QString& filepath)
@@ -2051,7 +2052,9 @@ void MainWindow::loadProject(const QString& filepath)
         for (int i = 0; i < openFiles.count(); i++) {
             openFile(openFiles[i], false, i == openTab);
         }
+        p.activeSolverConfigChanged(getCurrentSolverConfig());
         p.setModified(false);
+        updateRecentProjects(p.projectFile());
     } catch (Exception& e) {
         QMessageBox::warning(this, "MiniZinc IDE",
                              e.message(),
@@ -2705,6 +2708,7 @@ void MainWindow::on_projectBrowser_removeRequested(const QStringList& files)
         ui->config_window->removeConfig(i);
     }
 
+    getProject().remove(files);
     getProject().openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
 }
 

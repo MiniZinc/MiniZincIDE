@@ -392,7 +392,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
     populating = false;
 
     emit selectedIndexChanged(index);
-    emit selectedSolverConfigurationChanged(*sc);
+    emit selectedSolverConfigurationChanged(sc);
 }
 
 void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
