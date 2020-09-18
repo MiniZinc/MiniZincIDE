@@ -248,6 +248,11 @@ private slots:
 
     void on_menuSolver_configurations_triggered(QAction* action);
 
+    void on_solutionOutput(const QString& solution);
+    void on_finalStatus(const QString& status);
+    void on_fragment(const QString& data);
+    void on_progressOutput(float progress);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);

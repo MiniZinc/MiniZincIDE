@@ -780,6 +780,12 @@ void MainWindow::compileOrRun(
     // Use checker that matches model file if it exists and checking is on
     QSettings settings;
     settings.beginGroup("ide");
+
+    if (settings.value("clearOutput", true).toBool()) {
+        on_actionClear_output_triggered();
+    }
+    on_actionSplit_triggered();
+
     if (checkerFile.isEmpty() && settings.value("checkSolutions", true).toBool()) {
         auto mzc = modelFile;
         mzc.replace(mzc.length() - 1, 1, "c");
@@ -1126,14 +1132,16 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         return;
     }
 
+    QSettings settings;
+    settings.beginGroup("ide");
+    solutionLimit = settings.value("compressSolutions").toInt();
+    settings.endGroup();
+
+    solutionCount = 0;
+    hiddenSolutions.clear();
+
     auto timer = new QTimer(this);
     auto solveProcess = new SolveProcess(this);
-    auto writeOutput = [=](const QString& d) {
-        addOutput(d, false);
-        if (ts) {
-            *ts << d;
-        }
-    };
 
     connect(ui->actionStop, &QAction::triggered, solveProcess, [=] () {
         ui->actionStop->setDisabled(true);
@@ -1143,9 +1151,17 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         procFinished(0, solveProcess->timeElapsed());
         solveProcess->deleteLater();
     });
-    connect(solveProcess, &SolveProcess::solutionOutput, writeOutput);
-    connect(solveProcess, &SolveProcess::finalStatus, writeOutput);
-    connect(solveProcess, &SolveProcess::fragment, writeOutput);
+    if (ts) {
+        connect(solveProcess, &SolveProcess::solutionOutput, [=](const QString& d) { *ts << d; });
+        connect(solveProcess, &SolveProcess::finalStatus, [=](const QString& d) { *ts << d; });
+        connect(solveProcess, &SolveProcess::fragment, [=](const QString& d) { *ts << d; });
+    }
+
+    connect(solveProcess, &SolveProcess::solutionOutput, this, &MainWindow::on_solutionOutput);
+    connect(solveProcess, &SolveProcess::finalStatus, this, &MainWindow::on_finalStatus);
+    connect(solveProcess, &SolveProcess::fragment, this, &MainWindow::on_fragment);
+    connect(solveProcess, &SolveProcess::progressOutput, this, &MainWindow::on_progressOutput);
+
     connect(solveProcess, &SolveProcess::htmlOutput, [=](const QString& html) {
         addOutput(html, true);
     });
@@ -2838,4 +2854,45 @@ QString MainWindow::runMessage(const QString& action, const QString& model, cons
     }
     msg << "</div>";
     return message;
+}
+
+void MainWindow::on_solutionOutput(const QString& solution)
+{
+    solutionCount++;
+    if ((solutionLimit != 0 && solutionCount > solutionLimit) || !hiddenSolutions.isEmpty()) {
+        if (hiddenSolutions.isEmpty()) {
+            solutionCount = 1;
+        }
+        if (solutionCount == solutionLimit) {
+            addOutput("<div class='mznnotice'>[ " + QString::number(solutionLimit - 1) + " more solutions ]</div>");
+            addOutput(solution, false);
+            solutionCount = 0;
+            solutionLimit *= 2;
+        } else {
+            hiddenSolutions << solution;
+        }
+    } else {
+        addOutput(solution, false);
+    }
+}
+
+void MainWindow::on_finalStatus(const QString& status)
+{
+    if (solutionLimit != 0 && solutionCount > 0 && !hiddenSolutions.isEmpty()) {
+        if (solutionCount > 1) {
+            addOutput("<div class='mznnotice'>[ " + QString::number(solutionCount - 1) + " more solutions ]</div>");
+        }
+        addOutput(hiddenSolutions.last(), false);
+    }
+    addOutput(status, false);
+}
+
+void MainWindow::on_fragment(const QString& data)
+{
+    addOutput(data, false);
+}
+
+void MainWindow::on_progressOutput(float progress)
+{
+    progressBar->setValue(static_cast<int>(progress));
 }
