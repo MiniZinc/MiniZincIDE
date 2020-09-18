@@ -11,6 +11,7 @@ class CodeChecker : public QObject
     Q_OBJECT
 public:
     explicit CodeChecker(QObject *parent = nullptr);
+    ~CodeChecker();
 
     void start(const QString& modelContents, SolverConfiguration& sc, const QString& wd);
     void cancel(void);

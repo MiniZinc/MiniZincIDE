@@ -10,6 +10,12 @@ CodeChecker::CodeChecker(QObject *parent) : QObject(parent), p(this)
     p.setProcessChannelMode(QProcess::MergedChannels);
 }
 
+CodeChecker::~CodeChecker()
+{
+    cancel();
+    p.waitForFinished();
+}
+
 void CodeChecker::start(const QString& modelContents, SolverConfiguration& sc, const QString& wd)
 {
     QStringList args;
@@ -20,7 +26,9 @@ void CodeChecker::start(const QString& modelContents, SolverConfiguration& sc, c
 
 void CodeChecker::cancel()
 {
-    p.terminate();
+    if (p.state() == QProcess::Running) {
+        p.terminate();
+    }
 }
 
 void CodeChecker::onStarted()
