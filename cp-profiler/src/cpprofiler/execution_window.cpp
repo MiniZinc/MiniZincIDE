@@ -20,6 +20,8 @@
 #include <QFile>
 #include <QTimer>
 #include <QStatusBar>
+#include <QHBoxLayout>
+#include <QToolButton>
 
 #include "tree/node_tree.hh"
 
@@ -84,7 +86,7 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
         widget->setLayout(layout);
     }
 
-    layout->addWidget(traditional_view_->widget(), 0, 0, 2, 1);
+    layout->addWidget(traditional_view_->widget(), 1, 0, 2, 1);
 
     {
 
@@ -95,7 +97,7 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
 
         constexpr int start_scale = 50;
         sb->setValue(start_scale);
-        layout->addWidget(sb, 1, 1);
+        layout->addWidget(sb, 2, 1);
 
         traditional_view_->setScale(start_scale);
 
@@ -118,7 +120,7 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
 
     {
         lantern_widget = new LanternMenu();
-        layout->addWidget(lantern_widget, 2, 0);
+        layout->addWidget(lantern_widget, 3, 0);
         lantern_widget->hide();
 
         // connect(lantern_widget, &LanternMenu::limit_changed,
@@ -131,15 +133,20 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
     }
 
     {
-        auto menuBar = new QMenuBar(0);
-// Don't add the menu bar on Mac OS X
-#ifndef Q_WS_MAC
-        /// is this needed???
-        setMenuBar(menuBar);
-#endif
+//        auto menuBar = new QMenuBar(0);
+//// Don't add the menu bar on Mac OS X
+//#ifndef Q_WS_MAC
+//        /// is this needed???
+//        setMenuBar(menuBar);
+//#endif
+
+        auto widget = new QWidget();
+        auto button_layout = new QHBoxLayout();
+        button_layout->setContentsMargins(0, 0, 0, 0);
+        widget->setLayout(button_layout);
 
         {
-            auto nodeMenu = menuBar->addMenu("&Node");
+            auto nodeMenu = new QMenu("&Node");
 
             auto centerNode = new QAction{"Center current node", this};
             centerNode->setShortcut(QKeySequence("C"));
@@ -190,11 +197,19 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             showNodeInfo->setShortcut(QKeySequence("i"));
             nodeMenu->addAction(showNodeInfo);
             connect(showNodeInfo, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::showNodeInfo);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Node");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(nodeMenu);
+            button_layout->addWidget(button);
         }
 
         {
 
-            auto navMenu = menuBar->addMenu("Na&vigation");
+            auto navMenu = new QMenu("Na&vigation");
 
             auto navRoot = new QAction{"Go to the root", this};
             navRoot->setShortcut(QKeySequence("R"));
@@ -225,10 +240,18 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             navRight->setShortcut(QKeySequence("Right"));
             navMenu->addAction(navRight);
             connect(navRight, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::navRight);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Navigation");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(navMenu);
+            button_layout->addWidget(button);
         }
 
         {
-            auto viewMenu = menuBar->addMenu("Vie&w");
+            auto viewMenu = new QMenu("Vie&w");
 
             auto showPixelTree = new QAction{"Pixel Tree View", this};
             showPixelTree->setCheckable(true);
@@ -248,18 +271,34 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             viewMenu->addAction(toggleLanternTree);
 
             connect(toggleLanternTree, &QAction::triggered, this, &ExecutionWindow::toggleLanternView);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setMenu(viewMenu);
+            button->setText("View");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button_layout->addWidget(button);
         }
 
         {
-            auto dataMenu = menuBar->addMenu("&Data");
+            auto dataMenu = new QMenu("&Data");
 
             auto showBookmarks = new QAction{"Show bookmarks", this};
             dataMenu->addAction(showBookmarks);
             connect(showBookmarks, &QAction::triggered, this, &ExecutionWindow::showBookmarks);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Data");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(dataMenu);
+            button_layout->addWidget(button);
         }
 
         {
-            auto analysisMenu = menuBar->addMenu("&Analyses");
+            auto analysisMenu = new QMenu("&Analyses");
             auto similarSubtree = new QAction{"Similar Subtrees", this};
             similarSubtree->setShortcut(QKeySequence("Shift+S"));
             analysisMenu->addAction(similarSubtree);
@@ -276,11 +315,19 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             auto saveSearch = new QAction{"Save Search (for replaying)", this};
             analysisMenu->addAction(saveSearch);
             connect(saveSearch, &QAction::triggered, [this]() { emit needToSaveSearch(&execution_); });
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Analyses");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(analysisMenu);
+            button_layout->addWidget(button);
         }
 
 #ifdef DEBUG_MODE
         {
-            auto debugMenu = menuBar->addMenu("Debu&g");
+            auto debugMenu = new QMenu("Debu&g");
 
             auto updateLayoutAction = new QAction{"Update layout", this};
             debugMenu->addAction(updateLayoutAction);
@@ -309,6 +356,14 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             debugMode->setShortcut(QKeySequence("Shift+D"));
             debugMenu->addAction(debugMode);
             connect(debugMode, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::setDebugMode);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Debug");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(debugMenu);
+            button_layout->addWidget(button);
         }
 #endif
 
@@ -317,6 +372,9 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
         // debugText->setReadOnly(true);
 
         // layout->addWidget(debugText, 2, 0);
+
+        button_layout->addStretch();
+        layout->addWidget(widget, 0, 0, 1, 0);
     }
 }
 

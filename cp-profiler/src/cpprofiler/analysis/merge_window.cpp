@@ -15,6 +15,8 @@
 #include <QStatusBar>
 #include <QCheckBox>
 #include <cmath>
+#include <QHBoxLayout>
+#include <QToolButton>
 
 namespace cpprofiler
 {
@@ -49,14 +51,14 @@ MergeWindow::MergeWindow(Execution &ex_l, Execution &ex_r, std::shared_ptr<tree:
     sort_cb->setChecked(true);
     connect(sort_cb, &QCheckBox::stateChanged, pent_list, &PentagonListWidget::handleSortCB);
 
-    layout->addWidget(pent_list, 1, 0, 1, 1, Qt::AlignLeft);
-    layout->addWidget(sort_cb, 0, 0, 1, 1, Qt::AlignLeft);
+    layout->addWidget(pent_list, 2, 0, 1, 1, Qt::AlignLeft);
+    layout->addWidget(sort_cb, 1, 0, 1, 1, Qt::AlignLeft);
 
     {
         auto widget = new QWidget();
         setCentralWidget(widget);
         widget->setLayout(layout);
-        layout->addWidget(view_->widget(), 0, 1, 2, 1);
+        layout->addWidget(view_->widget(), 1, 1, 2, 1);
     }
 
     auto menuBar = new QMenuBar(0);
@@ -74,82 +76,116 @@ MergeWindow::MergeWindow(Execution &ex_l, Execution &ex_r, std::shared_ptr<tree:
             view_.get(), &tree::TraditionalView::setCurrentNode);
 
     {
-        auto nodeMenu = menuBar->addMenu("&Node");
+        auto widget = new QWidget();
+        auto button_layout = new QHBoxLayout();
+        button_layout->setContentsMargins(0, 0, 0, 0);
+        widget->setLayout(button_layout);
 
-        auto centerNode = new QAction{"Center current node", this};
-        centerNode->setShortcut(QKeySequence("C"));
-        nodeMenu->addAction(centerNode);
-        connect(centerNode, &QAction::triggered, view_.get(), &tree::TraditionalView::centerCurrentNode);
+        {
+            auto nodeMenu = new QMenu("&Node");
 
-        auto navRoot = new QAction{"Go to the root", this};
-        navRoot->setShortcut(QKeySequence("R"));
-        nodeMenu->addAction(navRoot);
-        connect(navRoot, &QAction::triggered, view_.get(), &tree::TraditionalView::navRoot);
+            auto centerNode = new QAction{"Center current node", this};
+            centerNode->setShortcut(QKeySequence("C"));
+            nodeMenu->addAction(centerNode);
+            connect(centerNode, &QAction::triggered, view_.get(), &tree::TraditionalView::centerCurrentNode);
 
-        auto navDown = new QAction{"Go down the tree", this};
-        navDown->setShortcut(QKeySequence("Down"));
-        nodeMenu->addAction(navDown);
-        connect(navDown, &QAction::triggered, view_.get(), &tree::TraditionalView::navDown);
+            auto navRoot = new QAction{"Go to the root", this};
+            navRoot->setShortcut(QKeySequence("R"));
+            nodeMenu->addAction(navRoot);
+            connect(navRoot, &QAction::triggered, view_.get(), &tree::TraditionalView::navRoot);
 
-        auto navUp = new QAction{"Go up the tree", this};
-        navUp->setShortcut(QKeySequence("Up"));
-        nodeMenu->addAction(navUp);
-        connect(navUp, &QAction::triggered, view_.get(), &tree::TraditionalView::navUp);
+            auto navDown = new QAction{"Go down the tree", this};
+            navDown->setShortcut(QKeySequence("Down"));
+            nodeMenu->addAction(navDown);
+            connect(navDown, &QAction::triggered, view_.get(), &tree::TraditionalView::navDown);
 
-        auto navLeft = new QAction{"Go left the tree", this};
-        navLeft->setShortcut(QKeySequence("Left"));
-        nodeMenu->addAction(navLeft);
-        connect(navLeft, &QAction::triggered, view_.get(), &tree::TraditionalView::navLeft);
+            auto navUp = new QAction{"Go up the tree", this};
+            navUp->setShortcut(QKeySequence("Up"));
+            nodeMenu->addAction(navUp);
+            connect(navUp, &QAction::triggered, view_.get(), &tree::TraditionalView::navUp);
 
-        auto navRight = new QAction{"Go right the tree", this};
-        navRight->setShortcut(QKeySequence("Right"));
-        nodeMenu->addAction(navRight);
-        connect(navRight, &QAction::triggered, view_.get(), &tree::TraditionalView::navRight);
+            auto navLeft = new QAction{"Go left the tree", this};
+            navLeft->setShortcut(QKeySequence("Left"));
+            nodeMenu->addAction(navLeft);
+            connect(navLeft, &QAction::triggered, view_.get(), &tree::TraditionalView::navLeft);
 
-        auto toggleShowLabel = new QAction{"Show labels down", this};
-        toggleShowLabel->setShortcut(QKeySequence("L"));
-        nodeMenu->addAction(toggleShowLabel);
-        connect(toggleShowLabel, &QAction::triggered, view_.get(), &tree::TraditionalView::showLabelsDown);
+            auto navRight = new QAction{"Go right the tree", this};
+            navRight->setShortcut(QKeySequence("Right"));
+            nodeMenu->addAction(navRight);
+            connect(navRight, &QAction::triggered, view_.get(), &tree::TraditionalView::navRight);
 
-        auto toggleShowLabelsUp = new QAction{"Show labels down", this};
-        toggleShowLabelsUp->setShortcut(QKeySequence("Shift+L"));
-        nodeMenu->addAction(toggleShowLabelsUp);
-        connect(toggleShowLabelsUp, &QAction::triggered, view_.get(), &tree::TraditionalView::showLabelsUp);
+            auto toggleShowLabel = new QAction{"Show labels down", this};
+            toggleShowLabel->setShortcut(QKeySequence("L"));
+            nodeMenu->addAction(toggleShowLabel);
+            connect(toggleShowLabel, &QAction::triggered, view_.get(), &tree::TraditionalView::showLabelsDown);
 
-        auto hideFailed = new QAction{"Hide failed", this};
-        hideFailed->setShortcut(QKeySequence("F"));
-        nodeMenu->addAction(hideFailed);
-        connect(hideFailed, &QAction::triggered, this, &analysis::MergeWindow::hideFailed);
+            auto toggleShowLabelsUp = new QAction{"Show labels down", this};
+            toggleShowLabelsUp->setShortcut(QKeySequence("Shift+L"));
+            nodeMenu->addAction(toggleShowLabelsUp);
+            connect(toggleShowLabelsUp, &QAction::triggered, view_.get(), &tree::TraditionalView::showLabelsUp);
 
-        auto unhideAll = new QAction{"Unhide all", this};
-        unhideAll->setShortcut(QKeySequence("U"));
-        nodeMenu->addAction(unhideAll);
-        connect(unhideAll, &QAction::triggered, view_.get(), &tree::TraditionalView::unhideAll);
+            auto hideFailed = new QAction{"Hide failed", this};
+            hideFailed->setShortcut(QKeySequence("F"));
+            nodeMenu->addAction(hideFailed);
+            connect(hideFailed, &QAction::triggered, this, &analysis::MergeWindow::hideFailed);
 
-        auto toggleHighlighted = new QAction{"Toggle highlight subtree", this};
-        toggleHighlighted->setShortcut(QKeySequence("H"));
-        nodeMenu->addAction(toggleHighlighted);
-        connect(toggleHighlighted, &QAction::triggered, view_.get(), &tree::TraditionalView::toggleHighlighted);
-    }
+            auto unhideAll = new QAction{"Unhide all", this};
+            unhideAll->setShortcut(QKeySequence("U"));
+            nodeMenu->addAction(unhideAll);
+            connect(unhideAll, &QAction::triggered, view_.get(), &tree::TraditionalView::unhideAll);
 
-    {
-        auto debugMenu = menuBar->addMenu("&Debug");
+            auto toggleHighlighted = new QAction{"Toggle highlight subtree", this};
+            toggleHighlighted->setShortcut(QKeySequence("H"));
+            nodeMenu->addAction(toggleHighlighted);
+            connect(toggleHighlighted, &QAction::triggered, view_.get(), &tree::TraditionalView::toggleHighlighted);
 
-        auto updateLayoutAction = new QAction{"Update layout", this};
-        debugMenu->addAction(updateLayoutAction);
-        connect(updateLayoutAction, &QAction::triggered, view_.get(), &tree::TraditionalView::updateLayout);
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Node");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(nodeMenu);
+            button_layout->addWidget(button);
+        }
 
-        auto updateView = new QAction{"Update view", this};
-        debugMenu->addAction(updateView);
-        connect(updateView, &QAction::triggered, view_.get(), &tree::TraditionalView::needsRedrawing);
-    }
+        {
+            auto debugMenu = new QMenu("&Debug");
 
-    {
-        auto analysisMenu = menuBar->addMenu("&Analysis");
+            auto updateLayoutAction = new QAction{"Update layout", this};
+            debugMenu->addAction(updateLayoutAction);
+            connect(updateLayoutAction, &QAction::triggered, view_.get(), &tree::TraditionalView::updateLayout);
 
-        auto ngAnalysisAction = new QAction{"Nogood analysis", this};
-        analysisMenu->addAction(ngAnalysisAction);
-        connect(ngAnalysisAction, &QAction::triggered, this, &MergeWindow::runNogoodAnalysis);
+            auto updateView = new QAction{"Update view", this};
+            debugMenu->addAction(updateView);
+            connect(updateView, &QAction::triggered, view_.get(), &tree::TraditionalView::needsRedrawing);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Debug");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(debugMenu);
+            button_layout->addWidget(button);
+        }
+
+        {
+            auto analysisMenu = new QMenu("&Analysis");
+
+            auto ngAnalysisAction = new QAction{"Nogood analysis", this};
+            analysisMenu->addAction(ngAnalysisAction);
+            connect(ngAnalysisAction, &QAction::triggered, this, &MergeWindow::runNogoodAnalysis);
+
+            auto button = new QToolButton(widget);
+            button->setStyleSheet("padding: 3px;");
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setText("Analysis");
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setMenu(analysisMenu);
+            button_layout->addWidget(button);
+        }
+
+        button_layout->addStretch();
+        layout->addWidget(widget, 0, 0, 1, 0);
     }
 
     pentagon_bar->update(merge_result_->size());
