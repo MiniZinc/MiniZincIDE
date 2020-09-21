@@ -94,6 +94,7 @@ void ConfigWindow::loadConfigs(void)
             }
         }
         populateComboBox();
+        updateGUI(true);
     } catch (Exception& e) {
         QMessageBox::warning(this, "Parameter configuration error", e.message(), QMessageBox::Ok);
     }
@@ -281,7 +282,19 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
 
     lastIndex = index;
 
-    if (index < 0 || index >= configs.length()) {
+    updateGUI();
+
+    if (index >= 0 && index < configs.length()) {
+        emit selectedIndexChanged(index);
+        emit selectedSolverConfigurationChanged(configs[index]);
+    }
+}
+
+void ConfigWindow::updateGUI(bool overrideSync)
+{
+    int index = currentIndex();
+
+    if (configs.isEmpty()) {
         ui->solver_controls->setVisible(false);
         ui->options_groupBox->setVisible(false);
         ui->advanced_groupBox->setVisible(false);
@@ -300,7 +313,7 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
 
     ui->makeConfigDefault_pushButton->setEnabled(sc->isBuiltin && !sc->solverDefinition.isDefaultSolver);
 
-    if (!ui->sync_checkBox->isChecked()) {
+    if (overrideSync || !ui->sync_checkBox->isChecked()) {
         ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
         ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
 
@@ -390,12 +403,11 @@ void ConfigWindow::on_config_comboBox_currentIndexChanged(int index)
     resizeExtraFlagsTable();
 
     populating = false;
-
-    emit selectedIndexChanged(index);
-    emit selectedSolverConfigurationChanged(sc);
 }
 
-void ConfigWindow::updateSolverConfig(SolverConfiguration* sc) {
+
+void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
+{
     if (!sc->modified) {
         return;
     }

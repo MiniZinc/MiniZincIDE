@@ -138,6 +138,7 @@ private:
     bool initialized = false;
     bool populating = false;
 
+    void updateGUI(bool overrideSync = false);
     void updateSolverConfig(SolverConfiguration* sc);
     void addExtraParam(const QString& key = "", const QVariant& value = "");
     void addExtraParam(const SolverFlag& f, const QVariant& value = QVariant());
