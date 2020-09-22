@@ -108,16 +108,6 @@ struct Theme
 };
 
 namespace Themes{
-    static Theme banana = Theme(ThemeColor(QColor(0x1A0703), QColor(0xF5CC38)), // text
-                                ThemeColor(QColor(0x2A6139), QColor(0x2A6139)), //keywords //0x2A6139
-                                ThemeColor(QColor(0x5E1F01), QColor(0x993102)), // function
-                                ThemeColor(QColor(0xF25C05), QColor(0xF54547)), // string //0xF52C2E
-                                ThemeColor(Qt::black, QColor(0xF5E4A9)), //comment
-                                ThemeColor(QColor(0xF5CC38),QColor(0x260A05)), //background
-                                ThemeColor(QColor(0xF5C720),QColor(0x1C0400)), // line highlight
-                                ThemeColor(QColor(0xF23A1E)) // error color
-                                );
-
     static Theme blueberry = Theme(ThemeColor(QColor(0x0B1224), QColor(0x8EBBED)), // text
                                 ThemeColor(QColor(0x3354A7), QColor(0x1172A6)), //keywords
                                 ThemeColor(QColor(0x9147A6), QColor(0xD676CC)), // function

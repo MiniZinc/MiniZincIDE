@@ -4764,13 +4764,6 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     ui->outputConsole->setPalette(palette);
 }
 
-void MainWindow::on_actionBananaTheme_triggered()
-{
-    Themes::currentTheme = Themes::banana;
-    on_actionDark_mode_toggled(darkMode); // Update all colors
-
-}
-
 void MainWindow::on_actionMangoTheme_triggered()
 {
     Themes::currentTheme = Themes::mango;

@@ -360,7 +360,6 @@
      <addaction name="actionDefaultTheme"/>
      <addaction name="actionBlueberryTheme"/>
      <addaction name="actionMangoTheme"/>
-     <addaction name="actionBananaTheme"/>
     </widget>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
@@ -1811,14 +1810,6 @@
   <action name="actionBlueberryTheme">
    <property name="text">
     <string>Blueberry</string>
-   </property>
-  </action>
-  <action name="actionBananaTheme">
-   <property name="text">
-    <string>Banana</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::TextHeuristicRole</enum>
    </property>
   </action>
   <action name="actionMangoTheme">

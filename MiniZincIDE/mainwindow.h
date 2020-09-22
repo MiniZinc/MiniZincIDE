@@ -301,7 +301,6 @@ private slots:
 
     //Themes
     void on_actionMangoTheme_triggered();
-    void on_actionBananaTheme_triggered();
     void on_actionBlueberryTheme_triggered();
     void on_actionDefaultTheme_triggered();
 
