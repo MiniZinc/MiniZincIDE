@@ -1106,13 +1106,17 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         timer->deleteLater();
     });
     connect(compileProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
+        compileProcess->disconnect();
         timer->stop();
+        int exitCode = 0;
         if (e == QProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
         } else {
-            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: error code " + QString().number(e));
+            QMetaEnum metaEnum = QMetaEnum::fromType<QProcess::ProcessError>();
+            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
+            exitCode = compileProcess->exitCode(); // Exit code should be valid
         }
-        procFinished(0, compileProcess->timeElapsed());
+        procFinished(exitCode, compileProcess->timeElapsed());
         compileProcess->deleteLater();
         timer->stop();
         timer->deleteLater();
@@ -1179,12 +1183,15 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         timer->deleteLater();
     });
     connect(solveProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
+        int exitCode = 0;
         if (e == QProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
         } else {
-            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: error code " + QString().number(e));
+            QMetaEnum metaEnum = QMetaEnum::fromType<QProcess::ProcessError>();
+            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
+            exitCode = solveProcess->exitCode(); // Exit code should be valid
         }
-        procFinished(0, solveProcess->timeElapsed());
+        procFinished(exitCode, solveProcess->timeElapsed());
         solveProcess->deleteLater();
         timer->stop();
         timer->deleteLater();
