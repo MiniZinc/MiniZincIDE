@@ -801,6 +801,10 @@ void MainWindow::compileOrRun(
         dataFiles << checkerFile;
     }
 
+    if (solverConfig->solverDefinition.stdFlags.contains("--output-html")) {
+        extraArguments << "--output-html";
+    }
+
     // Compile/run
     switch (cm) {
     case CM_RUN:
