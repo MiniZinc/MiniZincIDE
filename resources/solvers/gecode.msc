@@ -2,11 +2,11 @@
   "id": "org.gecode.gecode",
   "name": "Gecode",
   "description": "Gecode FlatZinc executable",
-  "version": "6.1.1",
+  "version": "6.3.0",
   "mznlib": "-Ggecode",
   "executable": "../../../bin/fzn-gecode",
   "tags": ["cp","int", "float", "set", "restart"],
-  "stdFlags": ["-a","-f","-n","-p","-r","-s","-t"],
+  "stdFlags": ["-a","-f","-n","-p","-r","-s","-t","--cp-profiler"],
   "extraFlags": [
       ["-c-d", "Recomputation commit distance", "int", "8"],
       ["-a-d", "Recomputation adaption distance", "int", "2"],

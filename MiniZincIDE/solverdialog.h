@@ -14,12 +14,8 @@
 #define SOLVERDIALOG_H
 
 #include <QDialog>
-#include <QProcess>
 #include <QJsonObject>
-
-#ifdef Q_OS_WIN
-#include <windows.h>
-#endif
+#include <QVariant>
 
 namespace Ui {
 class SolverDialog;
@@ -32,8 +28,10 @@ struct SolverFlag {
     double min;
     double max;
     QStringList options;
-    QString def;
+    QVariant def;
 };
+
+Q_DECLARE_METATYPE(SolverFlag)
 
 struct Solver {
     QString configFile;
@@ -63,24 +61,14 @@ struct Solver {
     QJsonObject json;
     bool isDefaultSolver;
     Solver(void) {}
-};
 
-class MznProcess : public QProcess {
-#ifdef Q_OS_WIN
-    Q_OBJECT
-#endif
-public:
-    MznProcess(QObject* parent=nullptr) : QProcess(parent) {}
-    void start(const QString& program, const QStringList& arguments, const QString& path);
-    void terminate(void);
-protected:
-    virtual void setupChildProcess();
-#ifdef Q_OS_WIN
-private:
-    HANDLE jobObject;
-private slots:
-    void attachJob();
-#endif
+    Solver(const QJsonObject& json);
+    static Solver& lookup(const QString& str);
+    static Solver& lookup(const QString& id, const QString& version, bool strict = true);
+
+    bool hasAllRequiredFlags(void);
+
+    bool operator==(const Solver&) const;
 };
 
 class SolverDialog : public QDialog
@@ -88,22 +76,8 @@ class SolverDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SolverDialog(QVector<Solver>& solvers,
-                          QString& userSolverConfigDir,
-                          QString& userConfigFile,
-                          QString& mznStdlibDir,
-                          bool openAsAddNew,
-                          const QString& mznPath,
-                          QWidget *parent = 0);
+    explicit SolverDialog(bool openAsAddNew, QWidget *parent = nullptr);
     ~SolverDialog();
-    QString mznPath();
-    static void checkMznExecutable(const QString& mznDistribPath,
-                                   QString& mzn_executable,
-                                   QString& mzn_version_string,
-                                   QVector<Solver>& solvers,
-                                   QString& userSolverConfigDir,
-                                   QString& userConfigFile,
-                                   QString& mznStdlibDir);
 private slots:
     void on_solvers_combo_currentIndexChanged(int index);
 
@@ -123,12 +97,17 @@ private slots:
 
     void on_mznlib_select_clicked();
 
+    void on_checkSolutions_checkBox_stateChanged(int arg1);
+
+    void on_clearOutput_checkBox_stateChanged(int arg1);
+
+    void on_compressSolutions_checkBox_stateChanged(int arg1);
+
+    void on_compressSolutions_spinBox_valueChanged(int arg1);
+
 private:
     Ui::SolverDialog *ui;
-    QVector<Solver>& solvers;
-    QString& userSolverConfigDir;
-    QString& userConfigFile;
-    QString& mznStdlibDir;
+
     void editingFinished(bool showError);
 };
 

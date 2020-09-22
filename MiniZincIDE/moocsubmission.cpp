@@ -1,6 +1,8 @@
 #include "moocsubmission.h"
 #include "ui_moocsubmission.h"
+#include "ide.h"
 #include "mainwindow.h"
+#include "exception.h"
 
 #include <QCheckBox>
 #include <QVBoxLayout>
@@ -12,6 +14,61 @@
 #include <QUrlQuery>
 #include <QCryptographicHash>
 #include <QJsonDocument>
+#include <QJsonArray>
+
+MOOCAssignment::MOOCAssignment(const QString& fileName)
+{
+    QFile f(fileName);
+    QFileInfo fi(f);
+    if (!f.open(QFile::ReadOnly)) {
+        throw FileError("Failed to open mooc file");
+    }
+    auto bytes = f.readAll();
+    auto doc = QJsonDocument::fromJson(bytes);
+    if (doc.isObject()) {
+        loadJSON(doc.object(), fi);
+    } else {
+        throw MoocError("Could not parse mooc file");
+    }
+}
+
+void MOOCAssignment::loadJSON(const QJsonObject& obj, const QFileInfo& fi)
+{
+    if (obj.isEmpty() ||
+            !obj["assignmentKey"].isString() || !obj["name"].isString() || !obj["moocName"].isString() ||
+            !obj["moocPasswordString"].isString() || !obj["submissionURL"].isString() ||
+            !obj["solutionAssignments"].isArray() || !obj["modelAssignments"].isArray()) {
+        throw MoocError("Could not parse mooc file");
+    }
+
+    assignmentKey = obj["assignmentKey"].toString();
+    name = obj["name"].toString();
+    moocName = obj["moocName"].toString();
+    moocPasswordString = obj["moocPasswordString"].toString();
+    submissionURL = obj["submissionURL"].toString();
+    QJsonArray sols = obj["solutionAssignments"].toArray();
+    for (int i=0; i<sols.size(); i++) {
+        QJsonObject solO = sols[i].toObject();
+        if (!sols[i].isObject() || !solO["id"].isString() || !solO["model"].isString() ||
+                !solO["data"].isString() || (!solO["timeout"].isDouble() && !solO["timeout"].isString() ) || !solO["name"].isString()) {
+            throw MoocError("Could not parse mooc file");
+        }
+
+        QString timeout = solO["timeout"].isDouble() ? QString::number(solO["timeout"].toInt()) : solO["timeout"].toString();
+        QFileInfo model_fi(fi.dir(), solO["model"].toString());
+        QFileInfo data_fi(fi.dir(), solO["data"].toString());
+        MOOCAssignmentItem item(solO["id"].toString(), model_fi.absoluteFilePath(), data_fi.absoluteFilePath(),
+                                timeout, solO["name"].toString());
+        problems.append(item);
+    }
+    QJsonArray modelsArray = obj["modelAssignments"].toArray();
+    for (int i=0; i<modelsArray.size(); i++) {
+        QJsonObject modelO = modelsArray[i].toObject();
+        QFileInfo model_fi(fi.dir(), modelO["model"].toString());
+        MOOCAssignmentItem item(modelO["id"].toString(), model_fi.absoluteFilePath(), modelO["name"].toString());
+        models.append(item);
+    }
+}
 
 MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
     QDialog(nullptr), _cur_phase(S_NONE), project(cp), mw(mw0),
@@ -103,7 +160,7 @@ void MOOCSubmission::cancelOperation()
         break;
     case S_WAIT_SOLVE:
         disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
-        mw->on_actionStop_triggered();
+        mw->stop();
         break;
     case S_WAIT_SUBMIT:
         disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
@@ -148,11 +205,25 @@ void MOOCSubmission::solveNext() {
         _cur_phase = S_WAIT_SOLVE;
         _output_string = "";
         mw->addOutput("<div style='color:orange;'>Running "+project.moocName+" submission "+item.name+"</div><br>\n");
-        if (!mw->runWithOutput(item.model, item.data, item.timeout, _output_stream)) {
-            ui->textBrowser->insertPlainText("Error: could not run "+item.name+"\n");
-            ui->textBrowser->insertPlainText("Skipping.\n");
-            solveNext();
+
+        auto sc = mw->getCurrentSolverConfig();
+        SolverConfiguration solverConfig(*sc);
+        solverConfig.timeLimit = item.timeout * 1000; // Override config time limit
+
+        QStringList files = { item.data };
+
+        // When we have a checker, use --output-mode checker
+        auto mzc = item.model;
+        mzc.replace(mzc.length() - 1, 1, "c");
+        if (mw->getProject().contains(mzc)) {
+            files << mzc;
+            solverConfig.extraOptions["output-mode"] = "checker";
+        } else if (mw->getProject().contains(mzc + ".mzn")) {
+            files << mzc + ".mzn";
+            solverConfig.extraOptions["output-mode"] = "checker";
         }
+
+        mw->run(solverConfig, item.model, files, QStringList(), &_output_stream);
         return;
     } else {
         submitToMOOC();
@@ -182,8 +253,6 @@ void MOOCSubmission::submitToMOOC()
             } else {
                 ui->textBrowser->insertPlainText("Error: could not open "+item.name+"\n");
                 ui->textBrowser->insertPlainText("Skipping.\n");
-                solveNext();
-                return;
             }
         }
     }

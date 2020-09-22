@@ -2,7 +2,7 @@
   "id": "org.gecode.gist",
   "name": "Gecode Gist",
   "description": "Gecode Gist FlatZinc executable",
-  "version": "6.1.1",
+  "version": "6.3.0",
   "mznlib": "-Ggecode",
   "executable": "../../../bin/run-fzn-gecode-gist",
   "tags": ["cp","int", "float", "set", "restart"],
