@@ -19,7 +19,7 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 LicenseFile={#MyAppDirectory}\resources\misc\COMBINED_LICENSE.txt
-DefaultDirName={pf}\MiniZinc
+DefaultDirName={autopf}\MiniZinc
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputBaseFilename=MiniZincIDE-{#MyAppVersion}-bundled-setup-{#MyAppArch}
@@ -29,6 +29,7 @@ ChangesAssociations=yes
 ArchitecturesInstallIn64BitMode={#MyApp64Bit}
 ArchitecturesAllowed={#MyAppArchitectures}
 DisableDirPage=no
+PrivilegesRequiredOverridesAllowed=dialog
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -71,22 +72,22 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Registry]
-Root: HKCR; Subkey: ".mzp"; ValueType: string; ValueName: ""; ValueData: "MiniZincProjectFile"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincProjectFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc project"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincProjectFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
-Root: HKCR; Subkey: "MiniZincProjectFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\.mzp"; ValueType: string; ValueName: ""; ValueData: "MiniZincProjectFile"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincProjectFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc project"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincProjectFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\MiniZincProjectFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
-Root: HKCR; Subkey: ".mzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincModelFile"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincModelFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc model"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincModelFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
-Root: HKCR; Subkey: "MiniZincModelFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\.mzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincModelFile"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincModelFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc model"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincModelFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\MiniZincModelFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
-Root: HKCR; Subkey: ".dzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincDataFile"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincDataFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc data"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincDataFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
-Root: HKCR; Subkey: "MiniZincDataFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\.dzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincDataFile"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincDataFile"; ValueType: string; ValueName: ""; ValueData: "MiniZinc data"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincDataFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\MiniZincDataFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
-Root: HKCR; Subkey: ".fzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincFlatZincFile"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincFlatZincFile"; ValueType: string; ValueName: ""; ValueData: "FlatZinc instance"; Flags: uninsdeletevalue;
-Root: HKCR; Subkey: "MiniZincFlatZincFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
-Root: HKCR; Subkey: "MiniZincFlatZincFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\.fzn"; ValueType: string; ValueName: ""; ValueData: "MiniZincFlatZincFile"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincFlatZincFile"; ValueType: string; ValueName: ""; ValueData: "FlatZinc instance"; Flags: uninsdeletevalue;
+Root: HKA; Subkey: "Software\Classes\MiniZincFlatZincFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\MiniZincFlatZincFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""

@@ -181,7 +181,7 @@ package:win64:
     - curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2FFindMus/jobs/artifacts/master/download?job=build:%MZNARCH%"
     - unzip -q findmus.zip
   script:
-    - "\"C:/Program Files (x86)/Inno Setup 5/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/minizinc-bundle.iss"
+    - "\"C:/Program Files (x86)/Inno Setup 6/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/minizinc-bundle.iss"
     ### Generate checksum
     - certutil -hashfile MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.exe SHA256 > MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.sha256
   artifacts:
