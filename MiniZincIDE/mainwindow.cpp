@@ -104,10 +104,10 @@ void MainWindow::init(const QString& projectFile)
     ui->tabWidget->removeTab(0);
 #ifndef Q_OS_MAC
     ui->menuFile->addAction(ui->actionQuit);
-//#else
-//    if (hasDarkMode()) {
-//        ui->menuView->removeAction(ui->actionDark_mode);
-//    }
+#else
+    if (hasDarkMode()) {
+        ui->menuView->removeAction(ui->actionDark_mode);
+    }
 #endif
 
     // initialise find widget
