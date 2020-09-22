@@ -827,7 +827,7 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
 
     // Get model interface to obtain parameters
     QStringList args;
-    args << "--model-interface-only" << data << model << extraArgs;
+    args << "-c" << "--model-interface-only" << data << model << extraArgs;
 
     MznProcess p;
     p.run(sc, args, QFileInfo(model).absolutePath());
