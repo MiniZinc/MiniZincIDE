@@ -125,3 +125,7 @@ QScrollBar::sub-line:horizontal {
     subcontrol-position: left;
     subcontrol-origin: margin;
 }
+
+QHeaderView::section {
+    background-color: #222222;
+}

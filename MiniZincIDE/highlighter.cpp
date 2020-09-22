@@ -67,7 +67,6 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
 
 void Highlighter::setEditorFont(QFont& font)
 {
-    quoteFormat.setFont(font);
     commentFormat.setFont(font);
     for (int i=0; i<rules.size(); i++) {
         rules[i].format.setFont(font);
@@ -231,7 +230,7 @@ void Highlighter::highlightBlock(const QString &text)
         int index = expression.indexIn(text);
         while (index >= 0) {
             int length = expression.matchedLength();
-            if (format(index)!=quoteFormat && format(index)!=commentFormat && format(index)!=stringFormat) {
+            if (format(index)!=commentFormat && format(index)!=stringFormat) {
                 if (format(index)==interpolateFormat) {
                     QTextCharFormat interpolateRule = rule.format;
                     interpolateRule.setFontItalic(true);
@@ -248,7 +247,7 @@ void Highlighter::highlightBlock(const QString &text)
     QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
     int pos = text.indexOf(re);
     while (pos != -1) {
-        if (format(pos)!=quoteFormat && format(pos)!=commentFormat) {
+        if (format(pos)!=commentFormat) {
             Bracket b;
             b.b = text.at(pos);
             b.pos = pos;
@@ -323,7 +322,7 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
     tempCursor.select(QTextCursor::Document);
 
     QTextCharFormat textfmt = cursor.charFormat();
-    textfmt.setFont(quoteFormat.font());
+    textfmt.setFont(commentFormat.font());
     tempCursor.setCharFormat(textfmt);
 
     QTextBlock start = document()->findBlock(cursor.selectionStart());

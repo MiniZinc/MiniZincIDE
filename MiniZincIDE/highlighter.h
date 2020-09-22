@@ -89,7 +89,6 @@ private:
     QColor stringColor;
     QColor commentColor;
 
-    QTextCharFormat quoteFormat;
     QTextCharFormat commentFormat;
     QRegExp commentStartExp;
     QRegExp commentEndExp;

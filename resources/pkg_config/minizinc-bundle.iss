@@ -45,7 +45,6 @@ Source: "{#MyAppDirectory}\resources\scripts\run-fzn-gecode-gist.bat"; DestDir: 
 Source: "{#MyAppDirectory}\minizinc\bin\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\minizinc\share\minizinc\*"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppDirectory}\resources\solvers\*.msc"; DestDir: "{app}\share\minizinc\solvers"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\resources\Preferences.json"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\vendor\gecode\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\gecode_gist\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; DestName: "fzn-gecode-gist.exe"; Flags: ignoreversion
@@ -53,7 +52,7 @@ Source: "{#MyAppDirectory}\vendor\gecode\share\gecode\mznlib\*"; DestDir: "{app}
 Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\bin"; DestName: "qt.conf"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\vendor\chuffed\share\chuffed\mznlib\*"; DestDir: "{app}\share\minizinc\chuffed"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\globalizer\share\globalizer\mznlib\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs
