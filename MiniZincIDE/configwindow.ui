@@ -102,6 +102,13 @@
                  </property>
                 </spacer>
                </item>
+               <item>
+                <widget class="QPushButton" name="reset_pushButton">
+                 <property name="text">
+                  <string>Reset to defaults</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </item>
             </layout>

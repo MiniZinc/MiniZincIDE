@@ -129,6 +129,8 @@ private slots:
 
     void on_actionAdd_all_known_parameters_triggered();
 
+    void on_reset_pushButton_clicked();
+
 private:
     Ui::ConfigWindow *ui;
 

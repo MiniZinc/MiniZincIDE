@@ -313,6 +313,8 @@ void ConfigWindow::updateGUI(bool overrideSync)
 
     ui->makeConfigDefault_pushButton->setEnabled(sc->isBuiltin && !sc->solverDefinition.isDefaultSolver);
 
+    ui->reset_pushButton->setEnabled(sc->isBuiltin);
+
     if (overrideSync || !ui->sync_checkBox->isChecked()) {
         ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
         ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
@@ -829,4 +831,19 @@ void ConfigWindow::on_actionAdd_all_known_parameters_triggered()
         }
         action->trigger();
     }
+}
+
+void ConfigWindow::on_reset_pushButton_clicked()
+{
+    auto sc = currentSolverConfig();
+    if (!sc || !sc->isBuiltin) {
+        return;
+    }
+
+    auto* newSc = new SolverConfiguration(sc->solverDefinition, true);
+    int i = currentIndex();
+    delete configs[i];
+    configs.replace(i, newSc);
+    updateGUI(true);
+    populateComboBox();
 }
