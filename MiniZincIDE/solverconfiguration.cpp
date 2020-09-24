@@ -266,10 +266,13 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     if (sco["solvingStats"].isBool()) {
         newSc.solvingStats = sco["solvingStats"].toBool();
     }
-    if (sco["extraOptions"].isObject()) {
+    if (sco["extraOptions"].isObject() && sco["useExtraOptions"].toBool()) {
         QJsonObject extraOptions = sco["extraOptions"].toObject();
-        for (auto& k : extraOptions.keys()) {
-            newSc.extraOptions[k] = extraOptions[k].toString();
+
+        for (auto& f : solver.extraFlags) {
+            if (extraOptions.contains(f.name) && f.def.toString() != extraOptions[f.name].toString()) {
+                newSc.extraOptions[f.name] = extraOptions[f.name].toString();
+            }
         }
     }
     return newSc;

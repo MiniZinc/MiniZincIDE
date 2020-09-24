@@ -139,6 +139,7 @@ void ConfigWindow::mergeConfigs(const QList<SolverConfiguration*> confs)
             configs.replace(swapAt, sc);
         }
     }
+    updateGUI(true);
     populateComboBox();
 }
 
