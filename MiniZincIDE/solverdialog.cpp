@@ -133,7 +133,13 @@ Solver::Solver(const QJsonObject& sj) {
                         extraFlag.def = def == "true";
                         break;
                     case SolverFlag::T_BOOL_ONOFF:
-                        extraFlag.def = def == extraFlag.options[0];
+                        if (def == extraFlag.options[0]) {
+                            extraFlag.def = true;
+                        } else if (def == extraFlag.options[1]) {
+                            extraFlag.def = false;
+                        } else {
+                            extraFlag.def = def == "true";
+                        }
                         break;
                     case SolverFlag::T_FLOAT:
                     case SolverFlag::T_FLOAT_RANGE:

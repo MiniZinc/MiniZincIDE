@@ -504,6 +504,11 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
     } else {
         valueItem->setData(Qt::DisplayRole, value);
     }
+    if (f.t == SolverFlag::T_BOOL && f.def.toBool()) {
+        // Non switched booleans which are default true cannot be turned off
+        // TODO: Maybe this should send the flag when different to default?
+        valueItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    }
 
     ui->extraParams_tableWidget->setItem(i, 0, keyItem);
     ui->extraParams_tableWidget->setItem(i, 1, typeItem);
@@ -779,7 +784,7 @@ void ExtraOptionDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
             break;
         case SolverFlag::T_BOOL:
         case SolverFlag::T_BOOL_ONOFF:
-            model->setData(index, static_cast<QCheckBox*>(editor)->isChecked());
+            QStyledItemDelegate::setModelData(editor, model, index);
             break;
         case SolverFlag::T_FLOAT:
             model->setData(index, static_cast<QLineEdit*>(editor)->text().toDouble());
