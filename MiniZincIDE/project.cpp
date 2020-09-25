@@ -177,9 +177,9 @@ void Project::loadJSON(const QJsonObject& obj, const QFileInfo& fi, ConfigWindow
         selectedSolverConfigFile = obj["selectedSolverConfigFile"].toString();
         selectedBuiltinConfigId = "";
         selectedBuiltinConfigVersion = "";
-    } else {
+    } /*else {
         warnings << "No selected solver config in project";
-    }
+    }*/
 
     for (auto file : obj["projectFiles"].toArray()) {
         auto path = basePath + file.toString();
