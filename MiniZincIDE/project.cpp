@@ -225,18 +225,6 @@ void Project::saveProject()
         confObject["selectedSolverConfigFile"] = selectedSolverConfigFile;
     }
 
-    // Save modified built-in configs
-    QJsonArray builtinSolverConfigs;
-    for (auto sc : solverConfigs) {
-        if (!sc->isBuiltin || *sc == SolverConfiguration(sc->solverDefinition, true)) {
-            continue;
-        }
-        builtinSolverConfigs << sc->toJSONObject();
-    }
-    if (solverConfigs.count()) {
-        confObject["builtinSolverConfigs"] = builtinSolverConfigs;
-    }
-
     // Write project file
     QJsonDocument doc(confObject);
     QFile file(projectFile());
