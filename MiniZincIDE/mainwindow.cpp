@@ -2056,6 +2056,7 @@ void MainWindow::saveProject(const QString& f)
         p.projectFile(filepath);
     }
     p.openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
+    p.activeSolverConfigChanged(getCurrentSolverConfig());
     p.saveProject();
     updateRecentProjects(p.projectFile());
 }
