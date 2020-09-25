@@ -1122,7 +1122,6 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         }
         procFinished(exitCode, compileProcess->timeElapsed());
         compileProcess->deleteLater();
-        timer->stop();
         timer->deleteLater();
     });
     connect(timer, &QTimer::timeout, compileProcess, [=] () {
@@ -1187,6 +1186,8 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         timer->deleteLater();
     });
     connect(solveProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
+        solveProcess->disconnect();
+        timer->stop();
         int exitCode = 0;
         if (e == QProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
@@ -1197,7 +1198,6 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         }
         procFinished(exitCode, solveProcess->timeElapsed());
         solveProcess->deleteLater();
-        timer->stop();
         timer->deleteLater();
     });
     connect(timer, &QTimer::timeout, solveProcess, [=] () {
