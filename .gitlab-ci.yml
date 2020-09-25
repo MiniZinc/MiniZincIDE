@@ -62,12 +62,14 @@ build:win64:
     - "if [ -n \"$CI_COMMIT_TAG\" ]; then MZNVERSION=\"$CI_COMMIT_TAG\"; else MZNVERSION=\"build$CI_PIPELINE_ID\"; fi"
     ### Choose the MiniZinc compiler branch
     - "if [ -n \"$CI_COMMIT_TAG\" ]; then MZNREF=\"$CI_COMMIT_TAG\"; elif [ \"$CI_COMMIT_REF_NAME\" = \"master\" ]; then MZNREF=\"master\"; else MZNREF=\"develop\"; fi"
+    ### Choose the FindMUS branch
+    - "if  [ -n \"$CI_COMMIT_TAG\" ] || [ \"$CI_COMMIT_REF_NAME\" = \"master\" ]; then FINDMUSREF=\"master\"; else FINDMUSREF=\"develop\"; fi"
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
     - unzip -q minizinc.zip
     - "[ ${DOWNLOAD_SOLVERS:-1} -eq 1 ] && curl --silent -o vendor.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=bundle:$MZNARCH\" && unzip -q vendor.zip"
     - "[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q globalizer.zip"
-    - "[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/master/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
+    - "[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header \"PRIVATE-TOKEN:$ACCESS_TOKEN\" \"https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/$FINDMUSREF/download?job=build:$MZNARCH\" && unzip -q findmus.zip"
 
 package:linux:
   stage: package
@@ -173,6 +175,7 @@ package:win64:
     - if defined CI_COMMIT_TAG (set MZNVERSION=%CI_COMMIT_TAG%) else (set MZNVERSION=%CI_PIPELINE_ID%)
     ### Choose the MiniZinc compiler branch
     - if defined CI_COMMIT_TAG (set MZNREF=%CI_COMMIT_TAG%) else if %CI_COMMIT_REF_NAME%==master (set MZNREF=master) else (set MZNREF=develop)
+    - if defined CI_COMMIT_TAG (set FINDMUSREF=master) else if %CI_COMMIT_REF_NAME%==master (set FINDMUSREF=master) else (set FINDMUSREF=develop)
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
     - unzip -q minizinc.zip
@@ -180,7 +183,7 @@ package:win64:
     - unzip -q vendor.zip
     - curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fglobalizer/jobs/artifacts/master/download?job=build:%MZNARCH%"
     - unzip -q globalizer.zip
-    - curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2FFindMus/jobs/artifacts/master/download?job=build:%MZNARCH%"
+    - curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2FFindMus/jobs/artifacts/%FINDMUSREF%/download?job=build:%MZNARCH%"
     - unzip -q findmus.zip
   script:
     - "\"C:/Program Files (x86)/Inno Setup 6/ISCC.exe\" /dMyAppVersion=\"%MZNVERSION%\" /dMyMZNVersion=\"%MZNVERSION%\" /dMyAppDirectory=\"%CI_PROJECT_DIR%\" /dMyMSVCRedist=\"%MSVCREDIST%\" /dMyUCRTRedist=\"%UCRTREDIST%\" /dMyAPPArch=\"%MZNARCH%\" /dMyApp64Bit=\"%ISSARCH%\" /dMyAppArchitectures=\"%ISSARCHALLOWED%\" /O\"%CI_PROJECT_DIR%\" resources/pkg_config/minizinc-bundle.iss"
