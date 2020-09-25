@@ -147,7 +147,7 @@ int ConfigWindow::findBuiltinConfig(const QString &id, const QString &version)
 {
     int matchId = -1;
     int i = 0;
-    for (auto sc : solverConfigs()) {
+    for (auto sc : configs) {
         if (sc->isBuiltin && sc->solverDefinition.id == id) {
             matchId = i;
             if (sc->solverDefinition.version == version) {
@@ -162,7 +162,7 @@ int ConfigWindow::findBuiltinConfig(const QString &id, const QString &version)
 int ConfigWindow::findConfigFile(const QString &file)
 {
     int i = 0;
-    for (auto sc : solverConfigs()) {
+    for (auto sc : configs) {
         if (sc->paramFile == file) {
             return i;
         }
