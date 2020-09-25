@@ -1,3 +1,28 @@
+2020-09-25
+  v2.5.0
+  - Remove support for the old binary storage format of projects.
+    These must be opened and re-saved with version 2.4.3 to remain compatible.
+  - Include experimental CP-profiler through the *MiniZinc* > *Profile search*
+    option for supported solvers.
+  - Redesign the solver configuration window.
+  - Use parameter configuration files rather than passing command-line options
+    directly.
+  - Show solver configurations and checkers in their own sections in the
+    project explorer.
+  - Allow multiselection in the project explorer for running particular sets
+    of files.
+  - Allow MiniZinc to manage subprocesses by itself.
+  - Allow non-privileged installs of the IDE on Windows.
+  - Correctly remove files from old installations of the IDE on Windows.
+  - Enable scroll bars in the preferences dialog to allow for low resolution
+    displays.
+  - Prompt to save modified files before performing MOOC submissions or running
+    models.
+  - Fix infinite recursion when a model file for a MOOC submission doesn't
+    exist.
+  - Use --output-mode checker for MOOC solution submission where supported.
+  - Fully support unicode on Windows.
+
 2020-03-03
   v2.4.3
   - Disable menu items that don't make sense when all tabs are closed,
