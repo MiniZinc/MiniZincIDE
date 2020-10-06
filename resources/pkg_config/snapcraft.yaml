@@ -26,7 +26,9 @@ apps:
 parts:
   ide:
     plugin: qmake
-    source: MiniZincIDE/
+    source: .
+    project-files:
+      - MiniZincIDE/MiniZincIDE.pro
     qt-version: qt5
     after: [desktop-qt5]
     build-packages:
