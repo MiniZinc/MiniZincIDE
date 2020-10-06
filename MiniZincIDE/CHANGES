@@ -1,6 +1,8 @@
 2020-09-25
   v2.5.0
-  - Remove support for the old binary storage format of projects.
+  - Add fallback libraries if user does not have libnss3.
+  - Remove support for the old binary storage format of projects used prior to
+    version 2.2.0.
     These must be opened and re-saved with version 2.4.3 to remain compatible.
   - Include experimental CP-profiler through the *MiniZinc* > *Profile search*
     option for supported solvers.
