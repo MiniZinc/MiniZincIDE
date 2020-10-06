@@ -157,12 +157,27 @@ void CodeEditor::setDarkMode(bool enable)
     darkMode = enable;
     highlighter->setDarkMode(enable);
     highlighter->rehighlight();
-    auto palette = this->palette();
-    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
-    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
-    palette.setColor(QPalette::Highlight, Themes::currentTheme.textHighlightColor.get(darkMode));
-    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
-    this->setPalette(palette);
+
+//// Palettes stop working when stylesheets are used for the same object.
+//// Since dark-mode is handeled via css on non-macOS systems, the more efficient pallet code cannot be used.
+//// Instead we have to generate css on the fly.
+//    auto palette = this->palette();
+//    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
+//    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
+//    palette.setColor(QPalette::Highlight, Themes::currentTheme.textHighlightColor.get(darkMode));
+//    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
+//    this->setPalette(palette);
+
+    auto style_sheet = QString("background-color: #%1;"
+                               "color: #%2;"
+                               "selection-background-color: #%3;"
+                               "selection-color: #%4;")
+      .arg(Themes::currentTheme.backgroundColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textHighlightColor.get(darkMode).rgba(), 0, 16)
+      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16);
+
+    setStyleSheet(style_sheet);
     cursorChange(); // Ensure extra selections are the correct colours
 }
 
