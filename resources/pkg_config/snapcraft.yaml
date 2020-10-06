@@ -1,6 +1,5 @@
 name: minizinc
-version: latest
-version-script: cat version.txt
+version: git
 summary: The MiniZinc bundle
 icon: resources/icon.png
 description: |
@@ -27,8 +26,7 @@ parts:
   ide:
     plugin: qmake
     source: .
-    project-files:
-      - MiniZincIDE/MiniZincIDE.pro
+    source-subdir: MiniZincIDE
     qt-version: qt5
     after: [desktop-qt5]
     build-packages:

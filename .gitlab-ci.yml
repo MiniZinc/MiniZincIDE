@@ -2,6 +2,9 @@ stages:
   - build
   - package
 
+default:
+  interruptible: true
+
 # ----------- Build MiniZincIDE -----------
 
 build:linux:
@@ -295,16 +298,15 @@ package:docker_ubuntu:
   script:
     - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
-    - echo "$MZNVERSION" > version.txt
     - apt-get update -y
+    - snapcraft login --with $SNAPCRAFT_LOGIN
     - snapcraft
-    - echo "$SNAPLOGIN" > login.pass
-    - snapcraft login --with login.pass
-    - snapcraft push --release=edge minizinc*.snap
+    - snapcraft upload minizinc*.snap --release edge
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
   dependencies: []
+  needs: []
   tags: [linux, docker]
 
 package:snap:
