@@ -1159,11 +1159,13 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         solveProcess->deleteLater();
     });
     if (ts) {
+        connect(solveProcess, &SolveProcess::statisticOutput, [=](const QString& d) { *ts << d; });
         connect(solveProcess, &SolveProcess::solutionOutput, [=](const QString& d) { *ts << d; });
         connect(solveProcess, &SolveProcess::finalStatus, [=](const QString& d) { *ts << d; });
         connect(solveProcess, &SolveProcess::fragment, [=](const QString& d) { *ts << d; });
     }
 
+    connect(solveProcess, &SolveProcess::statisticOutput, [=](const QString& d) { addOutput(d, false); });
     connect(solveProcess, &SolveProcess::solutionOutput, this, &MainWindow::on_solutionOutput);
     connect(solveProcess, &SolveProcess::finalStatus, this, &MainWindow::on_finalStatus);
     connect(solveProcess, &SolveProcess::fragment, this, &MainWindow::on_fragment);
