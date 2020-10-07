@@ -307,7 +307,10 @@ void Project::add(const QString& fileName)
     node->sortChildren(0);
 
     entries.insert(abs, item);
-    setModified(true);
+
+    if (!projectFile().isEmpty()) {
+        setModified(true);
+    }
 }
 
 void Project::add(const QStringList& fileNames)
