@@ -163,7 +163,7 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
             sc.verboseSolving = it.value().toBool();
         } else if (key == "--compiler-statistics" || key == "--statistics" || key == "-s") {
             sc.compilationStats = it.value().toBool();
-        } else if (key == "--solving-statistics" || key == "--statistics" || key == "-s") {
+        } else if (key == "--solver-statistics" || key == "--statistics" || key == "-s") {
             sc.solvingStats = it.value().toBool();
         } else if (key == "--output-time") {
             sc.outputTiming = it.value().toBool();
@@ -340,7 +340,7 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
         config["compiler-statistics"] = compilationStats;
     }
     if (solvingStats && supports("-s")) {
-        config["solving-statistics"] = solvingStats;
+        config["solver-statistics"] = solvingStats;
     }
     if (outputTiming) {
         config["output-time"] = outputTiming;
