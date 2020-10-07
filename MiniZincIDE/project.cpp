@@ -343,7 +343,10 @@ void Project::remove(const QString &fileName)
         parent->setFlags(Qt::NoItemFlags);
     }
     entries.remove(path);
-    setModified(true);
+
+    if (!projectFile().isEmpty()) {
+        setModified(true);
+    }
 }
 
 void Project::remove(const QStringList &fileNames)
