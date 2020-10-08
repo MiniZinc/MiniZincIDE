@@ -257,7 +257,7 @@ void MainWindow::init(const QString& projectFile)
     connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
 
     ui->projectExplorerDockWidget->hide();
-//    ui->conf_dock_widget->hide();
+    ui->configWindow_dockWidget->hide();
 
     project = new Project(ui->config_window->solverConfigs(), this);
     connect(ui->tabWidget, &QTabWidget::currentChanged, [=] (int i) {
