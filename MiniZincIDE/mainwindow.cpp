@@ -309,13 +309,14 @@ void MainWindow::updateUiProcessRunning(bool pr)
         bool isData = false;
         if (curEditor) {
             isPlayground = curEditor->filepath=="";
-            isMzn = isPlayground || QFileInfo(curEditor->filepath).suffix()=="mzn";
-            isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn";
+            isMzn = (isPlayground && !curEditor->filename.endsWith(".fzn")) || QFileInfo(curEditor->filepath).suffix()=="mzn";
+            isFzn = QFileInfo(curEditor->filepath).suffix()=="fzn" || curEditor->filename.endsWith(".fzn");
             isData = QFileInfo(curEditor->filepath).suffix()=="dzn" || QFileInfo(curEditor->filepath).suffix()=="json";
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn || isData));
         ui->actionRun->setEnabled(isMzn || isFzn || isData);
         ui->actionProfile_compilation->setEnabled((!isPlayground && isMzn) || isData);
+        ui->actionProfile_search->setEnabled(isMzn || isFzn || isData);
         fakeCompileAction->setEnabled(!(isMzn||isData));
         ui->actionCompile->setEnabled(isMzn||isData);
         fakeStopAction->setEnabled(true);
@@ -412,7 +413,9 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             curEditor->document()->setModified(openAsModified);
             tabChange(ui->tabWidget->currentIndex());
         } else if (doc) {
-            getProject().add(absPath);
+            if (!absPath.endsWith(".fzn")) {
+                getProject().add(absPath);
+            }
             IDE::instance()->registerEditor(absPath,curEditor);
         }
         if (closeTab >= 0)
@@ -893,7 +896,8 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
 QString MainWindow::currentModelFile()
 {
     if (curEditor) {
-        if (curEditor->filepath.endsWith(".mzn") && !curEditor->filepath.endsWith(".mzc.mzn")) {
+        if (curEditor->filepath.endsWith(".fzn") ||
+                (curEditor->filepath.endsWith(".mzn") && !curEditor->filepath.endsWith(".mzc.mzn"))) {
             // The current file is a model
             return curEditor->filepath;
         }
@@ -904,7 +908,7 @@ QString MainWindow::currentModelFile()
                 throw InternalError("Could not create temporary directory for compilation.");
             } else {
                 cleanupTmpDirs.append(modelTmpDir);
-                QString model = modelTmpDir->path() +"/untitled_model.mzn";
+                QString model = modelTmpDir->path() + "/untitled_model." + (curEditor->filename.endsWith(".fzn") ? "fzn" : "mzn");
                 QFile modelFile(model);
                 if (modelFile.open(QIODevice::ReadWrite)) {
                     QTextStream ts(&modelFile);
@@ -2528,6 +2532,9 @@ void MainWindow::setEditorMenuItemsEnabled(bool enabled) {
     ui->actionUndo->setEnabled(enabled);
     ui->actionRedo->setEnabled(enabled);
     ui->actionRun->setEnabled(enabled);
+    ui->actionCompile->setEnabled(enabled);
+    ui->actionProfile_compilation->setEnabled(enabled);
+    ui->actionProfile_search->setEnabled(enabled);
 }
 
 void MainWindow::on_configWindow_dockWidget_visibilityChanged(bool visible)
