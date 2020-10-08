@@ -4,6 +4,7 @@
 
 #include <QFileInfo>
 #include <QFile>
+#include <QJsonParseError>
 #include <QJsonArray>
 #include <QDir>
 
@@ -104,8 +105,21 @@ SolverConfiguration SolverConfiguration::loadJSON(const QString& filename)
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         throw FileError("Failed to open file " + filename);
     }
-    auto json = QJsonDocument::fromJson(file.readAll());
+    QJsonParseError error;
+    auto json = QJsonDocument::fromJson(file.readAll(), &error);
     file.close();
+    if (json.isNull()) {
+        QString message;
+        QTextStream ts(&message);
+        ts << "Could not parse "
+           << fi.fileName()
+           << ". Error at "
+           << error.offset
+           << ": "
+           << error.errorString()
+           << ".";
+        throw ConfigError(message);
+    }
     auto sc = loadJSON(json);
     sc.paramFile = fi.canonicalFilePath();
     return sc;
