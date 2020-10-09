@@ -297,6 +297,18 @@ void SolveProcess::onStdout()
 {
     setReadChannel(QProcess::ProcessChannel::StandardOutput);
 
+    // There might be a fragment on stderr without a new line
+    // This should be shown now since stdout has a newline
+    // to emulate console behaviour
+    if (canReadLine()) {
+        // All available stderr must be a fragment since otherwise
+        // onStderr would have processed it already
+        auto fragment = QString::fromUtf8(readAllStandardError());
+        if (!fragment.isEmpty()) {
+            processStderr(fragment);
+        }
+    }
+
     while (canReadLine()) {
         auto line = QString::fromUtf8(readLine());
         processStdout(line);
