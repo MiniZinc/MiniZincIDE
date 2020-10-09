@@ -407,7 +407,7 @@ void SolveProcess::processStderr(QString line)
     emit stdErrorOutput(line);
 }
 
-void SolveProcess::onFinished(int, QProcess::ExitStatus)
+void SolveProcess::onFinished(int exitCode, QProcess::ExitStatus status)
 {
     // Finish processing remaining stdout
     onStdout();
@@ -421,6 +421,8 @@ void SolveProcess::onFinished(int, QProcess::ExitStatus)
     // Finish processing remaining stderr
     onStderr();
     if (!atEnd()) {
-        processStdout(readAll());
+        processStderr(readAll());
     }
+
+    emit complete(exitCode, status);
 }

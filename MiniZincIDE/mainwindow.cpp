@@ -1187,7 +1187,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     });
     connect(solveProcess, &SolveProcess::jsonOutput, this, &MainWindow::openJSONViewer);
     connect(solveProcess, &SolveProcess::stdErrorOutput, this, &MainWindow::outputStdErr);
-    connect(solveProcess, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
+    connect(solveProcess, &SolveProcess::complete, [=](int exitCode, QProcess::ExitStatus exitStatus) {
         if (exitStatus == QProcess::CrashExit) {
             QMessageBox::critical(this, "MiniZinc IDE", "MiniZinc crashed unexpectedly.");
             procFinished(0, solveProcess->timeElapsed());

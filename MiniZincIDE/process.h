@@ -274,6 +274,12 @@ signals:
     /// \param error The data in stderr.
     ///
     void stdErrorOutput(const QString& error);
+    ///
+    /// \brief Emitted when output processing has completed and minizinc has exited
+    /// \param exitCode The exit code
+    /// \param exitStatus The exit status
+    ///
+    void complete(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
     enum State {
