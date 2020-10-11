@@ -449,9 +449,10 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
             openProject(fileName);
         } else if (fileName.endsWith(".mpc")) {
             QString absPath = QFileInfo(fileName).canonicalFilePath();
-            ui->config_window->addConfig(absPath);
-            getProject().add(absPath);
-            ui->configWindow_dockWidget->setVisible(true);
+            if (ui->config_window->addConfig(absPath)) {
+                getProject().add(absPath);
+                ui->configWindow_dockWidget->setVisible(true);
+            }
         } else {
             createEditor(fileName, openAsModified, false, false, focus);
         }

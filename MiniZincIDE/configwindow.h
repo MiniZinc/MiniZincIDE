@@ -46,8 +46,9 @@ public:
     ///
     /// \brief Loads a configuration from a JSON file
     /// \param fileName The path to the JSON file
+    /// \return True if loading the config was successful
     ///
-    void addConfig(const QString& fileName);
+    bool addConfig(const QString& fileName);
 
     ///
     /// \brief Adds/merges in existing solver configurations

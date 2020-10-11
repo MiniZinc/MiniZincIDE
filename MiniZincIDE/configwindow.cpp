@@ -100,11 +100,13 @@ void ConfigWindow::loadConfigs(void)
     }
 }
 
-void ConfigWindow::addConfig(const QString &fileName)
+bool ConfigWindow::addConfig(const QString &fileName)
 {
-    if (findConfigFile(fileName) != -1) {
+    int index = findConfigFile(fileName);
+    if (index != -1) {
         // Already have this config
-        return;
+        setCurrentIndex(index);
+        return true;
     }
 
     try {
@@ -118,8 +120,10 @@ void ConfigWindow::addConfig(const QString &fileName)
         }
         populateComboBox();
         setCurrentIndex(configs.length() - 1);
+        return true;
     } catch (Exception& e) {
         QMessageBox::warning(this, "Parameter configuration error", e.message(), QMessageBox::Ok);
+        return false;
     }
 }
 
