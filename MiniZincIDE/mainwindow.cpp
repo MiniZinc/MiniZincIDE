@@ -2697,7 +2697,7 @@ void MainWindow::on_projectBrowser_runRequested(const QStringList& files)
     for (auto& f : files) {
         if (f.endsWith(".mpc")) {
             int i = ui->config_window->findConfigFile(f);
-            if (i == -1) {
+            if (i != -1) {
                 sc = ui->config_window->solverConfigs()[i];
             }
         } else if (f.endsWith(".mzc.mzn") || f.endsWith(".mzc")) {
