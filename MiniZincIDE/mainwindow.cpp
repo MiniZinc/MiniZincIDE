@@ -252,7 +252,17 @@ void MainWindow::init(const QString& projectFile)
     settings.beginGroup("minizinc");
     QString mznDistribPath = settings.value("mznpath","").toString();
     settings.endGroup();
-    checkMznPath(mznDistribPath);
+    auto& driver = MznDriver::get();
+    try {
+        driver.setLocation(mznDistribPath);
+    } catch (Exception& e) {
+        int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                       e.message() + "\nDo you want to open the settings dialog?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Ok)
+            on_actionManage_solvers_triggered();
+    }
+    ui->config_window->init();
 
     connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
 
@@ -1808,6 +1818,8 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     SolverDialog sd(addNew);
     sd.exec();
 
+    checkDriver();
+
     ui->config_window->loadConfigs();
 
     settings.beginGroup("ide");
@@ -1878,19 +1890,8 @@ void MainWindow::on_actionGo_to_line_triggered()
     }
 }
 
-void MainWindow::checkMznPath(const QString& mznPath)
-{
+void MainWindow::checkDriver() {
     auto& driver = MznDriver::get();
-    try {
-        driver.setLocation(mznPath);
-    } catch (Exception& e) {
-        int ret = QMessageBox::warning(this, "MiniZinc IDE",
-                                       e.message() + "\nDo you want to open the settings dialog?",
-                                       QMessageBox::Ok | QMessageBox::Cancel);
-        if (ret == QMessageBox::Ok)
-            on_actionManage_solvers_triggered();
-    }
-
     bool haveMzn = (driver.isValid() && driver.solvers().size() > 0);
     ui->actionRun->setEnabled(haveMzn);
     ui->actionProfile_compilation->setEnabled(haveMzn);
@@ -1899,7 +1900,6 @@ void MainWindow::checkMznPath(const QString& mznPath)
     ui->actionSubmit_to_MOOC->setEnabled(haveMzn);
     if (!haveMzn)
         ui->configWindow_dockWidget->hide();
-    ui->config_window->init();
 }
 
 void MainWindow::on_actionShift_left_triggered()

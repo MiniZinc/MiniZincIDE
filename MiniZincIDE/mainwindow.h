@@ -336,7 +336,7 @@ private:
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime(qint64 elapsed_t);
-    void checkMznPath(const QString& mznPath);
+    void checkDriver();
     void updateRecentProjects(const QString& p);
     void updateRecentFiles(const QString& p);
     void updateUiProcessRunning(bool pr);
