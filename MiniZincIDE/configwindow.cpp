@@ -672,12 +672,6 @@ void ConfigWindow::on_clone_pushButton_clicked()
     setCurrentIndex(configs.length() - 1);
 }
 
-void ConfigWindow::on_actionCustom_Parameter_triggered()
-{
-    addExtraParam();
-    invalidate(false);
-}
-
 void ConfigWindow::resizeExtraFlagsTable()
 {
     int total_height = ui->extraParams_tableWidget->horizontalHeader()->height();

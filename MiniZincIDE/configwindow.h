@@ -124,8 +124,6 @@ private slots:
 
     void on_clone_pushButton_clicked();
 
-    void on_actionCustom_Parameter_triggered();
-
     void on_makeConfigDefault_pushButton_clicked();
 
     void on_actionAdd_all_known_parameters_triggered();
