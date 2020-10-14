@@ -30,6 +30,7 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
     ui->userDefinedBehavior_frame->setVisible(false);
 
     extraFlagsMenu = new QMenu(this);
+    extraFlagsMenu->setStyleSheet("menu-scrollable: 1;");
     ui->addExtraParam_toolButton->setMenu(extraFlagsMenu);
 
     ui->extraParams_tableWidget->setColumnCount(3);
@@ -382,6 +383,7 @@ void ConfigWindow::updateGUI(bool overrideSync)
         action->setData(QVariant::fromValue(f));
         connect(action, &QAction::triggered, [=] (bool) {
             addExtraParam(f);
+            resizeExtraFlagsTable();
             action->setDisabled(true);
         });
     }
@@ -521,8 +523,6 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
     ui->extraParams_tableWidget->setItem(i, 1, typeItem);
     ui->extraParams_tableWidget->setItem(i, 2, valueItem);
 
-    resizeExtraFlagsTable();
-
     invalidate(false);
 }
 
@@ -570,8 +570,6 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
     });
 
     ui->extraParams_tableWidget->setCellWidget(i, 1, typeComboBox);
-
-    resizeExtraFlagsTable();
 }
 
 void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<void()> action)
@@ -828,8 +826,11 @@ void ConfigWindow::on_actionAdd_all_known_parameters_triggered()
                 action == ui->actionAdd_all_known_parameters) {
             continue;
         }
-        action->trigger();
+        auto f = qvariant_cast<SolverFlag>(action->data());
+        addExtraParam(f);
+        action->setDisabled(true);
     }
+    resizeExtraFlagsTable();
 }
 
 void ConfigWindow::on_reset_pushButton_clicked()
