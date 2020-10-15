@@ -27,6 +27,8 @@ struct SolverFlag {
     enum { T_INT, T_INT_RANGE, T_BOOL, T_BOOL_ONOFF, T_FLOAT, T_FLOAT_RANGE, T_STRING, T_OPT, T_SOLVER } t;
     double min;
     double max;
+    qlonglong min_ll;
+    qlonglong max_ll;
     QStringList options;
     QVariant def;
 };

@@ -16,11 +16,13 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QScrollBar>
+#include <QValidator>
 
 #include "process.h"
 #include "exception.h"
 
 #include <algorithm>
+#include <limits>
 
 ConfigWindow::ConfigWindow(QWidget *parent) :
     QWidget(parent),
@@ -692,14 +694,21 @@ QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionVi
         {
             auto field = new QLineEdit(parent);
             field->setAlignment(Qt::AlignRight);
-            field->setValidator(new QIntValidator());
+            field->setValidator(new LongLongValidator());
             return field;
         }
         case SolverFlag::T_INT_RANGE:
         {
-            auto field = new QSpinBox(parent);
-            field->setRange(static_cast<int>(f.min), static_cast<int>(f.max));
-            return field;
+            if (f.min_ll < std::numeric_limits<int>::min() || f.max_ll > std::numeric_limits<int>::max()) {
+                auto field = new QLineEdit(parent);
+                field->setAlignment(Qt::AlignRight);
+                field->setValidator(new LongLongValidator(f.min_ll, f.max_ll));
+                return field;
+            } else {
+                auto field = new QSpinBox(parent);
+                field->setRange(static_cast<int>(f.min_ll), static_cast<int>(f.max_ll));
+                return field;
+            }
         }
         case SolverFlag::T_FLOAT:
         {
@@ -744,11 +753,17 @@ void ExtraOptionDelegate::setEditorData(QWidget* editor, const QModelIndex& inde
         auto f = qvariant_cast<SolverFlag>(index.data(Qt::UserRole));
         switch (f.t) {
         case SolverFlag::T_INT:
-            static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toInt()));
+            static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toLongLong()));
             break;
-        case SolverFlag::T_INT_RANGE:
-            static_cast<QSpinBox*>(editor)->setValue(index.data().toInt());
+        case SolverFlag::T_INT_RANGE: {
+            auto* e = qobject_cast<QSpinBox*>(editor);
+            if (e) {
+                e->setValue(index.data().toLongLong());
+            } else {
+                static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toLongLong()));
+            }
             break;
+        }
         case SolverFlag::T_FLOAT:
             static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toDouble()));
             break;
@@ -778,9 +793,15 @@ void ExtraOptionDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
         case SolverFlag::T_INT:
             model->setData(index, static_cast<QLineEdit*>(editor)->text().toInt());
             break;
-        case SolverFlag::T_INT_RANGE:
-            model->setData(index, static_cast<QSpinBox*>(editor)->value());
+        case SolverFlag::T_INT_RANGE: {
+            auto* e = qobject_cast<QSpinBox*>(editor);
+            if (e) {
+                model->setData(index, e->value());
+            } else {
+                model->setData(index, static_cast<QLineEdit*>(editor)->text().toLongLong());
+            }
             break;
+        }
         case SolverFlag::T_BOOL:
         case SolverFlag::T_BOOL_ONOFF:
             QStyledItemDelegate::setModelData(editor, model, index);

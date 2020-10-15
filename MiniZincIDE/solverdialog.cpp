@@ -91,8 +91,8 @@ Solver::Solver(const QJsonObject& sj) {
                                 extraFlag.t = SolverFlag::T_INT;
                             } else {
                                 extraFlag.t = SolverFlag::T_INT_RANGE;
-                                extraFlag.min = re_opt_match.captured(3).toInt();
-                                extraFlag.max = re_opt_match.captured(4).toInt();
+                                extraFlag.min_ll = re_opt_match.captured(3).toLongLong();
+                                extraFlag.max_ll = re_opt_match.captured(4).toLongLong();
                             }
                         } else if (re_opt_match.captured(1)=="float") {
                             if (re_opt_match.captured(3).isEmpty()) {
@@ -127,7 +127,7 @@ Solver::Solver(const QJsonObject& sj) {
                     switch (extraFlag.t) {
                     case SolverFlag::T_INT:
                     case SolverFlag::T_INT_RANGE:
-                        extraFlag.def = def.toInt();
+                        extraFlag.def = def.toLongLong();
                         break;
                     case SolverFlag::T_BOOL:
                         extraFlag.def = def == "true";

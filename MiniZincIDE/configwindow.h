@@ -161,4 +161,44 @@ public:
     void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
 };
 
+class LongLongValidator : public QValidator {
+    Q_OBJECT
+public:
+    LongLongValidator(qlonglong min, qlonglong max, QObject *parent = nullptr)
+        : QValidator(parent), _min(min), _max(max) {}
+    LongLongValidator(QObject *parent = nullptr) : QValidator(parent) {}
+    qlonglong bottom() const { return _min; }
+    qlonglong top() const { return _max; }
+    void setBottom(qlonglong min){
+        if (_min != min) {
+            _min = min;
+            changed();
+        }
+    }
+    void setTop(qlonglong max){
+        if (_max != max) {
+            _max = max;
+            changed();
+        }
+    }
+    void setRange(qlonglong min, qlonglong max){
+        setBottom(min);
+        setTop(max);
+    }
+    QValidator::State validate(QString &input, int&) const override{
+        bool ok = false;
+        qlonglong n = input.toLongLong(&ok);
+        if (!ok) {
+            return QValidator::Invalid;
+        }
+        if (n < _min || n > _max) {
+            return QValidator::Intermediate;
+        }
+        return QValidator::Acceptable;
+    }
+private:
+    qlonglong _min = std::numeric_limits<qlonglong>::min();
+    qlonglong _max = std::numeric_limits<qlonglong>::max();
+};
+
 #endif // CONFIGWINDOW_H
