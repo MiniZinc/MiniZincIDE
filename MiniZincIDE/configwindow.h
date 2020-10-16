@@ -124,6 +124,8 @@ private slots:
 
     void on_clone_pushButton_clicked();
 
+    void on_actionCustom_Parameter_triggered();
+
     void on_makeConfigDefault_pushButton_clicked();
 
     void on_actionAdd_all_known_parameters_triggered();
@@ -141,7 +143,7 @@ private:
 
     void updateGUI(bool overrideSync = false);
     void updateSolverConfig(SolverConfiguration* sc);
-    void addExtraParam(const QString& key = "", const QVariant& value = "");
+    void addExtraParam(const QString& key = "", bool backend = false, const QVariant& value = "");
     void addExtraParam(const SolverFlag& f, const QVariant& value = QVariant());
     void watchChanges(const QList<QWidget*>& objects, std::function<void()> action);
     void invalidate(bool all);

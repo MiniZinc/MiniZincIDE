@@ -35,13 +35,8 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
     extraFlagsMenu->setStyleSheet("menu-scrollable: 1;");
     ui->addExtraParam_toolButton->setMenu(extraFlagsMenu);
 
-    ui->extraParams_tableWidget->setColumnCount(3);
-    ui->extraParams_tableWidget->setHorizontalHeaderLabels(QStringList() << "Parameter" << "Type" << "Value");
     ui->extraParams_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    ui->extraParams_tableWidget->horizontalHeader()->setStretchLastSection(true);
-    ui->extraParams_tableWidget->verticalHeader()->hide();
-
-    ui->extraParams_tableWidget->setItemDelegateForColumn(2, new ExtraOptionDelegate);
+    ui->extraParams_tableWidget->setItemDelegateForColumn(3, new ExtraOptionDelegate);
 
     QList<QWidget*> toBeWatched;
     for (auto child : findChildren<QWidget*>()) {
@@ -407,8 +402,12 @@ void ConfigWindow::updateGUI(bool overrideSync)
             }
         }
         if (!matched) {
-            addExtraParam(it.key(), it.value());
+            addExtraParam(it.key(), false, it.value());
         }
+    }
+
+    for (auto it = sc->solverBackendOptions.begin(); it != sc->solverBackendOptions.end(); it++) {
+        addExtraParam(it.key(), true, it.value());
     }
 
     resizeExtraFlagsTable();
@@ -453,13 +452,18 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
     sc->extraOptions.clear();
     for (int row = 0; row < ui->extraParams_tableWidget->rowCount(); row++) {
         auto keyItem = ui->extraParams_tableWidget->item(row, 0);
-        auto valueItem = ui->extraParams_tableWidget->item(row, 2);
+        auto flagTypeWidget = static_cast<QComboBox*>(ui->extraParams_tableWidget->cellWidget(row, 1));
+        auto valueItem = ui->extraParams_tableWidget->item(row, 3);
         if (keyItem && valueItem) {
             auto key = keyItem->data(Qt::UserRole).isNull() ?
                         keyItem->data(Qt::DisplayRole).toString() :
                         keyItem->data(Qt::UserRole).toString();
             auto value = valueItem->data(Qt::DisplayRole);
-            sc->extraOptions.insert(key, value);
+            if (flagTypeWidget && flagTypeWidget->currentIndex() == 1) {
+                sc->solverBackendOptions.insert(key, value);
+            } else {
+                sc->extraOptions.insert(key, value);
+            }
         }
     }
 }
@@ -505,6 +509,9 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
     keyItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     keyItem->setData(Qt::UserRole, f.name);
 
+    auto flagTypeItem = new QTableWidgetItem;
+    flagTypeItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
     auto typeItem = new QTableWidgetItem;
     typeItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
@@ -522,13 +529,14 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
     }
 
     ui->extraParams_tableWidget->setItem(i, 0, keyItem);
-    ui->extraParams_tableWidget->setItem(i, 1, typeItem);
-    ui->extraParams_tableWidget->setItem(i, 2, valueItem);
+    ui->extraParams_tableWidget->setItem(i, 1, flagTypeItem);
+    ui->extraParams_tableWidget->setItem(i, 2, typeItem);
+    ui->extraParams_tableWidget->setItem(i, 3, valueItem);
 
     invalidate(false);
 }
 
-void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
+void ConfigWindow::addExtraParam(const QString& key, bool backend, const QVariant& value)
 {
     int i = ui->extraParams_tableWidget->rowCount();
     ui->extraParams_tableWidget->insertRow(i);
@@ -538,7 +546,12 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
     auto valItem = new QTableWidgetItem;
     valItem->setData(Qt::DisplayRole, value);
     ui->extraParams_tableWidget->setItem(i, 0, keyItem);
-    ui->extraParams_tableWidget->setItem(i, 2, valItem);
+    ui->extraParams_tableWidget->setItem(i, 3, valItem);
+
+    auto flagTypeComboBox = new QComboBox;
+    flagTypeComboBox->addItems({"MiniZinc", "Solver backend"});
+    flagTypeComboBox->setCurrentIndex(backend ? 1 : 0);
+    ui->extraParams_tableWidget->setCellWidget(i, 1, flagTypeComboBox);
 
     auto typeComboBox = new QComboBox;
     typeComboBox->addItems({"String", "Boolean", "Integer", "Float"});
@@ -571,7 +584,7 @@ void ConfigWindow::addExtraParam(const QString& key, const QVariant& value)
         valItem = newValItem;
     });
 
-    ui->extraParams_tableWidget->setCellWidget(i, 1, typeComboBox);
+    ui->extraParams_tableWidget->setCellWidget(i, 2, typeComboBox);
 }
 
 void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<void()> action)
@@ -670,6 +683,12 @@ void ConfigWindow::on_clone_pushButton_clicked()
     configs << clone;
     populateComboBox();
     setCurrentIndex(configs.length() - 1);
+}
+
+void ConfigWindow::on_actionCustom_Parameter_triggered()
+{
+    addExtraParam();
+    invalidate(false);
 }
 
 void ConfigWindow::resizeExtraFlagsTable()

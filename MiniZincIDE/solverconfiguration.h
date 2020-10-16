@@ -35,6 +35,7 @@ public:
     QVariant randomSeed;
     bool freeSearch;
     QVariantMap extraOptions;
+    QVariantMap solverBackendOptions;
     bool modified;
 
     ///

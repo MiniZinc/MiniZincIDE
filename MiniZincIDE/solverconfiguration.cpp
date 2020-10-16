@@ -209,6 +209,17 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
             sc.randomSeed = it.value().toVariant();
         } else if (key == "-f" || key == "--free-search") {
             sc.freeSearch = it.value().toBool();
+        } else if (key == "--backend-flags" ||
+                   key == "--fzn-flags" || key == "--flatzinc-flags" ||
+                   key == "--mzn-flags" || key == "--minizinc-flags") {
+            if (it.value().isString()) {
+                parseArgList(it.value().toString(), sc.solverBackendOptions);
+            } else if (it.value().isObject()) {
+                auto object = it.value().toObject();
+                for (auto it = object.begin(); it != object.end(); it++) {
+                    sc.solverBackendOptions.insert(it.key(), it.value().toVariant());
+                }
+            }
         } else {
             sc.extraOptions[key] = it.value().toVariant();
         }
@@ -266,7 +277,7 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
         newSc.randomSeed = sco["randomSeed"].toDouble();
     }
     if (sco["solverFlags"].isString() && !sco["solverFlags"].toString().isEmpty()) {
-        parseArgList(sco["solverFlags"].toString(), newSc.extraOptions);
+        parseArgList(sco["solverFlags"].toString(), newSc.solverBackendOptions);
     }
     if (sco["freeSearch"].isBool()) {
         newSc.freeSearch = sco["freeSearch"].toBool();
@@ -380,6 +391,9 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
     }
     for (auto it = extraOptions.begin(); it != extraOptions.end(); it++) {
         config[it.key()] = QJsonValue::fromVariant(it.value());
+    }
+    if (!solverBackendOptions.empty()) {
+        config["backend-flags"] = QJsonObject::fromVariantMap(solverBackendOptions);
     }
     for (auto f : solverDefinition.extraFlags) {
         if (f.t == SolverFlag::T_BOOL_ONOFF && extraOptions.contains(f.name)) {
