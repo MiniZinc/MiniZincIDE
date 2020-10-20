@@ -1,5 +1,6 @@
 * {
     background-color: #333333;
+    alternate-background-color: #444444;
     border-color: #444444;
     color: #FFFFFF;
 }
@@ -40,7 +41,7 @@ QTabBar::tab:hover {
     background-color: #2A2A2A;
 }
 
-QTextEdit, QLineEdit, QComboBox, QAbstractSlider, QAbstractSpinBox {
+QPlainTextEdit, QTextEdit, QLineEdit, QComboBox, QAbstractSlider, QAbstractSpinBox {
     background-color: #222222;
     padding: 3px;
     border: 1px solid #666666;
