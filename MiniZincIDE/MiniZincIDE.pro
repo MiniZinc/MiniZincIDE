@@ -47,6 +47,7 @@ CONFIG += embed_manifest_exe
 SOURCES += main.cpp\
     codechecker.cpp \
     configwindow.cpp \
+    extraparamdialog.cpp \
     ide.cpp \
     mainwindow.cpp \
     codeeditor.cpp \
@@ -71,6 +72,7 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     configwindow.h \
     exception.h \
+    extraparamdialog.h \
     highlighter.h \
     fzndoc.h \
     ide.h \
@@ -91,6 +93,7 @@ HEADERS  += mainwindow.h \
 
 FORMS    += \
     configwindow.ui \
+    extraparamdialog.ui \
     mainwindow.ui \
     projectbrowser.ui \
     solverdialog.ui \

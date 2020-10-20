@@ -17,6 +17,7 @@
 #include <QMenu>
 #include <QScrollBar>
 #include <QValidator>
+#include <QWidgetAction>
 
 #include "process.h"
 #include "exception.h"
@@ -31,9 +32,29 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->userDefinedBehavior_frame->setVisible(false);
 
-    extraFlagsMenu = new QMenu(this);
-    extraFlagsMenu->setStyleSheet("menu-scrollable: 1;");
-    ui->addExtraParam_toolButton->setMenu(extraFlagsMenu);
+    extraParamDialog = new ExtraParamDialog;
+
+    auto* widgetAction = new QWidgetAction(nullptr);
+    widgetAction->setDefaultWidget(extraParamDialog);
+
+    auto* menu = new QMenu(this);
+    menu->addAction(widgetAction);
+    ui->addExtraParam_toolButton->setMenu(menu);
+
+    connect(extraParamDialog, &ExtraParamDialog::addParams, this, [=](const QList<SolverFlag>& flags) {
+        for (auto& f : flags) {
+            addExtraParam(f);
+            extraParamDialog->setParamEnabled(f, false);
+        }
+        invalidate(false);
+        menu->hide();
+    });
+
+    connect(extraParamDialog, &ExtraParamDialog::addCustomParam, this, [=]() {
+        addExtraParam();
+        invalidate(false);
+        menu->hide();
+    });
 
     ui->extraParams_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->extraParams_tableWidget->setItemDelegateForColumn(3, new ExtraOptionDelegate);
@@ -374,19 +395,7 @@ void ConfigWindow::updateGUI(bool overrideSync)
     ui->freeSearch_checkBox->setEnabled(enableFreeSearch);
     ui->freeSearch_checkBox->setChecked(sc->freeSearch);
 
-    extraFlagsMenu->clear();
-    for (auto& f : sc->solverDefinition.extraFlags) {
-        auto action = extraFlagsMenu->addAction(f.description);
-        action->setData(QVariant::fromValue(f));
-        connect(action, &QAction::triggered, [=] (bool) {
-            addExtraParam(f);
-            resizeExtraFlagsTable();
-            action->setDisabled(true);
-        });
-    }
-    extraFlagsMenu->addSeparator();
-    extraFlagsMenu->addAction(ui->actionAdd_all_known_parameters);
-    extraFlagsMenu->addAction(ui->actionCustom_Parameter);
+    extraParamDialog->setParams(sc->solverDefinition.extraFlags);
 
     while (ui->extraParams_tableWidget->rowCount() > 0) {
         ui->extraParams_tableWidget->removeRow(0);
@@ -396,6 +405,7 @@ void ConfigWindow::updateGUI(bool overrideSync)
         bool matched = false;
         for (auto& f : sc->solverDefinition.extraFlags) {
             if (f.name == it.key()) {
+                extraParamDialog->setParamEnabled(f, false);
                 addExtraParam(f, it.value());
                 matched = true;
                 break;
@@ -457,7 +467,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
         if (keyItem && valueItem) {
             auto key = keyItem->data(Qt::UserRole).isNull() ?
                         keyItem->data(Qt::DisplayRole).toString() :
-                        keyItem->data(Qt::UserRole).toString();
+                        qvariant_cast<SolverFlag>(keyItem->data(Qt::UserRole)).name;
             auto value = valueItem->data(Qt::DisplayRole);
             if (flagTypeWidget && flagTypeWidget->currentIndex() == 1) {
                 sc->solverBackendOptions.insert(key, value);
@@ -478,13 +488,10 @@ void ConfigWindow::on_removeExtraParam_toolButton_clicked()
     }
     std::sort(toBeRemoved.begin(), toBeRemoved.end(), std::greater<int>());
     for (auto i : toBeRemoved) {
-        auto name = ui->extraParams_tableWidget->item(i, 0)->data(Qt::UserRole).toString();
-        for (auto action : extraFlagsMenu->actions()) {
+        auto data = ui->extraParams_tableWidget->item(i, 0)->data(Qt::UserRole);
+        if (!data.isNull()) {
             // Re-enable adding of this flag
-            if (name == qvariant_cast<SolverFlag>(action->data()).name) {
-                action->setEnabled(true);
-                break;
-            }
+            extraParamDialog->setParamEnabled(qvariant_cast<SolverFlag>(data), true);
         }
         ui->extraParams_tableWidget->removeRow(i);
     }
@@ -507,7 +514,7 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
 
     auto keyItem = new QTableWidgetItem(f.description);
     keyItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-    keyItem->setData(Qt::UserRole, f.name);
+    keyItem->setData(Qt::UserRole, QVariant::fromValue(f));
 
     auto flagTypeItem = new QTableWidgetItem;
     flagTypeItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
@@ -685,12 +692,6 @@ void ConfigWindow::on_clone_pushButton_clicked()
     setCurrentIndex(configs.length() - 1);
 }
 
-void ConfigWindow::on_actionCustom_Parameter_triggered()
-{
-    addExtraParam();
-    invalidate(false);
-}
-
 void ConfigWindow::resizeExtraFlagsTable()
 {
     int total_height = ui->extraParams_tableWidget->horizontalHeader()->height();
@@ -856,21 +857,6 @@ void ConfigWindow::on_makeConfigDefault_pushButton_clicked()
     } catch (Exception& e) {
         QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
     }
-}
-
-void ConfigWindow::on_actionAdd_all_known_parameters_triggered()
-{
-    for (auto action : extraFlagsMenu->actions()) {
-        if (!action->isEnabled() ||
-                action == ui->actionCustom_Parameter ||
-                action == ui->actionAdd_all_known_parameters) {
-            continue;
-        }
-        auto f = qvariant_cast<SolverFlag>(action->data());
-        addExtraParam(f);
-        action->setDisabled(true);
-    }
-    resizeExtraFlagsTable();
 }
 
 void ConfigWindow::on_reset_pushButton_clicked()

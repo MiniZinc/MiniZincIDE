@@ -15,13 +15,13 @@
 #include <QWidget>
 #include <QVariant>
 #include <QJsonDocument>
-#include <QStringListModel>
 #include <QFormLayout>
 #include <QMenu>
 #include <QStyledItemDelegate>
 
 #include "solverconfiguration.h"
 #include "solverdialog.h"
+#include "extraparamdialog.h"
 
 namespace Ui {
 class ConfigWindow;
@@ -124,11 +124,7 @@ private slots:
 
     void on_clone_pushButton_clicked();
 
-    void on_actionCustom_Parameter_triggered();
-
     void on_makeConfigDefault_pushButton_clicked();
-
-    void on_actionAdd_all_known_parameters_triggered();
 
     void on_reset_pushButton_clicked();
 
@@ -150,7 +146,7 @@ private:
     void populateComboBox(void);
     void resizeExtraFlagsTable(void);
 
-    QMenu* extraFlagsMenu;
+    ExtraParamDialog* extraParamDialog;
 };
 
 class ExtraOptionDelegate : public QStyledItemDelegate {
@@ -202,5 +198,7 @@ private:
     qlonglong _min = std::numeric_limits<qlonglong>::min();
     qlonglong _max = std::numeric_limits<qlonglong>::max();
 };
+
+
 
 #endif // CONFIGWINDOW_H
