@@ -1,3 +1,23 @@
+2020-10-22
+  v2.5.1
+  - Fix typo when passing solver statistics option to minizinc (#112).
+  - Fix missing statistics output (#112).
+  - Add support for colour themes (#110).
+  - Don't prompt for saving after adding/removing files from the Untitled
+    project.
+  - Fix running of compiled FlatZinc files.
+  - Show error message when trying to load an invalid configuration file.
+  - Ensure all output is sent to the output console, and that fragments in
+    standard error output appear when a newline is written to standard output
+    (#114).
+  - Fix running of solver configurations from the project explorer.
+  - Improve performance of adding a large number of extra flags at once.
+  - Add support for 64-bit integer extra flags.
+  - Add support for setting both solver backend flags and MiniZinc command flags
+    (#113).
+  - Improve interface for adding extra parameters, allowing search/filter and
+    multiselection of known parameters.
+
 2020-09-25
   v2.5.0
   - Add fallback libraries if user does not have libnss3.
