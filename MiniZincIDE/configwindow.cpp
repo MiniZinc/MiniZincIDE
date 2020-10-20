@@ -515,6 +515,7 @@ void ConfigWindow::addExtraParam(const SolverFlag& f, const QVariant& value)
     auto keyItem = new QTableWidgetItem(f.description);
     keyItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     keyItem->setData(Qt::UserRole, QVariant::fromValue(f));
+    keyItem->setToolTip(f.name);
 
     auto flagTypeItem = new QTableWidgetItem;
     flagTypeItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
@@ -558,9 +559,11 @@ void ConfigWindow::addExtraParam(const QString& key, bool backend, const QVarian
     auto flagTypeComboBox = new QComboBox;
     flagTypeComboBox->addItems({"MiniZinc", "Solver backend"});
     flagTypeComboBox->setCurrentIndex(backend ? 1 : 0);
+    flagTypeComboBox->setToolTip("Controls whether the flag is sent to the underlying solver executable (if available), or to the minizinc command.");
     ui->extraParams_tableWidget->setCellWidget(i, 1, flagTypeComboBox);
 
     auto typeComboBox = new QComboBox;
+    typeComboBox->setToolTip("Controls the data type of the flag value");
     typeComboBox->addItems({"String", "Boolean", "Integer", "Float"});
     switch (value.type()) {
     case QVariant::String:

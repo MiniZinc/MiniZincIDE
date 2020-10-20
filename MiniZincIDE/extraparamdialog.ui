@@ -45,6 +45,9 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="toolTip">
+      <string>Add the selected parameters.</string>
+     </property>
      <property name="text">
       <string>Add parameter</string>
      </property>
@@ -55,6 +58,9 @@
    </item>
    <item>
     <widget class="QPushButton" name="addAll_pushButton">
+     <property name="toolTip">
+      <string>Add all available parameters.</string>
+     </property>
      <property name="text">
       <string>Add all known parameters</string>
      </property>
@@ -62,6 +68,9 @@
    </item>
    <item>
     <widget class="QPushButton" name="customParameter_pushButton">
+     <property name="toolTip">
+      <string>Add a custom command line parameter to the minizinc command or to the solver executable.</string>
+     </property>
      <property name="text">
       <string>Add custom parameter</string>
      </property>

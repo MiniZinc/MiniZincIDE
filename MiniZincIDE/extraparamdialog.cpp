@@ -33,6 +33,7 @@ void ExtraParamDialog::setParams(const QList<SolverFlag>& params) {
         auto* item = new QStandardItem(params[i].description);
         item->setFlags(Qt::ItemFlag::ItemIsSelectable | Qt::ItemFlag::ItemIsEnabled);
         item->setData(QVariant::fromValue(params[i]));
+        item->setToolTip(params[i].name);
         _sourceModel->setItem(i, 0, item);
 
         // Allow filtering to search by flag name and description
