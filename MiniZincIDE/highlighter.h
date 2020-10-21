@@ -113,6 +113,26 @@ struct Theme
             foregroundActiveColor = textColor;
             foregroundInactiveColor = ThemeColor(textColor.light.lighter(), textColor.dark.darker());
         }
+
+        QString styleSheet(bool darkMode) {
+            auto style_sheet = QString("background-color: %1;"
+                                       "color: %2;")
+              .arg(backgroundColor.get(darkMode).name(QColor::HexArgb))
+              .arg(textColor.get(darkMode).name(QColor::HexArgb));
+
+            if (!isSystemTheme) {
+                // Only change highlight colour for non-system themes
+                // Many platforms have settings/accessibility options for this, so we should probably follow it by default
+                style_sheet += QString(
+                    "selection-background-color: %1;"
+                    "selection-color: %2;"
+                )
+                  .arg(textHighlightColor.get(darkMode).name(QColor::HexArgb))
+                  .arg(textColor.get(darkMode).name(QColor::HexArgb));
+            }
+
+            return style_sheet;
+        }
 };
 
 namespace Themes{

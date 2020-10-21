@@ -168,22 +168,7 @@ void CodeEditor::setDarkMode(bool enable)
 //    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
 //    this->setPalette(palette);
 
-    auto style_sheet = QString("background-color: %1;"
-                               "color: %2;")
-      .arg(Themes::currentTheme.backgroundColor.get(darkMode).name(QColor::HexArgb))
-      .arg(Themes::currentTheme.textColor.get(darkMode).name(QColor::HexArgb));
-
-    if (!Themes::currentTheme.isSystemTheme) {
-        // Only change highlight colour for non-system themes
-        // Many platforms have settings/accessibility options for this, so we should probably follow it by default
-        style_sheet += QString(
-            "selection-background-color: %1;"
-            "selection-color: %2;"
-        )
-          .arg(Themes::currentTheme.textHighlightColor.get(darkMode).name(QColor::HexArgb))
-          .arg(Themes::currentTheme.textColor.get(darkMode).name(QColor::HexArgb));
-    }
-    setStyleSheet(style_sheet);
+    setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
     cursorChange(); // Ensure extra selections are the correct colours
 }
 

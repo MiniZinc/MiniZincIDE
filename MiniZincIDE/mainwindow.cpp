@@ -2395,15 +2395,7 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
 #endif
     }
     ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : "+Themes::currentTheme.functionColor.get(darkMode).name()+" }");
-    auto style_sheet = QString("background-color: #%1;"
-                               "color: #%2;"
-                               "selection-background-color: #%3;"
-                               "selection-color: #%4;")
-      .arg(Themes::currentTheme.backgroundColor.get(darkMode).rgba(), 0, 16)
-      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16)
-      .arg(Themes::currentTheme.textHighlightColor.get(darkMode).rgba(), 0, 16)
-      .arg(Themes::currentTheme.textColor.get(darkMode).rgba(), 0, 16);
-    ui->outputConsole->setStyleSheet(style_sheet);
+    ui->outputConsole->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
 //    auto palette = ui->outputConsole->palette();
 //    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
 //    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
