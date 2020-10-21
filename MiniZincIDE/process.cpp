@@ -332,6 +332,11 @@ void SolveProcess::processStdout(QString line)
 
     // Can appear in any state
     if (trimmed.startsWith("%%%mzn-stat")) {
+        if (!outputBuffer.isEmpty()) {
+            // For now, also process any output gragment so it appears in the correct order
+            emit fragment(outputBuffer.join(""));
+            outputBuffer.clear();
+        }
         emit statisticOutput(line);
         return;
     } else if (trimmed.startsWith("%%%mzn-progress")) {
