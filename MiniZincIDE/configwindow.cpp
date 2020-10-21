@@ -590,7 +590,7 @@ void ConfigWindow::addExtraParam(const QString& key, bool backend, const QVarian
         data.convert(target);
         auto newValItem = new QTableWidgetItem;
         newValItem->setData(Qt::DisplayRole, data);
-        ui->extraParams_tableWidget->setItem(valItem->row(), 2, newValItem);
+        ui->extraParams_tableWidget->setItem(valItem->row(), 3, newValItem);
         valItem = newValItem;
     });
 
