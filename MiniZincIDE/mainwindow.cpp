@@ -851,7 +851,12 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
     args << "-c" << "--model-interface-only" << data << model << extraArgs;
 
     MznProcess p;
-    p.run(sc, args, QFileInfo(model).absolutePath());
+    // Passing all flags can break --model-inteface-only, so just pass the necessary ones
+    SolverConfiguration checkConfig(sc.solverDefinition);
+    checkConfig.additionalData = sc.additionalData;
+    checkConfig.extraOptions = sc.extraOptions;
+
+    p.run(checkConfig, args, QFileInfo(model).absolutePath());
 
     if (!p.waitForStarted() || !p.waitForFinished()) {
         auto message = p.readAllStandardError();
