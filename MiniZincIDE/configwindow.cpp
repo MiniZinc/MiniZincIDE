@@ -46,12 +46,14 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
             addExtraParam(f);
             extraParamDialog->setParamEnabled(f, false);
         }
+        resizeExtraFlagsTable();
         invalidate(false);
         menu->hide();
     });
 
     connect(extraParamDialog, &ExtraParamDialog::addCustomParam, this, [=]() {
         addExtraParam();
+        resizeExtraFlagsTable();
         invalidate(false);
         menu->hide();
     });
