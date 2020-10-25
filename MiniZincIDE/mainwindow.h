@@ -347,7 +347,7 @@ private:
     void outputStdErr(const QString& line);
     QStringList getOpenFiles(void);
 
-    void openJSONViewer(bool isJSONinitHandler, const QVector<MznProcess::VisOutput>& output);
+    void openJSONViewer(bool isJSONinitHandler, const QVector<SolveProcess::VisOutput>& output);
     void finishJSONViewer(qint64 time);
 
     void updateProfileSearchButton(void);

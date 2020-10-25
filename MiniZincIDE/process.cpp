@@ -53,6 +53,24 @@ void Process::start(const QString &program, const QStringList &arguments, const 
 
 void Process::terminate()
 {
+    if (state() != QProcess::NotRunning) {
+#ifdef Q_OS_WIN
+        TerminateJobObject(jobObject, EXIT_FAILURE);
+#else
+        ::killpg(processId(), SIGKILL);
+#endif
+        if (!waitForFinished(500)) {
+            kill();
+            waitForFinished();
+        }
+    }
+}
+
+void Process::sendInterrupt()
+{
+    if (state() == QProcess::NotRunning) {
+        return;
+    }
 #ifdef Q_OS_WIN
     QString pipe;
     QTextStream ts(&pipe);
@@ -66,19 +84,6 @@ void Process::terminate()
 #else
     ::killpg(processId(), SIGINT);
 #endif
-    if (!waitForFinished(500)) {
-        if (state() != QProcess::NotRunning) {
-#ifdef Q_OS_WIN
-            TerminateJobObject(jobObject, EXIT_FAILURE);
-#else
-            ::killpg(processId(), SIGKILL);
-#endif
-            if (!waitForFinished(500)) {
-                kill();
-                waitForFinished();
-            }
-        }
-    }
 }
 
 void Process::setupChildProcess()
@@ -105,13 +110,14 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     _mznDistribPath = mznDistribPath;
 
     MznProcess p;
-    p.run({"--version"});
-    if (!p.waitForStarted() || !p.waitForFinished()) {
+    try {
+        auto result = p.run({"--version"});
+        _versionString = result.stdOut + result.stdErr;
+    } catch (ProcessError&) {
         clear();
-        throw ProcessError("Failed to find or launch MiniZinc executable.");
+        throw;
     }
 
-    _versionString = p.readAllStandardOutput() + p.readAllStandardError();
     QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
     QRegularExpressionMatch path_match = version_regexp.match(_versionString);
     if (path_match.hasMatch()) {
@@ -132,29 +138,24 @@ void MznDriver::setLocation(const QString &mznDistribPath)
         throw DriverError("Versions of MiniZinc before " + minVersion.toString() + " are not supported.");
     }
 
-    p.run({"--config-dirs"});
-    if (p.waitForStarted() && p.waitForFinished()) {
-        QString allOutput = p.readAllStandardOutput();
-        QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
-        if (!jd.isNull()) {
-            QJsonObject sj = jd.object();
-            _userSolverConfigDir = sj["userSolverConfigDir"].toString();
-            _userConfigFile = sj["userConfigFile"].toString();
-            _mznStdlibDir = sj["mznStdlibDir"].toString();
-        }
+    QString allOutput = p.run({"--config-dirs"}).stdOut;
+    QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
+    if (!jd.isNull()) {
+        QJsonObject sj = jd.object();
+        _userSolverConfigDir = sj["userSolverConfigDir"].toString();
+        _userConfigFile = sj["userConfigFile"].toString();
+        _mznStdlibDir = sj["mznStdlibDir"].toString();
     }
-    p.run({"--solvers-json"});
-    if (p.waitForStarted() && p.waitForFinished()) {
-        QString allOutput = p.readAllStandardOutput();
-        QJsonDocument jd = QJsonDocument::fromJson(allOutput.toUtf8());
-        if (!jd.isNull()) {
-            _solvers.clear();
-            QJsonArray allSolvers = jd.array();
-            for (auto item : allSolvers) {
-                QJsonObject sj = item.toObject();
-                Solver s(sj);
-                _solvers.append(s);
-            }
+
+    allOutput = p.run({"--solvers-json"}).stdOut.toUtf8();
+    jd = QJsonDocument::fromJson(allOutput.toUtf8());
+    if (!jd.isNull()) {
+        _solvers.clear();
+        QJsonArray allSolvers = jd.array();
+        for (auto item : allSolvers) {
+            QJsonObject sj = item.toObject();
+            Solver s(sj);
+            _solvers.append(s);
         }
     }
 }
@@ -218,33 +219,56 @@ void MznDriver::setDefaultSolver(const Solver& s)
         throw DriverError("Cannot write user configuration file " + userConfigFile());
     }
 }
-
-MznProcess::MznProcess(QObject* parent) :
-    Process(parent)
+void MznProcess::start(const QStringList& args, const QString& cwd)
 {
-    connect(this, &MznProcess::started, [=] {
-        elapsedTimer.start();
+    p.setWorkingDirectory(cwd);
+
+    connect(&timer, &ElapsedTimer::timeElapsed, this, &MznProcess::timeUpdated);
+    connect(&p, &QProcess::started, [=] () {
+        timer.start(200);
+        emit started();
     });
-    connect(this, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int, QProcess::ExitStatus) {
-        onExited();
+    connect(&p, QOverload<int, QProcess::ExitStatus>::of(&Process::finished), [=](int code, QProcess::ExitStatus e) {
+        flushOutput();
+        if (code == 0 || ignoreExitStatus) {
+            emit success();
+        } else {
+            emit failure(code, FailureType::NonZeroExit);
+        }
+        p.disconnect();
+        emit(finished(elapsedTime()));
     });
-    connect(this, &MznProcess::errorOccurred, [=](QProcess::ProcessError) {
-        onExited();
+    connect(&p, &QProcess::errorOccurred, [=](QProcess::ProcessError e) {
+        if (!ignoreExitStatus) {
+            flushOutput();
+            switch (e) {
+            case QProcess::FailedToStart:
+                emit failure(0, FailureType::FailedToStart);
+                break;
+            case QProcess::Crashed:
+                emit failure(p.exitCode(), FailureType::Crashed);
+                break;
+            default:
+                emit failure(p.exitCode(), FailureType::UnknownError);
+                break;
+            }
+            p.disconnect();
+            emit(finished(elapsedTime()));
+        }
     });
+    connect(&p, &QProcess::readyReadStandardOutput, this, &MznProcess::readStdOut);
+    connect(&p, &QProcess::readyReadStandardError, this, &MznProcess::readStdErr);
+
+    Q_ASSERT(p.state() == QProcess::NotRunning);
+    ignoreExitStatus = false;
+    p.start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
 }
 
-void MznProcess::run(const QStringList& args, const QString& cwd)
+void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
 {
-    Q_ASSERT(state() == NotRunning);
-    setWorkingDirectory(cwd);
-    Process::start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
-}
-
-void MznProcess::run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
-{
-    temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.json");
+    auto* temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.mpc");
     if (!temp->open()) {
-        emit errorOccurred(QProcess::FailedToStart);
+        emit failure(0, FailureType::FailedToStart);
         return;
     }
     QString paramFile = temp->fileName();
@@ -252,33 +276,154 @@ void MznProcess::run(const SolverConfiguration& sc, const QStringList& args, con
     temp->close();
     QStringList newArgs;
     newArgs << "--param-file" << paramFile << args;
-    setWorkingDirectory(cwd);
-    Process::start(MznDriver::get().minizincExecutable(), newArgs, MznDriver::get().mznDistribPath());
-}
-
-qint64 MznProcess::timeElapsed()
-{
-    if (elapsedTimer.isValid()) {
-        return elapsedTimer.elapsed();
+    if (sc.timeLimit != 0) {
+        auto* hardTimer = new QTimer(this);
+        hardTimer->setSingleShot(true);
+        connect(hardTimer, &QTimer::timeout, hardTimer, [=] () {
+            stop();
+        });
+        connect(this, &MznProcess::started, hardTimer, [=] () {
+            hardTimer->start(sc.timeLimit + 1000);
+        });
+        connect(this, &MznProcess::finished, hardTimer, [=] () {
+            delete hardTimer;
+        });
     }
-    return finalTime;
+    start(newArgs, cwd);
 }
 
-void MznProcess::onExited()
+
+MznProcess::RunResult MznProcess::run(const QStringList& args, const QString& cwd)
 {
-    finalTime = elapsedTimer.elapsed();
-    elapsedTimer.invalidate();
-    delete temp;
-    temp = nullptr;
+    Q_ASSERT(p.state() == QProcess::NotRunning);
+    p.setWorkingDirectory(cwd);
+    p.start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
+    if (!p.waitForStarted()) {
+        throw ProcessError("Failed to find or start minizinc " + args.join(" ") + ".");
+    }
+    if (!p.waitForFinished()) {
+        p.terminate();
+        throw ProcessError("Failed to run minizinc " + args.join(" ") + ".");
+    }
+    return { p.exitCode(), p.readAllStandardOutput(), p.readAllStandardError() };
+}
+
+
+MznProcess::RunResult MznProcess::run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
+{
+    auto* temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.mpc");
+    if (!temp->open()) {
+        throw ProcessError("Failed to create temporary file");
+    }
+    QString paramFile = temp->fileName();
+    temp->write(sc.toJSON());
+    temp->close();
+    QStringList newArgs;
+    newArgs << "--param-file" << paramFile << args;
+    return run(newArgs, cwd);
+}
+
+void MznProcess::stop()
+{
+    if (p.state() == QProcess::NotRunning) {
+        return;
+    }
+    ignoreExitStatus = true;
+    p.sendInterrupt();
+    auto* killTimer = new QTimer(this);
+    killTimer->setSingleShot(true);
+    connect(killTimer, &QTimer::timeout, killTimer, [=] () {
+        if (p.state() == QProcess::Running) {
+            terminate();
+        }
+    });
+    connect(this, &MznProcess::finished, [=] () {
+        killTimer->stop();
+        delete killTimer;
+    });
+    killTimer->start(200);
+}
+
+void MznProcess::terminate()
+{
+    if (p.state() == QProcess::NotRunning) {
+        return;
+    }
+
+    p.disconnect();
+    p.terminate();
+    emit success();
+    emit finished(timer.elapsed());
+    timer.stop();
+}
+
+qint64 MznProcess::elapsedTime()
+{
+    return timer.elapsed();
+}
+
+void MznProcess::writeStdIn(const QString &data)
+{
+    p.write(data.toUtf8());
+}
+
+void MznProcess::closeStdIn()
+{
+    p.closeWriteChannel();
+}
+
+void MznProcess::readStdOut()
+{
+    p.setReadChannel(QProcess::ProcessChannel::StandardOutput);
+    if (p.canReadLine()) {
+        auto fragment = QString::fromUtf8(p.readAllStandardError());
+        if (!fragment.isEmpty()) {
+            emit outputStdError(fragment);
+        }
+    }
+    while (p.canReadLine()) {
+        auto line = QString::fromUtf8(p.readLine());
+        emit outputStdOut(line);
+    }
+}
+
+void MznProcess::readStdErr()
+{
+    p.setReadChannel(QProcess::ProcessChannel::StandardError);
+    if (p.canReadLine()) {
+        auto fragment = QString::fromUtf8(p.readAllStandardOutput());
+        if (!fragment.isEmpty()) {
+            emit outputStdOut(fragment);
+        }
+    }
+    while (p.canReadLine()) {
+        auto line = QString::fromUtf8(p.readLine());
+        emit outputStdError(line);
+    }
+}
+
+void MznProcess::flushOutput()
+{
+    readStdOut();
+    readStdErr();
+
+    auto stdOut = QString::fromUtf8(p.readAllStandardOutput());
+    if (!stdOut.isEmpty()) {
+        emit outputStdOut(stdOut);
+    }
+
+    auto stdErr = QString::fromUtf8(p.readAllStandardError());
+    if (!stdErr.isEmpty()) {
+        emit outputStdError(stdOut);
+    }
 }
 
 SolveProcess::SolveProcess(QObject* parent) :
     MznProcess(parent)
 {
-    connect(this, &SolveProcess::readyReadStandardOutput, this, &SolveProcess::onStdout);
-    connect(this, &SolveProcess::readyReadStandardError, this, &SolveProcess::onStderr);
-    connect(this, QOverload<int, QProcess::ExitStatus>::of(&SolveProcess::finished), this, &SolveProcess::onFinished);
+    connect(this, &MznProcess::outputStdOut, this, &SolveProcess::processStdout);
 }
+
 
 void SolveProcess::solve(const SolverConfiguration& sc, const QString& modelFile, const QStringList& dataFiles, const QStringList& extraArgs)
 {
@@ -290,39 +435,7 @@ void SolveProcess::solve(const SolverConfiguration& sc, const QString& modelFile
     QFileInfo fi(modelFile);
     QStringList args;
     args << extraArgs << modelFile << dataFiles;
-    MznProcess::run(sc, args, fi.canonicalPath());
-}
-
-void SolveProcess::onStdout()
-{
-    setReadChannel(QProcess::ProcessChannel::StandardOutput);
-
-    // There might be a fragment on stderr without a new line
-    // This should be shown now since stdout has a newline
-    // to emulate console behaviour
-    if (canReadLine()) {
-        // All available stderr must be a fragment since otherwise
-        // onStderr would have processed it already
-        auto fragment = QString::fromUtf8(readAllStandardError());
-        if (!fragment.isEmpty()) {
-            processStderr(fragment);
-        }
-    }
-
-    while (canReadLine()) {
-        auto line = QString::fromUtf8(readLine());
-        processStdout(line);
-    }
-}
-
-void SolveProcess::onStderr()
-{
-    setReadChannel(QProcess::ProcessChannel::StandardError);
-
-    while (canReadLine()) {
-        auto line = QString::fromUtf8(readLine());
-        processStderr(line);
-    }
+    MznProcess::start(sc, args, fi.canonicalPath());
 }
 
 void SolveProcess::processStdout(QString line)
@@ -410,36 +523,10 @@ void SolveProcess::processStdout(QString line)
         } else if (trimmed == "%%%mzn-json-time") {
             // Wrap current buffer in array with elapsed time
             jsonBuffer.prepend("[");
-            jsonBuffer << "," << QString().number(timeElapsed()) << "]";
+            jsonBuffer << "," << QString().number(elapsedTime()) << "]";
         } else {
             jsonBuffer << trimmed;
         }
         break;
     }
-}
-
-void SolveProcess::processStderr(QString line)
-{
-    auto trimmed = line.trimmed();
-    emit stdErrorOutput(line);
-}
-
-void SolveProcess::onFinished(int exitCode, QProcess::ExitStatus status)
-{
-    // Finish processing remaining stdout
-    onStdout();
-    if (!atEnd()) {
-        processStdout(readAll());
-    }
-    if (!outputBuffer.isEmpty()) {
-        emit fragment(outputBuffer.join(""));
-        outputBuffer.clear();
-    }
-    // Finish processing remaining stderr
-    onStderr();
-    if (!atEnd()) {
-        processStderr(readAll());
-    }
-
-    emit complete(exitCode, status);
 }

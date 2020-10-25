@@ -171,9 +171,9 @@ Solver::Solver(const QJsonObject& sj) {
 Solver& Solver::lookup(const QString& str)
 {
     MznProcess p;
-    p.run({ "--solver-json", str });
-    if (p.waitForStarted() && p.waitForFinished()) {
-        auto solver_doc = QJsonDocument::fromJson(p.readAllStandardOutput());
+    try {
+        auto result = p.run({ "--solver-json", str });
+        auto solver_doc = QJsonDocument::fromJson(result.stdOut.toUtf8());
         if (!solver_doc.isObject()) {
             throw ConfigError("Failed to find solver " + str);
         }
@@ -185,8 +185,9 @@ Solver& Solver::lookup(const QString& str)
         }
         MznDriver::get().solvers() << solver;
         return MznDriver::get().solvers().last();
+    } catch (Exception&) {
+        throw DriverError("Failed to lookup solver " + str);
     }
-    throw DriverError("Failed to lookup solver " + str);
 }
 
 Solver& Solver::lookup(const QString& id, const QString& version, bool strict)

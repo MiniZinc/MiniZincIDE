@@ -20,12 +20,16 @@ signals:
 
 private slots:
     void onStarted(void);
-    void onFinished(int exitCode, QProcess::ExitStatus exitStatus);
-    void onErrorOccurred(QProcess::ProcessError e);
+    void onLine(const QString& data);
+    void onFinished();
 
 private:
     MznProcess p;
     QString input;
+
+    bool inRelevantError = false;
+    MiniZincError curError;
+    QVector<MiniZincError> mznErrors;
 };
 
 #endif // CHECKCODE_H

@@ -47,6 +47,7 @@ CONFIG += embed_manifest_exe
 SOURCES += main.cpp\
     codechecker.cpp \
     configwindow.cpp \
+    elapsedtimer.cpp \
     extraparamdialog.cpp \
     ide.cpp \
     mainwindow.cpp \
@@ -71,6 +72,7 @@ HEADERS  += mainwindow.h \
     codechecker.h \
     codeeditor.h \
     configwindow.h \
+    elapsedtimer.h \
     exception.h \
     extraparamdialog.h \
     highlighter.h \

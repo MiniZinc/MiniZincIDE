@@ -856,57 +856,49 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
     checkConfig.additionalData = sc.additionalData;
     checkConfig.extraOptions = sc.extraOptions;
 
-    p.run(checkConfig, args, QFileInfo(model).absolutePath());
+    try {
+        auto result = p.run(checkConfig, args, QFileInfo(model).absolutePath());
 
-    if (!p.waitForStarted() || !p.waitForFinished()) {
-        auto message = p.readAllStandardError();
-        if (!message.isEmpty()) {
-            addOutput(message,false);
-        }
-        if (p.error() == QProcess::FailedToStart) {
-            QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
-        } else {
-            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: error code "+ QString().number(p.error()));
-        }
-        return false;
-    }
-
-    QStringList additionalDataFiles;
-    QStringList additionalArgs;
-    if (p.exitCode() == 0 && p.exitStatus() == QProcess::NormalExit) {
-        auto jdoc = QJsonDocument::fromJson(p.readAllStandardOutput());
-        if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
-            QJsonObject inputArgs = jdoc.object()["input"].toObject();
-            QStringList undefinedArgs = inputArgs.keys();
-            if (undefinedArgs.size() > 0) {
-                QStringList params;
-                paramDialog->getParams(undefinedArgs, getProject().dataFiles(), params, additionalDataFiles);
-                if (additionalDataFiles.isEmpty()) {
-                    if (params.size()==0) {
-                        return false;
-                    }
-                    for (int i=0; i<undefinedArgs.size(); i++) {
-                        if (params[i].isEmpty()) {
-                            if (! (inputArgs[undefinedArgs[i]].isObject() && inputArgs[undefinedArgs[i]].toObject().contains("optional")) ) {
-                                QMessageBox::critical(this, "Undefined parameter", "The parameter '" + undefinedArgs[i] + "' is undefined.");
-                                return false;
+        QStringList additionalDataFiles;
+        QStringList additionalArgs;
+        if (result.exitCode == 0) {
+            auto jdoc = QJsonDocument::fromJson(result.stdOut.toUtf8());
+            if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
+                QJsonObject inputArgs = jdoc.object()["input"].toObject();
+                QStringList undefinedArgs = inputArgs.keys();
+                if (undefinedArgs.size() > 0) {
+                    QStringList params;
+                    paramDialog->getParams(undefinedArgs, getProject().dataFiles(), params, additionalDataFiles);
+                    if (additionalDataFiles.isEmpty()) {
+                        if (params.size()==0) {
+                            return false;
+                        }
+                        for (int i=0; i<undefinedArgs.size(); i++) {
+                            if (params[i].isEmpty()) {
+                                if (! (inputArgs[undefinedArgs[i]].isObject() && inputArgs[undefinedArgs[i]].toObject().contains("optional")) ) {
+                                    QMessageBox::critical(this, "Undefined parameter", "The parameter '" + undefinedArgs[i] + "' is undefined.");
+                                    return false;
+                                }
+                            } else {
+                                additionalArgs << "-D" << undefinedArgs[i] + "=" + params[i] + ";";
                             }
-                        } else {
-                            additionalArgs << "-D" << undefinedArgs[i] + "=" + params[i] + ";";
                         }
                     }
                 }
+            } else {
+                addOutput("<p style='color:red'>Error when checking model parameters:</p>");
+                addOutput(result.stdErr, false);
+                QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
+                return false;
             }
-        } else {
-            addOutput("<p style='color:red'>Error when checking model parameters:</p>");
-            addOutput(p.readAllStandardError(), false);
-            QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
-            return false;
         }
+        data << additionalDataFiles;
+        extraArgs << additionalArgs;
+        return true;
+    } catch (ProcessError& e) {
+         QMessageBox::critical(this, "MiniZinc IDE", e.message());
+         return false;
     }
-    data << additionalDataFiles;
-    extraArgs << additionalArgs;
-    return true;
 }
 
 QString MainWindow::currentModelFile()
@@ -1041,7 +1033,7 @@ void MainWindow::statusTimerEvent(qint64 time)
     setElapsedTime(time);
 }
 
-void MainWindow::openJSONViewer(bool isJSONinitHandler, const QVector<MznProcess::VisOutput>& output)
+void MainWindow::openJSONViewer(bool isJSONinitHandler, const QVector<SolveProcess::VisOutput>& output)
 {
     if (curHtmlWindow==-1) {
         QVector<VisWindowSpec> specs;
@@ -1089,7 +1081,6 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     cleanupTmpDirs.append(fznTmpDir);
     QString fzn = fznTmpDir->path() + "/" + fi.baseName() + ".fzn";
 
-    auto timer = new QTimer(this);
     auto compileProcess = new MznProcess(this);
     QStringList args;
     args << "-c"
@@ -1100,64 +1091,44 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         args << "--output-paths-to-stdout"
              << "--output-detailed-timing";
     }
-
+    auto* output = new QString;
+    auto* ts = new QTextStream(output);
     connect(ui->actionStop, &QAction::triggered, compileProcess, [=] () {
         ui->actionStop->setDisabled(true);
-        compileProcess->disconnect();
-        compileProcess->terminate();
+        compileProcess->stop();
         addOutput("<div class='mznnotice'>Stopped.</div>");
-        procFinished(0, compileProcess->timeElapsed());
-        compileProcess->deleteLater();
-        timer->deleteLater();
     });
-    connect(compileProcess, &MznProcess::readyReadStandardError, [=]() {
-       compileProcess->setReadChannel(QProcess::StandardError);
-       while (compileProcess->canReadLine()) {
-           auto line = QString::fromUtf8(compileProcess->readLine());
-           outputStdErr(line);
-       }
+    connect(compileProcess, &MznProcess::outputStdOut, [=] (const QString& data) {
+        *ts << data;
     });
-    connect(compileProcess, QOverload<int, QProcess::ExitStatus>::of(&MznProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitStatus == QProcess::CrashExit) {
-            QMessageBox::critical(this, "MiniZinc IDE", "MiniZinc crashed unexpectedly.");
-            procFinished(0, compileProcess->timeElapsed());
+    connect(compileProcess, &MznProcess::outputStdError, this, &MainWindow::outputStdErr);
+    connect(compileProcess, &MznProcess::success, [=] () {
+        if (profile) {
+            profileCompiledFzn(*output);
         } else {
-            procFinished(exitCode, compileProcess->timeElapsed());
-            if (exitCode == 0) {
-                if (profile) {
-                    auto output = QString::fromUtf8(compileProcess->readAllStandardOutput());
-                    profileCompiledFzn(output);
-                } else {
-                    openCompiledFzn(fzn);
-                }
-            }
+            openCompiledFzn(fzn);
         }
-        compileProcess->deleteLater();
-        timer->stop();
-        timer->deleteLater();
+        procFinished(0, compileProcess->elapsedTime());
     });
-    connect(compileProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
-        compileProcess->disconnect();
-        timer->stop();
-        int exitCode = 0;
-        if (e == QProcess::FailedToStart) {
+    connect(compileProcess, &MznProcess::finished, [=] () {
+        delete ts;
+        delete output;
+        compileProcess->deleteLater();
+    });
+    connect(compileProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+        if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
-        } else {
-            QMetaEnum metaEnum = QMetaEnum::fromType<QProcess::ProcessError>();
+            exitCode = 0;
+        } else if (e != MznProcess::NonZeroExit) {
+            QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
-            exitCode = compileProcess->exitCode(); // Exit code should be valid
         }
-        procFinished(exitCode, compileProcess->timeElapsed());
-        compileProcess->deleteLater();
-        timer->deleteLater();
+        procFinished(exitCode, compileProcess->elapsedTime());
     });
-    connect(timer, &QTimer::timeout, compileProcess, [=] () {
-        statusTimerEvent(compileProcess->timeElapsed());
-    });
+    connect(compileProcess, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
     addOutput(runMessage("Compiling", model, data, extraArgs));
     updateUiProcessRunning(true);
-    compileProcess->run(sc, args, fi.absolutePath());
-    timer->start(1000);
+    compileProcess->start(sc, args, fi.absolutePath());
 }
 
 void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, QTextStream* ts)
@@ -1174,16 +1145,12 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     solutionCount = 0;
     hiddenSolutions.clear();
 
-    auto timer = new QTimer(this);
     auto solveProcess = new SolveProcess(this);
 
     connect(ui->actionStop, &QAction::triggered, solveProcess, [=] () {
         ui->actionStop->setDisabled(true);
-        solveProcess->disconnect();
-        solveProcess->terminate();
+        solveProcess->stop();
         addOutput("<div class='mznnotice'>Stopped.</div>");
-        procFinished(0, solveProcess->timeElapsed());
-        solveProcess->deleteLater();
     });
     if (ts) {
         connect(solveProcess, &SolveProcess::statisticOutput, [=](const QString& d) { *ts << d; });
@@ -1202,43 +1169,31 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         addOutput(html, true);
     });
     connect(solveProcess, &SolveProcess::jsonOutput, this, &MainWindow::openJSONViewer);
-    connect(solveProcess, &SolveProcess::stdErrorOutput, this, &MainWindow::outputStdErr);
-    connect(solveProcess, &SolveProcess::complete, [=](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitStatus == QProcess::CrashExit) {
-            QMessageBox::critical(this, "MiniZinc IDE", "MiniZinc crashed unexpectedly.");
-            procFinished(0, solveProcess->timeElapsed());
-        } else {
-            procFinished(exitCode, solveProcess->timeElapsed());
-        }
-        solveProcess->deleteLater();
-        timer->stop();
-        timer->deleteLater();
+    connect(solveProcess, &SolveProcess::outputStdError, this, &MainWindow::outputStdErr);
+    connect(solveProcess, &SolveProcess::success, [=]() {
+        procFinished(0, solveProcess->elapsedTime());
     });
-    connect(solveProcess, &MznProcess::errorOccurred, [=](QProcess::ProcessError e) {
+    connect(solveProcess, &MznProcess::finished, [=] () {
+        solveProcess->deleteLater();
+    });
+    connect(solveProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
         solveProcess->disconnect();
-        timer->stop();
-        int exitCode = 0;
-        if (e == QProcess::FailedToStart) {
+        if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
-        } else {
-            QMetaEnum metaEnum = QMetaEnum::fromType<QProcess::ProcessError>();
+            exitCode = 0;
+        } else if (e != MznProcess::NonZeroExit) {
+            QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
-            exitCode = solveProcess->exitCode(); // Exit code should be valid
         }
-        procFinished(exitCode, solveProcess->timeElapsed());
-        solveProcess->deleteLater();
-        timer->deleteLater();
+        procFinished(exitCode, solveProcess->elapsedTime());
     });
-    connect(timer, &QTimer::timeout, solveProcess, [=] () {
-        statusTimerEvent(solveProcess->timeElapsed());
-    });
+    connect(solveProcess, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
 
     addOutput(runMessage("Running", model, data, extraArgs));
 
     curFilePath = model; // TODO: Fix the JSON visualization handling to not require this
     updateUiProcessRunning(true);
     solveProcess->solve(sc, model, data, extraArgs);
-    timer->start(1000);
 }
 
 void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)

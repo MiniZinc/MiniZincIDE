@@ -4,7 +4,6 @@
 #include <QProcess>
 #include <QTextStream>
 #include <QVersionNumber>
-#include <QElapsedTimer>
 #include <QTemporaryFile>
 
 #ifdef Q_OS_WIN
@@ -14,6 +13,7 @@
 
 #include "solverconfiguration.h"
 #include "htmlwindow.h"
+#include "elapsedtimer.h"
 
 ///
 /// \brief The Process class
@@ -27,6 +27,7 @@ public:
     Process(QObject* parent=nullptr) : QProcess(parent) {}
     void start(const QString& program, const QStringList& arguments, const QString& path);
     void terminate(void);
+    void sendInterrupt();
 protected:
     virtual void setupChildProcess();
 #ifdef Q_OS_WIN
@@ -175,24 +176,35 @@ private:
 /// \brief The MznProcess class
 /// Runs MiniZinc using the current MznDriver
 ///
-class MznProcess : public Process {
+class MznProcess : public QObject {
     Q_OBJECT
 public:
-    struct VisOutput {
-        VisWindowSpec spec;
-        QString data;
+    struct RunResult {
+        int exitCode;
+        QString stdOut;
+        QString stdErr;
 
-        VisOutput(const VisWindowSpec& s = VisWindowSpec(), const QString& d = "") : spec(s), data(d) {}
+        RunResult(int _exitCode, const QString& _stdOut, const QString& _stdErr)
+            : exitCode(_exitCode), stdOut(_stdOut), stdErr(_stdErr) {}
     };
 
-    MznProcess(QObject* parent=nullptr);
+    enum FailureType {
+        NonZeroExit,
+        FailedToStart,
+        Crashed,
+        UnknownError
+    };
+    Q_ENUM(FailureType)
+
+    MznProcess(QObject* parent = nullptr)
+        : QObject(parent), ignoreExitStatus(false), p(nullptr), timer(nullptr) {}
 
     ///
     /// \brief Start minizinc.
     /// \param args Command line arguments
     /// \param cwd Working directory
     ///
-    void run(const QStringList& args, const QString& cwd = QString());
+    void start(const QStringList& args, const QString& cwd = QString());
 
     ///
     /// \brief Start minizinc and use the given solver configuration.
@@ -200,19 +212,101 @@ public:
     /// \param args Command line arguments
     /// \param cwd Working directory
     ///
-    void run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString());
+    void start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString());
 
     ///
-    /// \brief Give the amount of time since solving started
-    /// \return Amount of time elapsed in nanoseconds
+    /// \brief Stop minizinc (does not block)
     ///
-    qint64 timeElapsed(void);
+    void stop();
+
+    ///
+    /// \brief Force stop minizinc immediately (blocks, does not finishe processing output)
+    ///
+    void terminate();
+
+    ///
+    /// \brief Run minizinc in blocking mode (only for fast commands).
+    /// \param args Command line arguments
+    /// \param cwd Working directory
+    /// \return The stdout and stderr output
+    ///
+    RunResult run(const QStringList& args, const QString& cwd = QString());
+
+    ///
+    /// \brief Run minizinc in blocking mode (only for fast commands).
+    /// \param sc The solver configuration to use
+    /// \param args Command line arguments
+    /// \param cwd Working directory
+    /// \return The stdout and stderr output
+    ///
+    RunResult run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString());
+
+    ///
+    /// \brief Get the time since the process started.
+    /// \return The elapsed time in nanoseconds
+    ///
+    qint64 elapsedTime();
+
+    ///
+    /// \brief Write string to process stdin
+    /// \param data String data to write
+    ///
+    void writeStdIn(const QString& data);
+
+    ///
+    /// \brief Closes process stdin
+    ///
+    void closeStdIn();
+
+signals:
+    ///
+    /// \brief Emitted when the process is started.
+    ///
+    void started();
+
+    ///
+    /// \brief Emitted when a line is written to stdout.
+    /// \param output The data in stdout.
+    ///
+    void outputStdOut(const QString& output);
+    ///
+    /// \brief Emitted when a line is written to stderr.
+    /// \param error The data in stderr.
+    ///
+    void outputStdError(const QString& error);
+
+    ///
+    /// \brief Emitted regularly as time elapses
+    /// \param time The time elapsed in nanoseconds
+    ///
+    void timeUpdated(qint64 time);
+
+    ///
+    /// \brief Emitted on successful exit (or after stopping).
+    ///
+    void success();
+
+    ///
+    /// \brief Emitted when the process encounters an error
+    /// \param exitCode The exit code
+    /// \param e The error that occurred
+    ///
+    void failure(int exitCode, FailureType e);
+
+    ///
+    /// \brief Emitted when finished regardless of success/failure.
+    /// \param time The runtime in nanoseconds.
+    ///
+    void finished(qint64 time);
 private:
-    using Process::start;
-    QElapsedTimer elapsedTimer;
-    qint64 finalTime = 0;
-    QTemporaryFile* temp = nullptr;
-    void onExited(void);
+    bool ignoreExitStatus;
+    Process p;
+    ElapsedTimer timer;
+
+    void readStdOut();
+    void readStdErr();
+
+    void flushOutput();
 };
 
 ///
@@ -222,6 +316,13 @@ class SolveProcess : public MznProcess {
     Q_OBJECT
 
 public:
+    struct VisOutput {
+        VisWindowSpec spec;
+        QString data;
+
+        VisOutput(const VisWindowSpec& s = VisWindowSpec(), const QString& d = "") : spec(s), data(d) {}
+    };
+
     SolveProcess(QObject* parent=nullptr);
 
     ///
@@ -267,20 +368,9 @@ signals:
     void finalStatus(const QString& data);
     ///
     /// \brief Emitted when an unknown fragment is output
-    /// \param data The data that was read
+    /// \param data The data that was readprocess
     ///
     void fragment(const QString& data);
-    ///
-    /// \brief Emitted when a line is written to stderr.
-    /// \param error The data in stderr.
-    ///
-    void stdErrorOutput(const QString& error);
-    ///
-    /// \brief Emitted when output processing has completed and minizinc has exited
-    /// \param exitCode The exit code
-    /// \param exitStatus The exit status
-    ///
-    void complete(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
     enum State {
@@ -300,13 +390,7 @@ private:
     using MznProcess::run;
 
 private slots:
-    void onStdout(void);
-    void onStderr(void);
-
     void processStdout(QString line);
-    void processStderr(QString line);
-
-    void onFinished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
 #endif // PROCESS_H
