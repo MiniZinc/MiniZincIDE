@@ -1139,7 +1139,8 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     QSettings settings;
     settings.beginGroup("ide");
-    solutionLimit = settings.value("compressSolutions").toInt();
+    auto compress = settings.value("compressSolutions");
+    solutionLimit = compress.isNull() ? 100 : compress.toInt();
     settings.endGroup();
 
     solutionCount = 0;
