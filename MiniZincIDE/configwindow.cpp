@@ -135,7 +135,9 @@ bool ConfigWindow::addConfig(const QString &fileName)
         configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName)));
         for (auto sc : configs) {
             if (!sc->syncedOptionsMatch(*(configs.last()))) {
+                populating = true; // Make sure this doesn't mark the config as modified
                 ui->sync_checkBox->setChecked(false);
+                populating = false;
                 break;
             }
         }
