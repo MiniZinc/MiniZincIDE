@@ -97,19 +97,24 @@ QStringList Project::loadProject(const QString& file, ConfigWindow* configWindow
 
     f.close();
 
+    // Save these because adding the configs can change them
+    auto projectBuiltinConfigId = selectedBuiltinConfigId;
+    auto projectBuiltinConfigVersion = selectedBuiltinConfigVersion;
+    auto projectselectedSolverConfigFile = selectedSolverConfigFile;
+
     for (auto& sc : solverConfigurationFiles()) {
         configWindow->addConfig(sc);
     }
 
-    if (!selectedBuiltinConfigId.isEmpty()) {
-        int index = configWindow->findBuiltinConfig(selectedBuiltinConfigId, selectedBuiltinConfigVersion);
+    if (!projectBuiltinConfigId.isEmpty()) {
+        int index = configWindow->findBuiltinConfig(projectBuiltinConfigId, projectBuiltinConfigVersion);
         if (index == -1) {
-            warnings << "Could not find solver " + selectedBuiltinConfigId + "@" + selectedBuiltinConfigVersion;
+            warnings << "Could not find solver " + projectBuiltinConfigId + "@" + projectBuiltinConfigVersion;
         } else {
             configWindow->setCurrentIndex(index);
         }
-    } else if (!selectedSolverConfigFile.isEmpty()) {
-        int index = configWindow->findConfigFile(rootDir().absolutePath() + "/" + selectedSolverConfigFile);
+    } else if (!projectselectedSolverConfigFile.isEmpty()) {
+        int index = configWindow->findConfigFile(rootDir().absolutePath() + "/" + projectselectedSolverConfigFile);
         configWindow->setCurrentIndex(index);
     }
 
