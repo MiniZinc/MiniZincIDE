@@ -77,7 +77,7 @@ void Process::sendInterrupt()
     ts << "\\\\.\\pipe\\minizinc-" << processId();
     auto pipeName = pipe.toStdString();
     HANDLE hNamedPipe = CreateFileA(pipeName.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (hNamedPipe) {
+    if (hNamedPipe != INVALID_HANDLE_VALUE) {
         WriteFile(hNamedPipe, nullptr, 0, nullptr, nullptr);
         CloseHandle(hNamedPipe);
     }
