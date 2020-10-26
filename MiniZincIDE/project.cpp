@@ -101,7 +101,7 @@ QStringList Project::loadProject(const QString& file, ConfigWindow* configWindow
         configWindow->addConfig(sc);
     }
 
-    if (!selectedBuiltinConfigId.isEmpty() && !selectedBuiltinConfigVersion.isEmpty()) {
+    if (!selectedBuiltinConfigId.isEmpty()) {
         int index = configWindow->findBuiltinConfig(selectedBuiltinConfigId, selectedBuiltinConfigVersion);
         if (index == -1) {
             warnings << "Could not find solver " + selectedBuiltinConfigId + "@" + selectedBuiltinConfigVersion;
@@ -168,7 +168,7 @@ void Project::loadJSON(const QJsonObject& obj, const QFileInfo& fi, ConfigWindow
 
     configWindow->mergeConfigs(configs);
 
-    if (obj["selectedBuiltinConfigId"].isString() && obj["selectedBuiltinConfigVersion"].isString()) {
+    if (obj["selectedBuiltinConfigId"].isString()) {
         selectedBuiltinConfigId = obj["selectedBuiltinConfigId"].toString();
         selectedBuiltinConfigVersion = obj["selectedBuiltinConfigVersion"].toString();
         selectedSolverConfigFile = "";
