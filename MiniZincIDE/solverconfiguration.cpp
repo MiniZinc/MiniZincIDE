@@ -297,7 +297,13 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
         for (auto& f : solver.extraFlags) {
             if (extraOptions.contains(f.name) && f.def.toString() != extraOptions[f.name].toString()) {
                 newSc.extraOptions[f.name] = extraOptions[f.name].toString();
+                extraOptions.remove(f.name);
             }
+        }
+
+        for (auto it = extraOptions.begin(); it != extraOptions.end(); it++) {
+            // Unrecognised, but we shouldn't ignore them
+            newSc.extraOptions[it.key()] = it.value().toVariant();
         }
     }
     return newSc;
