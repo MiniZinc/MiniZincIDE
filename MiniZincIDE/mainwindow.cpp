@@ -99,6 +99,8 @@ void MainWindow::windowMenuSelected(QAction* a)
 
 void MainWindow::init(const QString& projectFile)
 {
+    code_checker = new CodeChecker(this);
+
     IDE::instance()->mainWindows.insert(this);
     ui->setupUi(this);
     ui->tabWidget->removeTab(0);
@@ -577,12 +579,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     IDE::instance()->mainWindows.remove(this);
 
-    // Stop running subprocesses
-    if (code_checker) {
-        code_checker->disconnect();
-        code_checker->cancel();
-        code_checker->deleteLater();
-    }
     stop(); // Stop solver if one is running
 
     QSettings settings;
@@ -645,6 +641,7 @@ void MainWindow::tabChange(int tab) {
         disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                    ui->actionRedo, SLOT(setEnabled(bool)));
         disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
+        disconnect(code_checker, &CodeChecker::finished, curEditor, &CodeEditor::checkFile);
         disconnect(curEditor, &CodeEditor::changedDebounced, this, &MainWindow::check_code);
     }
     curEditor = tab == -1 ? nullptr : qobject_cast<CodeEditor*>(ui->tabWidget->widget(tab));
@@ -668,6 +665,7 @@ void MainWindow::tabChange(int tab) {
         connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
                 ui->actionRedo, SLOT(setEnabled(bool)));
         connect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
+        connect(code_checker, &CodeChecker::finished, curEditor, &CodeEditor::checkFile);
         connect(curEditor, &CodeEditor::changedDebounced, this, &MainWindow::check_code);
         setWindowModified(curEditor->document()->isModified());
         QString p;
@@ -2313,19 +2311,6 @@ void MainWindow::check_code()
     }
     auto contents = curEditor->document()->toPlainText();
     auto wd = QFileInfo(curEditor->filepath).absolutePath();
-    if (code_checker) {
-        code_checker->disconnect();
-        code_checker->cancel();
-        code_checker->deleteLater();
-    }
-    code_checker = new CodeChecker(this);
-    connect(code_checker, &CodeChecker::finished, this, [=](const QVector<MiniZincError>& mznErrors) {
-        code_checker->deleteLater();
-        code_checker = nullptr;
-        if (curEditor) {
-            curEditor->checkFile(mznErrors);
-        }
-    });
     code_checker->start(contents, *sc, wd);
 }
 

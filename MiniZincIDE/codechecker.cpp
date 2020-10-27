@@ -1,7 +1,12 @@
 #include "codechecker.h"
 #include "process.h"
 
-CodeChecker::CodeChecker(QObject *parent) : QObject(parent), p(this)
+CodeChecker::~CodeChecker()
+{
+    cancel();
+}
+
+void CodeChecker::connectSignals()
 {
     connect(&p, &MznProcess::started, this, &CodeChecker::onStarted);
     connect(&p, &MznProcess::outputStdOut, this, &CodeChecker::onLine);
@@ -9,13 +14,10 @@ CodeChecker::CodeChecker(QObject *parent) : QObject(parent), p(this)
     connect(&p, &MznProcess::finished, this, &CodeChecker::onFinished);
 }
 
-CodeChecker::~CodeChecker()
-{
-    cancel();
-}
-
 void CodeChecker::start(const QString& modelContents, SolverConfiguration& sc, const QString& wd)
 {
+    cancel();
+    connectSignals();
     inRelevantError = false;
     curError = MiniZincError();
     mznErrors.clear();
@@ -30,6 +32,7 @@ void CodeChecker::start(const QString& modelContents, SolverConfiguration& sc, c
 
 void CodeChecker::cancel()
 {
+    p.disconnect();
     p.terminate();
 }
 

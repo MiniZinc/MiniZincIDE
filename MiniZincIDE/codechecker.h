@@ -10,7 +10,7 @@ class CodeChecker : public QObject
 {
     Q_OBJECT
 public:
-    explicit CodeChecker(QObject *parent = nullptr);
+    explicit CodeChecker(QObject *parent = nullptr) : QObject(parent), p(this) {}
     ~CodeChecker();
 
     void start(const QString& modelContents, SolverConfiguration& sc, const QString& wd);
@@ -30,6 +30,8 @@ private:
     bool inRelevantError = false;
     MiniZincError curError;
     QVector<MiniZincError> mznErrors;
+
+    void connectSignals();
 };
 
 #endif // CHECKCODE_H
