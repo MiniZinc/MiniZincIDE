@@ -611,6 +611,7 @@ void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<vo
         QComboBox* comboBox;
         QGroupBox* groupBox;
         QTableWidget* tableWidget;
+        QPlainTextEdit* plainTextEdit;
 
         if ((checkBox = qobject_cast<QCheckBox*>(widget))) {
             connect(checkBox, &QCheckBox::stateChanged, [=] (int) { action(); });
@@ -626,6 +627,8 @@ void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<vo
             connect(groupBox, &QGroupBox::toggled, [=] (bool) { action(); });
         } else if ((tableWidget = qobject_cast<QTableWidget*>(widget))) {
             connect(tableWidget, &QTableWidget::cellChanged, [=] (int, int) { action(); });
+        } else if ((plainTextEdit = qobject_cast<QPlainTextEdit*>(widget))) {
+            connect(plainTextEdit, &QPlainTextEdit::textChanged, [=] () { action(); });
         }
     }
 }
