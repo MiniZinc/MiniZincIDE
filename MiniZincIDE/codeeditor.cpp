@@ -508,10 +508,9 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     QPainter painter(lineNumbers);
     QFont lineNoFont = font();
     QFontMetrics fm(lineNoFont);
-    int origFontHeight = fm.height();
     lineNoFont.setPointSizeF(lineNoFont.pointSizeF()*0.8);
     QFontMetrics fm2(lineNoFont);
-    int heightDiff = (origFontHeight-fm2.height());
+    int ascentDiff = fontMetrics().ascent() - fm2.ascent();
     painter.setFont(lineNoFont);
     painter.fillRect(event->rect(), Themes::currentTheme.backgroundColor.get(darkMode));
 
@@ -528,7 +527,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            int textTop = top+fontMetrics().leading()+heightDiff;
+            int textTop = top + ascentDiff;
 
             if (errorLines.contains(blockNumber)) {
                 painter.setPen(Themes::currentTheme.errorColor.get(darkMode));
