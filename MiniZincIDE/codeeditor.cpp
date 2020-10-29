@@ -512,7 +512,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     QFontMetrics fm2(lineNoFont);
     int ascentDiff = fontMetrics().ascent() - fm2.ascent();
     painter.setFont(lineNoFont);
-    painter.fillRect(event->rect(), Themes::currentTheme.backgroundColor.get(darkMode));
+    painter.fillRect(event->rect(), Themes::currentTheme.lineNumberbackground.get(darkMode));
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();

@@ -59,7 +59,8 @@ struct Theme
         foregroundInactiveColor, // color of inactive line number
         textHighlightColor,      // color of highlighted text
         bracketsMatchColor, // Color of matching brackets
-        bracketsNoMatchColor //Colors of dangling brackets
+        bracketsNoMatchColor, //Colors of dangling brackets
+        lineNumberbackground // Color of line numbers background
         ;
 
         bool isSystemTheme = false;
@@ -112,6 +113,8 @@ struct Theme
 
             foregroundActiveColor = textColor;
             foregroundInactiveColor = ThemeColor(textColor.light.lighter(), textColor.dark.darker());
+
+            lineNumberbackground = ThemeColor(backgroundColor.light.darker(110), backgroundColor.dark.lighter(150));
         }
 
         QString styleSheet(bool darkMode) {
