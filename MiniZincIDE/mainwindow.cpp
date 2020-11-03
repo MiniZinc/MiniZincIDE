@@ -800,7 +800,7 @@ void MainWindow::compileOrRun(
     QSettings settings;
     settings.beginGroup("ide");
 
-    if (settings.value("clearOutput", true).toBool()) {
+    if (settings.value("clearOutput", false).toBool()) {
         on_actionClear_output_triggered();
     }
     on_actionSplit_triggered();
@@ -1137,8 +1137,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     QSettings settings;
     settings.beginGroup("ide");
-    auto compress = settings.value("compressSolutions");
-    solutionLimit = compress.isNull() ? 100 : compress.toInt();
+    solutionLimit = settings.value("compressSolutions", 100).toInt();
     settings.endGroup();
 
     solutionCount = 0;
