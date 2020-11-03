@@ -704,7 +704,10 @@ void ConfigWindow::on_clone_pushButton_clicked()
 
 void ConfigWindow::resizeExtraFlagsTable()
 {
-    int total_height = ui->extraParams_tableWidget->horizontalHeader()->height();
+    auto* hScroll = ui->extraParams_tableWidget->horizontalScrollBar();
+    // To avoid creating a vertical scrollbar if there's a horizontal one
+    int padding = hScroll ? hScroll->height() : 0;
+    int total_height = ui->extraParams_tableWidget->horizontalHeader()->height() + padding;
     if (!ui->extraParams_tableWidget->horizontalScrollBar()->isHidden()) {
         total_height += ui->extraParams_tableWidget->horizontalScrollBar()->height();
     }
@@ -712,7 +715,6 @@ void ConfigWindow::resizeExtraFlagsTable()
         total_height += ui->extraParams_tableWidget->rowHeight(row);
     }
     ui->extraParams_tableWidget->setMinimumHeight(total_height);
-
 }
 
 QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
