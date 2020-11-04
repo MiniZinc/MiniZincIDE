@@ -1084,7 +1084,8 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     args << "-c"
          << "-o" << fzn
          << model
-         << data;
+         << data
+         << extraArgs;
     if (profile) {
         args << "--output-paths-to-stdout"
              << "--output-detailed-timing";
