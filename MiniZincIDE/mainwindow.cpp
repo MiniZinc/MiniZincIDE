@@ -1125,9 +1125,11 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         procFinished(exitCode, compileProcess->elapsedTime());
     });
     connect(compileProcess, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
+    SolverConfiguration compileSc(sc);
+    compileSc.outputTiming = false; // Remove solns2out options
     addOutput(runMessage("Compiling", model, data, extraArgs));
     updateUiProcessRunning(true);
-    compileProcess->start(sc, args, fi.absolutePath());
+    compileProcess->start(compileSc, args, fi.absolutePath());
 }
 
 void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, QTextStream* ts)
