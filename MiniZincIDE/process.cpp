@@ -275,7 +275,7 @@ void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, c
     temp->write(sc.toJSON());
     temp->close();
     QStringList newArgs;
-    newArgs << "--param-file" << paramFile << args;
+    newArgs << "--param-file-no-push" << paramFile << args;
     if (sc.timeLimit != 0) {
         auto* hardTimer = new QTimer(this);
         hardTimer->setSingleShot(true);
