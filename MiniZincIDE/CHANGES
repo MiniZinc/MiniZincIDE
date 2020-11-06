@@ -1,3 +1,20 @@
+2020-11-06
+  v2.5.2
+  - Properly resize extra flags table after adding parameters (#119).
+  - Use the minimal configuration to check the model interface (#118).
+  - Allow omitting builtin solver version in project JSON.
+  - Don't mark as modified when loading non-synced solver configurations.
+  - Ensure the last open configuration in a project is selected when loaded.
+  - Fix the default values of solution truncation and output window clearing.
+  - Process unrecognised extra flags from old project configurations.
+  - Fix watching for modification of the additional data box.
+  - Fix the alignment of line numbers.
+  - Make behaviour controls more narrow to accommodate smaller window sizes.
+  - Defocus config window widgets when updating solver config so values of
+    currently edited fields are updated.
+  - Pass user input data correctly during compilation.
+  - Remove solns2out options from MiniZinc call when compiling.
+
 2020-10-22
   v2.5.1
   - Fix typo when passing solver statistics option to minizinc (#112).
