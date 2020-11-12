@@ -434,7 +434,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
 {
     // Make sure if anything was being edited, we defocus to update the value
     auto* focus = focusWidget();
-    if (focus) {
+    if (focus && focus->hasFocus()) {
         focus->clearFocus();
         focus->setFocus();
     }
