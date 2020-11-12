@@ -474,7 +474,12 @@ void SolveProcess::processStdout(QString line)
                 visBuffer.clear();
             }
             outputBuffer.clear();
-        } else if (trimmed == "==========" || trimmed == "=====UNKNOWN=====" || trimmed == "=====ERROR=====") {
+        } else if (trimmed == "==========" ||
+                   trimmed == "=====UNKNOWN=====" ||
+                   trimmed == "=====ERROR=====" ||
+                   trimmed == "=====UNSATISFIABLE=====" ||
+                   trimmed == "=====UNSATorUNBOUNDED=====" ||
+                   trimmed == "=====UNBOUNDED=====") {
             outputBuffer << line;
             emit finalStatus(outputBuffer.join(""));
             outputBuffer.clear();
