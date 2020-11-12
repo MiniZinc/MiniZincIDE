@@ -422,6 +422,9 @@ SolveProcess::SolveProcess(QObject* parent) :
     MznProcess(parent)
 {
     connect(this, &MznProcess::outputStdOut, this, &SolveProcess::processStdout);
+    connect(this, &MznProcess::success, this, &SolveProcess::finished);
+    connect(this, &MznProcess::failure, this, &SolveProcess::finished);
+    connect(this, &MznProcess::finished, this, &SolveProcess::finished);
 }
 
 
@@ -533,5 +536,13 @@ void SolveProcess::processStdout(QString line)
             jsonBuffer << trimmed;
         }
         break;
+    }
+}
+
+void SolveProcess::finished() {
+    // Make sure any remaining fragment is printed
+    if (!outputBuffer.empty()) {
+        emit fragment(outputBuffer.join(""));
+        outputBuffer.clear();
     }
 }

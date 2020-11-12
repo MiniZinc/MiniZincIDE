@@ -391,6 +391,7 @@ private:
 
 private slots:
     void processStdout(QString line);
+    void finished();
 };
 
 #endif // PROCESS_H
