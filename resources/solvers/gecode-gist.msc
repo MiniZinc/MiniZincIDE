@@ -6,7 +6,7 @@
   "mznlib": "-Ggecode",
   "executable": "../../../bin/run-fzn-gecode-gist",
   "tags": ["cp","int", "float", "set", "restart"],
-  "stdFlags": ["-a","-n","-s","-p","-r","-f"],
+  "stdFlags": ["-a","-n","-p","-r","-f"],
   "extraFlags": [
       ["--c-d", "Recomputation commit distance", "int", "8"],
       ["--a-d", "Recomputation adaption distance", "int", "2"],
