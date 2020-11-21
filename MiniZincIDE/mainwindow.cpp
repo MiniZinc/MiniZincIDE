@@ -672,11 +672,11 @@ void MainWindow::tabChange(int tab) {
         p += " ";
         p += QChar(0x2014);
         p += " ";
-        if (projectPath.isEmpty()) {
-            p += "Untitled Project";
+        if (getProject().hasProjectFile()) {
+            QFileInfo fi(getProject().projectFile());
+            p += "Project: " + fi.baseName();
         } else {
-            QFileInfo fi(projectPath);
-            p += "Project: "+fi.baseName();
+            p += "Untitled Project";
         }
         if (curEditor->filepath.isEmpty()) {
             setWindowFilePath(curEditor->filename);
