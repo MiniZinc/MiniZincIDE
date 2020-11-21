@@ -302,7 +302,6 @@ private:
     QVector<QTemporaryDir*> cleanupTmpDirs;
     QVector<Process*> cleanupProcesses;
     QTextCursor incrementalFindCursor;
-    QString projectPath;
     bool saveBeforeRunning;
     ParamDialog* paramDialog;
     bool profileInfoVisible;

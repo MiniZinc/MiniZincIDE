@@ -573,9 +573,9 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 //            }
         }
     }
-    if (!projectPath.isEmpty())
-        IDE::instance()->projects.remove(projectPath);
-    projectPath = "";
+    if (getProject().hasProjectFile()) {
+        IDE::instance()->projects.remove(getProject().projectFile());
+    }
 
     IDE::instance()->mainWindows.remove(this);
 
@@ -2027,6 +2027,8 @@ void MainWindow::saveProject(const QString& f)
     }
 
     if (p.projectFile() != filepath) {
+        IDE::instance()->projects.remove(p.projectFile());
+        IDE::instance()->projects.insert(filepath, this);
         p.projectFile(filepath);
     }
     p.openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
@@ -2056,6 +2058,7 @@ void MainWindow::loadProject(const QString& filepath)
         }
         p.activeSolverConfigChanged(getCurrentSolverConfig());
         p.setModified(false);
+        IDE::instance()->projects.insert(p.projectFile(), this);
         updateRecentProjects(p.projectFile());
     } catch (Exception& e) {
         QMessageBox::warning(this, "MiniZinc IDE",
