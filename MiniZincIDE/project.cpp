@@ -507,8 +507,7 @@ void Project::activeSolverConfigChanged(const SolverConfiguration* sc)
         selectedSolverConfigFile = "";
         selectedBuiltinConfigId = "";
         selectedBuiltinConfigVersion = "";
-    }
-    if (sc->isBuiltin) {
+    } else if (sc->isBuiltin) {
         selectedSolverConfigFile = "";
         selectedBuiltinConfigId = sc->solverDefinition.id;
         selectedBuiltinConfigVersion = sc->solverDefinition.version;
