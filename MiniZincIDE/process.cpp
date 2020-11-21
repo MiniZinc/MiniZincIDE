@@ -266,7 +266,7 @@ void MznProcess::start(const QStringList& args, const QString& cwd)
 
 void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
 {
-    auto* temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.mpc");
+    auto* temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.mpc", this);
     if (!temp->open()) {
         emit failure(0, FailureType::FailedToStart);
         return;
@@ -274,6 +274,9 @@ void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, c
     QString paramFile = temp->fileName();
     temp->write(sc.toJSON());
     temp->close();
+    connect(this, &MznProcess::finished, temp, [=] () {
+        delete temp;
+    });
     QStringList newArgs;
     newArgs << "--param-file-no-push" << paramFile << args;
     if (sc.timeLimit != 0) {
@@ -311,13 +314,13 @@ MznProcess::RunResult MznProcess::run(const QStringList& args, const QString& cw
 
 MznProcess::RunResult MznProcess::run(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
 {
-    auto* temp = new QTemporaryFile(QDir::tempPath() + "/mzn_XXXXXX.mpc");
-    if (!temp->open()) {
+    QTemporaryFile temp(QDir::tempPath() + "/mzn_XXXXXX.mpc");
+    if (!temp.open()) {
         throw ProcessError("Failed to create temporary file");
     }
-    QString paramFile = temp->fileName();
-    temp->write(sc.toJSON());
-    temp->close();
+    QString paramFile = temp.fileName();
+    temp.write(sc.toJSON());
+    temp.close();
     QStringList newArgs;
     newArgs << "--param-file" << paramFile << args;
     return run(newArgs, cwd);

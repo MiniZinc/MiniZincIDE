@@ -1178,7 +1178,6 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         solveProcess->deleteLater();
     });
     connect(solveProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
-        solveProcess->disconnect();
         if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
             exitCode = 0;
