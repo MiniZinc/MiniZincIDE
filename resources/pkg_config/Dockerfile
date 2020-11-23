@@ -10,8 +10,7 @@ COPY vendor/gecode/bin/fzn-gecode /usr/local/bin/
 COPY vendor/gecode/share/gecode/mznlib /usr/local/share/minizinc/gecode
 COPY resources/solvers/gecode.msc /usr/local/share/minizinc/solvers/
 
-COPY vendor/chuffed/bin/fzn-chuffed /usr/local/bin/
-COPY vendor/chuffed/share/minizinc/* /usr/local/share/minizinc/
+COPY vendor/chuffed /usr/local
 
 # Strip all binaries
 RUN [ -f "/etc/alpine-release" ] && apk add --no-cache binutils || (apt-get update -y && apt-get install -y binutils)
