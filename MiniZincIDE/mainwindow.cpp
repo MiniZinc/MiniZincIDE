@@ -1007,9 +1007,9 @@ QString MainWindow::setElapsedTime(qint64 elapsed_t)
     auto sc = getCurrentSolverConfig();
     if (sc && sc->timeLimit > 0) {
         timeLimit += " / ";
-        int tl_hours = sc->timeLimit / 3600;
-        int tl_minutes = (sc->timeLimit % 3600) / 60;
-        int tl_seconds = sc->timeLimit % 60;
+        int tl_hours = sc->timeLimit / 3600000;
+        int tl_minutes = (sc->timeLimit % 3600000) / 60000;
+        int tl_seconds = sc->timeLimit % 60000 / 1000;
         if (tl_hours > 0)
             timeLimit += QString().number(tl_hours)+"h ";
         if (tl_hours > 0 || tl_minutes > 0)
