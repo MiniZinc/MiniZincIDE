@@ -1,3 +1,13 @@
+2020-24-06
+  v2.5.3
+-  Only reset config window item focus if it is still focused, preventing spurious
+   changes in focus during code checking.
+-  Fix handling of final statuses, including UNSAT (#123).
+-  Remove -s flag support from Gecode Gist solver configuration (#125).
+-  Fix crash when saving a project with no solver selected (#127).
+-  Correctly remove temporary parameter configuration files after use (#128, #129).
+-  Fix the time limit readout in the status bar when solving.
+
 2020-11-06
   v2.5.2
   - Properly resize extra flags table after adding parameters (#119).
