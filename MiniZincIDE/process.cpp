@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <iostream>
+#else
+#include <VersionHelpers.h>
 #endif
 
 #ifdef Q_OS_WIN
@@ -38,8 +40,15 @@ void Process::start(const QString &program, const QStringList &arguments, const 
     setProcessEnvironment(env);
 #ifdef Q_OS_WIN
     _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
-    jobObject = CreateJobObject(nullptr, nullptr);
-    connect(this, SIGNAL(started()), this, SLOT(attachJob()));
+    if (IsWindows8OrGreater()) {
+        jobObject = CreateJobObject(nullptr, nullptr);
+        connect(this, SIGNAL(started()), this, SLOT(attachJob()));
+    } else {
+        // Workaround PCA automatically adding to a job for Windows 7
+        setCreateProcessArgumentsModifier([] (QProcess::CreateProcessArguments *args) {
+            args->flags |= CREATE_BREAKAWAY_FROM_JOB;
+        });
+    }
 #else
     setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
@@ -55,7 +64,12 @@ void Process::terminate()
 {
     if (state() != QProcess::NotRunning) {
 #ifdef Q_OS_WIN
-        TerminateJobObject(jobObject, EXIT_FAILURE);
+        if (IsWindows8OrGreater()) {
+            TerminateJobObject(jobObject, EXIT_FAILURE);
+        } else {
+            // We can't use job objects in Windows 7, since MiniZinc already uses them
+            QProcess::kill();
+        }
 #else
         ::killpg(processId(), SIGKILL);
 #endif
