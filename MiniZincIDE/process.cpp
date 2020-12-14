@@ -92,7 +92,8 @@ void Process::sendInterrupt()
     auto pipeName = pipe.toStdString();
     HANDLE hNamedPipe = CreateFileA(pipeName.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hNamedPipe != INVALID_HANDLE_VALUE) {
-        WriteFile(hNamedPipe, nullptr, 0, nullptr, nullptr);
+        DWORD bytesWritten;
+        WriteFile(hNamedPipe, nullptr, 0, &bytesWritten, nullptr);
         CloseHandle(hNamedPipe);
     }
 #else
