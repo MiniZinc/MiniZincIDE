@@ -9,7 +9,7 @@ default:
 
 build:linux:
   stage: build
-  image: dekker1/minibuild:Qt
+  image: cyderize/ci-image:qt
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     GIT_STRATEGY: clone
@@ -19,8 +19,12 @@ build:linux:
     - make -j4
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
+    # Download Gecode Gist so linuxdeployqt can include its dependencies
+    - curl --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" --silent https://gitlab.com/api/v4/snippets/1796163/raw | tr -d '\r' > download.sh
+    - sh download.sh vendor master gecode_gist:linux vendor.zip
+    - unzip -q vendor.zip
     # Workaround for: https://github.com/probonopd/linuxdeployqt/issues/35
-    - linuxdeployqt ide/usr/bin/MiniZincIDE -bundle-non-qt-libs -no-translations -no-copy-copyright-files
+    - linuxdeployqt ide/usr/bin/MiniZincIDE -executable=vendor/gecode_gist/bin/fzn-gecode -bundle-non-qt-libs -no-translations -no-copy-copyright-files
     - mkdir ide/usr/lib_fallback
     - mv ide/usr/lib/libnss3.so ide/usr/lib/libnssutil3.so ide/usr/lib_fallback/
   tags: [linux, docker]
