@@ -6,16 +6,6 @@
 
 QT       += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): {
-  greaterThan(QT_MINOR_VERSION, 5): {
-    QT += webenginewidgets
-    DEFINES += MINIZINC_IDE_HAVE_WEBENGINE
-  }
-  !greaterThan(QT_MINOR_VERSION, 5): {
-    QT += webkitwidgets
-  }
-}
-
 TARGET = MiniZincIDE
 TEMPLATE = app
 
@@ -62,8 +52,6 @@ SOURCES += main.cpp\
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
     project.cpp \
-    htmlwindow.cpp \
-    htmlpage.cpp \
     moocsubmission.cpp \
     solverconfiguration.cpp \
     esclineedit.cpp
@@ -87,8 +75,6 @@ HEADERS  += mainwindow.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
-    htmlwindow.h \
-    htmlpage.h \
     moocsubmission.h \
     solverconfiguration.h \
     esclineedit.h
@@ -102,7 +88,6 @@ FORMS    += \
     gotolinedialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \
-    htmlwindow.ui \
     moocsubmission.ui
 
 RESOURCES += \

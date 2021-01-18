@@ -18,11 +18,6 @@
 #include <QProcess>
 #include <QTimer>
 #include <QLabel>
-#ifdef MINIZINC_IDE_HAVE_WEBENGINE
-#include <QWebEngineView>
-#else
-#include <QWebView>
-#endif
 #include <QSet>
 #include <QTemporaryDir>
 #include <QMap>
@@ -37,7 +32,6 @@
 #include "solverdialog.h"
 #include "paramdialog.h"
 #include "project.h"
-#include "htmlwindow.h"
 #include "moocsubmission.h"
 #include "solverconfiguration.h"
 #include "process.h"
@@ -199,7 +193,6 @@ private slots:
 
     void showWindowMenu(void);
     void windowMenuSelected(QAction*);
-    void closeHTMLWindow(int);
     void on_actionCheat_Sheet_triggered();
     void check_code();
 
@@ -273,7 +266,6 @@ public:
     void resolve(int htmlWindowIdentifier, const QString &data);
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
-    int addHtmlWindow(HTMLWindow* w);
     bool checkSolutions(void) const;
     void setCheckSolutions(bool b);
     SolverConfiguration* getCurrentSolverConfig(void);
@@ -285,9 +277,6 @@ private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
     QString curFilePath;
-    int curHtmlWindow;
-    QVector<HTMLWindow*> htmlWindows;
-    QVector<QString> htmlWindowModels;
     CodeChecker* code_checker;
     CodeEditor* curCheckEditor;
     int solutionCount;
@@ -349,9 +338,6 @@ private:
     void outputStdErr(const QString& line);
     QStringList getOpenFiles(void);
 
-    void openJSONViewer(bool isJSONinitHandler, const QVector<SolveProcess::VisOutput>& output);
-    void finishJSONViewer(qint64 time);
-
     void updateProfileSearchButton(void);
 
     QString runMessage(const QString& action, const QString& model, const QStringList& data, const QStringList& extraArgs);
@@ -359,7 +345,6 @@ public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
     bool isEmptyProject(void);
-    void selectJSONSolution(HTMLPage* source, int n);
     Project& getProject(void) { return *project; }
 };
 

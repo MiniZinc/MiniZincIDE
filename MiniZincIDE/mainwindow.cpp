@@ -40,7 +40,6 @@
 MainWindow::MainWindow(const QString& project) :
     ui(new Ui::MainWindow),
     curEditor(nullptr),
-    curHtmlWindow(-1),
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
@@ -54,7 +53,6 @@ MainWindow::MainWindow(const QString& project) :
 MainWindow::MainWindow(const QStringList& files) :
     ui(new Ui::MainWindow),
     curEditor(nullptr),
-    curHtmlWindow(-1),
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
@@ -748,7 +746,6 @@ void MainWindow::addOutput(const QString& s, bool html)
 
 void MainWindow::on_actionRun_triggered()
 {
-    curHtmlWindow = -1;
     compileOrRun(CM_RUN);
 }
 
@@ -1032,38 +1029,6 @@ void MainWindow::statusTimerEvent(qint64 time)
     setElapsedTime(time);
 }
 
-void MainWindow::openJSONViewer(bool isJSONinitHandler, const QVector<SolveProcess::VisOutput>& output)
-{
-    if (curHtmlWindow==-1) {
-        QVector<VisWindowSpec> specs;
-        for (auto& item : output) {
-            specs << item.spec;
-        }
-        QFileInfo htmlWindowTitleFile(curFilePath);
-        HTMLWindow* htmlWindow = new HTMLWindow(specs, this, htmlWindowTitleFile.fileName());
-        curHtmlWindow = htmlWindow->getId();
-        htmlWindow->init();
-        connect(htmlWindow, SIGNAL(closeWindow(int)), this, SLOT(closeHTMLWindow(int)));
-        htmlWindow->show();
-    }
-    for (int i=0; i<output.size(); i++) {
-        if (htmlWindows[curHtmlWindow]) {
-            if (isJSONinitHandler) {
-                htmlWindows[curHtmlWindow]->initJSON(i, output[i].data);
-            } else {
-                htmlWindows[curHtmlWindow]->addSolution(i, output[i].data);
-            }
-        }
-    }
-}
-
-void MainWindow::finishJSONViewer(qint64 time)
-{
-    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
-        htmlWindows[curHtmlWindow]->finish(time);
-    }
-}
-
 void MainWindow::compile(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, bool profile)
 {
     if (!requireMiniZinc()) {
@@ -1185,7 +1150,6 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(solveProcess, &SolveProcess::htmlOutput, [=](const QString& html) {
         addOutput(html, true);
     });
-    connect(solveProcess, &SolveProcess::jsonOutput, this, &MainWindow::openJSONViewer);
     connect(solveProcess, &SolveProcess::outputStdError, this, &MainWindow::outputStdErr);
     connect(solveProcess, &SolveProcess::success, [=]() {
         procFinished(0, solveProcess->elapsedTime());
@@ -1228,8 +1192,6 @@ void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
             dataFile.close();
             QStringList dataFiles;
             dataFiles.push_back(filepath);
-            curHtmlWindow = htmlWindowIdentifier;
-            run(*getCurrentSolverConfig(), htmlWindowModels[htmlWindowIdentifier], dataFiles);
         } else {
             QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
         }
@@ -1241,35 +1203,11 @@ QString MainWindow::currentSolverConfigName(void) {
     return sc ? sc->name() : "None";
 }
 
-int MainWindow::addHtmlWindow(HTMLWindow *w)
-{
-    htmlWindows.push_back(w);
-    htmlWindowModels.push_back(curFilePath);
-    return htmlWindows.size()-1;
-}
-
-void MainWindow::closeHTMLWindow(int identifier)
-{
-    stop();
-    if (identifier==curHtmlWindow) {
-        curHtmlWindow = -1;
-    }
-    htmlWindows[identifier] = nullptr;
-}
-
-void MainWindow::selectJSONSolution(HTMLPage* source, int n)
-{
-    if (curHtmlWindow >= 0 && htmlWindows[curHtmlWindow]) {
-        htmlWindows[curHtmlWindow]->selectSolution(source,n);
-    }
-}
-
 void MainWindow::procFinished(int exitCode, qint64 time) {
     procFinished(exitCode);
     QString elapsedTime = setElapsedTime(time);
     ui->statusbar->clearMessage();
     addOutput("<div class='mznnotice'>Finished in " + elapsedTime + "</div>");
-    finishJSONViewer(time);
 }
 
 void MainWindow::procFinished(int exitCode) {
@@ -2819,7 +2757,6 @@ void MainWindow::on_actionProfile_search_triggered()
     if (!ui->cpprofiler_dockWidget->isVisible()) {
         on_actionShow_search_profiler_triggered();
     }
-    curHtmlWindow = -1;
     QStringList args;
     args << "--cp-profiler"
          << QString::number(ex_id++) + "," + QString::number(conductor->getListenPort());

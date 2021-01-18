@@ -12,7 +12,6 @@
 #endif
 
 #include "solverconfiguration.h"
-#include "htmlwindow.h"
 #include "elapsedtimer.h"
 
 ///
@@ -316,13 +315,6 @@ class SolveProcess : public MznProcess {
     Q_OBJECT
 
 public:
-    struct VisOutput {
-        VisWindowSpec spec;
-        QString data;
-
-        VisOutput(const VisWindowSpec& s = VisWindowSpec(), const QString& d = "") : spec(s), data(d) {}
-    };
-
     SolveProcess(QObject* parent=nullptr);
 
     ///
@@ -356,12 +348,6 @@ signals:
     ///
     void progressOutput(float progress);
     ///
-    /// \brief Emitted when a new solution is produced with visualization data.
-    /// \param isInitHandler True if this is an initialization handler
-    /// \param output The JSON visualization output
-    ///
-    void jsonOutput(bool isInitHandler, const QVector<VisOutput>& output);
-    ///
     /// \brief Emitted when a final status string is read.
     /// \param data The data that was read (==========\n or =====UNKNOWN=====\n or =====ERROR=====\n)
     ///
@@ -383,7 +369,6 @@ private:
     QStringList outputBuffer;
     QStringList htmlBuffer;
     QStringList jsonBuffer;
-    QVector<VisOutput> visBuffer;
 
     State state;
 
