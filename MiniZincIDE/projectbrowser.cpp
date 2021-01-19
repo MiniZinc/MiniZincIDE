@@ -62,11 +62,12 @@ void ProjectBrowser::setupContextMenu()
     });
 
     connect(ui->treeView, &QWidget::customContextMenuRequested, [=] (const QPoint& pos) {
-        if (!proj) {
+        auto selected = ui->treeView->selectionModel()->selectedIndexes();
+
+        if (!proj || selected.empty()) {
             return;
         }
 
-        auto selected = ui->treeView->selectionModel()->selectedIndexes();
         int numModelsSelected = 0;
         int numDataSelected = 0;
         int numCheckersSelected = 0;
@@ -87,9 +88,11 @@ void ProjectBrowser::setupContextMenu()
             case Project::SolverConfig:
                 numSolverConfigsSelected++;
                 break;
-            default:
+            case Project::Other:
                 numOthersSelected++;
                 break;
+            default:
+                return; // No applicable actions
             }
         }
 
