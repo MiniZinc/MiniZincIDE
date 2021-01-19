@@ -83,6 +83,8 @@ private:
 signals:
     /// emitted when compilation and running of a model has finished
     void finished();
+    /// emitted when the window is going to close
+    void terminating();
 
 public slots:
 

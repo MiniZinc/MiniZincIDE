@@ -563,6 +563,9 @@ void MainWindow::closeEvent(QCloseEvent* e) {
         }
     }
 
+    // At this point we're definitely closing
+    emit terminating();
+
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
         if (ce) {
@@ -578,8 +581,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     }
 
     IDE::instance()->mainWindows.remove(this);
-
-    stop(); // Stop solver if one is running
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -1092,6 +1093,11 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     }
     auto* output = new QString;
     auto* ts = new QTextStream(output);
+    connect(this, &MainWindow::terminating, compileProcess, [=] () {
+        compileProcess->disconnect();
+        compileProcess->stop();
+        compileProcess->deleteLater();
+    });
     connect(ui->actionStop, &QAction::triggered, compileProcess, [=] () {
         ui->actionStop->setDisabled(true);
         compileProcess->stop();
@@ -1148,6 +1154,11 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     auto solveProcess = new SolveProcess(this);
 
+    connect(this, &MainWindow::terminating, solveProcess, [=] () {
+        solveProcess->disconnect();
+        solveProcess->stop();
+        solveProcess->deleteLater();
+    });
     connect(ui->actionStop, &QAction::triggered, solveProcess, [=] () {
         ui->actionStop->setDisabled(true);
         solveProcess->stop();
