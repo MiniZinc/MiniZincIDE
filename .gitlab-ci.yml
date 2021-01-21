@@ -9,7 +9,7 @@ default:
 
 build:linux:
   stage: build
-  image: cyderize/ci-image:qt
+  image: minizinc/build-environment:qt
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     GIT_STRATEGY: clone
@@ -80,7 +80,7 @@ build:win64:
 
 package:linux:
   stage: package
-  image: dekker1/minibuild:package
+  image: minizinc/build-environment:package
   variables:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
@@ -205,7 +205,7 @@ package:win64:
 
 package:appimage:
   stage: package
-  image: dekker1/minibuild:appimage
+  image: minizinc/build-environment:appimage
   variables:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
@@ -292,7 +292,7 @@ package:docker_ubuntu:
 
 .snap_job: &snap_job
   stage: package
-  image: dekker1/minibuild:snap
+  image: minizinc/build-environment:snap
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     MZNARCH: "linux"
