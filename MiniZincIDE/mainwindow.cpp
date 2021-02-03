@@ -1739,6 +1739,11 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       return;
     }
 
+    if(url.scheme() == "http" || url.scheme() == "https") {
+      QDesktopServices::openUrl(url);
+      return;
+    }
+
     QString query = url.query();
     url.setQuery("");
     url.setScheme("file");
