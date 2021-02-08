@@ -126,7 +126,7 @@ class SolverData
         info_map_.insert({nid, Info(orig)});
     }
 
-    const Info &getInfo(NodeID nid) const
+    Info getInfo(NodeID nid) const
     {
         auto it = info_map_.find(nid);
         if (it != info_map_.end())
