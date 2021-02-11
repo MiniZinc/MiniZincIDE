@@ -2245,6 +2245,10 @@ void MainWindow::on_actionSubmit_to_MOOC_triggered()
     // Check if any documents need saving
     QVector<CodeEditor*> modifiedDocs;
     QSet<QString> files;
+    for (auto model : getProject().moocAssignment().models) {
+        files.insert(model.model);
+        files.insert(model.data);
+    }
     for (auto problem : getProject().moocAssignment().problems) {
         files.insert(problem.model);
         files.insert(problem.data);
