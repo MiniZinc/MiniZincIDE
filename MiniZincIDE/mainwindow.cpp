@@ -2646,6 +2646,18 @@ QStringList MainWindow::getOpenFiles()
     return ret;
 }
 
+QList<CodeEditor*> MainWindow::codeEditors()
+{
+    QList<CodeEditor*> ret;
+    for (int i=0; i<ui->tabWidget->count(); i++) {
+        CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ret << ce;
+        }
+    }
+    return ret;
+}
+
 void MainWindow::on_projectBrowser_runRequested(const QStringList& files)
 {
     QString model;

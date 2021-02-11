@@ -89,6 +89,26 @@ MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
     QVBoxLayout* problemLayout = new QVBoxLayout;
     ui->problemBox->setLayout(problemLayout);
 
+    QSet<QString> mooc_mzns;
+    for (auto& p : project.models) {
+        mooc_mzns << p.model;
+    }
+    for (auto& p : project.problems) {
+        mooc_mzns << p.model;
+    }
+    QStringList nonSubmissionFiles;
+    for (auto* ce : mw->codeEditors()) {
+        if (ce->filename.endsWith(".mzn") && !mooc_mzns.contains(ce->filepath)) {
+            nonSubmissionFiles << ce->filename;
+        }
+    }
+    if (nonSubmissionFiles.empty()) {
+        ui->nonSubmissionGroup->setVisible(false);
+    } else {
+        ui->nonSubmissionLabel->setText(nonSubmissionFiles.join("\n"));
+        ui->nonSubmissionGroup->setVisible(true);
+    }
+
     for (int i=0; i<project.models.size(); i++) {
         const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);

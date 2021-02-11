@@ -280,6 +280,7 @@ public:
     const Solver* getCurrentSolver(void);
     void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), bool profile = false);
     void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), QTextStream* ts = nullptr);
+    QList<CodeEditor*> codeEditors();
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
