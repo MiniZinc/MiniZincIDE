@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <cfloat>
 
 ConfigWindow::ConfigWindow(QWidget *parent) :
     QWidget(parent),
@@ -759,6 +760,7 @@ QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionVi
         case SolverFlag::T_FLOAT_RANGE:
         {
             auto field = new QDoubleSpinBox(parent);
+            field->setDecimals(DBL_MAX_10_EXP + DBL_DIG);
             field->setRange(f.min, f.max);
             return field;
         }
