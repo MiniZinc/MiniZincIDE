@@ -783,6 +783,12 @@ QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionVi
         case SolverFlag::T_STRING:
             return QStyledItemDelegate::createEditor(parent, option, index);
         }
+    }
+    else if (index.data().canConvert<double>()) {
+        auto field = new QLineEdit(parent);
+        field->setAlignment(Qt::AlignRight);
+        field->setValidator(new QDoubleValidator());
+        return field;
     } else {
         return QStyledItemDelegate::createEditor(parent, option, index);
     }
@@ -821,6 +827,9 @@ void ExtraOptionDelegate::setEditorData(QWidget* editor, const QModelIndex& inde
             QStyledItemDelegate::setEditorData(editor, index);
             break;
         }
+    }
+    else if (index.data().canConvert<double>()) {
+        static_cast<QLineEdit*>(editor)->setText(QString::number(index.data().toDouble()));
     } else {
         QStyledItemDelegate::setEditorData(editor, index);
     }
@@ -861,6 +870,9 @@ void ExtraOptionDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
             model->setData(index, static_cast<QComboBox*>(editor)->currentText());
             break;
         }
+    }
+    else if (index.data().canConvert<double>()) {
+        model->setData(index, static_cast<QLineEdit*>(editor)->text().toDouble());
     } else {
         QStyledItemDelegate::setModelData(editor, model, index);
     }
