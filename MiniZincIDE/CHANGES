@@ -1,3 +1,19 @@
+2021-03-08
+  v2.5.4
+-  Fix possible crash due to incorrect use of WriteFile on Windows.
+-  Ensure Gecode Gist dependencies are present in the Linux bundle and AppImage
+   (#132).
+-  Fix crash when stopping solver during exit.
+-  Don't show irrelevant context menu entries in the project explorer.
+-  Add support for HTTP/S links in the output pane.
+-  Fix crash when saving CP Profiler executions where there is no info
+   associated with a node.
+-  Show a warning when there are open files which are not part of a MOOC
+   submission.
+-  Fix double spinbox precision issues (#134).
+-  Include Gecode Gist and CP Profiler dependencies in Snap package.
+-  Allow opening of multiple files through the open file menu option.
+
 2020-24-06
   v2.5.3
 -  Only reset config window item focus if it is still focused, preventing spurious
