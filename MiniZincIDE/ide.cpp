@@ -438,16 +438,17 @@ void IDE::setEditorFont(QFont font)
 
 void IDE::openFile(const QString& fileName0)
 {
-    QString fileName = fileName0;
-    if (fileName.isEmpty()) {
-        fileName = QFileDialog::getOpenFileName(nullptr, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc *.mpc);;Other (*)");
-        if (!fileName.isNull()) {
-            setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
+    QStringList fileNames;
+    if (fileName0.isEmpty()) {
+        fileNames = QFileDialog::getOpenFileNames(nullptr, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc *.mpc);;Other (*)");
+        if (!fileNames.isEmpty()) {
+            setLastPath(QFileInfo(fileNames.last()).absolutePath() + fileDialogSuffix);
         }
+    } else {
+        fileNames << fileName0;
     }
-    if (!fileName.isEmpty()) {
-        MainWindow* mw = new MainWindow(QString());
-        mw->openFile(fileName, false, true);
+    if (!fileNames.isEmpty()) {
+        MainWindow* mw = new MainWindow(fileNames);
         mw->show();
     }
 }

@@ -447,16 +447,14 @@ QString MainWindow::getLastPath(void)
 
 void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
 {
-    QString fileName = path;
-
-    if (fileName.isNull()) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc *.mpc);;Other (*)");
-        if (!fileName.isNull()) {
-            setLastPath(QFileInfo(fileName).absolutePath()+fileDialogSuffix);
-        }
+    QStringList fileNames;
+    if (path.isEmpty()) {
+        fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc *.mpc);;Other (*)");
+    } else {
+        fileNames << path;
     }
 
-    if (!fileName.isEmpty()) {
+    for (auto& fileName : fileNames) {
         if (fileName.endsWith(".mzp")) {
             openProject(fileName);
         } else if (fileName.endsWith(".mpc")) {
