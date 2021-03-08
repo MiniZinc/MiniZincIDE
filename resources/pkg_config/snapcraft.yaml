@@ -33,6 +33,8 @@ parts:
       - qtwebengine5-dev
     stage-packages:
       - libqt5webengine5
+      - libqt5sql5-sqlite
+      - libqt5printsupport5
   minizinc:
     plugin: dump
     source: minizinc/
