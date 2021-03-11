@@ -114,8 +114,7 @@ void MainWindow::init(const QString& projectFile)
 
     // initialise find widget
     ui->findFrame->hide();
-    connect(ui->find, SIGNAL(escPressed(void)), this, SLOT(on_closeFindWidget_clicked()));
-
+    ui->findWidget->installEventFilter(this);
 
     QWidget* solverConfFrame = new QWidget;
     QVBoxLayout* solverConfFrameLayout = new QVBoxLayout;
@@ -2314,6 +2313,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
             }
         }
         return false;
+    } else if (obj == ui->findWidget) {
+        if (ev->type() == QEvent::KeyPress) {
+            auto* keyEvent = static_cast<QKeyEvent*>(ev);
+            if (keyEvent->key() == Qt::Key_Escape) {
+                on_closeFindWidget_clicked();
+                return true;
+            }
+        }
     } else {
         return QMainWindow::eventFilter(obj,ev);
     }
