@@ -1,4 +1,4 @@
-2021-03-08
+2021-03-12
   v2.5.4
 -  Fix possible crash due to incorrect use of WriteFile on Windows.
 -  Ensure Gecode Gist dependencies are present in the Linux bundle and AppImage
@@ -13,6 +13,9 @@
 -  Fix double spinbox precision issues (#134).
 -  Include Gecode Gist and CP Profiler dependencies in Snap package.
 -  Allow opening of multiple files through the open file menu option.
+-  Ensure file dialogs save last path when opening files.
+-  Make the escape key close the find/replace dialog when focussed on any child
+   widget.
 
 2020-24-06
   v2.5.3
