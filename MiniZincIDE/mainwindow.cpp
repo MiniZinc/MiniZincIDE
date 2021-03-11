@@ -450,6 +450,9 @@ void MainWindow::openFile(const QString &path, bool openAsModified, bool focus)
     QStringList fileNames;
     if (path.isEmpty()) {
         fileNames = QFileDialog::getOpenFileNames(this, tr("Open File"), getLastPath(), "MiniZinc Files (*.mzn *.dzn *.fzn *.json *.mzp *.mzc *.mpc);;Other (*)");
+        if (!fileNames.isEmpty()) {
+            setLastPath(QFileInfo(fileNames.last()).absolutePath() + fileDialogSuffix);
+        }
     } else {
         fileNames << path;
     }
