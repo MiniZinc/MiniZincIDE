@@ -16,25 +16,51 @@ apps:
   minizinc:
     command: bin/minizinc
   ide:
-    command: bin/desktop-launch ${SNAP}/bin/MiniZincIDE
+    command: desktop-launch $SNAP/bin/MiniZincIDE
     desktop: share/applications/MiniZincIDE.desktop
     environment:
+      LD_LIBRARY_PATH: $SNAP/opt/qt512/lib:$LD_LIBRARY_PATH
       # Use GTK3 cursor theme, icon theme and open/save file dialogs.
       QT_QPA_PLATFORMTHEME: gtk3
+      QT_PLUGIN_PATH: $SNAP/opt/qt512/plugins/
+      QTDIR: $SNAP/opt/qt512
+      # See https://github.com/ubuntu/snapcraft-desktop-helpers/blob/92150d5b3031160998d47c438383d5cc7decf967/qt/launcher-specific#L60
+      QTWEBENGINEPROCESS_PATH: $SNAP/opt/qt512/libexec/QtWebEngineProcess
 
 parts:
   ide:
-    plugin: qmake
+    plugin: nil # Using the qmake plugin will install qt5-qmake which we don't want/need
     source: .
     source-subdir: MiniZincIDE
-    qt-version: qt5
-    after: [desktop-qt5]
+    after: [desktop-gtk3]
+    build-environment:
+      - QT_BASE_DIR: /opt/qt512
+      - QTDIR: $QT_BASE_DIR
+      - PATH: $QTDIR/bin:$PATH
+      - LD_LIBRARY_PATH: $QTDIR/lib:$LD_LIBRARY_PATH
+      - PKG_CONFIG_PATH: $QTDIR/lib/pkgconfig:$PKG_CONFIG_PATH
     build-packages:
-      - qtwebengine5-dev
+      - build-essential
+      # From https://launchpad.net/~beineri/+archive/ubuntu/opt-qt-5.12.10-bionic
+      - qt512base
+      - qt512webengine
     stage-packages:
-      - libqt5webengine5
-      - libqt5sql5-sqlite
-      - libqt5printsupport5
+      - qt512base
+      - qt512webengine
+      # Needed for the web engine
+      - libavformat57
+      - libdouble-conversion1
+      - libevent-2.1-6
+      - libminizip1
+      - libpulse0
+      - libre2-4
+      - libxtst6
+    override-build: |
+      qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" MiniZincIDE.pro
+      make -j"${SNAPCRAFT_PARALLEL_BUILD_COUNT}"
+      make INSTALL_ROOT="${SNAPCRAFT_PART_INSTALL}" install
+      echo "[Paths]\nPrefix = ../opt/qt512/" > ${SNAPCRAFT_PART_INSTALL}/bin/qt.conf
+      echo "[Paths]\nPrefix = ../" > ${SNAPCRAFT_PART_INSTALL}/opt/qt512/libexec/qt.conf
   minizinc:
     plugin: dump
     source: minizinc/
@@ -67,39 +93,37 @@ parts:
       solvers/*.msc: share/minizinc/solvers/
       misc/MiniZincIDE.desktop: share/applications/
     stage: [bin/, share/]
-  # This part installs the qt5 dependencies and a `desktop-launch` script to initialise
+  # This part installs the gtk dependencies and a `desktop-launch` script to initialise
   # desktop-specific features such as fonts, themes and the XDG environment.
   # 
   # It is copied straight from the snapcraft desktop helpers project. Please periodically
   # check the source for updates and copy the changes.
   #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
   # 
-  desktop-qt5:
+  desktop-gtk3:
     source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
-    source-subdir: qt
+    source-subdir: gtk
     plugin: make
-    make-parameters: ["FLAVOR=qt5"]
+    make-parameters: ["FLAVOR=gtk3"]
     build-packages:
       - build-essential
-      - qtbase5-dev
-      - dpkg-dev
+      - libgtk-3-dev
     stage-packages:
-      - libxkbcommon0
+      - libxkbcommon0  # XKB_CONFIG_ROOT
       - ttf-ubuntu-font-family
       - dmz-cursor-theme
       - light-themes
       - adwaita-icon-theme
       - gnome-themes-standard
       - shared-mime-info
-      - libqt5gui5
+      - libgtk-3-0
       - libgdk-pixbuf2.0-0
-      - libqt5svg5 # for loading icon themes which are svg
-      - try: [appmenu-qt5] # not available on core18
+      - libglib2.0-bin
+      - libgtk-3-bin
+      - unity-gtk3-module
+      - libappindicator3-1
       - locales-all
       - xdg-user-dirs
-      - fcitx-frontend-qt5
-  # Add GTK theme integration
-  qt5-gtk-platform:
-    plugin: nil
-    stage-packages:
-      - qt5-gtk-platformtheme
+      - ibus-gtk3
+      - libibus-1.0-5
+      - fcitx-frontend-gtk3
