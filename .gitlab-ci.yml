@@ -291,7 +291,7 @@ package:docker_ubuntu:
   tags: [docker-cli]
 
 .snap_job: &snap_job
-  stage: package
+  stage: build
   image: minizinc/build-environment:snap
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
@@ -303,9 +303,7 @@ package:docker_ubuntu:
     - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - apt-get update -y
-    - snapcraft login --with $SNAPCRAFT_LOGIN
     - snapcraft
-    - snapcraft upload minizinc*.snap --release edge
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
@@ -313,11 +311,22 @@ package:docker_ubuntu:
   needs: []
   tags: [linux, docker]
 
-package:snap:
+build:snap:
   <<: *snap_job
   only: [tags]
 
-package:snap_manual:
+build:snap_manual:
   <<: *snap_job
   except: [tags]
   when: manual
+
+package:snap:
+  stage: package
+  image: minizinc/build-environment:snap
+  dependencies: ["build:snap"]
+  needs: ["build:snap"]
+  tags: [linux, docker]
+  script:
+    - snapcraft login --with $SNAPCRAFT_LOGIN
+    - snapcraft upload minizinc*.snap --release edge
+  only: [tags]
