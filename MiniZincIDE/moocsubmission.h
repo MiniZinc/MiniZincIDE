@@ -21,10 +21,11 @@ public:
     QString data;
     int timeout;
     QString name;
-    MOOCAssignmentItem(QString id0, QString model0, QString data0, QString timeout0, QString name0)
-        : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0) {}
-    MOOCAssignmentItem(QString id0, QString model0, QString name0)
-        : id(id0), model(model0), timeout(-1), name(name0) {}
+    bool required;
+    MOOCAssignmentItem(QString id0, QString model0, QString data0, QString timeout0, QString name0, bool required0 = false)
+        : id(id0), model(model0), data(data0), timeout(timeout0.toInt()), name(name0), required(required0) {}
+    MOOCAssignmentItem(QString id0, QString model0, QString name0, bool required0 = false)
+        : id(id0), model(model0), timeout(-1), name(name0), required(required0) {}
 };
 
 class MOOCAssignment {

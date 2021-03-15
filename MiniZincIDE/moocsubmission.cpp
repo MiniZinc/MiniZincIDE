@@ -58,14 +58,14 @@ void MOOCAssignment::loadJSON(const QJsonObject& obj, const QFileInfo& fi)
         QFileInfo model_fi(fi.dir(), solO["model"].toString());
         QFileInfo data_fi(fi.dir(), solO["data"].toString());
         MOOCAssignmentItem item(solO["id"].toString(), model_fi.absoluteFilePath(), data_fi.absoluteFilePath(),
-                                timeout, solO["name"].toString());
+                                timeout, solO["name"].toString(), solO["required"].toBool(false));
         problems.append(item);
     }
     QJsonArray modelsArray = obj["modelAssignments"].toArray();
     for (int i=0; i<modelsArray.size(); i++) {
         QJsonObject modelO = modelsArray[i].toObject();
         QFileInfo model_fi(fi.dir(), modelO["model"].toString());
-        MOOCAssignmentItem item(modelO["id"].toString(), model_fi.absoluteFilePath(), modelO["name"].toString());
+        MOOCAssignmentItem item(modelO["id"].toString(), model_fi.absoluteFilePath(), modelO["name"].toString(), modelO["required"].toBool(false));
         models.append(item);
     }
 }
@@ -113,12 +113,14 @@ MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
         const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
+        cb->setEnabled(!item.required);
         modelLayout->addWidget(cb);
     }
     for (int i=0; i<project.problems.size(); i++) {
         const MOOCAssignmentItem& item = project.problems.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
         cb->setChecked(true);
+        cb->setEnabled(!item.required);
         problemLayout->addWidget(cb);
     }
     if (project.models.empty())
