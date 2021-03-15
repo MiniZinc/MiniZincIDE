@@ -1,4 +1,4 @@
-2021-03-12
+2021-03-16
   v2.5.4
 -  Fix possible crash due to incorrect use of WriteFile on Windows.
 -  Ensure Gecode Gist dependencies are present in the Linux bundle and AppImage
@@ -16,6 +16,7 @@
 -  Ensure file dialogs save last path when opening files.
 -  Make the escape key close the find/replace dialog when focussed on any child
    widget.
+-  Allow setting MOOC submission items as mandatory.
 
 2020-24-06
   v2.5.3
