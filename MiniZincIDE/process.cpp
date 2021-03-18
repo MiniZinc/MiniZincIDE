@@ -39,7 +39,7 @@ void Process::start(const QString &program, const QStringList &arguments, const 
     env.insert("PATH", addPath + pathSep + curPath);
     setProcessEnvironment(env);
 #ifdef Q_OS_WIN
-    _putenv_s("PATH", (addPath + pathSep + curPath).toStdString().c_str());
+    _wputenv_s(L"PATH", (addPath + pathSep + curPath).toStdWString().c_str());
     if (IsWindows8OrGreater()) {
         jobObject = CreateJobObject(nullptr, nullptr);
         connect(this, SIGNAL(started()), this, SLOT(attachJob()));
@@ -54,7 +54,7 @@ void Process::start(const QString &program, const QStringList &arguments, const 
 #endif
     QProcess::start(program,arguments, QIODevice::Unbuffered | QIODevice::ReadWrite);
 #ifdef Q_OS_WIN
-    _putenv_s("PATH", curPath.toStdString().c_str());
+    _wputenv_s(L"PATH", curPath.toStdWString().c_str());
 #else
     setenv("PATH", curPath.toStdString().c_str(), 1);
 #endif
