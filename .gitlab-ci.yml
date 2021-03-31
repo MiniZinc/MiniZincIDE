@@ -310,11 +310,11 @@ package:docker_ubuntu:
 
 package:snap:
   <<: *snap_job
-  only: [tags, develop]
+  only: [tags, master, develop]
 
 package:snap_manual:
   <<: *snap_job
-  except: [tags, develop]
+  except: [tags, master, develop]
   when: manual
 
 .snap_publish: &snap_publish
