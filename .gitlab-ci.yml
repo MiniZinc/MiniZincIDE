@@ -1,6 +1,7 @@
 stages:
   - build
   - package
+  - publish
 
 default:
   interruptible: true
@@ -121,7 +122,6 @@ package:linux:
   artifacts:
     name: "minizinc_bundle_linux_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE*.tgz, MiniZincIDE*.sha256]
-  dependencies: ["build:linux"]
   needs: ["build:linux"]
   tags: [linux, docker]
 
@@ -164,7 +164,6 @@ package:osx:
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE.app]
-  dependencies: ["build:osx"]
   needs: ["build:osx"]
   tags: [osx, qt]
 
@@ -199,7 +198,6 @@ package:win64:
   artifacts:
     name: "minizinc_bundle_windows_%CI_PIPELINE_ID%"
     paths: [MiniZincIDE*.exe, MiniZincIDE*.sha256]
-  dependencies: ["build:win64"]
   needs: ["build:win64"]
   tags: [win64]
 
@@ -249,7 +247,6 @@ package:appimage:
   artifacts:
     name: "minizinc_appimage_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE*.AppImage, MiniZincIDE*.sha256]
-  dependencies: ["build:linux"]
   needs: ["build:linux"]
   tags: [linux, docker]
 
@@ -267,7 +264,7 @@ package:docker_alpine:
     - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
-  dependencies: []
+  needs: []
   only: [tags, master, develop]
   tags: [docker-cli]
 
@@ -286,12 +283,13 @@ package:docker_ubuntu:
     - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
-  dependencies: []
+  needs: []
   only: [tags, master, develop]
   tags: [docker-cli]
 
+
 .snap_job: &snap_job
-  stage: build
+  stage: package
   image: minizinc/build-environment:snap
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
@@ -307,26 +305,25 @@ package:docker_ubuntu:
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
-  dependencies: []
-  needs: []
+  needs: ["build:linux"]
   tags: [linux, docker]
 
-build:snap:
+package:snap:
   <<: *snap_job
-  only: [tags]
+  only: [tags, develop]
 
-build:snap_manual:
+package:snap_manual:
   <<: *snap_job
-  except: [tags]
+  except: [tags, develop]
   when: manual
 
-package:snap:
-  stage: package
+publish:snap:
+  stage: publish
   image: minizinc/build-environment:snap
-  dependencies: ["build:snap"]
-  needs: ["build:snap"]
   tags: [linux, docker]
   script:
     - snapcraft login --with $SNAPCRAFT_LOGIN
     - snapcraft upload minizinc*.snap --release edge
-  only: [tags]
+  only: [tags, develop]
+  needs: ["package:snap"]
+  when: manual

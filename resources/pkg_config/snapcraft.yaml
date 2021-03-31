@@ -16,51 +16,37 @@ apps:
   minizinc:
     command: bin/minizinc
   ide:
-    command: desktop-launch $SNAP/bin/MiniZincIDE
+    command: bin/desktop-launch $SNAP/MiniZincIDE.sh
     desktop: share/applications/MiniZincIDE.desktop
     environment:
-      LD_LIBRARY_PATH: $SNAP/opt/qt512/lib:$LD_LIBRARY_PATH
-      # Use GTK3 cursor theme, icon theme and open/save file dialogs.
-      QT_QPA_PLATFORMTHEME: gtk3
-      QT_PLUGIN_PATH: $SNAP/opt/qt512/plugins/
-      QTDIR: $SNAP/opt/qt512
-      # See https://github.com/ubuntu/snapcraft-desktop-helpers/blob/92150d5b3031160998d47c438383d5cc7decf967/qt/launcher-specific#L60
-      QTWEBENGINEPROCESS_PATH: $SNAP/opt/qt512/libexec/QtWebEngineProcess
-
+      FONTCONFIG_PATH: $SNAP/etc/fonts
+      FONTCONFIG_FILE: $SNAP/etc/fonts/fonts.conf
 parts:
   ide:
-    plugin: nil # Using the qmake plugin will install qt5-qmake which we don't want/need
-    source: .
-    source-subdir: MiniZincIDE
-    after: [desktop-gtk3]
-    build-environment:
-      - QT_BASE_DIR: /opt/qt512
-      - QTDIR: $QT_BASE_DIR
-      - PATH: $QTDIR/bin:$PATH
-      - LD_LIBRARY_PATH: $QTDIR/lib:$LD_LIBRARY_PATH
-      - PKG_CONFIG_PATH: $QTDIR/lib/pkgconfig:$PKG_CONFIG_PATH
-    build-packages:
-      - build-essential
-      # From https://launchpad.net/~beineri/+archive/ubuntu/opt-qt-5.12.10-bionic
-      - qt512base
-      - qt512webengine
+    plugin: dump
+    source: ide/
+    organize:
+      usr: /
+    stage:
+      - bin/
+      - lib/
+      - lib_fallback/
+      - libexec/
+      - plugins/
+      - resources/
+      - translations/
+  deps:
+    plugin: nil
     stage-packages:
-      - qt512base
-      - qt512webengine
-      # Needed for the web engine
-      - libavformat57
-      - libdouble-conversion1
-      - libevent-2.1-6
-      - libminizip1
-      - libpulse0
-      - libre2-4
-      - libxtst6
-    override-build: |
-      qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" MiniZincIDE.pro
-      make -j"${SNAPCRAFT_PARALLEL_BUILD_COUNT}"
-      make INSTALL_ROOT="${SNAPCRAFT_PART_INSTALL}" install
-      echo "[Paths]\nPrefix = ../opt/qt512/" > ${SNAPCRAFT_PART_INSTALL}/bin/qt.conf
-      echo "[Paths]\nPrefix = ../" > ${SNAPCRAFT_PART_INSTALL}/opt/qt512/libexec/qt.conf
+      # Additional IDE dependencies which linuxdeployqt does not include.
+      # Cannot put in the ide part because it reorganizes the directory structure.
+      - libasound2
+      - libegl1
+      - libfontconfig1
+      - libfreetype6
+      - libgl1
+      - libx11-6
+      - libxcb1
   minizinc:
     plugin: dump
     source: minizinc/
@@ -92,38 +78,20 @@ parts:
       scripts/run-fzn-gecode-gist: bin/
       solvers/*.msc: share/minizinc/solvers/
       misc/MiniZincIDE.desktop: share/applications/
-    stage: [bin/, share/]
-  # This part installs the gtk dependencies and a `desktop-launch` script to initialise
-  # desktop-specific features such as fonts, themes and the XDG environment.
-  # 
-  # It is copied straight from the snapcraft desktop helpers project. Please periodically
-  # check the source for updates and copy the changes.
+      scripts/MiniZincIDE.sh: /
+    stage: [bin/, share/, MiniZincIDE.sh]
+  # This part installs a `desktop-launch` script to initialise desktop-specific
+  # features such as fonts, themes and the XDG environment.
+  #
+  # It is copied straight from the snapcraft desktop helpers project.
+  # Please periodically check the source for updates and copy the changes.
   #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
-  # 
-  desktop-gtk3:
+  #
+  desktop-glib-only:
     source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
-    source-subdir: gtk
+    source-subdir: glib-only
     plugin: make
-    make-parameters: ["FLAVOR=gtk3"]
     build-packages:
-      - build-essential
-      - libgtk-3-dev
+      - libglib2.0-dev
     stage-packages:
-      - libxkbcommon0  # XKB_CONFIG_ROOT
-      - ttf-ubuntu-font-family
-      - dmz-cursor-theme
-      - light-themes
-      - adwaita-icon-theme
-      - gnome-themes-standard
-      - shared-mime-info
-      - libgtk-3-0
-      - libgdk-pixbuf2.0-0
       - libglib2.0-bin
-      - libgtk-3-bin
-      - unity-gtk3-module
-      - libappindicator3-1
-      - locales-all
-      - xdg-user-dirs
-      - ibus-gtk3
-      - libibus-1.0-5
-      - fcitx-frontend-gtk3
