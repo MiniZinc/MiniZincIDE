@@ -317,13 +317,24 @@ package:snap_manual:
   except: [tags, develop]
   when: manual
 
-publish:snap:
+.snap_publish: &snap_publish
   stage: publish
   image: minizinc/build-environment:snap
   tags: [linux, docker]
   script:
     - snapcraft login --with $SNAPCRAFT_LOGIN
-    - snapcraft upload minizinc*.snap --release edge
-  only: [tags, develop]
+    - snapcraft upload minizinc*.snap --release $SNAPCRAFT_CHANNEL
   needs: ["package:snap"]
-  when: manual
+
+publish:snap_edge:
+  variables:
+    SNAPCRAFT_CHANNEL: edge
+  <<: *snap_publish
+  only: [develop]
+
+publish:snap_stable:
+  variables:
+    SNAPCRAFT_CHANNEL: stable
+  <<: *snap_publish
+  only: [tags]
+  when: manual # Don't publish to stable channel automatically
