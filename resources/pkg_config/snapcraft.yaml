@@ -47,6 +47,18 @@ parts:
       - libgl1
       - libx11-6
       - libxcb1
+    stage:
+    # Drivers need no-patchelf so can't include them here 
+    - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+  deps-mesa:
+    plugin: nil
+    stage-packages:
+      - libgl1-mesa-dri
+    build-attributes:
+      - no-patchelf
+    stage:
+      # Include no-patchelf drivers at this point
+      - usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
   minizinc:
     plugin: dump
     source: minizinc/
