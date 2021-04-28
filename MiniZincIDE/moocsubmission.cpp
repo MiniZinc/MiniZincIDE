@@ -46,6 +46,7 @@ void MOOCAssignment::loadJSON(const QJsonObject& obj, const QFileInfo& fi)
     moocName = obj["moocName"].toString();
     moocPasswordString = obj["moocPasswordString"].toString();
     submissionURL = obj["submissionURL"].toString();
+    submissionTerms = obj["submissionTerms"].toString();
     QJsonArray sols = obj["solutionAssignments"].toArray();
     for (int i=0; i<sols.size(); i++) {
         QJsonObject solO = sols[i].toObject();
@@ -109,6 +110,16 @@ MOOCSubmission::MOOCSubmission(MainWindow* mw0, MOOCAssignment& cp) :
         ui->nonSubmissionGroup->setVisible(true);
     }
 
+    if (project.submissionTerms.isEmpty()) {
+        ui->submissionTerms_groupBox->setVisible(false);
+        ui->runButton->setEnabled(true);
+    } else {
+        ui->submissionTerms_textBrowser->setText(cp.submissionTerms);
+        ui->submissionTerms_checkBox->setChecked(false);
+        ui->runButton->setEnabled(false);
+        ui->submissionTerms_groupBox->setVisible(true);
+    }
+
     for (int i=0; i<project.models.size(); i++) {
         const MOOCAssignmentItem& item = project.models.at(i);
         QCheckBox* cb = new QCheckBox(item.name);
@@ -161,6 +172,7 @@ void MOOCSubmission::disableUI()
     ui->loginGroup->setEnabled(false);
     ui->modelBox->setEnabled(false);
     ui->problemBox->setEnabled(false);
+    ui->submissionTerms_checkBox->setEnabled(false);
     ui->runButton->setText("Abort");
 }
 
@@ -169,6 +181,7 @@ void MOOCSubmission::enableUI()
     ui->loginGroup->setEnabled(true);
     ui->modelBox->setEnabled(true);
     ui->problemBox->setEnabled(true);
+    ui->submissionTerms_checkBox->setEnabled(true);
     ui->runButton->setText("Run and submit");
 }
 
@@ -426,4 +439,9 @@ void MOOCSubmission::on_storePassword_toggled(bool checked)
         settings.setValue("storeLogin", false);
         settings.endGroup();
     }
+}
+
+void MOOCSubmission::on_submissionTerms_checkBox_stateChanged(int arg1)
+{
+    ui->runButton->setEnabled(arg1);
 }

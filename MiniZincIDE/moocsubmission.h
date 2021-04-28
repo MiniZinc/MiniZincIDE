@@ -35,6 +35,7 @@ public:
     QString moocName;
     QString moocPasswordString;
     QString submissionURL;
+    QString submissionTerms;
     QList<MOOCAssignmentItem> problems;
     QList<MOOCAssignmentItem> models;
 
@@ -88,6 +89,8 @@ private slots:
     void rcvErrorResponse(QNetworkReply::NetworkError);
 
     void on_storePassword_toggled(bool checked);
+    void on_submissionTerms_checkBox_stateChanged(int arg1);
+
 private:
     Ui::MOOCSubmission *ui;
 };

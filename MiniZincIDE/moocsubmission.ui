@@ -199,6 +199,25 @@
     </spacer>
    </item>
    <item>
+    <widget class="QGroupBox" name="submissionTerms_groupBox">
+     <property name="title">
+      <string>Terms of submission</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_7">
+      <item>
+       <widget class="QTextBrowser" name="submissionTerms_textBrowser"/>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="submissionTerms_checkBox">
+        <property name="text">
+         <string>I have read and accept the above terms and conditions</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="runButton">
      <property name="text">
       <string>Run and submit</string>
