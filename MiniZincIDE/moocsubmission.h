@@ -36,6 +36,7 @@ public:
     QString moocPasswordString;
     QString submissionURL;
     QString submissionTerms;
+    bool sendMeta;
     QList<MOOCAssignmentItem> problems;
     QList<MOOCAssignmentItem> models;
 

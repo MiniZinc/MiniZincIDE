@@ -47,6 +47,7 @@ void MOOCAssignment::loadJSON(const QJsonObject& obj, const QFileInfo& fi)
     moocPasswordString = obj["moocPasswordString"].toString();
     submissionURL = obj["submissionURL"].toString();
     submissionTerms = obj["submissionTerms"].toString();
+    sendMeta = obj["sendMeta"].toBool(false);
     QJsonArray sols = obj["solutionAssignments"].toArray();
     for (int i=0; i<sols.size(); i++) {
         QJsonObject solO = sols[i].toObject();
@@ -296,6 +297,19 @@ void MOOCSubmission::submitToMOOC()
     _submission["secret"] = ui->password->text();
     _submission["submitterEmail"] = ui->login->text();
     _submission["parts"] = _parts;
+    if (project.sendMeta) {
+        QJsonObject metadata;
+        metadata["version"] = MznDriver::get().version().toString();
+        metadata["versionString"] = MznDriver::get().minizincVersionString();
+        metadata["solver"] = mw->getCurrentSolver()->id + " " + mw->getCurrentSolver()->version;
+        metadata["arch"] = QSysInfo::currentCpuArchitecture();
+        metadata["kernelType"] = QSysInfo::kernelType();
+        metadata["kernelVersion"] = QSysInfo::kernelVersion();
+        metadata["productType"] = QSysInfo::productType();
+        metadata["productVersion"] = QSysInfo::productVersion();
+        metadata["prettyProductName"] = QSysInfo::prettyProductName();
+        _submission["metadata"] = metadata;
+    }
 
     QJsonDocument doc(_submission);
 
