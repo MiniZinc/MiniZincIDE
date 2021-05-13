@@ -1093,6 +1093,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     }
     auto* output = new QString;
     auto* ts = new QTextStream(output);
+    auto* cancelled = new bool(false);
     connect(this, &MainWindow::terminating, compileProcess, [=] () {
         compileProcess->disconnect();
         compileProcess->stop();
@@ -1100,6 +1101,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     });
     connect(ui->actionStop, &QAction::triggered, compileProcess, [=] () {
         ui->actionStop->setDisabled(true);
+        *cancelled = true;
         compileProcess->stop();
         addOutput("<div class='mznnotice'>Stopped.</div>");
     });
@@ -1108,16 +1110,19 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     });
     connect(compileProcess, &MznProcess::outputStdError, this, &MainWindow::outputStdErr);
     connect(compileProcess, &MznProcess::success, [=] () {
-        if (profile) {
-            profileCompiledFzn(*output);
-        } else {
-            openCompiledFzn(fzn);
+        if (!(*cancelled)) {
+            if (profile) {
+                profileCompiledFzn(*output);
+            } else {
+                openCompiledFzn(fzn);
+            }
         }
         procFinished(0, compileProcess->elapsedTime());
     });
     connect(compileProcess, &MznProcess::finished, [=] () {
         delete ts;
         delete output;
+        delete cancelled;
         compileProcess->deleteLater();
     });
     connect(compileProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
