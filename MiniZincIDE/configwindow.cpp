@@ -143,7 +143,18 @@ bool ConfigWindow::addConfig(const QString &fileName)
             }
         }
         populateComboBox();
-        setCurrentIndex(configs.length() - 1);
+
+        if (ui->sync_checkBox->isChecked()) {
+            // Ensure that newly loaded config overrides synced options
+            populating = true; // Make sure this doesn't mark the config as modified
+            ui->sync_checkBox->setChecked(false);
+            populating = false;
+            setCurrentIndex(configs.length() - 1);
+            populating = true; // Make sure this doesn't mark the config as modified
+            ui->sync_checkBox->setChecked(true);
+            populating = false;
+        }
+
         return true;
     } catch (Exception& e) {
         QMessageBox::warning(this, "Parameter configuration error", e.message(), QMessageBox::Ok);
@@ -344,6 +355,18 @@ void ConfigWindow::updateGUI(bool overrideSync)
 
     ui->reset_pushButton->setEnabled(sc->isBuiltin);
 
+    ui->intermediateSolutions_checkBox->setEnabled(sc->supports("-a") || sc->supports("-i"));
+
+    ui->numSolutions_checkBox->setEnabled(sc->supports("-a"));
+    ui->numSolutions_spinBox->setEnabled(sc->supports("-n"));
+
+    ui->numOptimal_checkBox->setEnabled(sc->supports("-a-o"));
+    ui->numOptimal_spinBox->setEnabled(sc->supports("-n-o"));
+
+    ui->verboseSolving_checkBox->setEnabled(sc->supports("-v"));
+
+    ui->solvingStats_checkBox->setEnabled(sc->supports("-s"));
+
     if (overrideSync || !ui->sync_checkBox->isChecked()) {
         ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
         ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
@@ -354,49 +377,53 @@ void ConfigWindow::updateGUI(bool overrideSync)
             ui->userDefinedBehavior_radioButton->setChecked(true);
         }
 
-        ui->intermediateSolutions_checkBox->setChecked(sc->printIntermediate);
+        if (ui->intermediateSolutions_checkBox->isEnabled()) {
+            ui->intermediateSolutions_checkBox->setChecked(sc->printIntermediate);
+        }
 
-        ui->numSolutions_spinBox->setValue(sc->numSolutions);
-        ui->numSolutions_checkBox->setChecked(sc->numSolutions != 0);
+        if (ui->numSolutions_spinBox->isEnabled()) {
+            ui->numSolutions_spinBox->setValue(sc->numSolutions);
+        }
 
-        ui->numOptimal_spinBox->setValue(sc->numOptimal);
-        ui->numOptimal_checkBox->setChecked(sc->numOptimal != 0);
+        if (ui->numSolutions_checkBox->isEnabled()) {
+            ui->numSolutions_checkBox->setChecked(sc->numSolutions != 0);
+        }
+
+        if (ui->numOptimal_spinBox->isEnabled()) {
+            ui->numOptimal_spinBox->setValue(sc->numOptimal);
+        }
+
+        if (ui->numOptimal_checkBox->isEnabled()) {
+            ui->numOptimal_checkBox->setChecked(sc->numOptimal != 0);
+        }
 
         ui->verboseCompilation_checkBox->setChecked(sc->verboseCompilation);
-        ui->verboseSolving_checkBox->setChecked(sc->verboseSolving);
 
+        if (ui->verboseSolving_checkBox->isEnabled()) {
+            ui->verboseSolving_checkBox->setChecked(sc->verboseSolving);
+        }
         ui->compilationStats_checkBox->setChecked(sc->compilationStats);
-        ui->solvingStats_checkBox->setChecked(sc->solvingStats);
+
+        if (ui->solvingStats_checkBox->isEnabled()) {
+            ui->solvingStats_checkBox->setChecked(sc->solvingStats);
+        }
+
         ui->timingInfo_checkBox->setChecked(sc->outputTiming);
     }
-
-    ui->intermediateSolutions_checkBox->setEnabled(
-                sc->solverDefinition.stdFlags.contains("-a") ||
-                sc->solverDefinition.stdFlags.contains("-i"));
-
-    ui->numSolutions_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-a"));
-    ui->numSolutions_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-n"));
-
-    ui->numOptimal_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-a-o"));
-    ui->numOptimal_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-n-o"));
-
-    ui->verboseSolving_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-v"));
-
-    ui->solvingStats_checkBox->setEnabled(sc->solverDefinition.stdFlags.contains("-s"));
 
     ui->optimizationLevel_comboBox->setCurrentIndex(sc->optimizationLevel);
     ui->additionalData_plainTextEdit->setPlainText(sc->additionalData.join("\n"));
 
-    ui->numThreads_spinBox->setEnabled(sc->solverDefinition.stdFlags.contains("-p"));
+    ui->numThreads_spinBox->setEnabled(sc->supports("-p"));
     ui->numThreads_spinBox->setValue(sc->numThreads);
 
-    bool enableRandomSeed = sc->solverDefinition.stdFlags.contains("-r");
+    bool enableRandomSeed = sc->supports("-r");
     ui->randomSeed_lineEdit->setText(sc->randomSeed.toString());
     ui->randomSeed_checkBox->setChecked(!sc->randomSeed.isNull());
     ui->randomSeed_checkBox->setEnabled(enableRandomSeed);
     ui->randomSeed_lineEdit->setEnabled(enableRandomSeed && !sc->randomSeed.isNull());
 
-    bool enableFreeSearch = sc->solverDefinition.stdFlags.contains("-f");
+    bool enableFreeSearch = sc->supports("-f");
     ui->freeSearch_checkBox->setEnabled(enableFreeSearch);
     ui->freeSearch_checkBox->setChecked(sc->freeSearch);
 
