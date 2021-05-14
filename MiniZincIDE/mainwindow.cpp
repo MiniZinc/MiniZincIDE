@@ -1942,11 +1942,8 @@ void MainWindow::on_actionNew_project_triggered()
 
 bool MainWindow::isEmptyProject(void)
 {
-    if (ui->tabWidget->count() == 0) {
-        return !getProject().hasProjectFile();
-    }
-    if (getProject().isModified()) {
-        return true;
+    if (getProject().hasProjectFile() || !getProject().files().empty()) {
+        return false;
     }
     for (int i = 0; i < ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
