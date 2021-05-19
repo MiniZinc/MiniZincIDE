@@ -62,6 +62,18 @@ public:
     void removeConfig(int i);
 
     ///
+    /// \brief Stash modified configs so they can be re-added later
+    /// Stash modified configs and record the currently selected one
+    ///
+    void stashModifiedConfigs();
+
+    ///
+    /// \brief Unstash previously stashed modified configs
+    /// Unstash modified configs and select the config that was active during stashing
+    ///
+    void unstashModifiedConfigs();
+
+    ///
     /// \brief Saves the solver configuration with the given index
     /// \param index The index of the solver configuration to save
     /// \return The location of the saved file or empty if cancelled
@@ -129,9 +141,26 @@ private slots:
     void on_reset_pushButton_clicked();
 
 private:
+    class StashItem {
+    public:
+        StashItem() {}
+        StashItem(SolverConfiguration* sc);
+        SolverConfiguration* consume();
+    private:
+        QJsonObject json;
+        bool isBuiltIn;
+        QString paramFile;
+    };
+
     Ui::ConfigWindow *ui;
 
     QList<SolverConfiguration*> configs;
+
+    QVector<StashItem> stash;
+    QString stashSelectedBuiltinSolverId;
+    QString stashSelectedBuiltinSolverVersion;
+    QString stashSelectedParamFile;
+    int stashSelectedModifiedConfig = -1;
 
     int lastIndex = -1;
     bool initialized = false;

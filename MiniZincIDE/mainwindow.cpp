@@ -1796,12 +1796,14 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     bool checkUpdates = settings.value("checkforupdates21",false).toBool();
     settings.endGroup();
 
+    ui->config_window->stashModifiedConfigs();
     SolverDialog sd(addNew);
     sd.exec();
 
     checkDriver();
 
     ui->config_window->loadConfigs();
+    ui->config_window->unstashModifiedConfigs();
 
     settings.beginGroup("ide");
     if (!checkUpdates && settings.value("checkforupdates21",false).toBool()) {
@@ -2522,10 +2524,9 @@ void MainWindow::on_configWindow_dockWidget_visibilityChanged(bool visible)
 void MainWindow::on_config_window_itemsChanged(const QStringList& items)
 {
     disconnect(solverConfCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), ui->config_window, &ConfigWindow::setCurrentIndex);
-    int oldIndex = solverConfCombo->currentIndex();
     solverConfCombo->clear();
     solverConfCombo->addItems(items);
-    solverConfCombo->setCurrentIndex(oldIndex);
+    solverConfCombo->setCurrentIndex(ui->config_window->currentIndex());
     connect(solverConfCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), ui->config_window, &ConfigWindow::setCurrentIndex);
 
     ui->menuSolver_configurations->clear();

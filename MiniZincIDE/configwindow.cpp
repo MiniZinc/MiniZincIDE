@@ -84,14 +84,6 @@ void ConfigWindow::init()
 {
     loadConfigs();
     initialized = true;
-    int i = 0;
-    for (auto config : configs) {
-        if (config->solverDefinition.isDefaultSolver) {
-            setCurrentIndex(i);
-            break;
-        }
-        i++;
-    }
 }
 
 void ConfigWindow::loadConfigs(void)
@@ -200,6 +192,10 @@ int ConfigWindow::findBuiltinConfig(const QString &id, const QString &version)
 
 int ConfigWindow::findConfigFile(const QString &file)
 {
+    if (file.isEmpty()) {
+        // Unsaved configuration
+        return -1;
+    }
     int i = 0;
     for (auto sc : configs) {
         if (sc->paramFile == file) {
@@ -208,6 +204,53 @@ int ConfigWindow::findConfigFile(const QString &file)
         i++;
     }
     return -1;
+}
+
+void ConfigWindow::stashModifiedConfigs()
+{
+    auto* selected = currentSolverConfig();
+    for (auto* sc : configs) {
+        if (sc->modified) {
+            if (sc == selected) {
+                stashSelectedModifiedConfig = stash.length();
+            }
+            stash.append(StashItem(sc));
+        }
+    }
+    if (selected->isBuiltin) {
+        stashSelectedBuiltinSolverId = selected->solverDefinition.id;
+        stashSelectedBuiltinSolverVersion = selected->solverDefinition.version;
+    }
+    stashSelectedParamFile = selected->paramFile;
+}
+
+void ConfigWindow::unstashModifiedConfigs()
+{
+    lastIndex = -1;
+
+    QList<SolverConfiguration*> merge;
+    for (auto& item : stash) {
+        merge.append(item.consume());
+    }
+    mergeConfigs(merge);
+
+    int i = -1;
+    if (stashSelectedModifiedConfig != -1) {
+        i = configs.indexOf(merge[stashSelectedModifiedConfig]);
+    } else if (!stashSelectedParamFile.isEmpty()) {
+        i = findConfigFile(stashSelectedParamFile);
+    } else if (!stashSelectedBuiltinSolverId.isEmpty()) {
+        i = findBuiltinConfig(stashSelectedBuiltinSolverId, stashSelectedBuiltinSolverVersion);
+    }
+    if (i != -1) {
+        setCurrentIndex(i);
+    }
+
+    stash.clear();
+    stashSelectedBuiltinSolverId = "";
+    stashSelectedBuiltinSolverVersion = "";
+    stashSelectedParamFile = "";
+    stashSelectedModifiedConfig = -1;
 }
 
 QString ConfigWindow::saveConfig(int index)
@@ -358,18 +401,14 @@ void ConfigWindow::updateGUI(bool overrideSync)
     ui->intermediateSolutions_checkBox->setEnabled(sc->supports("-a") || sc->supports("-i"));
 
     ui->numSolutions_checkBox->setEnabled(sc->supports("-a"));
-    ui->numSolutions_spinBox->setEnabled(sc->supports("-n"));
-
     ui->numOptimal_checkBox->setEnabled(sc->supports("-a-o"));
-    ui->numOptimal_spinBox->setEnabled(sc->supports("-n-o"));
-
     ui->verboseSolving_checkBox->setEnabled(sc->supports("-v"));
-
     ui->solvingStats_checkBox->setEnabled(sc->supports("-s"));
 
     if (overrideSync || !ui->sync_checkBox->isChecked()) {
-        ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
         ui->timeLimit_checkBox->setChecked(sc->timeLimit != 0);
+        ui->timeLimit_doubleSpinBox->setValue(sc->timeLimit / 1000.0);
+        ui->timeLimit_doubleSpinBox->setEnabled(ui->timeLimit_checkBox->isChecked());
 
         if (sc->printIntermediate && sc->numSolutions == 1) {
             ui->defaultBehavior_radioButton->setChecked(true);
@@ -377,26 +416,11 @@ void ConfigWindow::updateGUI(bool overrideSync)
             ui->userDefinedBehavior_radioButton->setChecked(true);
         }
 
-        if (ui->intermediateSolutions_checkBox->isEnabled()) {
-            ui->intermediateSolutions_checkBox->setChecked(sc->printIntermediate);
-        }
-
-        if (ui->numSolutions_spinBox->isEnabled()) {
-            ui->numSolutions_spinBox->setValue(sc->numSolutions);
-        }
-
-        if (ui->numSolutions_checkBox->isEnabled()) {
-            ui->numSolutions_checkBox->setChecked(sc->numSolutions != 0);
-        }
-
-        if (ui->numOptimal_spinBox->isEnabled()) {
-            ui->numOptimal_spinBox->setValue(sc->numOptimal);
-        }
-
-        if (ui->numOptimal_checkBox->isEnabled()) {
-            ui->numOptimal_checkBox->setChecked(sc->numOptimal != 0);
-        }
-
+        ui->intermediateSolutions_checkBox->setChecked(sc->printIntermediate);
+        ui->numSolutions_spinBox->setValue(sc->numSolutions);
+        ui->numSolutions_checkBox->setChecked(sc->numSolutions != 0);
+        ui->numOptimal_spinBox->setValue(sc->numOptimal);
+        ui->numOptimal_checkBox->setChecked(sc->numOptimal != 0);
         ui->verboseCompilation_checkBox->setChecked(sc->verboseCompilation);
 
         if (ui->verboseSolving_checkBox->isEnabled()) {
@@ -410,6 +434,9 @@ void ConfigWindow::updateGUI(bool overrideSync)
 
         ui->timingInfo_checkBox->setChecked(sc->outputTiming);
     }
+
+    ui->numSolutions_spinBox->setEnabled(ui->numSolutions_checkBox->isEnabled() && ui->numSolutions_checkBox->isChecked());
+    ui->numOptimal_spinBox->setEnabled(ui->numOptimal_checkBox->isEnabled() && ui->numOptimal_checkBox->isChecked());
 
     ui->optimizationLevel_comboBox->setCurrentIndex(sc->optimizationLevel);
     ui->additionalData_plainTextEdit->setPlainText(sc->additionalData.join("\n"));
@@ -710,7 +737,19 @@ void ConfigWindow::populateComboBox()
     initialized = false;
     ui->config_comboBox->clear();
     ui->config_comboBox->addItems(items);
-    setCurrentIndex(oldIndex);
+    if (oldIndex > 0 && oldIndex < configs.length()) {
+        setCurrentIndex(oldIndex);
+    } else {
+        // Index no longer valid, just go back to default solver
+        int i = 0;
+        for (auto config : configs) {
+            if (config->solverDefinition.isDefaultSolver) {
+                setCurrentIndex(i);
+                break;
+            }
+            i++;
+        }
+    }
     emit itemsChanged(items);
     initialized = oldInitialized;
 }
@@ -929,4 +968,17 @@ void ConfigWindow::on_reset_pushButton_clicked()
     configs.replace(i, newSc);
     updateGUI(true);
     populateComboBox();
+}
+
+ConfigWindow::StashItem::StashItem(SolverConfiguration* sc) :
+    json(sc->toJSONObject()),
+    isBuiltIn(sc->isBuiltin),
+    paramFile(sc->paramFile)
+{}
+
+SolverConfiguration* ConfigWindow::StashItem::consume() {
+    auto* sc = new (SolverConfiguration) (SolverConfiguration::loadJSON(QJsonDocument(json)));
+    sc->isBuiltin = isBuiltIn;
+    sc->paramFile = paramFile;
+    return sc;
 }
