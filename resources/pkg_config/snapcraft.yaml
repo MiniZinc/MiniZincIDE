@@ -48,8 +48,8 @@ parts:
       - libx11-6
       - libxcb1
     stage:
-    # Drivers need no-patchelf so can't include them here 
-    - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+      # Drivers need no-patchelf so can't include them here
+      - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
   deps-mesa:
     plugin: nil
     stage-packages:
@@ -69,7 +69,7 @@ parts:
     organize:
       gecode/bin/fzn-gecode: bin/
       gecode_gist/bin/fzn-gecode: bin/fzn-gecode-gist
-      gecode/share/gecode/mznlib: share/minizinc/gecode
+      gecode/share/minizinc/*: share/minizinc/
       chuffed/bin/fzn-chuffed: bin/
       chuffed/share/minizinc/*: share/minizinc/
     stage: [bin/, share/minizinc/]

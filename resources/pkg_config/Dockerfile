@@ -6,10 +6,7 @@ COPY minizinc/bin/* /usr/local/bin/
 COPY minizinc/share/minizinc /usr/local/share/minizinc
 
 # Install vendor solvers
-COPY vendor/gecode/bin/fzn-gecode /usr/local/bin/
-COPY vendor/gecode/share/gecode/mznlib /usr/local/share/minizinc/gecode
-COPY resources/solvers/gecode.msc /usr/local/share/minizinc/solvers/
-
+COPY vendor/gecode /usr/local
 COPY vendor/chuffed /usr/local
 
 # Strip all binaries

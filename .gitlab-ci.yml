@@ -99,9 +99,9 @@ package:linux:
     ### Package vendor solvers
     - mv vendor/gecode/bin/fzn-gecode $PACKAGE/bin/
     - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/bin/fzn-gecode-gist
-    - mv vendor/gecode/share/gecode/mznlib $PACKAGE/share/minizinc/gecode
+    - cp -r vendor/gecode/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
-    - mv vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/bin/
     - mv globalizer/share/globalizer/mznlib $PACKAGE/share/minizinc/globalizer
@@ -142,11 +142,11 @@ package:osx:
     - mkdir -p $DIR/bin/
     - mv vendor/gecode/bin/fzn-gecode $DIR/bin/
     - mv vendor/gecode_gist/bin/fzn-gecode $DIR/bin/fzn-gecode-gist
-    - mv vendor/gecode/share/gecode/mznlib $MZNDIR/gecode
+    - cp -r vendor/gecode/share/minizinc/* $MZNDIR/
     - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
 
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
-    - mv vendor/chuffed/share/minizinc/* $MZNDIR/
+    - cp -r vendor/chuffed/share/minizinc/* $MZNDIR/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $DIR/bin/
     - mv globalizer/share/globalizer/mznlib $MZNDIR/globalizer
@@ -220,7 +220,7 @@ package:appimage:
     ### Package vendor solvers
     - mv vendor/gecode/bin/fzn-gecode $PACKAGE/usr/bin/
     - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/usr/bin/fzn-gecode-gist
-    - mv vendor/gecode/share/gecode/mznlib $PACKAGE/usr/share/minizinc/gecode
+    - cp -r vendor/gecode/share/minizinc/* $PACKAGE/usr/share/minizinc/
 
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
@@ -286,7 +286,6 @@ package:docker_ubuntu:
   needs: []
   only: [tags, master, develop]
   tags: [docker-cli]
-
 
 .snap_job: &snap_job
   stage: package
