@@ -69,9 +69,11 @@ parts:
     organize:
       gecode/bin/fzn-gecode: bin/
       gecode_gist/bin/fzn-gecode: bin/fzn-gecode-gist
-      gecode/share/minizinc/*: share/minizinc/
+      gecode/share/minizinc/solvers/*: share/minizinc/solvers/
+      gecode/share/minizinc/gecode: share/minizinc/gecode
       chuffed/bin/fzn-chuffed: bin/
-      chuffed/share/minizinc/*: share/minizinc/
+      chuffed/share/minizinc/solvers/*: share/minizinc/solvers/
+      chuffed/share/minizinc/chuffed: share/minizinc/chuffed
     stage: [bin/, share/minizinc/]
   globalizer:
     plugin: dump
