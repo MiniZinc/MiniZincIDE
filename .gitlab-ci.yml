@@ -10,7 +10,7 @@ default:
 
 build:linux:
   stage: build
-  image: minizinc/build-environment:qt
+  image: ghcr.io/minizinc/docker-build-environment:qt
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     GIT_STRATEGY: clone
@@ -81,7 +81,7 @@ build:win64:
 
 package:linux:
   stage: package
-  image: minizinc/build-environment:package
+  image: ghcr.io/minizinc/docker-build-environment:package
   variables:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
@@ -203,7 +203,7 @@ package:win64:
 
 package:appimage:
   stage: package
-  image: minizinc/build-environment:appimage
+  image: ghcr.io/minizinc/docker-build-environment:appimage
   variables:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
@@ -289,7 +289,7 @@ package:docker_ubuntu:
 
 .snap_job: &snap_job
   stage: package
-  image: minizinc/build-environment:snap
+  image: ghcr.io/minizinc/docker-build-environment:snap
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     MZNARCH: "linux"
@@ -318,7 +318,7 @@ package:snap_manual:
 
 .snap_publish: &snap_publish
   stage: publish
-  image: minizinc/build-environment:snap
+  image: ghcr.io/minizinc/docker-build-environment:snap
   tags: [linux, docker]
   script:
     - snapcraft login --with $SNAPCRAFT_LOGIN
