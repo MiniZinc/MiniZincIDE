@@ -203,7 +203,7 @@ package:win64:
 
 package:appimage:
   stage: package
-  image: ghcr.io/minizinc/docker-build-environment:appimage
+  image: ghcr.io/minizinc/docker-build-environment:qt
   variables:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
