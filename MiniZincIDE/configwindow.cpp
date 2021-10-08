@@ -217,11 +217,13 @@ void ConfigWindow::stashModifiedConfigs()
             stash.append(StashItem(sc));
         }
     }
-    if (selected->isBuiltin) {
-        stashSelectedBuiltinSolverId = selected->solverDefinition.id;
-        stashSelectedBuiltinSolverVersion = selected->solverDefinition.version;
+    if (selected != nullptr) {
+        if (selected->isBuiltin) {
+            stashSelectedBuiltinSolverId = selected->solverDefinition.id;
+            stashSelectedBuiltinSolverVersion = selected->solverDefinition.version;
+        }
+        stashSelectedParamFile = selected->paramFile;
     }
-    stashSelectedParamFile = selected->paramFile;
 }
 
 void ConfigWindow::unstashModifiedConfigs()
