@@ -73,7 +73,7 @@ public:
     /// \brief The name of the minizinc executable
     /// \return The executable name, or an empty string if not found
     ///
-    const QString& minizincExecutable(void) const
+    const QStringList& minizincExecutable(void) const
     {
         return _minizincExecutable;
     }
@@ -150,7 +150,7 @@ public:
 private:
     MznDriver() {}
 
-    QString _minizincExecutable;
+    QStringList _minizincExecutable;
     QString _mznDistribPath;
     QString _versionString;
     QString _userSolverConfigDir;

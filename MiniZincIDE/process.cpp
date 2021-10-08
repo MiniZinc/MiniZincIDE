@@ -23,6 +23,10 @@
 #include <VersionHelpers.h>
 #endif
 
+#ifdef Q_OS_MAC
+#include <sys/sysctl.h>
+#endif
+
 #ifdef Q_OS_WIN
 #define pathSep ";"
 #else
@@ -121,10 +125,42 @@ void MznDriver::setLocation(const QString &mznDistribPath)
 {
     clear();
 
-    _minizincExecutable = "minizinc";
     _mznDistribPath = mznDistribPath;
-
     MznProcess p;
+    QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
+
+#ifdef Q_OS_MAC
+    int isTranslated = 0;
+    {
+        size_t size = sizeof(isTranslated);
+        if (sysctlbyname("sysctl.proc_translated", &isTranslated, &size, NULL, 0) == -1) {
+            isTranslated = 0;
+        }
+    }
+
+    if (isTranslated) {
+        _minizincExecutable = QStringList({"arch", "-arch", "arm64", "minizinc"});
+    }
+    for (int i = 0; i <= isTranslated; i++) {
+        if (i == 1) {
+            _minizincExecutable = QStringList({"minizinc"});
+        }
+        try {
+            auto result = p.run({"--version"});
+            _versionString = result.stdOut + result.stdErr;
+            QRegularExpressionMatch path_match = version_regexp.match(_versionString);
+            if (path_match.hasMatch()) {
+                break;
+            }
+        } catch (ProcessError& e) {
+            if (i == isTranslated) {
+                clear();
+                throw;
+            }
+        }
+    }
+#else
+    _minizincExecutable = QStringList({"minizinc"});
     try {
         auto result = p.run({"--version"});
         _versionString = result.stdOut + result.stdErr;
@@ -132,8 +168,8 @@ void MznDriver::setLocation(const QString &mznDistribPath)
         clear();
         throw;
     }
+#endif
 
-    QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
     QRegularExpressionMatch path_match = version_regexp.match(_versionString);
     if (path_match.hasMatch()) {
         _version = QVersionNumber(
@@ -276,7 +312,12 @@ void MznProcess::start(const QStringList& args, const QString& cwd)
 
     Q_ASSERT(p.state() == QProcess::NotRunning);
     ignoreExitStatus = false;
-    p.start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
+    const QStringList& exec = MznDriver::get().minizincExecutable();
+    QStringList execArgs = args;
+    for (unsigned int i = exec.size() - 1; i > 0; i--) {
+        execArgs.push_front(exec[i]);
+    }
+    p.start(exec[0], execArgs, MznDriver::get().mznDistribPath());
 }
 
 void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd)
@@ -315,7 +356,12 @@ MznProcess::RunResult MznProcess::run(const QStringList& args, const QString& cw
 {
     Q_ASSERT(p.state() == QProcess::NotRunning);
     p.setWorkingDirectory(cwd);
-    p.start(MznDriver::get().minizincExecutable(), args, MznDriver::get().mznDistribPath());
+    const QStringList& exec = MznDriver::get().minizincExecutable();
+    QStringList execArgs = args;
+    for (unsigned int i = exec.size() - 1; i > 0; i--) {
+        execArgs.push_front(exec[i]);
+    }
+    p.start(exec[0], execArgs, MznDriver::get().mznDistribPath());
     if (!p.waitForStarted()) {
         throw ProcessError("Failed to find or start minizinc " + args.join(" ") + ".");
     }
