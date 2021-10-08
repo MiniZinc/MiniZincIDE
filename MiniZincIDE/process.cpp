@@ -128,6 +128,7 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     _mznDistribPath = mznDistribPath;
     MznProcess p;
     QRegularExpression version_regexp("version (\\d+)\\.(\\d+)\\.(\\d+)");
+    _minizincExecutable = QStringList({"minizinc"});
 
 #ifdef Q_OS_MAC
     int isTranslated = 0;
@@ -160,7 +161,6 @@ void MznDriver::setLocation(const QString &mznDistribPath)
         }
     }
 #else
-    _minizincExecutable = QStringList({"minizinc"});
     try {
         auto result = p.run({"--version"});
         _versionString = result.stdOut + result.stdErr;
