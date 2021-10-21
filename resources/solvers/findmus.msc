@@ -13,7 +13,7 @@
   "stdFlags": ["--output-html", "-v", "-s", "-t"],
   "extraFlags": [
     ["-a", "Find all MUSes", "bool", "true"],
-	["-n", "Number of MUSes to find", "int", "1"],
+    ["-n", "Number of MUSes to find", "int", "1"],
     ["--paramset", "Preset parameters", "opt:hint:mzn:fzn", "mzn"],
     ["--subsolver", "Sub-solver for SAT checking", "string", "gecode_presolver"],
     ["--subsolver-timelimit", "Timelimit for SAT check (ms)", "int", "1000"],
@@ -38,7 +38,7 @@
     ["--no-stats", "Disable statistics output", "bool", "true"],
     ["--filter-mode", "Change filtering mode (foreground, exclusive)", "opt:fg:ex", "fg"],
     ["--filter-path", "Filter constraints by path (comma separated)", "string", ""],
-    ["--filter-name", "Filter constraints by name (comma separated)", "string", ""],
+    ["--filter-named", "Filter constraints by name (comma separated)", "string", ""],
     ["--dump-dot", "Write tree to GraphViz file", "string", ""],
     ["-g", "Attempt to record domain changes as constraints", "bool", "true"],
     ["--soft-defines", "Consider functional constraints as part of MUSes.", "bool", "true"],

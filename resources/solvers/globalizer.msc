@@ -27,5 +27,7 @@
       ["--debug-solving", "Debugging info for model solving", "bool", "true"],
       ["--debug-model", "Debugging info for group models", "bool", "true"],
       ["--debug-high", "Debugging info for high-level progress", "bool", "true"],
+      ["--norm-if", "Replace if statements containing foralls with foralls with where clauses", "bool", "true"],
+      ["--norm-fi", "Replace foralls containing if statements with foralls with where clauses", "bool", "true"]
     ]
 }
