@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>MiniZincIDE</title>
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                font-family: sans-serif;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            #windows {
+                width: 100vw;
+                height: 100vh;
+                display: grid;
+                grid-auto-rows: auto;
+                gap: 1px;
+                background: #CCC;
+            }
+            #windows > * {
+                background: #FFF;
+                border: 0;
+                width: 100%;
+                height: 100%;
+            }
+            #message {
+                width: 100vw;
+                position: absolute;
+                top: 20vw;
+                left: 0;
+                text-align: center;
+            }
+            #message:empty {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="windows"></div>
+        <div id="message">Connecting...</div>
+        <script>
+            const layoutGrid = (container) => {
+                const numChildren = container.children.length;
+                const cols = Math.ceil(Math.sqrt(numChildren));
+                container.style = `grid-template-columns: repeat(${cols}, auto);`;
+            };
+            const windows = document.getElementById('windows');
+            let buffers = [];
+            const ws = new WebSocket('%1');
+            const message = document.getElementById('message');
+            ws.onopen = () => {
+                message.textContent = '';
+            };
+            ws.onerror = e => {
+                message.textContent = `A WebSocket error occurred (code ${e.code}).`;
+                console.log('WebSocket error: ', e);
+            };
+            ws.onclose = () => {
+                message.textContent = 'Disconnected. Refresh the page to try again.';
+            };
+            ws.onmessage = e => {
+                const message = JSON.parse(e.data);
+                switch (message.event) {
+                    case 'init':
+                        // Initialize new frame
+                        const frame = document.createElement("iframe");
+                        const buffer = {
+                            ready: false,
+                            queue: [message]
+                        };
+                        frame.addEventListener('load', () => {
+                            buffer.ready = true;
+                        });
+                        frame.src = message.url;
+                        windows.appendChild(frame);
+                        buffers.push(buffer);
+                        layoutGrid(windows);
+                        break;
+                    case 'solution':
+                        // Pass solution to children
+                        for (let i = 0; i < message.items.length; i++) {
+                            buffers[i].queue.push({
+                                event: 'solution',
+                                time: message.time,
+                                data: message.items[i]
+                            });
+                        }
+                        break;
+                    case 'reset':
+                        // Reset page
+                        while (windows.firstChild) {
+                            windows.removeChild(windows.lastChild);
+                        }
+                        buffers = [];
+                        break;
+                    case 'status':
+                    case 'finish':
+                        // Pass on to all children
+                        for (const buffer of buffers) {
+                            buffer.queue.push(message);
+                        }
+                        break;
+                }
+            };
+            window.addEventListener('message', e => {
+                const message = e.data;
+                switch (message.event) {
+                    case 'rebroadcast':
+                        // Rebroadcast to all children
+                        for (const buffer of buffers) {
+                            buffer.queue.push(message.message);
+                        }
+                        break;
+                    default:
+                        // Pass on to IDE
+                        ws.send(JSON.stringify(message));
+                        break;
+                }
+            });
+            window.setInterval(() => {
+                for (let i = 0; i < buffers.length; i++) {
+                    if (buffers[i].ready) {
+                        const frame = windows.children[i];
+                        if (frame) {
+                            for (const message of buffers[i].queue) {
+                                frame.contentWindow.postMessage(message, '*');
+                            }
+                            buffers[i].queue = [];
+                        }
+                    }
+                }
+            }, 1);
+        </script>
+    </body>
+</html>

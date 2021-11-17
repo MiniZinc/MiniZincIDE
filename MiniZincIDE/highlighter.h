@@ -54,6 +54,7 @@ struct Theme
         commentColor, // Color of comments %
         backgroundColor, // Color of background
         errorColor, //Color of error messages
+        warningColor, // Color of warning messages
         lineHighlightColor,  // Color of highlighted line
         foregroundActiveColor, // color of active line number
         foregroundInactiveColor, // color of inactive line number
@@ -84,6 +85,7 @@ struct Theme
             ThemeColor(_lineHighlightColor,_lineHighlightColor),
             ThemeColor(_textHighlightColor,_textHighlightColor),
             ThemeColor(Qt::red,Qt::red),
+            ThemeColor(Qt::yellow, Qt::yellow),
             systemTheme)
             {}
 
@@ -96,6 +98,7 @@ struct Theme
               ThemeColor _lineHighlightColor,
               ThemeColor _textHighlightColor,
               ThemeColor _errorColor,
+              ThemeColor _warningColor,
               bool systemTheme = false):
             textColor(_textColor),
             keywordColor(_keywordColor),
@@ -104,6 +107,7 @@ struct Theme
             commentColor(_commentColor),
             backgroundColor(_backgroundColor),
             errorColor(_errorColor),
+            warningColor(_warningColor),
             lineHighlightColor(_lineHighlightColor),
             textHighlightColor(_textHighlightColor),
             isSystemTheme(systemTheme) {
@@ -147,7 +151,8 @@ namespace Themes{
                                    ThemeColor(QColor(0xE9ECFF),QColor(0x001926)), //background
                                    ThemeColor(QColor(0xE7E3FF),QColor(0x001D2B)), // line highlight
                                    ThemeColor(QColor(0xBEBDFC),QColor(0x005580)), // text highlight
-                                   ThemeColor(Qt::red) // error color
+                                   ThemeColor(Qt::red), // error color
+                                   ThemeColor(Qt::yellow) // warning color
                                    );
 
     static Theme mango = Theme(ThemeColor(QColor(0x375327), QColor(0xF2DC6D)), // text
@@ -158,7 +163,8 @@ namespace Themes{
                                ThemeColor(QColor(0xEFDC9B),QColor(0x030500)), //background
                                ThemeColor(QColor(0xD9C78D),QColor(0x070D00)), // line highlight
                                ThemeColor(QColor(0xCFB359),QColor(0x6B6033)), // text highlight
-                               ThemeColor(Qt::red, QColor(0x51C0BF)) // error color
+                               ThemeColor(Qt::red, QColor(0x51C0BF)), // error color
+                               ThemeColor(Qt::yellow) // warning color
                                );
 
     static Theme minizinc = Theme(ThemeColor(Qt::black, Qt::white), // text
@@ -170,6 +176,7 @@ namespace Themes{
                                   ThemeColor(QColor(0xF0F0F0),QColor(0x1D1D26)), // line highlight
                                   ThemeColor(QColor(0xE7E3FF),QColor(0x001D2B)), // text highlight
                                   ThemeColor(Qt::red), // error color
+                                  ThemeColor(QColor(0xd1ab13), Qt::yellow), // warning color
                                   true
                                   );
     extern Theme currentTheme;

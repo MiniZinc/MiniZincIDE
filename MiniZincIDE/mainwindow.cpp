@@ -29,6 +29,7 @@
 #include "moocsubmission.h"
 #include "highlighter.h"
 #include "exception.h"
+#include "ideutils.h"
 
 #include "../cp-profiler/src/cpprofiler/execution.hh"
 #include "../cp-profiler/src/cpprofiler/options.hh"
@@ -44,8 +45,7 @@ MainWindow::MainWindow(const QString& project) :
     tmpDir(nullptr),
     saveBeforeRunning(false),
     outputBuffer(nullptr),
-    processRunning(false),
-    currentSolverConfig(-1)
+    processRunning(false)
 {
     init(project);
 }
@@ -57,8 +57,7 @@ MainWindow::MainWindow(const QStringList& files) :
     tmpDir(nullptr),
     saveBeforeRunning(false),
     outputBuffer(nullptr),
-    processRunning(false),
-    currentSolverConfig(-1)
+    processRunning(false)
 {
     init(QString());
     for (int i=0; i<files.size(); i++)
@@ -143,14 +142,6 @@ void MainWindow::init(const QString& projectFile)
 
     ui->toolBar->insertWidget(solverConfComboAction, runButton);
 
-    ui->outputConsole->installEventFilter(this);
-
-    auto palette = ui->outputConsole->palette();
-    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
-    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
-    ui->outputConsole->setPalette(palette);
-
-
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
@@ -213,7 +204,7 @@ void MainWindow::init(const QString& projectFile)
 
     ui->actionSubmit_to_MOOC->setVisible(false);
 
-    connect(ui->outputConsole, SIGNAL(anchorClicked(QUrl)), this, SLOT(errorClicked(QUrl)));
+    connect(ui->outputWidget, &OutputWidget::anchorClicked, this, &MainWindow::anchorClicked);
 
     QSettings settings;
     settings.beginGroup("MainWindow");
@@ -232,7 +223,7 @@ void MainWindow::init(const QString& projectFile)
     darkMode = settings.value("darkMode", false).value<bool>();
     ui->actionDark_mode->setChecked(darkMode);
     on_actionDark_mode_toggled(darkMode);
-    ui->outputConsole->setFont(editorFont);
+    ui->outputWidget->setBrowserFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
     if (settings.value("toolbarHidden", false).toBool()) {
@@ -324,7 +315,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         }
         fakeRunAction->setEnabled(! (isMzn || isFzn || isData));
         ui->actionRun->setEnabled(isMzn || isFzn || isData);
-        ui->actionProfile_compilation->setEnabled((!isPlayground && isMzn) || isData);
+        ui->actionProfile_compilation->setEnabled(isMzn || isData);
         ui->actionProfile_search->setEnabled(isMzn || isFzn || isData);
         fakeCompileAction->setEnabled(!(isMzn||isData));
         ui->actionCompile->setEnabled(isMzn||isData);
@@ -734,13 +725,10 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::addOutput(const QString& s, bool html)
 {
-    QTextCursor cursor = ui->outputConsole->textCursor();
-    cursor.movePosition(QTextCursor::End);
-    ui->outputConsole->setTextCursor(cursor);
     if (html) {
-        cursor.insertHtml(s+"<br />");
+        ui->outputWidget->addHtml(s);
     } else {
-        cursor.insertText(s);
+        ui->outputWidget->addText(s);
     }
 }
 
@@ -882,8 +870,8 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
                     }
                 }
             } else {
-                addOutput("<p style='color:red'>Error when checking model parameters:</p>");
-                addOutput(result.stdErr, false);
+                ui->outputWidget->addText("Error when checking model parameters:\n", ui->outputWidget->errorCharFormat());
+                ui->outputWidget->addText(result.stdErr);
                 QMessageBox::critical(this, "Internal error", "Could not determine model parameters");
                 return false;
             }
@@ -922,6 +910,7 @@ QString MainWindow::currentModelFile()
                 } else {
                     throw InternalError("Could not write temporary model file.");
                 }
+                curEditor->playgroundTempFile = model;
                 return model;
             }
         }
@@ -988,33 +977,14 @@ bool MainWindow::promptSaveModified()
 
 QString MainWindow::setElapsedTime(qint64 elapsed_t)
 {
-    int hours =  elapsed_t / 3600000;
-    int minutes = (elapsed_t % 3600000) / 60000;
-    int seconds = (elapsed_t % 60000) / 1000;
-    int msec = (elapsed_t % 1000);
-    QString elapsed;
-    if (hours > 0)
-        elapsed += QString().number(hours)+"h ";
-    if (hours > 0 || minutes > 0)
-        elapsed += QString().number(minutes)+"m ";
-    if (hours > 0 || minutes > 0 || seconds > 0)
-        elapsed += QString().number(seconds)+"s";
-    if (hours==0 && minutes==0)
-        elapsed += " "+QString().number(msec)+"msec";
+    auto elapsed = IDEUtils::formatTime(elapsed_t);
     QString timeLimit;
     auto sc = getCurrentSolverConfig();
     if (sc && sc->timeLimit > 0) {
         timeLimit += " / ";
-        int tl_hours = sc->timeLimit / 3600000;
-        int tl_minutes = (sc->timeLimit % 3600000) / 60000;
-        int tl_seconds = sc->timeLimit % 60000 / 1000;
-        if (tl_hours > 0)
-            timeLimit += QString().number(tl_hours)+"h ";
-        if (tl_hours > 0 || tl_minutes > 0)
-            timeLimit += QString().number(tl_minutes)+"m ";
-        timeLimit += QString().number(tl_seconds)+"s";
+        timeLimit += IDEUtils::formatTime(sc->timeLimit);
     }
-    statusLabel->setText(elapsed+timeLimit);
+    statusLabel->setText(elapsed + timeLimit);
     return elapsed;
 }
 
@@ -1045,7 +1015,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     cleanupTmpDirs.append(fznTmpDir);
     QString fzn = fznTmpDir->path() + "/" + fi.baseName() + ".fzn";
 
-    auto compileProcess = new MznProcess(this);
+    auto proc = new MznProcess(this);
     QStringList args;
     args << "-c"
          << "-o" << fzn
@@ -1056,41 +1026,57 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
         args << "--output-paths-to-stdout"
              << "--output-detailed-timing";
     }
-    auto* output = new QString;
-    auto* ts = new QTextStream(output);
-    auto* cancelled = new bool(false);
-    connect(this, &MainWindow::terminating, compileProcess, [=] () {
-        compileProcess->disconnect();
-        compileProcess->stop();
-        compileProcess->deleteLater();
+    connect(this, &MainWindow::terminating, proc, [=] () {
+        proc->disconnect();
+        proc->stop();
+        proc->deleteLater();
     });
-    connect(ui->actionStop, &QAction::triggered, compileProcess, [=] () {
+    connect(ui->actionStop, &QAction::triggered, proc, [=] () {
         ui->actionStop->setDisabled(true);
-        *cancelled = true;
-        compileProcess->stop();
-        addOutput("<div class='mznnotice'>Stopped.</div>");
+        proc->stop();
+        ui->outputWidget->addText("Stopped.");
     });
-    connect(compileProcess, &MznProcess::outputStdOut, [=] (const QString& data) {
-        *ts << data;
-    });
-    connect(compileProcess, &MznProcess::outputStdError, this, &MainWindow::outputStdErr);
-    connect(compileProcess, &MznProcess::success, [=] () {
-        if (!(*cancelled)) {
-            if (profile) {
-                profileCompiledFzn(*output);
-            } else {
+
+    if (profile) {
+        auto* timing = new QVector<TimingEntry>;
+        auto* paths = new QVector<PathEntry>;
+
+        connect(proc, &MznProcess::profilingOutput, [=] (const QVector<TimingEntry>& t) {
+            *timing << t;
+        });
+        connect(proc, &MznProcess::pathsOutput, [=] (const QVector<PathEntry>& p) {
+            *paths << p;
+        });
+
+        connect(proc, &MznProcess::success, [=] (bool cancelled) {
+            profileCompiledFzn(*timing, *paths);
+            procFinished(0, proc->elapsedTime());
+        });
+        connect(proc, &MznProcess::finished, [=] () {
+            delete timing;
+            delete paths;
+        });
+    } else {
+        connect(proc, &MznProcess::success, [&] (bool cancelled) {
+            if (!cancelled) {
                 openCompiledFzn(fzn);
             }
-        }
-        procFinished(0, compileProcess->elapsedTime());
+            procFinished(0, proc->elapsedTime());
+        });
+    }
+    connect(proc, &MznProcess::statisticsOutput, ui->outputWidget, &OutputWidget::addStatistics);
+    connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
+    connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addText(d, f, "Standard Error");
     });
-    connect(compileProcess, &MznProcess::finished, [=] () {
-        delete ts;
-        delete output;
-        delete cancelled;
-        compileProcess->deleteLater();
+    connect(proc, &MznProcess::finished, [=] () {
+        proc->deleteLater();
     });
-    connect(compileProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+    connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
         if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
             exitCode = 0;
@@ -1098,14 +1084,13 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
             QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
         }
-        procFinished(exitCode, compileProcess->elapsedTime());
+        procFinished(exitCode, proc->elapsedTime());
     });
-    connect(compileProcess, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
+    connect(proc, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
     SolverConfiguration compileSc(sc);
     compileSc.outputTiming = false; // Remove solns2out options
-    addOutput(runMessage("Compiling", model, data, extraArgs));
     updateUiProcessRunning(true);
-    compileProcess->start(compileSc, args, fi.absolutePath());
+    proc->start(compileSc, args, fi.canonicalPath());
 }
 
 void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, QTextStream* ts)
@@ -1114,50 +1099,127 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         return;
     }
 
+    QFileInfo fi(model);
+    auto workingDir = fi.canonicalPath();
+
     QSettings settings;
     settings.beginGroup("ide");
-    solutionLimit = settings.value("compressSolutions", 100).toInt();
+    int compressSolutions = settings.value("compressSolutions", 100).toInt();
     settings.endGroup();
 
-    solutionCount = 0;
-    hiddenSolutions.clear();
+    auto* proc = new MznProcess(this);
 
-    auto solveProcess = new SolveProcess(this);
-
-    connect(this, &MainWindow::terminating, solveProcess, [=] () {
-        solveProcess->disconnect();
-        solveProcess->stop();
-        solveProcess->deleteLater();
+    connect(this, &MainWindow::terminating, proc, [=] () {
+        proc->disconnect();
+        proc->stop();
+        proc->deleteLater();
     });
-    connect(ui->actionStop, &QAction::triggered, solveProcess, [=] () {
+    connect(ui->actionStop, &QAction::triggered, proc, [=] () {
         ui->actionStop->setDisabled(true);
-        solveProcess->stop();
-        addOutput("<div class='mznnotice'>Stopped.</div>");
+        proc->stop();
+        ui->outputWidget->addText("Stopped.\n", ui->outputWidget->noticeCharFormat());
     });
     if (ts) {
-        connect(solveProcess, &SolveProcess::statisticOutput, [=](const QString& d) { *ts << d; });
-        connect(solveProcess, &SolveProcess::solutionOutput, [=](const QString& d) { *ts << d; });
-        connect(solveProcess, &SolveProcess::finalStatus, [=](const QString& d) { *ts << d; });
-        connect(solveProcess, &SolveProcess::fragment, [=](const QString& d) { *ts << d; });
+        // Write to a stream for the purposes of submission
+        // (also disables JSON streaming output)
+        connect(proc, &MznProcess::outputStdOut, [=](const QString& d) { *ts << d; });
     }
 
-    connect(solveProcess, &SolveProcess::statisticOutput, [=](const QString& d) { addOutput(d, false); });
-    connect(solveProcess, &SolveProcess::solutionOutput, this, &MainWindow::on_solutionOutput);
-    connect(solveProcess, &SolveProcess::finalStatus, this, &MainWindow::on_finalStatus);
-    connect(solveProcess, &SolveProcess::fragment, this, &MainWindow::on_fragment);
-    connect(solveProcess, &SolveProcess::progressOutput, this, &MainWindow::on_progressOutput);
-
-    connect(solveProcess, &SolveProcess::htmlOutput, [=](const QString& html) {
-        addOutput(html, true);
+    connect(proc, &MznProcess::statisticsOutput, ui->outputWidget, &OutputWidget::addStatistics);
+    connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, qint64 time) {
+        if (server != nullptr && output.contains("vis_json")) {
+            auto items = output["vis_json"].toJsonValue();
+            QJsonObject obj({{"event", "solution"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"items", items}});
+            QJsonDocument doc(obj);
+            server->broadcastMessage(doc);
+        }
+        ui->outputWidget->addSolution(output, time);
     });
-    connect(solveProcess, &SolveProcess::outputStdError, this, &MainWindow::outputStdErr);
-    connect(solveProcess, &SolveProcess::success, [=]() {
-        procFinished(0, solveProcess->elapsedTime());
+    connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::finalStatus, [=](const QString& status, qint64 time) {
+        if (server != nullptr) {
+            QJsonObject obj({{"event", "status"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"status", status}});
+            QJsonDocument doc(obj);
+            server->broadcastMessage(doc);
+        }
+        ui->outputWidget->addStatus(status, time);
     });
-    connect(solveProcess, &MznProcess::finished, [=] () {
-        solveProcess->deleteLater();
+    connect(proc, &MznProcess::unknownOutput, [=](const QString& d) { ui->outputWidget->addText(d); });
+    connect(proc, &MznProcess::commentOutput, this, [=] (const QString& d) {
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addText(d, f, "Comments");
     });
-    connect(solveProcess, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+    connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
+    connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addTextToSection(section, message.toString(), f);
+        if (section == "vis_json") {
+            bool needNewServer = server == nullptr;
+            if (needNewServer) {
+                server = new Server(this);
+                server->setWebroots({workingDir, MznDriver::get().mznStdlibDir()});
+                connect(server, &Server::receiveMessage, [=] (const QJsonDocument& message) {
+                    auto msg = message.object();
+                    auto event = msg["event"].toString();
+                    if (event == "solve") {
+                        auto* origSc = getCurrentSolverConfig();
+                        if (origSc == nullptr) {
+                            return;
+                        }
+                        QStringList df;
+                        bool modelFileGiven = msg["modelFile"].isString();
+                        auto m = modelFileGiven ? workingDir + "/" + msg["modelFile"].toString() : model;
+                        if (!IDEUtils::isChildPath(workingDir, m)) {
+                            return;
+                        }
+                        if (msg["dataFiles"].isArray()) {
+                            for (auto it : msg["dataFiles"].toArray()) {
+                                auto d = workingDir + "/" + it.toString();
+                                if (!IDEUtils::isChildPath(workingDir, d)) {
+                                    return;
+                                }
+                                df << d;
+                            }
+                        } else if (!modelFileGiven) {
+                            // No model, no data, so use previous
+                            df = data;
+                        }
+                        auto options = msg["options"].toObject().toVariantMap();
+                        SolverConfiguration rsc(*origSc);
+                        rsc.extraOptions.unite(options);
+                        if (processRunning) {
+                            proc->terminate();
+                        }
+                        run(rsc, m, df);
+                    }
+                });
+            }
+            server->broadcastMessage(message.toJsonDocument());
+            server->openUrl();
+            ui->outputWidget->associateServerUrl(server->url().toString());
+        }
+    });
+    connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addText(d, f, "Standard Error");
+    });
+    connect(proc, &MznProcess::success, [=]() {
+        ui->outputWidget->endExecution(0, proc->elapsedTime());
+        procFinished(0, proc->elapsedTime());
+    });
+    connect(proc, &MznProcess::finished, [=] () {
+        if (server != nullptr) {
+            QJsonObject obj({{"event", "finished"}, {"time", proc->elapsedTime()}});
+            QJsonDocument doc(obj);
+            server->broadcastMessage(doc);
+        }
+        proc->deleteLater();
+    });
+    connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
         if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
             exitCode = 0;
@@ -1165,37 +1227,36 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
             QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
         }
-        procFinished(exitCode, solveProcess->elapsedTime());
+        ui->outputWidget->endExecution(exitCode, proc->elapsedTime());
+        procFinished(exitCode, proc->elapsedTime());
     });
-    connect(solveProcess, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
+    connect(proc, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
 
-    addOutput(runMessage("Running", model, data, extraArgs));
-
-    curFilePath = model; // TODO: Fix the JSON visualization handling to not require this
     updateUiProcessRunning(true);
-    solveProcess->solve(sc, model, data, extraArgs);
-}
 
-void MainWindow::resolve(int htmlWindowIdentifier, const QString &data)
-{
-    QTemporaryDir* dataTmpDir = new QTemporaryDir;
-    if (!dataTmpDir->isValid()) {
-        QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
-        return;
-    } else {
-        cleanupTmpDirs.append(dataTmpDir);
-        QString filepath = dataTmpDir->path()+"/untitled_data.json";
-        QFile dataFile(filepath);
-        if (dataFile.open(QIODevice::ReadWrite)) {
-            QTextStream ts(&dataFile);
-            ts << data;
-            dataFile.close();
-            QStringList dataFiles;
-            dataFiles.push_back(filepath);
-        } else {
-            QMessageBox::critical(this, "MiniZinc IDE", "Could not write temporary model file.");
-        }
+    QStringList args;
+    args << model
+         << data;
+
+    QStringList files;
+    for (auto& arg : args) {
+        files << QFileInfo(arg).fileName();
     }
+
+    ui->outputWidget->setSolutionLimit(compressSolutions);
+    ui->outputWidget->startExecution("Running", files);
+
+    // Stop server if running (but leave server running even after finish)
+    if (server != nullptr) {
+        QJsonObject obj({{"event", "reset"}});
+        QJsonDocument doc(obj);
+        server->broadcastMessage(doc);
+        server->clearHistory();
+        server->setWebroots({workingDir, MznDriver::get().mznStdlibDir()});
+    }
+
+    args << extraArgs;
+    proc->start(sc, args, workingDir, ts == nullptr);
 }
 
 QString MainWindow::currentSolverConfigName(void) {
@@ -1207,13 +1268,9 @@ void MainWindow::procFinished(int exitCode, qint64 time) {
     procFinished(exitCode);
     QString elapsedTime = setElapsedTime(time);
     ui->statusbar->clearMessage();
-    addOutput("<div class='mznnotice'>Finished in " + elapsedTime + "</div>");
 }
 
 void MainWindow::procFinished(int exitCode) {
-    if (exitCode != 0) {
-        addOutput("<div style='color:red;'>Process finished with non-zero exit code "+QString().number(exitCode)+"</div>");
-    }
     updateUiProcessRunning(false);
     ui->statusbar->clearMessage();
     delete tmpDir;
@@ -1361,78 +1418,69 @@ void MainWindow::openCompiledFzn(const QString& fzn)
     openFile(fzn, !fzn.endsWith(".mzc"));
 }
 
-void MainWindow::profileCompiledFzn(const QString& output)
+void MainWindow::profileCompiledFzn(const QVector<TimingEntry>& timing, const QVector<PathEntry>& paths)
 {
-    auto lines = output.split(QRegExp("[\r\n]"), QString::SkipEmptyParts);
-    QRegularExpression path_re("^(.+)\\t(.+)\\t(.*;)$");
-    QRegularExpression count_re("([^|;]*)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|(\\d+)\\|([^;]*);");
-    QRegularExpression time_re("^%%%mzn-stat: profiling=\\[\"(.*)\",(\\d*),(\\d*)\\]$");
-
     typedef QMap<QString,QVector<BracketData*>> CoverageMap;
     CoverageMap ce_coverage;
 
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
-        if (ce && ce->filepath.endsWith(".mzn")) {
-            QTextBlock tb = ce->document()->begin();
-            QVector<BracketData*> coverage;
-            while (tb.isValid()) {
-                BracketData* bd = static_cast<BracketData*>(tb.userData());
-                if (bd==nullptr) {
-                    bd = new BracketData;
-                    tb.setUserData(bd);
-                }
-                bd->d.reset();
-                coverage.push_back(bd);
-                tb = tb.next();
-            }
-            ce_coverage.insert(ce->filepath,coverage);
+        if (ce == nullptr) {
+            continue;
         }
+        auto path = ce->filepath.isEmpty() ? ce->playgroundTempFile : ce->filepath;
+        if (!path.endsWith(".mzn")) {
+            continue;
+        }
+        QTextBlock tb = ce->document()->begin();
+        QVector<BracketData*> coverage;
+        while (tb.isValid()) {
+            BracketData* bd = static_cast<BracketData*>(tb.userData());
+            if (bd==nullptr) {
+                bd = new BracketData;
+                tb.setUserData(bd);
+            }
+            bd->d.reset();
+            coverage.push_back(bd);
+            tb = tb.next();
+        }
+        ce_coverage.insert(path,coverage);
     }
 
     int totalCons=1;
     int totalVars=1;
     int totalTime=1;
-    for (auto line : lines) {
-        QRegularExpressionMatch path_match = path_re.match(line);
-        if (path_match.hasMatch()) {
-            QString paths = path_match.captured(3);
-            QRegularExpressionMatchIterator match = count_re.globalMatch(paths);
-            if (match.hasNext()) {
-                int min_line_covered = -1;
-                CoverageMap::iterator fileMatch;
-                while (match.hasNext()) {
-                    QRegularExpressionMatch m = match.next();
-                    auto tryMatch = ce_coverage.find(m.captured(1));
-                    if (tryMatch != ce_coverage.end()) {
-                        fileMatch = tryMatch;
-                        min_line_covered = m.captured(2).toInt();
-                    }
-                }
-                if (min_line_covered > 0 && min_line_covered <= fileMatch.value().size()) {
-                    if (path_match.captured(1)[0].isDigit()) {
-                        fileMatch.value()[min_line_covered-1]->d.con++;
-                        totalCons++;
-                    } else {
-                        fileMatch.value()[min_line_covered-1]->d.var++;
-                        totalVars++;
-                    }
-                }
+    for (auto& it : paths) {
+        int min_line_covered = -1;
+        CoverageMap::iterator fileMatch;
+        for (auto& segment : it.path().segments()) {
+            auto tryMatch = ce_coverage.find(segment.filename);
+            if (tryMatch != ce_coverage.end()) {
+                fileMatch = tryMatch;
+                min_line_covered = segment.firstLine;
             }
-        } else {
-            QRegularExpressionMatch time_match = time_re.match(line);
-            if (time_match.hasMatch()) {
-                CoverageMap::iterator fileMatch = ce_coverage.find(time_match.captured(1));
-                if (fileMatch != ce_coverage.end()) {
-                    int line_no = time_match.captured(2).toInt();
-                    if (line_no > 0 && line_no <= fileMatch.value().size()) {
-                        fileMatch.value()[line_no-1]->d.ms = time_match.captured(3).toInt();
-                        totalTime += fileMatch.value()[line_no-1]->d.ms;
-                    }
-                }
+        }
+        if (min_line_covered > 0 && min_line_covered <= fileMatch.value().size()) {
+            if (it.constraintIndex() != -1) {
+                fileMatch.value()[min_line_covered-1]->d.con++;
+                totalCons++;
+            } else {
+                fileMatch.value()[min_line_covered-1]->d.var++;
+                totalVars++;
             }
         }
     }
+    for (auto& it : timing) {
+        CoverageMap::iterator fileMatch = ce_coverage.find(it.filename());
+        if (fileMatch != ce_coverage.end()) {
+            int line_no = it.line();
+            if (line_no > 0 && line_no <= fileMatch.value().size()) {
+                fileMatch.value()[line_no-1]->d.ms = it.time();
+                totalTime += fileMatch.value()[line_no-1]->d.ms;
+            }
+        }
+    }
+
     for (auto& coverage: ce_coverage) {
         for(auto data: coverage){
             data->d.totalCon = totalCons;
@@ -1451,19 +1499,12 @@ void MainWindow::on_actionCompile_triggered()
 void MainWindow::on_actionClear_output_triggered()
 {
     progressBar->setHidden(true);
-    ui->outputConsole->document()->clear();
+    ui->outputWidget->clear();
 }
 
 void MainWindow::setEditorFont(QFont font)
 {
-    QTextCharFormat format;
-    format.setFont(font);
-
-    ui->outputConsole->setFont(font);
-    QTextCursor cursor(ui->outputConsole->document());
-    cursor.movePosition(QTextCursor::Start);
-    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-    cursor.mergeCharFormat(format);
+    ui->outputWidget->setBrowserFont(font);
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
         if (ce) {
@@ -1657,7 +1698,7 @@ void MainWindow::highlightPath(QString& path, int index) {
   }
 }
 
-void MainWindow::errorClicked(const QUrl & anUrl)
+void MainWindow::anchorClicked(const QUrl & anUrl)
 {
     QUrl url = anUrl;
 
@@ -1682,6 +1723,18 @@ void MainWindow::errorClicked(const QUrl & anUrl)
       return;
     }
 
+    if (conductor != nullptr && url.scheme() == "cpprofiler") {
+        bool ok;
+        auto ex_id = url.query().toInt(&ok);
+        if (ok) {
+            auto* ex = conductor->getExecution(ex_id);
+            if (ex != nullptr) {
+                showExecutionWindow(conductor->getExecutionWindow(ex));
+            }
+        }
+        return;
+    }
+
     if(url.scheme() == "http" || url.scheme() == "https") {
       QDesktopServices::openUrl(url);
       return;
@@ -1697,7 +1750,7 @@ void MainWindow::errorClicked(const QUrl & anUrl)
         if (!ce) {
             continue;
         }
-        QFileInfo ceinfo(ce->filepath);
+        QFileInfo ceinfo(ce->filepath.isEmpty() ? ce->playgroundTempFile : ce->filepath);
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
             QRegExp re_line("line=([0-9]+)");
             if (re_line.indexIn(query) != -1) {
@@ -2243,19 +2296,7 @@ void MainWindow::moocFinished(int) {
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
 {
-    if (obj == ui->outputConsole) {
-        if (ev->type() == QEvent::KeyPress) {
-            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(ev);
-            if (keyEvent == QKeySequence::Copy) {
-                ui->outputConsole->copy();
-                return true;
-            } else if (keyEvent == QKeySequence::Cut) {
-                ui->outputConsole->cut();
-                return true;
-            }
-        }
-        return false;
-    } else if (obj == ui->findWidget) {
+    if (obj == ui->findWidget) {
         if (ev->type() == QEvent::KeyPress) {
             auto* keyEvent = static_cast<QKeyEvent*>(ev);
             if (keyEvent->key() == Qt::Key_Escape) {
@@ -2314,12 +2355,7 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
         qApp->setStyleSheet("");
 #endif
     }
-    ui->outputConsole->document()->setDefaultStyleSheet(".mznnotice { color : "+Themes::currentTheme.functionColor.get(darkMode).name()+" }");
-    ui->outputConsole->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
-//    auto palette = ui->outputConsole->palette();
-//    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
-//    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
-//    ui->outputConsole->setPalette(palette);
+    ui->outputWidget->setDarkMode(darkMode);
 }
 
 void MainWindow::on_actionMangoTheme_triggered()
@@ -2543,34 +2579,6 @@ bool MainWindow::requireMiniZinc()
     return true;
 }
 
-void MainWindow::outputStdErr(const QString& l)
-{
-    QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-[0-9]+(\\.[0-9]+)?)?)?):\\s*$");
-    if (errexp.indexIn(l) != -1) {
-        QString errFile = errexp.cap(1).trimmed();
-        if (errFile.endsWith("untitled_model.mzn")) {
-            QFileInfo errFileInfo(errFile);
-            for (QTemporaryDir* d : cleanupTmpDirs) {
-                QFileInfo tmpFileInfo(d->path()+"/untitled_model.mzn");
-                if (errFileInfo.canonicalFilePath()==tmpFileInfo.canonicalFilePath()) {
-                    errFile = "Playground";
-                    break;
-                }
-            }
-        }
-        QUrl url = QUrl::fromLocalFile(errFile);
-        QString query = "line="+errexp.cap(3);
-        if (!errexp.cap(5).isEmpty())
-            query += "&column="+errexp.cap(5);
-        url.setQuery(query);
-        url.setScheme("err");
-        IDE::instance()->stats.errorsShown++;
-        addOutput("<a style='color:red' href='"+url.toString()+"'>"+errFile+":"+errexp.cap(2)+":</a>");
-    } else {
-        addOutput(l,false);
-    }
-}
-
 void MainWindow::on_moocChanged(const MOOCAssignment* mooc)
 {
     if (mooc) {
@@ -2739,11 +2747,12 @@ void MainWindow::on_actionShow_search_profiler_triggered()
         cpprofiler::Options opts;
         conductor = new cpprofiler::Conductor(opts, this);
         conductor->setWindowFlags(Qt::Widget);
+        connect(conductor, &cpprofiler::Conductor::executionStart, [=] (cpprofiler::Execution* e) {
+            ui->outputWidget->associateProfilerExecution(e->id());
+        });
         connect(conductor, &cpprofiler::Conductor::showExecutionWindow, this, &MainWindow::showExecutionWindow);
         connect(conductor, &cpprofiler::Conductor::showMergeWindow, this, &MainWindow::showMergeWindow);
         profiler_layout->addWidget(conductor);
-
-        ex_id = 0;
     }
     if (ui->cpprofiler_dockWidget->isVisible()) {
         ui->cpprofiler_dockWidget->hide();
@@ -2759,7 +2768,7 @@ void MainWindow::on_actionProfile_search_triggered()
     }
     QStringList args;
     args << "--cp-profiler"
-         << QString::number(ex_id++) + "," + QString::number(conductor->getListenPort());
+         << QString::number(conductor->getNextExecId()) + "," + QString::number(conductor->getListenPort());
     compileOrRun(CM_RUN, nullptr, QString(), QStringList(), QString(), args);
 }
 
@@ -2808,72 +2817,120 @@ void MainWindow::updateProfileSearchButton()
     ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("--cp-profiler"));
 }
 
-QString MainWindow::runMessage(const QString& action, const QString& model, const QStringList& data, const QStringList& extraArgs)
-{
-    QString message;
-    QTextStream msg(&message);
-    msg << "<div class='mznnotice'>"
-        << action
-        << " "
-        << QFileInfo(model).fileName();
-    if (!data.isEmpty()) {
-        msg << " with ";
-        bool first = true;
-        for (auto df: data) {
-            QFileInfo fi(df);
-            if (first) {
-                first = false;
-            } else {
-                msg << ", ";
-            }
-            msg << fi.fileName();
-        }
-    }
-    if (!extraArgs.isEmpty()) {
-        msg << ", additional arguments "
-            << extraArgs.join(" ");
-    }
-    msg << "</div>";
-    return message;
-}
-
-void MainWindow::on_solutionOutput(const QString& solution)
-{
-    solutionCount++;
-    if ((solutionLimit != 0 && solutionCount > solutionLimit) || !hiddenSolutions.isEmpty()) {
-        if (hiddenSolutions.isEmpty()) {
-            solutionCount = 1;
-        }
-        if (solutionCount == solutionLimit) {
-            addOutput("<div class='mznnotice'>[ " + QString::number(solutionLimit - 1) + " more solutions ]</div>");
-            addOutput(solution, false);
-            solutionCount = 0;
-            solutionLimit *= 2;
-        } else {
-            hiddenSolutions << solution;
-        }
-    } else {
-        addOutput(solution, false);
-    }
-}
-
-void MainWindow::on_finalStatus(const QString& status)
-{
-    if (solutionLimit != 0 && solutionCount > 0 && !hiddenSolutions.isEmpty()) {
-        if (solutionCount > 1) {
-            addOutput("<div class='mznnotice'>[ " + QString::number(solutionCount - 1) + " more solutions ]</div>");
-        }
-        addOutput(hiddenSolutions.last(), false);
-    }
-    addOutput(status, false);
-}
-
-void MainWindow::on_fragment(const QString& data)
-{
-    addOutput(data, false);
-}
-
 void MainWindow::on_progressOutput(float progress)
 {
     progressBar->setValue(static_cast<int>(progress));
+}
+
+void MainWindow::on_minizincError(const QJsonObject& error) {
+    bool isError = error["type"].toString() == "error";
+    auto color = isError ? Themes::currentTheme.errorColor.get(darkMode)
+                         : Themes::currentTheme.warningColor.get(darkMode);
+    QString messageType = isError ? "Errors" : "Warnings";
+
+    if (error["stack"].isArray()) {
+        auto stack = error["stack"].toArray();
+        QString lastFile = "";
+        int lastLine = -1;
+        for (auto it : stack) {
+            auto entry = it.toObject();
+            auto loc = entry["location"].toObject();
+            if (loc["filename"].toString() != lastFile || loc["firstLine"].toInt() != lastLine) {
+                lastFile = loc["filename"].toString();
+                lastLine = loc["firstLine"].toInt();
+
+                ui->outputWidget->addHtml(locationToLink(
+                                              loc["filename"].toString(),
+                                              loc["firstLine"].toInt(),
+                                              loc["firstColumn"].toInt(),
+                                              loc["lastLine"].toInt(),
+                                              loc["lastColumn"].toInt(),
+                                              color
+                                         ), messageType);
+                ui->outputWidget->addText("\n", messageType);
+            }
+            ui->outputWidget->addText(QString(entry["isCompIter"].toBool() ? "    with " : "  in ") + entry["description"].toString(), messageType);
+            ui->outputWidget->addText("\n", messageType);
+        }
+    } else if (error["location"].isObject()) {
+        auto loc = error["location"].toObject();
+        ui->outputWidget->addHtml(locationToLink(
+                                      loc["filename"].toString(),
+                                      loc["firstLine"].toInt(),
+                                      loc["firstColumn"].toInt(),
+                                      loc["lastLine"].toInt(),
+                                      loc["lastColumn"].toInt(),
+                                      color
+                                 ), messageType);
+        ui->outputWidget->addText(":\n", messageType);
+    }
+
+    QString what = error["what"].toString();
+    QString message;
+
+    if (error["includedFrom"].isArray()) {
+        for (auto it : error["includedFrom"].toArray()) {
+            message += QString(" (included from %1)\n").arg(it.toString());
+        }
+    }
+
+    if (isError) {
+        message += "MiniZinc: ";
+    } else {
+        message += "Warning: ";
+    }
+    if (error["what"].isString()) {
+        message += QString("%1: ").arg(what);
+    }
+    message += QString("%1\n").arg(error["message"].toString());
+
+    if (what == "cyclic include error") {
+        for (auto it : error["cycle"].toArray()) {
+            message += QString(" %1\n").arg(it.toString());
+        }
+    }
+
+    ui->outputWidget->addText(message, messageType);
+}
+
+QString MainWindow::locationToLink(const QString& file, int firstLine, int firstColumn, int lastLine, int lastColumn, const QColor& color)
+{
+    QString label = file;
+    if (file.endsWith("untitled_model.mzn")) {
+        QFileInfo fi(file);
+        for (QTemporaryDir* d : cleanupTmpDirs) {
+            QFileInfo tmpFileInfo(d->path() + "/untitled_model.mzn");
+            if (fi.canonicalFilePath( )== tmpFileInfo.canonicalFilePath()) {
+                label = "Playground";
+                break;
+            }
+        }
+    }
+    QString position;
+    if (firstLine == lastLine) {
+        if (firstColumn == lastColumn) {
+            position = QString("%1.%2")
+                    .arg(firstLine)
+                    .arg(firstColumn);
+        } else {
+            position = QString("%1.%2-%3")
+                    .arg(firstLine)
+                    .arg(firstColumn)
+                    .arg(lastColumn);
+        }
+    } else {
+        position = QString("%1-%2.%3-%4")
+                .arg(firstLine)
+                .arg(firstColumn)
+                .arg(lastLine)
+                .arg(lastColumn);
+    }
+    QUrl url = QUrl::fromLocalFile(file);
+    url.setQuery(QString("line=%1&column=%2").arg(firstLine).arg(firstColumn));
+    url.setScheme("err");
+    return QString("<a style=\"color:%1\" href=\"%2\">%3:%4</a>")
+                              .arg(color.name())
+                              .arg(url.toString())
+                              .arg(label)
+                              .arg(position);
 }

@@ -18,6 +18,8 @@
 void
 CodeEditor::initUI(QFont& font)
 {
+    setWordWrapMode(QTextOption::NoWrap);
+
     setFont(font);
 
     setTabStopWidth(QFontMetrics(font).boundingRect("  ").width());
@@ -378,8 +380,10 @@ void CodeEditor::cursorChange()
         extraSelections.append(highlightLineSelection);
     }
 
+    auto ec = Themes::currentTheme.errorColor.get(darkMode);
+    auto wc = Themes::currentTheme.warningColor.get(darkMode);
     foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
-        if (sel.format.underlineColor()==Qt::red) {
+        if (sel.format.underlineColor() == ec || sel.format.underlineColor() == wc) {
             extraSelections.append(sel);
         }
     }
@@ -531,6 +535,8 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
 
             if (errorLines.contains(blockNumber)) {
                 painter.setPen(Themes::currentTheme.errorColor.get(darkMode));
+            } else if (warningLines.contains(blockNumber)) {
+                painter.setPen(Themes::currentTheme.warningColor.get(darkMode));
             } else if (blockNumber == curLine) {
                 painter.setPen(Themes::currentTheme.foregroundActiveColor.get(darkMode));
             } else {
@@ -672,7 +678,6 @@ bool CodeEditor::eventFilter(QObject *, QEvent *ev)
         evPos = QPoint(evPos.x()-lineNumbersWidth(),evPos.y());
         if (evPos.x() >= 0) {
             QTextCursor cursor = cursorForPosition(evPos);
-            cursor.movePosition(QTextCursor::PreviousCharacter);
             bool foundError = false;
             foreach (CodeEditorError cee, errors) {
                 if (cursor.position() >= cee.startPos && cursor.position() <= cee.endPos) {
@@ -716,29 +721,33 @@ void CodeEditor::cut()
 
 void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
 {
+    auto errorColor = Themes::currentTheme.errorColor.get(darkMode);
+    auto warningColor = Themes::currentTheme.warningColor.get(darkMode);
+
     QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
 
     QList<QTextEdit::ExtraSelection> extraSelections;
     foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
-        if (sel.format.underlineColor()!=Qt::red) {
+        if (sel.format.underlineColor() != errorColor && sel.format.underlineColor() != warningColor) {
             extraSelections.append(sel);
         }
     }
 
     errors.clear();
     errorLines.clear();
-    for (unsigned int i=0; i<mznErrors.size(); i++) {
+    warningLines.clear();
+    for (auto& it : mznErrors) {
         QTextEdit::ExtraSelection sel;
         QTextCharFormat format = sel.format;
         format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
-        format.setUnderlineColor(Themes::currentTheme.errorColor.get(darkMode));
-        QTextBlock block = document()->findBlockByNumber(mznErrors[i].first_line-1);
-        QTextBlock endblock = document()->findBlockByNumber(mznErrors[i].last_line-1);
+        format.setUnderlineColor(it.isWarning ? warningColor : errorColor);
+        QTextBlock block = document()->findBlockByNumber(it.first_line-1);
+        QTextBlock endblock = document()->findBlockByNumber(it.last_line-1);
         if (block.isValid() && endblock.isValid()) {
             QTextCursor cursor = textCursor();
             cursor.setPosition(block.position());
-            int firstCol = mznErrors[i].first_col < mznErrors[i].last_col ? (mznErrors[i].first_col-1) : (mznErrors[i].last_col-1);
-            int lastCol = mznErrors[i].first_col < mznErrors[i].last_col ? (mznErrors[i].last_col) : (mznErrors[i].first_col);
+            int firstCol = it.first_col < it.last_col ? (it.first_col-1) : (it.last_col-1);
+            int lastCol = it.first_col < it.last_col ? (it.last_col) : (it.first_col);
             cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, firstCol);
             int startPos = cursor.position();
             cursor.setPosition(endblock.position(), QTextCursor::KeepAnchor);
@@ -747,10 +756,14 @@ void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
             sel.cursor = cursor;
             sel.format = format;
             extraSelections.append(sel);
-            CodeEditorError cee(startPos,endPos,mznErrors[i].msg);
+            CodeEditorError cee(startPos, endPos, QString(it.isWarning ? "Warning: %1" : "Error: %1").arg(it.msg));
             errors.append(cee);
-            for (int j=mznErrors[i].first_line; j<=mznErrors[i].last_line; j++) {
-                errorLines.insert(j-1);
+            for (int j=it.first_line; j<=it.last_line; j++) {
+                if (it.isWarning) {
+                    warningLines.insert(j - 1);
+                } else {
+                    errorLines.insert(j - 1);
+                }
             }
         }
     }

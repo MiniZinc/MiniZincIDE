@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QVersionNumber>
 #include <QTemporaryFile>
+#include <QJsonObject>
 
 #ifdef Q_OS_WIN
 #define NOMINMAX
@@ -13,6 +14,7 @@
 
 #include "solverconfiguration.h"
 #include "elapsedtimer.h"
+#include "profilecompilation.h"
 
 ///
 /// \brief The Process class
@@ -196,10 +198,10 @@ public:
     Q_ENUM(FailureType)
 
     MznProcess(QObject* parent = nullptr)
-        : QObject(parent), ignoreExitStatus(false), p(nullptr), timer(nullptr) {}
+        : QObject(parent), cancelled(false), p(nullptr), timer(nullptr) {}
 
     ///
-    /// \brief Start minizinc.
+    /// \brief Start minizinc. Does not enable --json-stream.
     /// \param args Command line arguments
     /// \param cwd Working directory
     ///
@@ -210,8 +212,9 @@ public:
     /// \param sc The solver configuration to use
     /// \param args Command line arguments
     /// \param cwd Working directory
+    /// \param jsonStream Whether or not to enable --json-stream
     ///
-    void start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString());
+    void start(const SolverConfiguration& sc, const QStringList& args, const QString& cwd = QString(), bool jsonStream = true);
 
     ///
     /// \brief Stop minizinc (does not block)
@@ -283,7 +286,7 @@ signals:
     ///
     /// \brief Emitted on successful exit (or after stopping).
     ///
-    void success();
+    void success(bool cancelled);
 
     ///
     /// \brief Emitted when the process encounters an error
@@ -297,86 +300,80 @@ signals:
     /// \param time The runtime in nanoseconds.
     ///
     void finished(qint64 time);
+
+    // Emitted if --json-stream is enabled
+    ///
+    /// \brief Emitted when a solution message is produced.
+    ///
+    void solutionOutput(const QVariantMap& sections, qint64 time = -1);
+    ///
+    /// \brief Emitted when en error message is produced.
+    ///
+    void errorOutput(const QJsonObject& error);
+    ///
+    /// \brief Emitted when a warning message is produced.
+    ///
+    void warningOutput(const QJsonObject& warning);
+    ///
+    /// \brief Emitted when a statistics message is produced.
+    ///
+    void statisticsOutput(const QVariantMap& statistics);
+    ///
+    /// \brief Emitted when a progress message is read.
+    /// \param progress The progress value
+    ///
+    void progressOutput(double progress);
+    ///
+    /// \brief Emitted when a final status string is read.
+    ///
+    void finalStatus(const QString& status, qint64 time = -1);
+    ///
+    /// \brief Emitted when a comment is read
+    /// \param data The data that was read
+    ///
+    void commentOutput(const QString& data);
+    ///
+    /// \brief Emitted if a time message is output
+    /// \param time The output time
+    ///
+    void timeOutput(qint64 time = -1);
+
+    ///
+    /// \brief Emitted when paths are output
+    /// \param paths The paths
+    ///
+    void pathsOutput(const QVector<PathEntry>& paths);
+    ///
+    /// \brief Emitted when detailed timing info is produced
+    /// \param timing The timing information
+    ///
+    void profilingOutput(const QVector<TimingEntry>& timing);
+    ///
+    /// \brief Emitted when a non-stderr trace is produced
+    /// \param section The trace output section
+    /// \param message The trace message (either a string or JSON)
+    ///
+    void traceOutput(const QString& section, const QVariant& message);
+    ///
+    /// \brief Emitted when an unknown fragment is output
+    /// \param data The data that was read
+    ///
+    void unknownOutput(const QString& data);
+
 private:
-    bool ignoreExitStatus;
+    bool cancelled;
+    bool parse;
     Process p;
     ElapsedTimer timer;
 
     void readStdOut();
     void readStdErr();
 
+    void processOutput();
+
+    void onStdOutLine(const QString& line);
+
     void flushOutput();
-};
-
-///
-/// \brief Runs the minizinc executable and processes solution output.
-///
-class SolveProcess : public MznProcess {
-    Q_OBJECT
-
-public:
-    SolveProcess(QObject* parent=nullptr);
-
-    ///
-    /// \brief Solve an instance using minizinc, processing solutions
-    /// \param sc The solver configuration
-    /// \param modelFile The model file path
-    /// \param dataFiles The data file paths
-    /// \param extraArgs Extra command line arguments
-    ///
-    void solve(const SolverConfiguration& sc, const QString& modelFile, const QStringList& dataFiles = QStringList(), const QStringList& extraArgs = QStringList());
-
-signals:
-    ///
-    /// \brief Emitted when ---------- is read.
-    /// \param solution The solution including ----------\n
-    ///
-    void solutionOutput(const QString& solution);
-    ///
-    /// \brief Emitted when %%%mzn-stat is read.
-    /// \param statistic The statistic read
-    ///
-    void statisticOutput(const QString& statistic);
-    ///
-    /// \brief Emitted when %%%mzn-html-end is read.
-    /// \param html The HTML read
-    ///
-    void htmlOutput(const QString& html);
-    ///
-    /// \brief Emitted when %%%mzn-progress is read.
-    /// \param progress The progress value
-    ///
-    void progressOutput(float progress);
-    ///
-    /// \brief Emitted when a final status string is read.
-    /// \param data The data that was read (==========\n or =====UNKNOWN=====\n or =====ERROR=====\n)
-    ///
-    void finalStatus(const QString& data);
-    ///
-    /// \brief Emitted when an unknown fragment is output
-    /// \param data The data that was readprocess
-    ///
-    void fragment(const QString& data);
-
-private:
-    enum State {
-        Output,
-        HTML,
-        JSONInit,
-        JSON
-    };
-
-    QStringList outputBuffer;
-    QStringList htmlBuffer;
-    QStringList jsonBuffer;
-
-    State state;
-
-    using MznProcess::run;
-
-private slots:
-    void processStdout(QString line);
-    void finished();
 };
 
 #endif // PROCESS_H

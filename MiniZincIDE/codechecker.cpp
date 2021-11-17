@@ -44,26 +44,28 @@ void CodeChecker::onStarted()
 
 void CodeChecker::onLine(const QString& l)
 {
-    QRegExp errexp("^(.*):(([0-9]+)(\\.([0-9]+)(-([0-9]+)(\\.([0-9]+))?)?)?):\\s*$");
-    if (errexp.indexIn(l) != -1) {
-        inRelevantError = false;
-        QString errFile = errexp.cap(1).trimmed();
-        if (errFile=="stdin") {
-            inRelevantError = true;
-            curError.filename = errFile;
-            curError.first_line = errexp.cap(3).toInt();
-            curError.first_col = errexp.cap(5).isEmpty() ? 1 : errexp.cap(5).toInt();
-            curError.last_line =
-                    (errexp.cap(7).isEmpty() || errexp.cap(9).isEmpty()) ? curError.first_line : errexp.cap(7).toInt();
-            curError.last_col =
-                    errexp.cap(7).isEmpty() ? 1 : (errexp.cap(9).isEmpty() ? errexp.cap(7).toInt(): errexp.cap(9).toInt());
-        }
-    } else {
-        if (inRelevantError && (l.startsWith("MiniZinc:") || l.startsWith("Error:"))) {
-            curError.msg = l.trimmed();
-            mznErrors.push_back(curError);
-        }
+    QJsonParseError error;
+    auto json = QJsonDocument::fromJson(l.toUtf8(), &error);
+    if (json.isNull()) {
+        return;
     }
+    auto msg = json.object();
+    if (msg["type"] != "error" && msg["type"] != "warning") {
+        return;
+    }
+    if (!msg["location"].isObject()) {
+        return;
+    }
+    auto loc = msg["location"].toObject();
+    MiniZincError e;
+    e.isWarning = msg["type"] == "warning";
+    e.filename = loc["filename"].toString();
+    e.first_line = loc["firstLine"].toInt();
+    e.first_col = loc["firstColumn"].toInt();
+    e.last_line = loc["lastLine"].toInt();
+    e.last_col = loc["lastColumn"].toInt();
+    e.msg = msg["message"].toString();
+    mznErrors.push_back(e);
 }
 
 void CodeChecker::onFinished()

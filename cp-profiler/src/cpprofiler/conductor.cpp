@@ -240,6 +240,7 @@ void Conductor::handleStart(ReceiverThread *receiver, const std::string &ex_name
 
         /// needs a new execution
         auto ex = addNewExecution(ex_name_used, ex_id, restarts);
+        emit executionStart(ex);
 
         /// construct a name map
         if (ide_used)
@@ -319,6 +320,16 @@ Execution *Conductor::addNewExecution(const std::string &ex_name, int ex_id, boo
     }
 
     return ex.get();
+}
+
+
+Execution* Conductor::getExecution(int exec_id)
+{
+    auto it = executions_.find(exec_id);
+    if (it == executions_.end()) {
+        return nullptr;
+    }
+    return &*it->second;
 }
 
 ExecutionWindow &Conductor::getExecutionWindow(Execution *e)

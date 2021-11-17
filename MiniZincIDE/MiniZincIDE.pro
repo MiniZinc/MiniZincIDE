@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
-
+QT       += core gui widgets websockets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
@@ -40,12 +39,16 @@ SOURCES += main.cpp\
     elapsedtimer.cpp \
     extraparamdialog.cpp \
     ide.cpp \
+    ideutils.cpp \
     mainwindow.cpp \
     codeeditor.cpp \
     highlighter.cpp \
     fzndoc.cpp \
+    outputwidget.cpp \
     process.cpp \
+    profilecompilation.cpp \
     projectbrowser.cpp \
+    server.cpp \
     solverdialog.cpp \
     gotolinedialog.cpp \
     paramdialog.cpp \
@@ -66,9 +69,13 @@ HEADERS  += mainwindow.h \
     highlighter.h \
     fzndoc.h \
     ide.h \
+    ideutils.h \
     macos_extras.h \
+    outputwidget.h \
     process.h \
+    profilecompilation.h \
     projectbrowser.h \
+    server.h \
     solverdialog.h \
     gotolinedialog.h \
     paramdialog.h \
@@ -83,6 +90,7 @@ FORMS    += \
     configwindow.ui \
     extraparamdialog.ui \
     mainwindow.ui \
+    outputwidget.ui \
     projectbrowser.ui \
     solverdialog.ui \
     gotolinedialog.ui \

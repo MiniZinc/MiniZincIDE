@@ -27,6 +27,7 @@
 #include <QProgressBar>
 #include <QComboBox>
 #include <QVersionNumber>
+#include <QJsonArray>
 
 #include "codeeditor.h"
 #include "solverdialog.h"
@@ -36,6 +37,8 @@
 #include "solverconfiguration.h"
 #include "process.h"
 #include "codechecker.h"
+#include "profilecompilation.h"
+#include "server.h"
 
 #include "../cp-profiler/src/cpprofiler/conductor.hh"
 #include "../cp-profiler/src/cpprofiler/execution_window.hh"
@@ -109,7 +112,7 @@ private slots:
 
     void openCompiledFzn(const QString& file);
 
-    void profileCompiledFzn(const QString& output);
+    void profileCompiledFzn(const QVector<TimingEntry>& timing, const QVector<PathEntry>& paths);
 
     void on_actionSave_as_triggered();
 
@@ -121,7 +124,7 @@ private slots:
 
     void on_actionAbout_MiniZinc_IDE_triggered();
 
-    void errorClicked(const QUrl&);
+    void anchorClicked(const QUrl&);
 
     void on_actionDefault_font_size_triggered();
 
@@ -248,10 +251,9 @@ private slots:
 
     void on_menuSolver_configurations_triggered(QAction* action);
 
-    void on_solutionOutput(const QString& solution);
-    void on_finalStatus(const QString& status);
-    void on_fragment(const QString& data);
     void on_progressOutput(float progress);
+
+    void on_minizincError(const QJsonObject& error);
 
 protected:
     virtual void closeEvent(QCloseEvent*);
@@ -263,7 +265,6 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
-    void resolve(int htmlWindowIdentifier, const QString &data);
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
     bool checkSolutions(void) const;
@@ -276,13 +277,8 @@ public:
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;
-    QString curFilePath;
     CodeChecker* code_checker;
     CodeEditor* curCheckEditor;
-    int solutionCount;
-    int solutionLimit;
-    QTimer solutionLimitTimer;
-    QVector<QString> hiddenSolutions;
     QProgressBar* progressBar;
     QLabel* statusLabel;
     QLabel* statusLineColLabel;
@@ -297,7 +293,6 @@ private:
     bool saveBeforeRunning;
     ParamDialog* paramDialog;
     bool profileInfoVisible;
-    int runTimeout;
     Project* project;
     int newFileCounter;
     QComboBox* solverConfCombo;
@@ -310,12 +305,9 @@ private:
     bool processRunning;
 
     QToolButton* runButton;
-    QVector<QPair<SolverFlag,QWidget*>> extraSolverFlags;
-    int currentSolverConfig;
-    bool renamingSolverConf;
 
     cpprofiler::Conductor* conductor = nullptr;
-    int ex_id;
+    Server* server = nullptr;
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };
@@ -340,7 +332,7 @@ private:
 
     void updateProfileSearchButton(void);
 
-    QString runMessage(const QString& action, const QString& model, const QStringList& data, const QStringList& extraArgs);
+    QString locationToLink(const QString& filename, int firstLine, int firstColumn, int lastLine, int lastColumn, const QColor& color);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);

@@ -73,9 +73,11 @@ class Conductor : public QMainWindow
                      const std::string &execution_name,
                      std::shared_ptr<NameMap> nm);
 
+    Execution* getExecution(int exec_id);
+
   signals:
 
-    void readyForBuilding(Execution *e);
+    void executionStart(Execution *e);
 
     /// For a heatmap in the IDE
     void showNogood(QString url, QString name, bool record);

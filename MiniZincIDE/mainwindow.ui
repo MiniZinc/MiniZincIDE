@@ -430,19 +430,9 @@
     <number>8</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_4">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
-      <widget class="QTextBrowser" name="outputConsole">
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAsNeeded</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAsNeeded</enum>
-       </property>
-       <property name="openLinks">
-        <bool>false</bool>
-       </property>
-      </widget>
+      <widget class="OutputWidget" name="outputWidget" native="true"/>
      </item>
     </layout>
    </widget>
@@ -559,7 +549,7 @@
           <x>0</x>
           <y>0</y>
           <width>80</width>
-          <height>671</height>
+          <height>663</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1173,10 +1163,16 @@
    <extends>QWidget</extends>
    <header>configwindow.h</header>
   </customwidget>
+  <customwidget>
+   <class>OutputWidget</class>
+   <extends>QWidget</extends>
+   <header>outputwidget.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
-  <tabstop>outputConsole</tabstop>
+  <tabstop>outputWidget</tabstop>
   <tabstop>find</tabstop>
   <tabstop>replace</tabstop>
   <tabstop>b_next</tabstop>

@@ -28,4 +28,7 @@
         <file>images/media-playback-stop.png</file>
         <file>images/applications-system.png</file>
     </qresource>
+    <qresource prefix="/server">
+        <file>server/index.html</file>
+    </qresource>
 </RCC>

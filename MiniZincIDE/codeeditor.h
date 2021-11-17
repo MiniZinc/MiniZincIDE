@@ -31,6 +31,7 @@ public:
 };
 
 struct MiniZincError {
+    bool isWarning;
     QString filename;
     int first_line;
     int last_line;
@@ -55,6 +56,7 @@ public:
     int debugInfoOffset();
     QString filepath;
     QString filename;
+    QString playgroundTempFile;
     void setEditorFont(QFont& font);
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
@@ -90,6 +92,7 @@ private:
     bool darkMode;
     QList<CodeEditorError> errors;
     QSet<int> errorLines;
+    QSet<int> warningLines;
     QHash<QString,QString> idMap;
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
