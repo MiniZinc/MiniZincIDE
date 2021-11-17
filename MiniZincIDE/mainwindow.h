@@ -40,6 +40,10 @@
 #include "profilecompilation.h"
 #include "server.h"
 
+#ifdef Q_OS_WIN
+#include "win_darkmode.h"
+#endif
+
 #include "../cp-profiler/src/cpprofiler/conductor.hh"
 #include "../cp-profiler/src/cpprofiler/execution_window.hh"
 #include "../cp-profiler/src/cpprofiler/analysis/merge_window.hh"
@@ -308,6 +312,10 @@ private:
 
     cpprofiler::Conductor* conductor = nullptr;
     Server* server = nullptr;
+
+#ifdef Q_OS_WIN
+    DarkModeNotifier* darkModeNotifier = nullptr;
+#endif
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };

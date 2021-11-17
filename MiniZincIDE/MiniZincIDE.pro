@@ -29,6 +29,12 @@ macx {
     }
 }
 
+win32 {
+    SOURCES += win_darkmode.cpp
+    HEADERS += win_darkmode.h
+    LIBS += -ladvapi32
+}
+
 RC_ICONS = mznide.ico
 
 CONFIG += embed_manifest_exe

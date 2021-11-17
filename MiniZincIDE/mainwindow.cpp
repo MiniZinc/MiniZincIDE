@@ -221,6 +221,14 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setPointSize(13);
     editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
     darkMode = settings.value("darkMode", false).value<bool>();
+#ifdef Q_OS_WIN
+    darkModeNotifier = new DarkModeNotifier(this);
+    if (darkModeNotifier->supportsDarkMode()) {
+        ui->menuView->removeAction(ui->actionDark_mode);
+        darkMode = darkModeNotifier->darkMode();
+        connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &MainWindow::on_actionDark_mode_toggled);
+    }
+#endif
     ui->actionDark_mode->setChecked(darkMode);
     on_actionDark_mode_toggled(darkMode);
     ui->outputWidget->setBrowserFont(editorFont);
