@@ -30,5 +30,6 @@
     </qresource>
     <qresource prefix="/server">
         <file>server/index.html</file>
+        <file>server/connector.js</file>
     </qresource>
 </RCC>

@@ -44,7 +44,6 @@ MainWindow::MainWindow(const QString& project) :
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
-    outputBuffer(nullptr),
     processRunning(false)
 {
     init(project);
@@ -56,7 +55,6 @@ MainWindow::MainWindow(const QStringList& files) :
     code_checker(nullptr),
     tmpDir(nullptr),
     saveBeforeRunning(false),
-    outputBuffer(nullptr),
     processRunning(false)
 {
     init(QString());
@@ -338,6 +336,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
 MainWindow::~MainWindow()
 {
     delete code_checker;
+    delete server;
     for (int i=0; i<cleanupTmpDirs.size(); i++) {
         delete cleanupTmpDirs[i];
     }
@@ -1134,25 +1133,10 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     }
 
     connect(proc, &MznProcess::statisticsOutput, ui->outputWidget, &OutputWidget::addStatistics);
-    connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, qint64 time) {
-        if (server != nullptr && output.contains("vis_json")) {
-            auto items = output["vis_json"].toJsonValue();
-            QJsonObject obj({{"event", "solution"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"items", items}});
-            QJsonDocument doc(obj);
-            server->broadcastMessage(doc);
-        }
-        ui->outputWidget->addSolution(output, time);
-    });
+    connect(proc, &MznProcess::solutionOutput, ui->outputWidget, &OutputWidget::addSolution);
     connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
     connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
-    connect(proc, &MznProcess::finalStatus, [=](const QString& status, qint64 time) {
-        if (server != nullptr) {
-            QJsonObject obj({{"event", "status"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"status", status}});
-            QJsonDocument doc(obj);
-            server->broadcastMessage(doc);
-        }
-        ui->outputWidget->addStatus(status, time);
-    });
+    connect(proc, &MznProcess::finalStatus, ui->outputWidget, &OutputWidget::addStatus);
     connect(proc, &MznProcess::unknownOutput, [=](const QString& d) { ui->outputWidget->addText(d); });
     connect(proc, &MznProcess::commentOutput, this, [=] (const QString& d) {
         QTextCharFormat f;
@@ -1164,50 +1148,9 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         QTextCharFormat f;
         f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
         ui->outputWidget->addTextToSection(section, message.toString(), f);
-        if (section == "vis_json") {
-            bool needNewServer = server == nullptr;
-            if (needNewServer) {
-                server = new Server(this);
-                server->setWebroots({workingDir, MznDriver::get().mznStdlibDir()});
-                connect(server, &Server::receiveMessage, [=] (const QJsonDocument& message) {
-                    auto msg = message.object();
-                    auto event = msg["event"].toString();
-                    if (event == "solve") {
-                        auto* origSc = getCurrentSolverConfig();
-                        if (origSc == nullptr) {
-                            return;
-                        }
-                        QStringList df;
-                        bool modelFileGiven = msg["modelFile"].isString();
-                        auto m = modelFileGiven ? workingDir + "/" + msg["modelFile"].toString() : model;
-                        if (!IDEUtils::isChildPath(workingDir, m)) {
-                            return;
-                        }
-                        if (msg["dataFiles"].isArray()) {
-                            for (auto it : msg["dataFiles"].toArray()) {
-                                auto d = workingDir + "/" + it.toString();
-                                if (!IDEUtils::isChildPath(workingDir, d)) {
-                                    return;
-                                }
-                                df << d;
-                            }
-                        } else if (!modelFileGiven) {
-                            // No model, no data, so use previous
-                            df = data;
-                        }
-                        auto options = msg["options"].toObject().toVariantMap();
-                        SolverConfiguration rsc(*origSc);
-                        rsc.extraOptions.unite(options);
-                        if (processRunning) {
-                            proc->terminate();
-                        }
-                        run(rsc, m, df);
-                    }
-                });
-            }
-            server->broadcastMessage(message.toJsonDocument());
-            server->openUrl();
-            ui->outputWidget->associateServerUrl(server->url().toString());
+        if (vis_connector == nullptr && section == "vis_json") {
+            auto obj = message.toJsonObject();
+            startVisualisation(model, data, obj["url"].toString(), obj["userData"], proc);
         }
     });
     connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
@@ -1219,14 +1162,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         ui->outputWidget->endExecution(0, proc->elapsedTime());
         procFinished(0, proc->elapsedTime());
     });
-    connect(proc, &MznProcess::finished, [=] () {
-        if (server != nullptr) {
-            QJsonObject obj({{"event", "finished"}, {"time", proc->elapsedTime()}});
-            QJsonDocument doc(obj);
-            server->broadcastMessage(doc);
-        }
-        proc->deleteLater();
-    });
+    connect(proc, &MznProcess::finished, proc, &QObject::deleteLater);
     connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
         if (e == MznProcess::FailedToStart) {
             QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
@@ -1251,17 +1187,9 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         files << QFileInfo(arg).fileName();
     }
 
+    vis_connector = nullptr;
     ui->outputWidget->setSolutionLimit(compressSolutions);
     ui->outputWidget->startExecution("Running", files);
-
-    // Stop server if running (but leave server running even after finish)
-    if (server != nullptr) {
-        QJsonObject obj({{"event", "reset"}});
-        QJsonDocument doc(obj);
-        server->broadcastMessage(doc);
-        server->clearHistory();
-        server->setWebroots({workingDir, MznDriver::get().mznStdlibDir()});
-    }
 
     args << extraArgs;
     proc->start(sc, args, workingDir, ts == nullptr);
@@ -1281,9 +1209,6 @@ void MainWindow::procFinished(int exitCode, qint64 time) {
 void MainWindow::procFinished(int exitCode) {
     updateUiProcessRunning(false);
     ui->statusbar->clearMessage();
-    delete tmpDir;
-    tmpDir = nullptr;
-    outputBuffer = nullptr;
     emit(finished());
 }
 
@@ -2941,4 +2866,88 @@ QString MainWindow::locationToLink(const QString& file, int firstLine, int first
                               .arg(url.toString())
                               .arg(label)
                               .arg(position);
+}
+
+void MainWindow::startVisualisation(const QString& model, const QStringList& data, const QString& url, const QJsonValue& userData, MznProcess* proc)
+{
+    if (server == nullptr) {
+        server = new Server(this);
+    }
+
+    QFileInfo modelFileInfo(model);
+    QStringList files({modelFileInfo.fileName()});
+    for (auto& df : data) {
+        QFileInfo fi(df);
+        files << fi.fileName();
+    }
+    auto workingDir = modelFileInfo.canonicalPath();
+
+    auto label = files.join(", ");
+    QStringList roots({workingDir, MznDriver::get().mznStdlibDir()});
+    vis_connector = server->addConnector(label, roots);
+    connect(vis_connector, &VisConnector::receiveMessage, [=] (const QJsonDocument& message) {
+        auto msg = message.object();
+        auto event = msg["event"].toString();
+        if (event == "solve") {
+            auto* origSc = getCurrentSolverConfig();
+            if (origSc == nullptr) {
+                return;
+            }
+            QStringList df;
+            bool modelFileGiven = msg["modelFile"].isString();
+            auto m = modelFileGiven ? workingDir + "/" + msg["modelFile"].toString() : model;
+            if (!IDEUtils::isChildPath(workingDir, m)) {
+                return;
+            }
+            if (msg["dataFiles"].isArray()) {
+                for (auto it : msg["dataFiles"].toArray()) {
+                    auto d = workingDir + "/" + it.toString();
+                    if (!IDEUtils::isChildPath(workingDir, d)) {
+                        return;
+                    }
+                    df << d;
+                }
+            } else if (!modelFileGiven) {
+                // No model, no data, so use previous
+                df = data;
+            }
+            auto options = msg["options"].toObject().toVariantMap();
+            SolverConfiguration rsc(*origSc);
+            rsc.extraOptions.unite(options);
+
+            if (processRunning) {
+                proc->terminate();
+            }
+            run(rsc, m, df);
+        }
+    });
+    connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
+        if (section == "vis_json") {
+            auto obj = message.toJsonObject();
+            obj["event"] = "window";
+            vis_connector->broadcastMessage(QJsonDocument(obj));
+        }
+    });
+    connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, qint64 time) {
+        if (output.contains("vis_json")) {
+            auto items = output["vis_json"].toJsonValue();
+            QJsonObject obj({{"event", "solution"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"items", items}});
+            QJsonDocument doc(obj);
+            vis_connector->broadcastMessage(doc);
+        }
+    });
+    connect(proc, &MznProcess::finalStatus, [=](const QString& status, qint64 time) {
+        QJsonObject obj({{"event", "status"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"status", status}});
+        QJsonDocument doc(obj);
+        vis_connector->broadcastMessage(doc);
+    });
+    connect(proc, &MznProcess::finished, [=](qint64 time) {
+        QJsonObject obj({{"event", "finish"}, {"time", time}});
+        QJsonDocument doc(obj);
+        vis_connector->broadcastMessage(doc);
+    });
+    QJsonObject obj({{"event", "window"}, {"url", url}, {"userData", userData}});
+    vis_connector->broadcastMessage(QJsonDocument(obj));
+    ui->outputWidget->associateServerUrl(vis_connector->url().toString());
+    QDesktopServices::openUrl(vis_connector->url());
 }

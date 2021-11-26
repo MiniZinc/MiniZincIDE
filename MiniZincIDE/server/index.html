@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>MiniZincIDE</title>
+        <title>%3 | MiniZincIDE</title>
         <style>
             html, body {
                 margin: 0;
@@ -48,9 +48,78 @@
                 container.style = `grid-template-columns: repeat(${cols}, auto);`;
             };
             const windows = document.getElementById('windows');
-            let buffers = [];
-            const ws = new WebSocket('%1');
+            const buffers = [];
+            const ws = new WebSocket('%1/%2');
             const message = document.getElementById('message');
+            
+            const solutionMessages = [];
+            let statusMessage = null;
+            let finishMessage = null;
+            const saveHistory = (message) => {
+                switch (message.event) {
+                    case 'window':
+                        const frame = document.createElement("iframe");
+                        const buffer = {
+                            ready: false,
+                            queue: [{event: 'init', payload: message.userData}]
+                        };
+                        frame.addEventListener('load', () => {
+                            buffer.ready = true;
+                        });
+                        frame.src = `%2/${message.url}`;
+                        windows.appendChild(frame);
+                        buffers.push(buffer);
+                        layoutGrid(windows);
+                        break;
+                    case 'solution':
+                        solutionMessages.push(message);
+                        break;
+                    case 'status':
+                        statusMessage = {
+                            status: message.status,
+                            time: message.time
+                        };
+                    case 'finish':
+                        finishMessage = {
+                            time: message.time
+                        };
+                        break;
+                }
+            };
+            const handleEvent = (message) => {
+                switch (message.event) {
+                    case 'solution':
+                        // Pass solution to children
+                        for (let i = 0; i < message.items.length; i++) {
+                            buffers[i].queue.push({
+                                event: 'solution',
+                                payload: {
+                                    time: message.time,
+                                    data: message.items[i]
+                                }
+                            });
+                        }
+                        break;
+                    case 'status':
+                        // Pass on to all children
+                        for (const buffer of buffers) {
+                            buffer.queue.push({
+                                status: message.status,
+                                time: message.time
+                            });
+                        }
+                        break;
+                    case 'finish':
+                        // Pass on to all children
+                        for (const buffer of buffers) {
+                            buffer.queue.push({
+                                time: message.time
+                            });
+                        }
+                        break;
+                }
+            }
+
             ws.onopen = () => {
                 message.textContent = '';
             };
@@ -65,43 +134,14 @@
                 const message = JSON.parse(e.data);
                 switch (message.event) {
                     case 'init':
-                        // Initialize new frame
-                        const frame = document.createElement("iframe");
-                        const buffer = {
-                            ready: false,
-                            queue: [message]
-                        };
-                        frame.addEventListener('load', () => {
-                            buffer.ready = true;
-                        });
-                        frame.src = message.url;
-                        windows.appendChild(frame);
-                        buffers.push(buffer);
-                        layoutGrid(windows);
-                        break;
-                    case 'solution':
-                        // Pass solution to children
-                        for (let i = 0; i < message.items.length; i++) {
-                            buffers[i].queue.push({
-                                event: 'solution',
-                                time: message.time,
-                                data: message.items[i]
-                            });
+                        // Save into history in case child window needs it
+                        for (const m of message.messages) {
+                            saveHistory(m);
                         }
                         break;
-                    case 'reset':
-                        // Reset page
-                        while (windows.firstChild) {
-                            windows.removeChild(windows.lastChild);
-                        }
-                        buffers = [];
-                        break;
-                    case 'status':
-                    case 'finish':
-                        // Pass on to all children
-                        for (const buffer of buffers) {
-                            buffer.queue.push(message);
-                        }
+                    default:
+                        handleEvent(message);
+                        saveHistory(message);
                         break;
                 }
             };
@@ -113,6 +153,88 @@
                         for (const buffer of buffers) {
                             buffer.queue.push(message.message);
                         }
+                        break;
+                    case 'getNumSolutions':
+                        e.source.postMessage({
+                            event: 'response',
+                            id: message.id,
+                            data: solutionMessages.length
+                        });
+                        break;
+                    case 'getSolution': {
+                        let index = message.index < 0 ? message.index + solutionMessages.length : message.index;
+                        if (index < 0 || index >= solutionMessages.length) {
+                            e.source.postMessage({
+                                event: 'error',
+                                id: message.id,
+                                message: 'Index out of range'
+                            });
+                            return;
+                        }
+
+                        let windowIndex = -1;
+                        for (let i = 0; i < windows.children.length; i++) {
+                            if (windows.children[i].contentWindow === e.source) {
+                                windowIndex = i;
+                            }
+                        }
+                        if (windowIndex === -1) {
+                            e.source.postMessage({
+                                event: 'error',
+                                id: message.id,
+                                message: 'Could not determine source window'
+                            });
+                            return;
+                        }
+
+                        e.source.postMessage({
+                            event: 'response',
+                            id: message.id,
+                            payload: {
+                                time: solutionMessages[index].time,
+                                data: solutionMessages[index].items[windowIndex]
+                            }
+                        });
+                        break;
+                    }
+                    case 'getAllSolutions': {
+                        let windowIndex = -1;
+                        for (let i = 0; i < windows.children.length; i++) {
+                            if (windows.children[i].contentWindow === e.source) {
+                                windowIndex = i;
+                            }
+                        }
+                        if (windowIndex === -1) {
+                            e.source.postMessage({
+                                event: 'error',
+                                id: message.id,
+                                message: 'Could not determine source window'
+                            });
+                            return;
+                        }
+                        e.source.postMessage({
+                            event: 'response',
+                            id: message.id,
+                            payload: solutionMessages.map(message => ({
+                                time: message.time,
+                                data: message.items[windowIndex]
+                            }))
+                        });
+                        break;
+                    }
+                    case 'getStatus':
+                        e.source.postMessage({
+                            event: 'response',
+                            id: message.id,
+                            payload: statusMessage
+                        });
+                        break;
+                    case 'getFinish':
+                        e.source.postMessage({
+                            event: 'response',
+                            id: message.id,
+                            payload: finishMessage
+                        });
                         break;
                     default:
                         // Pass on to IDE

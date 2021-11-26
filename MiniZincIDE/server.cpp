@@ -7,6 +7,47 @@
 #include "ideutils.h"
 #include "exception.h"
 
+VisConnector::~VisConnector()
+{
+    for (auto* c : _clients) {
+        delete c;
+    }
+}
+
+void VisConnector::newWebSocketClient(QWebSocket* socket)
+{
+    connect(socket, &QWebSocket::disconnected, this, &VisConnector::webSocketClientDisconnected);
+    connect(socket, &QWebSocket::textMessageReceived, this, &VisConnector::webSocketMessageReceived);
+    QJsonObject obj({{"event", "init"}, {"messages", _history}});
+    auto json = QString::fromUtf8(QJsonDocument(obj).toJson());
+    socket->sendTextMessage(json);
+}
+
+void VisConnector::webSocketClientDisconnected()
+{
+    auto* client = qobject_cast<QWebSocket*>(sender());
+    if (client) {
+        _clients.removeAll(client);
+        client->deleteLater();
+    }
+}
+
+void VisConnector::broadcastMessage(const QJsonDocument& message)
+{
+    auto json = QString::fromUtf8(message.toJson());
+    for (auto* client : _clients) {
+        client->sendTextMessage(json);
+    }
+    _history << message.object(); // Save data so we can send to new clients
+}
+
+void VisConnector::webSocketMessageReceived(const QString& message)
+{
+    QJsonParseError error;
+    auto json = QJsonDocument::fromJson(message.toUtf8(), &error);
+    emit receiveMessage(json);
+}
+
 Server::Server(QObject *parent) :
     QObject(parent),
     http(new QTcpServer(this)),
@@ -23,12 +64,24 @@ Server::Server(QObject *parent) :
     connect(ws, &QWebSocketServer::newConnection, this, &Server::newWebSocketClient);
 }
 
-QUrl Server::url() const {
-    QUrl url;
-    url.setScheme("http");
-    url.setHost(address());
-    url.setPort(port());
-    return url;
+Server::~Server()
+{
+    for (auto* c : connectors) {
+        delete c;
+    }
+}
+
+VisConnector* Server::addConnector(const QString& label, const QStringList& roots)
+{
+    auto* c = new VisConnector(this);
+    c->_label = label;
+    c->_roots = roots;
+    c->_url.setScheme("http");
+    c->_url.setHost(address());
+    c->_url.setPort(port());
+    c->_url.setPath(QString("/%1").arg(connectors.size()));
+    connectors << c;
+    return c;
 }
 
 void Server::newHttpClient()
@@ -41,23 +94,57 @@ void Server::newHttpClient()
         return;
     }
 
+    // Connector script
+    if (parts[1] == "/minizinc-ide.js") {
+        QFile f(":/server/server/connector.js");
+        f.open(QFile::ReadOnly | QFile::Text);
+        QTextStream c(&f);
+        ts << "HTTP/1.1 200 OK\r\n"
+           << "Content-Type: text/javascript\r\n"
+           << "\r\n"
+           << c.readAll();
+        socket->close();
+        return;
+    }
+
+    QRegularExpression re("^/?(\\d+)(/.*)?$");
+    auto p = QUrl::fromPercentEncoding(parts[1].toUtf8());
+    auto match = re.match(p);
+    if (!match.hasMatch()) {
+        ts << "HTTP/1.1 404 OK\r\n"
+           << "\r\n"
+           << "File not found.";
+        socket->close();
+        return;
+    }
+
+    auto index = match.captured(1).toInt();
+    if (index >= connectors.size()) {
+        ts << "HTTP/1.1 404 OK\r\n"
+           << "\r\n"
+           << "File not found.";
+        socket->close();
+        return;
+    }
+
+    auto path = match.captured(2);
     // Window management page
-    if (parts[1] == "/" || parts[1] == "/index.html") {
+    if (path.isEmpty() || path == "index.html") {
+        QString title = connectors[index]->_label.toHtmlEscaped();
         QFile f(":/server/server/index.html");
         f.open(QFile::ReadOnly | QFile::Text);
         QTextStream c(&f);
         ts << "HTTP/1.1 200 OK\r\n"
            << "Content-Type: text/html\r\n"
            << "\r\n"
-           << c.readAll().arg(ws->serverUrl().toString());
+           << c.readAll().arg(ws->serverUrl().toString()).arg(index).arg(title);
         socket->close();
         return;
     }
 
     // Static file server
     QStringList base_dirs({":/server/server"});
-    base_dirs << roots;
-    auto path = QUrl::fromPercentEncoding(parts[1].toUtf8());
+    base_dirs << connectors[index]->_roots;
     for (auto& base_dir : base_dirs) {
         auto full_path = base_dir + "/" + path;
         if (IDEUtils::isChildPath(base_dir, full_path)) {
@@ -93,45 +180,13 @@ void Server::newHttpClient()
 void Server::newWebSocketClient()
 {
     auto* socket = ws->nextPendingConnection();
-    connect(socket, &QWebSocket::disconnected, this, &Server::webSocketClientDisconnected);
-    clients << socket;
-    connect(socket, &QWebSocket::textMessageReceived, this, &Server::webSocketMessageReceived);
-    for (auto& item: history) {
-        // Send previous messages so client is caught up
-        socket->sendTextMessage(item);
+    auto path = socket->requestUrl().path();
+    bool ok = false;
+    auto index = path.right(path.size() - 1).toInt(&ok);
+    if (!ok || index >= connectors.size()) {
+        socket->close();
+        return;
     }
-}
-
-void Server::webSocketClientDisconnected()
-{
-    auto* client = qobject_cast<QWebSocket*>(sender());
-    if (client) {
-        clients.removeAll(client);
-        client->deleteLater();
-    }
-}
-
-void Server::broadcastMessage(const QJsonDocument& message)
-{
-    auto json = QString::fromUtf8(message.toJson());
-    for (auto* client : clients) {
-        client->sendTextMessage(json);
-    }
-    history << json; // Save data so we can send to new clients
-}
-
-void Server::webSocketMessageReceived(const QString& message)
-{
-    QJsonParseError error;
-    auto json = QJsonDocument::fromJson(message.toUtf8(), &error);
-    emit receiveMessage(json);
-}
-
-void Server::openUrl(bool force)
-{
-    if (force || (clientCount() == 0 && (!lastOpened.isValid() || lastOpened.hasExpired(1000)))) {
-        // Open if no one is connected (and don't open multiple times in rapid succession)
-        lastOpened.restart();
-        QDesktopServices::openUrl(url());
-    }
+    auto* c = connectors[index];
+    c->newWebSocketClient(socket);
 }
