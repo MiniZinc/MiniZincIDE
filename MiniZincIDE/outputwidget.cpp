@@ -70,7 +70,7 @@ void OutputWidget::scrollToBottom()
     scrollbar->setValue(scrollbar->maximum());
 }
 
-void OutputWidget::startExecution(const QString& type, const QStringList& files)
+void OutputWidget::startExecution(const QString& label)
 {
     TextLayoutLock lock(this);
     auto c = ui->textBrowser->textCursor();
@@ -87,9 +87,7 @@ void OutputWidget::startExecution(const QString& type, const QStringList& files)
 
     auto leftSideCursor = table->cellAt(0, 0).firstCursorPosition();
     leftSideCursor.insertText(QString(QChar::ObjectReplacementCharacter), _arrowFormat);
-    leftSideCursor.insertText(type, noticeCharFormat());
-    leftSideCursor.insertText(" ", noticeCharFormat());
-    leftSideCursor.insertText(files.join(", "), noticeCharFormat());
+    leftSideCursor.insertText(label, noticeCharFormat());
 
     auto rightSideCursor = table->cellAt(0, 1).firstCursorPosition();
     rightSideCursor.setBlockFormat(_rightAlignBlockFormat);

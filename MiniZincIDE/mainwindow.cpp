@@ -1123,6 +1123,43 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         proc->stop();
         proc->deleteLater();
     });
+
+    QStringList args;
+    args << model
+         << data;
+    QStringList files;
+    for (auto& arg : args) {
+        files << QFileInfo(arg).fileName();
+    }
+    args << extraArgs;
+
+    if (sc.solverDefinition.isGUIApplication) {
+        // Detach GUI app
+        ui->outputWidget->startExecution(QString("Running ") + files.join(", ") + " (detached)");
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addText("Process will continue running detached from the IDE.\n", f);
+        connect(proc, &MznProcess::started, this, [=] () {
+            ui->outputWidget->endExecution(0, proc->elapsedTime());
+            procFinished(0);
+        });
+        connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+            if (e == MznProcess::FailedToStart) {
+                QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
+                exitCode = 0;
+            } else if (e != MznProcess::NonZeroExit) {
+                QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
+                QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
+            }
+            ui->outputWidget->endExecution(exitCode, proc->elapsedTime());
+            procFinished(exitCode, proc->elapsedTime());
+        });
+        connect(proc, &MznProcess::finished, proc, &QObject::deleteLater);
+
+        proc->start(sc, args, workingDir, ts == nullptr);
+        return;
+    }
+
     connect(ui->actionStop, &QAction::triggered, proc, [=] () {
         ui->actionStop->setDisabled(true);
         proc->stop();
@@ -1180,18 +1217,9 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     updateUiProcessRunning(true);
 
-    QStringList args;
-    args << model
-         << data;
-
-    QStringList files;
-    for (auto& arg : args) {
-        files << QFileInfo(arg).fileName();
-    }
-
     vis_connector = nullptr;
     ui->outputWidget->setSolutionLimit(compressSolutions);
-    ui->outputWidget->startExecution("Running", files);
+    ui->outputWidget->startExecution(files.join(", ").prepend("Running "));
 
     args << extraArgs;
     proc->start(sc, args, workingDir, ts == nullptr);

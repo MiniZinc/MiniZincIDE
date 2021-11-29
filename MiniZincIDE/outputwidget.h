@@ -43,7 +43,7 @@ public:
 public slots:
     void setDarkMode(bool darkMode);
 
-    void startExecution(const QString& type, const QStringList& files);
+    void startExecution(const QString& label);
     void associateProfilerExecution(int executionId);
     void associateServerUrl(const QString& url);
     void addSolution(const QVariantMap& output, qint64 time = -1);
