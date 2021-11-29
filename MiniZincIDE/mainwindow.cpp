@@ -2068,7 +2068,7 @@ void MainWindow::on_action_Un_comment_triggered()
     QTextBlock block = beginBlock;
     bool isCommented = true;
     do {
-        if (comment.match(block.text()).hasMatch()) {
+        if (!comment.match(block.text()).hasMatch()) {
             isCommented = false;
             break;
         }
