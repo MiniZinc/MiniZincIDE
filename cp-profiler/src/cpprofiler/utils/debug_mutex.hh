@@ -2,7 +2,11 @@
 #ifndef CPPROFILER_UTILS_DEBUG_MUTEX_HH
 #define CPPROFILER_UTILS_DEBUG_MUTEX_HH
 
+#if QT_VERSION >= 0x060000
+#include <QRecursiveMutex>
+#else
 #include <QMutex>
+#endif
 #include <QDebug>
 
 namespace cpprofiler
@@ -10,30 +14,35 @@ namespace cpprofiler
 namespace utils
 {
 
-class DebugMutex : public QMutex
+#if QT_VERSION >= 0x060000
+typedef QRecursiveMutex MyMutex;
+#else
+typedef QMutex MyMutex;
+#endif
+class DebugMutex : public MyMutex
 {
   public:
-    DebugMutex() : QMutex(QMutex::Recursive) {}
+    DebugMutex() {}
 
     void lock(std::string msg)
     {
 
         // qDebug() << "(" << msg.c_str() << ") lock";
 
-        QMutex::lock();
+        MyMutex::lock();
     }
 
     bool tryLock()
     {
 
         // qDebug() << "try lock";
-        return QMutex::tryLock();
+        return MyMutex::tryLock();
     }
 
     void unlock(std::string msg)
     {
         // qDebug() << "(" << msg.c_str() << ") unlock";
-        QMutex::unlock();
+        MyMutex::unlock();
     }
 };
 

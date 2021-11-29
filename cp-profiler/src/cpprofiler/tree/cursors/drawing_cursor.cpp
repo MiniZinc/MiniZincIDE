@@ -174,7 +174,7 @@ void DrawingCursor::processCurrentNode()
         const Label &label = debug_mode_ ? std::to_string(node) : tree_.getLabel(node);
 
         auto fm = painter_.fontMetrics();
-        auto label_width = fm.width(label.c_str());
+        auto label_width = fm.horizontalAdvance(label.c_str());
 
         {
             auto font = painter_.font();
