@@ -363,14 +363,12 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
     bool large = false;
     QString fileContents;
     QString absPath = QFileInfo(path).canonicalFilePath();
-    if (isNewFile) {
-        if (path=="Playground") {
-            absPath=path;
-            fileContents="% Use this editor as a MiniZinc scratch book\n";
-            openAsModified=false;
-        } else {
-            absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
-        }
+    if (isNewFile && path == "Playground") {
+        absPath = path;
+        fileContents = "% Use this editor as a MiniZinc scratch book\n";
+        openAsModified = false;
+    } else if (isNewFile && path.startsWith(".")) {
+        absPath = QString("Untitled")+QString().setNum(newFileCounter++)+path;
     } else if (path.isEmpty()) {
         absPath = path;
         // Do nothing
@@ -383,6 +381,9 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
                                  "Could not open file "+path,
                                  QMessageBox::Ok);
             return;
+        }
+        if (isNewFile) {
+            absPath = QFileInfo(path).fileName();
         }
     } else {
         if (absPath.isEmpty()) {
@@ -1066,11 +1067,12 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
             delete paths;
         });
     } else {
-        connect(proc, &MznProcess::success, [&] (bool cancelled) {
+        connect(proc, &MznProcess::success, [=] (bool cancelled) {
             if (!cancelled) {
                 openCompiledFzn(fzn);
             }
             procFinished(0, proc->elapsedTime());
+            ui->outputWidget->endExecution(0, proc->elapsedTime());
         });
     }
     connect(proc, &MznProcess::statisticsOutput, ui->outputWidget, &OutputWidget::addStatistics);
@@ -1093,12 +1095,18 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
             QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
             QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
         }
+        ui->outputWidget->endExecution(0, proc->elapsedTime());
         procFinished(exitCode, proc->elapsedTime());
     });
     connect(proc, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
     SolverConfiguration compileSc(sc);
     compileSc.outputTiming = false; // Remove solns2out options
     updateUiProcessRunning(true);
+    QStringList files({QFileInfo(model).fileName()});
+    for (auto& d : data) {
+        files << QFileInfo(d).fileName();
+    }
+    ui->outputWidget->startExecution(files.join(", ").prepend("Compiling "));
     proc->start(compileSc, args, fi.canonicalPath());
 }
 
@@ -1380,7 +1388,7 @@ void MainWindow::openCompiledFzn(const QString& fzn)
             break;
         }
     }
-    openFile(fzn, !fzn.endsWith(".mzc"));
+    createEditor(fzn, !fzn.endsWith(".mzc"), true, false);
 }
 
 void MainWindow::profileCompiledFzn(const QVector<TimingEntry>& timing, const QVector<PathEntry>& paths)
