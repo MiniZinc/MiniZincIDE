@@ -5,6 +5,12 @@
     color: #FFFFFF;
 }
 
+*:disabled {
+    background-color: #333333;
+    color: #666666;
+    border-color: #666666;
+}
+
 QMenuBar, QPushButton {
     background-color: #444444;
 }
