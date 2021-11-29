@@ -35,6 +35,9 @@
 
 void Process::start(const QString &program, const QStringList &arguments, const QString &path)
 {
+#if QT_VERSION >= 0x060000
+    setChildProcessModifier(Process::setpgid);
+#endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString curPath = env.value("PATH");
     QString addPath = IDE::instance()->appDir();
@@ -105,7 +108,11 @@ void Process::sendInterrupt()
 #endif
 }
 
+#if QT_VERSION >= 0x060000
+void Process::setpgid()
+#else
 void Process::setupChildProcess()
+#endif
 {
 #ifndef Q_OS_WIN
     if (::setpgid(0,0)) {

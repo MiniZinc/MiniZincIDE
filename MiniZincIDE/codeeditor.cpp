@@ -22,7 +22,7 @@ CodeEditor::initUI(QFont& font)
 
     setFont(font);
 
-    setTabStopWidth(QFontMetrics(font).boundingRect("  ").width());
+    setTabStopDistance(QFontMetrics(font).boundingRect("  ").width());
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
@@ -224,10 +224,11 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         e->accept();
         QTextCursor cursor(textCursor());
         QString curLine = cursor.block().text();
-        QRegExp leadingWhitespace("^(\\s*)");
+        QRegularExpression leadingWhitespace("^(\\s*)");
         cursor.insertText("\n");
-        if (leadingWhitespace.indexIn(curLine) != -1) {
-            cursor.insertText(leadingWhitespace.cap(1));
+        auto leadingWhitespace_match = leadingWhitespace.match(curLine);
+        if (leadingWhitespace_match.hasMatch()) {
+            cursor.insertText(leadingWhitespace_match.captured(1));
         }
         ensureCursorVisible();
     } else if (e->key() == Qt::Key_Escape) {

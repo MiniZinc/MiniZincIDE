@@ -250,7 +250,11 @@ void Project::add(const QString& fileName)
         return;
     }
 
+#if QT_VERSION >= 0x060000
+    auto parts = path.split("/", Qt::SkipEmptyParts); // Qt always uses / as the path separator
+#else
     auto parts = path.split("/", QString::SkipEmptyParts); // Qt always uses / as the path separator
+#endif
     auto file = parts.takeLast();
 
     QStandardItem* node = otherItem;

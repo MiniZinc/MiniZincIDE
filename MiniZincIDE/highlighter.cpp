@@ -44,7 +44,7 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     QTextCharFormat format;
 
     format.setForeground(functionColor);
-    rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\s*\\()");
+    rule.pattern = QRegularExpression("\\b[A-Za-z0-9_]+(?=\\s*\\()");
     rule.format = format;
     rules.append(rule);
 
@@ -52,7 +52,7 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     format.setFontWeight(QFont::Bold);
     format.setForeground(keywordColor);
     for (int i=0; i<patterns.size(); i++) {
-        rule.pattern = QRegExp(patterns[i]);
+        rule.pattern = QRegularExpression(patterns[i]);
         rule.format = format;
         rules.append(rule);
     }
@@ -60,8 +60,8 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
 
     setEditorFont(font);
 
-    commentStartExp = QRegExp("/\\*");
-    commentEndExp = QRegExp("\\*/");
+    commentStartExp = QRegularExpression("/\\*");
+    commentEndExp = QRegularExpression("\\*/");
 
     setDarkMode(dm);
 
@@ -116,10 +116,10 @@ void Highlighter::highlightBlock(const QString &text)
         bd->highlightingState = static_cast<BracketData*>(block.previous().userData())->highlightingState;
     }
 
-    QRegExp noneRegExp("\"|%|/\\*");
-    QRegExp stringRegExp("\"|\\\\\\(");
-    QRegExp commentRegexp("\\*/");
-    QRegExp interpolateRegexp("[)\"%(]|/\\*");
+    QRegularExpression noneRegExp("\"|%|/\\*");
+    QRegularExpression stringRegExp("\"|\\\\\\(");
+    QRegularExpression commentRegexp("\\*/");
+    QRegularExpression interpolateRegexp("[)\"%(]|/\\*");
 
     QTextCharFormat stringFormat;
     stringFormat.setForeground(stringColor);
@@ -136,7 +136,7 @@ void Highlighter::highlightBlock(const QString &text)
         switch (currentState) {
         case HS_NONE:
             {
-                int nxt = noneRegExp.indexIn(text, curPosition);
+                int nxt = noneRegExp.match(text, curPosition).capturedStart();
                 if (nxt==-1) {
                     curPosition = -1;
                 } else {
@@ -156,7 +156,7 @@ void Highlighter::highlightBlock(const QString &text)
             break;
         case HS_STRING:
             {
-                int nxt = stringRegExp.indexIn(text, curPosition);
+                int nxt = stringRegExp.match(text, curPosition).capturedStart();
                 int stringStartIdx = curPosition==0 ? 0 : curPosition-1;
                 if (nxt==-1) {
                     setFormat(stringStartIdx, text.size()-stringStartIdx, stringFormat);
@@ -177,7 +177,7 @@ void Highlighter::highlightBlock(const QString &text)
             break;
         case HS_COMMENT:
             {
-                int nxt = commentRegexp.indexIn(text, curPosition);
+                int nxt = commentRegexp.match(text, curPosition).capturedStart();
                 int commentStartIdx = curPosition==0 ? 0 : curPosition-1;
                 if (nxt==-1) {
                     // EOL -> stay in COMMENT state
@@ -193,7 +193,7 @@ void Highlighter::highlightBlock(const QString &text)
             break;
         case HS_INTERPOLATE:
             {
-                int nxt = interpolateRegexp.indexIn(text, curPosition);
+                int nxt = interpolateRegexp.match(text, curPosition).capturedStart();
                 if (nxt==-1) {
                     // EOL -> stay in INTERPOLATE state
                     setFormat(curPosition, text.size()-curPosition, interpolateFormat);
@@ -228,10 +228,11 @@ void Highlighter::highlightBlock(const QString &text)
     // Stage 2: find keywords and functions
     for (int i=0; i<rules.size(); i++) {
         const Rule& rule = rules[i];
-        QRegExp expression(rule.pattern);
-        int index = expression.indexIn(text);
+        QRegularExpression expression(rule.pattern);
+        auto match = expression.match(text);
+        int index = match.capturedStart();
         while (index >= 0) {
-            int length = expression.matchedLength();
+            int length = match.capturedLength();
             if (format(index)!=commentFormat && format(index)!=stringFormat) {
                 if (format(index)==interpolateFormat) {
                     QTextCharFormat interpolateRule = rule.format;
@@ -241,13 +242,15 @@ void Highlighter::highlightBlock(const QString &text)
                     setFormat(index, length, rule.format);
                 }
             }
-            index = expression.indexIn(text, index + length);
+            match = expression.match(text, index + length);
+            index = match.capturedStart();
         }
     }
 
     // Stage 3: update bracket data
-    QRegExp re("\\(|\\)|\\{|\\}|\\[|\\]");
-    int pos = text.indexOf(re);
+    QRegularExpression re("\\(|\\)|\\{|\\}|\\[|\\]");
+    auto re_match = re.match(text);
+    int pos = re_match.capturedStart();
     while (pos != -1) {
         if (format(pos)!=commentFormat) {
             Bracket b;
@@ -255,7 +258,8 @@ void Highlighter::highlightBlock(const QString &text)
             b.pos = pos;
             bd->brackets.append(b);
         }
-        pos = text.indexOf(re, pos+1);
+        re_match = re.match(text, pos+1);
+        pos = re_match.capturedStart();
     }
     setCurrentBlockUserData(bd);
 

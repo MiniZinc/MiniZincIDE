@@ -15,6 +15,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QMenu>
+#include <QPainterPath>
 #include "ideutils.h"
 
 OutputWidget::OutputWidget(QWidget *parent) :

@@ -30,7 +30,11 @@ public:
     void terminate(void);
     void sendInterrupt();
 protected:
+#if QT_VERSION >= 0x060000
+    static void setpgid();
+#else
     virtual void setupChildProcess();
+#endif
 #ifdef Q_OS_WIN
 private:
     HANDLE jobObject;

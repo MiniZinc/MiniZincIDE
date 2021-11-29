@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QPushButton>
+#include <QRegularExpression>
 
 #include "ide.h"
 #include "mainwindow.h"
@@ -521,7 +522,9 @@ void IDE::loadLargeFile(const QString &path, QWidget* parent)
         QFile file(path);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             QTextStream file_stream(&file);
+#if QT_VERSION < 0x060000
             file_stream.setCodec("UTF-8");
+#endif
             it.value()->td.setPlainText(file_stream.readAll());
             it.value()->large = false;
             it.value()->td.setModified(false);
@@ -580,29 +583,31 @@ IDE::versionCheckFinished(void) {
     if (versionCheckReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200) {
         QString currentVersion = versionCheckReply->readAll();
 
-        QRegExp versionRegExp("([1-9][0-9]*)\\.([0-9]+)\\.([0-9]+)");
+        QRegularExpression versionRegExp("([1-9][0-9]*)\\.([0-9]+)\\.([0-9]+)");
 
         int curVersionMajor = 0;
         int curVersionMinor = 0;
         int curVersionPatch = 0;
         bool ok = true;
-        if (versionRegExp.indexIn(currentVersion) != -1) {
-            curVersionMajor = versionRegExp.cap(1).toInt(&ok);
+        QRegularExpressionMatch curVersionMatch = versionRegExp.match(currentVersion);
+        if (curVersionMatch.hasMatch()) {
+            curVersionMajor = curVersionMatch.captured(1).toInt(&ok);
             if (ok)
-                curVersionMinor = versionRegExp.cap(2).toInt(&ok);
+                curVersionMinor = curVersionMatch.captured(2).toInt(&ok);
             if (ok)
-                curVersionPatch = versionRegExp.cap(3).toInt(&ok);
+                curVersionPatch = curVersionMatch.captured(3).toInt(&ok);
         }
 
         int appVersionMajor = 0;
         int appVersionMinor = 0;
         int appVersionPatch = 0;
-        if (ok && versionRegExp.indexIn(applicationVersion()) != -1) {
-            appVersionMajor = versionRegExp.cap(1).toInt(&ok);
+        QRegularExpressionMatch appVersionMatch = versionRegExp.match(applicationVersion());
+        if (ok && appVersionMatch.hasMatch()) {
+            appVersionMajor = appVersionMatch.captured(1).toInt(&ok);
             if (ok)
-                appVersionMinor = versionRegExp.cap(2).toInt(&ok);
+                appVersionMinor = appVersionMatch.captured(2).toInt(&ok);
             if (ok)
-                appVersionPatch = versionRegExp.cap(3).toInt(&ok);
+                appVersionPatch = appVersionMatch.captured(3).toInt(&ok);
         }
 
         bool needUpdate = ok && (curVersionMajor > appVersionMajor ||

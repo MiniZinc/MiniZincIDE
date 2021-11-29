@@ -71,7 +71,7 @@ void MainWindow::showWindowMenu()
     for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
          it != IDE::instance()->mainWindows.end(); ++it) {
         QAction* windowAction = ui->menuWindow->addAction((*it)->windowTitle());
-        QVariant v = qVariantFromValue(static_cast<void*>(*it));
+        QVariant v = QVariant::fromValue(static_cast<void*>(*it));
         windowAction->setData(v);
         windowAction->setCheckable(true);
         if (*it == this) {
@@ -143,7 +143,7 @@ void MainWindow::init(const QString& projectFile)
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose, true);
     minimizeAction = new QAction("&Minimize",this);
-    minimizeAction->setShortcut(Qt::CTRL+Qt::Key_M);
+    minimizeAction->setShortcut(Qt::CTRL | Qt::Key_M);
 #ifdef Q_OS_MAC
     connect(ui->menuWindow, SIGNAL(aboutToShow()), this, SLOT(showWindowMenu()));
     connect(ui->menuWindow, SIGNAL(triggered(QAction*)), this, SLOT(windowMenuSelected(QAction*)));
@@ -164,17 +164,17 @@ void MainWindow::init(const QString& projectFile)
     paramDialog = new ParamDialog(this);
 
     fakeRunAction = new QAction(this);
-    fakeRunAction->setShortcut(Qt::CTRL+Qt::Key_R);
+    fakeRunAction->setShortcut(Qt::CTRL | Qt::Key_R);
     fakeRunAction->setEnabled(true);
     this->addAction(fakeRunAction);
 
     fakeCompileAction = new QAction(this);
-    fakeCompileAction->setShortcut(Qt::CTRL+Qt::Key_B);
+    fakeCompileAction->setShortcut(Qt::CTRL | Qt::Key_B);
     fakeCompileAction->setEnabled(true);
     this->addAction(fakeCompileAction);
 
     fakeStopAction = new QAction(this);
-    fakeStopAction->setShortcut(Qt::CTRL+Qt::Key_E);
+    fakeStopAction->setShortcut(Qt::CTRL | Qt::Key_E);
     fakeStopAction->setEnabled(true);
     this->addAction(fakeStopAction);
 
@@ -911,7 +911,9 @@ QString MainWindow::currentModelFile()
                 QFile modelFile(model);
                 if (modelFile.open(QIODevice::ReadWrite)) {
                     QTextStream ts(&modelFile);
+#if QT_VERSION < 0x060000
                     ts.setCodec("UTF-8");
+#endif
                     ts << curEditor->document()->toPlainText();
                     modelFile.close();
                 } else {
@@ -1245,7 +1247,9 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
             QFile file(filepath);
             if (file.open(QFile::WriteOnly | QFile::Text)) {
                 QTextStream out(&file);
+#if QT_VERSION < 0x060000
                 out.setCodec(QTextCodec::codecForName("UTF-8"));
+#endif
                 out << ce->document()->toPlainText();
                 file.close();
                 if (filepath != ce->filepath) {
@@ -1544,7 +1548,7 @@ void MainWindow::find(bool fwd, bool forceNoWrapAround)
     int hasWrapped = wrap ? 0 : 1;
     while (hasWrapped < 2) {
         if (ui->check_re->isChecked()) {
-            QRegExp re(toFind, ignoreCase ? Qt::CaseInsensitive : Qt::CaseSensitive);
+            QRegularExpression re(toFind, ignoreCase ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
             if (!re.isValid()) {
                 ui->not_found->setText("invalid");
                 return;
@@ -1685,16 +1689,18 @@ void MainWindow::anchorClicked(const QUrl & anUrl)
         }
         QFileInfo ceinfo(ce->filepath.isEmpty() ? ce->playgroundTempFile : ce->filepath);
         if (ceinfo.canonicalFilePath() == urlinfo.canonicalFilePath()) {
-            QRegExp re_line("line=([0-9]+)");
-            if (re_line.indexIn(query) != -1) {
+            QRegularExpression re_line("line=([0-9]+)");
+            auto re_line_match = re_line.match(query);
+            if (re_line_match.hasMatch()) {
                 bool ok;
-                int line = re_line.cap(1).toInt(&ok);
+                int line = re_line_match.captured(1).toInt(&ok);
                 if (ok) {
                     int col = 1;
-                    QRegExp re_col("column=([0-9]+)");
-                    if (re_col.indexIn(query) != -1) {
+                    QRegularExpression re_col("column=([0-9]+)");
+                    auto re_col_match = re_col.match(query);
+                    if (re_col_match.hasMatch()) {
                         bool ok;
-                        col = re_col.cap(1).toInt(&ok);
+                        col = re_col_match.captured(1).toInt(&ok);
                         if (!ok)
                             col = 1;
                     }
@@ -1817,17 +1823,17 @@ void MainWindow::on_actionShift_left_triggered()
     bool atBlockStart = cursor.selectionEnd() == endblock.position();
     if (block==endblock || !atBlockStart)
         endblock = endblock.next();
-    QRegExp white("\\s");
-    QRegExp twowhite("\\s\\s");
+    QRegularExpression white("\\s");
+    QRegularExpression twowhite("\\s\\s");
     cursor.beginEditBlock();
     do {
         cursor.setPosition(block.position());
         if (block.length() > 2) {
             cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
-            if (twowhite.indexIn(cursor.selectedText()) != 0) {
+            if (twowhite.match(cursor.selectedText()).hasMatch()) {
                 cursor.movePosition(QTextCursor::Left,QTextCursor::KeepAnchor,1);
             }
-            if (white.indexIn(cursor.selectedText()) == 0) {
+            if (!white.match(cursor.selectedText()).hasMatch()) {
                 cursor.removeSelectedText();
             }
         }
@@ -2056,14 +2062,14 @@ void MainWindow::on_action_Un_comment_triggered()
         std::swap(beginBlock,endblock);
     endblock = endblock.next();
 
-    QRegExp comment("^(\\s*%|\\s*$)");
-    QRegExp comSpace("%\\s");
-    QRegExp emptyLine("^\\s*$");
+    QRegularExpression comment("^(\\s*%|\\s*$)");
+    QRegularExpression comSpace("%\\s");
+    QRegularExpression emptyLine("^\\s*$");
 
     QTextBlock block = beginBlock;
     bool isCommented = true;
     do {
-        if (comment.indexIn(block.text()) == -1) {
+        if (comment.match(block.text()).hasMatch()) {
             isCommented = false;
             break;
         }
@@ -2079,13 +2085,13 @@ void MainWindow::on_action_Un_comment_triggered()
             int cpos = t.indexOf("%");
             if (cpos != -1) {
                 cursor.setPosition(block.position()+cpos);
-                bool haveSpace = (comSpace.indexIn(t,cpos)==cpos);
+                bool haveSpace = (comSpace.match(t,cpos).capturedStart() == cpos);
                 cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,haveSpace ? 2:1);
                 cursor.removeSelectedText();
             }
 
         } else {
-            if (emptyLine.indexIn(t)==-1)
+            if (!emptyLine.match(t).hasMatch())
                 cursor.insertText("% ");
         }
         block = block.next();
@@ -2913,7 +2919,11 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
             }
             auto options = msg["options"].toObject().toVariantMap();
             SolverConfiguration rsc(*origSc);
-            rsc.extraOptions.unite(options);
+            QMapIterator<QString, QVariant> i(options);
+            while (i.hasNext()) {
+                i.next();
+                rsc.extraOptions[i.key()] = i.value();
+            }
 
             if (processRunning) {
                 proc->terminate();

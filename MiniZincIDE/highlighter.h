@@ -16,6 +16,7 @@
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
 #include <QTextDocument>
+#include <QRegularExpression>
 
 struct Bracket {
     QChar b;
@@ -236,7 +237,7 @@ protected:
 private:
     struct Rule
     {
-        QRegExp pattern;
+        QRegularExpression pattern;
         QTextCharFormat format;
     };
     QVector<Rule> rules;
@@ -249,8 +250,8 @@ private:
     QColor commentColor;
 
     QTextCharFormat commentFormat;
-    QRegExp commentStartExp;
-    QRegExp commentEndExp;
+    QRegularExpression commentStartExp;
+    QRegularExpression commentEndExp;
     bool darkMode;
 
 };

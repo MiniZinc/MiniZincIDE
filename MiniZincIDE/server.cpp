@@ -89,7 +89,7 @@ void Server::newHttpClient()
     auto socket = http->nextPendingConnection();
     QTextStream ts(socket);
     socket->waitForReadyRead();
-    auto parts = ts.readAll().split(QRegExp("\\s+"));
+    auto parts = ts.readAll().split(QRegularExpression("\\s+"));
     if (parts.length() < 3 || parts[0] != "GET") {
         return;
     }
