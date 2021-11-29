@@ -20,7 +20,6 @@ CONFIG += c++11
 macx {
     ICON = mznide.icns
     OBJECTIVE_SOURCES += macos_extras.mm
-    QT += macextras
     LIBS += -framework Cocoa
     macx-xcode {
       QMAKE_INFO_PLIST = mznide-xcode.plist

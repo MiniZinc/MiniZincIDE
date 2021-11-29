@@ -26,9 +26,6 @@ void IDEStatistics::init(QVariant v) {
         modelsRun = m["modelsRun"].toInt();
         solvers = m["solvers"].toStringList();
     }
-#ifdef Q_OS_MAC
-    (void) new MyRtfMime();
-#endif
 }
 
 QVariantMap IDEStatistics::toVariantMap(void) {
