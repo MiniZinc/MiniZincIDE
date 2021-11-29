@@ -215,7 +215,11 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
             break;
         }
     }
-    if (e->key() == Qt::Key_Tab) {
+    if (e->key() == Qt::Key_Backtab) {
+        e->accept();
+        shiftLeft();
+        ensureCursorVisible();
+    } else if (e->key() == Qt::Key_Tab) {
         e->accept();
         QTextCursor cursor(textCursor());
         cursor.insertText("  ");
@@ -769,4 +773,48 @@ void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
         }
     }
     setExtraSelections(extraSelections);
+}
+
+void CodeEditor::shiftLeft()
+{
+    QTextCursor cursor = textCursor();
+    QTextBlock block = document()->findBlock(cursor.selectionStart());
+    QTextBlock endblock = document()->findBlock(cursor.selectionEnd());
+    bool atBlockStart = cursor.selectionEnd() == endblock.position();
+    if (block==endblock || !atBlockStart)
+        endblock = endblock.next();
+    QRegularExpression white("\\s");
+    QRegularExpression twowhite("\\s\\s");
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        if (block.length() > 2) {
+            cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
+            if (!twowhite.match(cursor.selectedText()).hasMatch()) {
+                cursor.movePosition(QTextCursor::Left,QTextCursor::KeepAnchor,1);
+            }
+            if (white.match(cursor.selectedText()).hasMatch()) {
+                cursor.removeSelectedText();
+            }
+        }
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
+}
+
+void CodeEditor::shiftRight()
+{
+    QTextCursor cursor = textCursor();
+    QTextBlock block = document()->findBlock(cursor.selectionStart());
+    QTextBlock endblock = document()->findBlock(cursor.selectionEnd());
+    bool atBlockStart = cursor.selectionEnd() == endblock.position();
+    if (block==endblock || !atBlockStart)
+        endblock = endblock.next();
+    cursor.beginEditBlock();
+    do {
+        cursor.setPosition(block.position());
+        cursor.insertText("  ");
+        block = block.next();
+    } while (block.isValid() && block != endblock);
+    cursor.endEditBlock();
 }

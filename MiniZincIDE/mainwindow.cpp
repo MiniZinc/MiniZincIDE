@@ -1846,46 +1846,16 @@ void MainWindow::checkDriver() {
 
 void MainWindow::on_actionShift_left_triggered()
 {
-    QTextCursor cursor = curEditor->textCursor();
-    QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
-    bool atBlockStart = cursor.selectionEnd() == endblock.position();
-    if (block==endblock || !atBlockStart)
-        endblock = endblock.next();
-    QRegularExpression white("\\s");
-    QRegularExpression twowhite("\\s\\s");
-    cursor.beginEditBlock();
-    do {
-        cursor.setPosition(block.position());
-        if (block.length() > 2) {
-            cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
-            if (twowhite.match(cursor.selectedText()).hasMatch()) {
-                cursor.movePosition(QTextCursor::Left,QTextCursor::KeepAnchor,1);
-            }
-            if (!white.match(cursor.selectedText()).hasMatch()) {
-                cursor.removeSelectedText();
-            }
-        }
-        block = block.next();
-    } while (block.isValid() && block != endblock);
-    cursor.endEditBlock();
+    if (curEditor != nullptr) {
+        curEditor->shiftLeft();
+    }
 }
 
 void MainWindow::on_actionShift_right_triggered()
 {
-    QTextCursor cursor = curEditor->textCursor();
-    QTextBlock block = curEditor->document()->findBlock(cursor.selectionStart());
-    QTextBlock endblock = curEditor->document()->findBlock(cursor.selectionEnd());
-    bool atBlockStart = cursor.selectionEnd() == endblock.position();
-    if (block==endblock || !atBlockStart)
-        endblock = endblock.next();
-    cursor.beginEditBlock();
-    do {
-        cursor.setPosition(block.position());
-        cursor.insertText("  ");
-        block = block.next();
-    } while (block.isValid() && block != endblock);
-    cursor.endEditBlock();
+    if (curEditor != nullptr) {
+        curEditor->shiftRight();
+    }
 }
 
 void MainWindow::on_actionHelp_triggered()

@@ -64,6 +64,8 @@ public:
     void checkFile(const QVector<MiniZincError>& errors);
     void showDebugInfo(bool show);
     const static int DEBUG_TAB_SIZE = 70;
+    void shiftLeft();
+    void shiftRight();
 protected:
     void resizeEvent(QResizeEvent *event);
     void showEvent(QShowEvent *event);
