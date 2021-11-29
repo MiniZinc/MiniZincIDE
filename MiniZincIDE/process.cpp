@@ -35,9 +35,6 @@
 
 void Process::start(const QString &program, const QStringList &arguments, const QString &path)
 {
-#if QT_VERSION >= 0x060000
-    setChildProcessModifier(Process::setpgid);
-#endif
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString curPath = env.value("PATH");
     QString addPath = IDE::instance()->appDir();
@@ -57,6 +54,9 @@ void Process::start(const QString &program, const QStringList &arguments, const 
         });
     }
 #else
+#if QT_VERSION >= 0x060000
+    setChildProcessModifier(Process::setpgid);
+#endif
     setenv("PATH", (addPath + pathSep + curPath).toStdString().c_str(), 1);
 #endif
     QProcess::start(program,arguments, QIODevice::Unbuffered | QIODevice::ReadWrite);
@@ -124,7 +124,10 @@ void Process::setupChildProcess()
 #ifdef Q_OS_WIN
 void Process::attachJob()
 {
-    AssignProcessToJobObject(jobObject, pid()->hProcess);
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, true, processId());
+    if (hProcess != nullptr) {
+        AssignProcessToJobObject(jobObject, hProcess);
+    }
 }
 #endif
 
