@@ -1144,9 +1144,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     if (sc.solverDefinition.isGUIApplication) {
         // Detach GUI app
         ui->outputWidget->startExecution(QString("Running ") + files.join(", ") + " (detached)");
-        QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
-        ui->outputWidget->addText("Process will continue running detached from the IDE.\n", f);
+        ui->outputWidget->addText("Process will continue running detached from the IDE.\n", ui->outputWidget->commentCharFormat());
         connect(proc, &MznProcess::started, this, [=] () {
             ui->outputWidget->endExecution(0, proc->elapsedTime());
             procFinished(0);
@@ -1181,29 +1179,24 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     connect(proc, &MznProcess::statisticsOutput, ui->outputWidget, &OutputWidget::addStatistics);
     connect(proc, &MznProcess::solutionOutput, ui->outputWidget, &OutputWidget::addSolution);
+    connect(proc, &MznProcess::checkerOutput, ui->outputWidget, &OutputWidget::addCheckerOutput);
     connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
     connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
     connect(proc, &MznProcess::finalStatus, ui->outputWidget, &OutputWidget::addStatus);
     connect(proc, &MznProcess::unknownOutput, [=](const QString& d) { ui->outputWidget->addText(d); });
     connect(proc, &MznProcess::commentOutput, this, [=] (const QString& d) {
-        QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
-        ui->outputWidget->addText(d, f, "Comments");
+        ui->outputWidget->addText(d, ui->outputWidget->commentCharFormat(), "Comments");
     });
     connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
     connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
-        QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
-        ui->outputWidget->addTextToSection(section, message.toString(), f);
+        ui->outputWidget->addTextToSection(section, message.toString(), ui->outputWidget->commentCharFormat());
         if (vis_connector == nullptr && section == "vis_json") {
             auto obj = message.toJsonObject();
             startVisualisation(model, data, obj["url"].toString(), obj["userData"], proc);
         }
     });
     connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
-        QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
-        ui->outputWidget->addText(d, f, "Standard Error");
+        ui->outputWidget->addText(d, ui->outputWidget->commentCharFormat(), "Standard Error");
     });
     connect(proc, &MznProcess::success, [=]() {
         ui->outputWidget->endExecution(0, proc->elapsedTime());

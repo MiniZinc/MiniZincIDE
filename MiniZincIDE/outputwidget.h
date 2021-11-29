@@ -37,6 +37,7 @@ public:
     const QTextCharFormat& noticeCharFormat() const { return _noticeCharFormat; }
     const QTextCharFormat& errorCharFormat() const { return _errorCharFormat; }
     const QTextCharFormat& infoCharFormat() const { return _infoCharFormat; }
+    const QTextCharFormat& commentCharFormat() const { return _commentCharFormat; }
 
     int solutionLimit() { return _solutionLimit; }
 
@@ -47,6 +48,7 @@ public slots:
     void associateProfilerExecution(int executionId);
     void associateServerUrl(const QString& url);
     void addSolution(const QVariantMap& output, qint64 time = -1);
+    void addCheckerOutput(const QVariantMap& output);
     void addText(const QString& text, const QString& messageType = QString());
     void addText(const QString& text, const QTextCharFormat& format, const QString& messageType = QString());
     void addHtml(const QString& html, const QString& messageType = QString());
@@ -105,10 +107,13 @@ private:
     QTextCharFormat _noticeCharFormat;
     QTextCharFormat _errorCharFormat;
     QTextCharFormat _infoCharFormat;
+    QTextCharFormat _commentCharFormat;
     QTextCharFormat _arrowFormat;
     QTextBlockFormat _rightAlignBlockFormat;
     QTextTableFormat _headerTableFormat;
     QTextFrameFormat _frameFormat;
+
+    QVariantMap _checkerOutput;
 
     void addSection(const QString& section);
     void addMessageType(const QString& messageType);

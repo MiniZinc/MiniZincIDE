@@ -538,6 +538,10 @@ void MznProcess::onStdOutLine(const QString& line)
             auto sections = msg["output"].toObject().toVariantMap();
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
             emit solutionOutput(sections, time);
+        } else if (msg_type == "checker") {
+            auto sections = msg["output"].toObject().toVariantMap();
+            qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
+            emit checkerOutput(sections, time);
         } else if (msg_type == "status") {
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
             emit finalStatus(msg["status"].toString(), time);

@@ -59,7 +59,9 @@ void OutputWidget::setDarkMode(bool darkMode)
 {
     _noticeCharFormat.setForeground(Themes::currentTheme.functionColor.get(darkMode));
     _errorCharFormat.setForeground(Themes::currentTheme.errorColor.get(darkMode));
+    _errorCharFormat.setForeground(Themes::currentTheme.errorColor.get(darkMode));
     _infoCharFormat.setForeground(Qt::gray);
+    _commentCharFormat.setForeground(Themes::currentTheme.commentColor.get(darkMode));
 
     ui->textBrowser->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
 }
@@ -173,6 +175,30 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
 
     QTextCursor cursor = _frame->lastCursorPosition();
 
+    if (!_checkerOutput.isEmpty()) {
+        cursor.insertText("% Solution checker report:\n", _commentCharFormat);
+        for (auto it = _checkerOutput.begin(); it != _checkerOutput.end(); it++) {
+            auto section = it.key();
+            if (section == "raw" || it.value().toString().isEmpty()) {
+                continue;
+            }
+            addSection(section);
+            QTextBlockFormat format;
+            format.setProperty(Property::Section, section);
+            cursor.setBlockFormat(format);
+            cursor.block().setVisible(_sections[section]);
+            if (section == "html" || section.endsWith("_html")) {
+                addHtmlToSection(section, it.value().toString());
+            } else {
+                addTextToSection(section, "% " + it.value().toString(), _commentCharFormat);
+            }
+            if (!cursor.block().text().isEmpty()) {
+                cursor.insertBlock();
+            }
+        }
+        _checkerOutput.clear();
+    }
+
     for (auto it = output.begin(); it != output.end(); it++) {
         auto section = it.key();
         if (section == "raw" || it.value().toString().isEmpty()) {
@@ -208,6 +234,12 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
     cursor.setBlockFormat(format);
     cursor.insertText("----------\n", _defaultCharFormat);
     _hierarchy.first().second++;
+}
+
+void OutputWidget::addCheckerOutput(const QVariantMap& output)
+{
+    // Print when we get solution
+    _checkerOutput = output;
 }
 
 void OutputWidget::addText(const QString& text, const QString& messageType) {

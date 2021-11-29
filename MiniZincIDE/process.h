@@ -311,6 +311,10 @@ signals:
     ///
     void solutionOutput(const QVariantMap& sections, qint64 time = -1);
     ///
+    /// \brief Emitted when a checker message is produced.
+    ///
+    void checkerOutput(const QVariantMap& sections, qint64 time = -1);
+    ///
     /// \brief Emitted when en error message is produced.
     ///
     void errorOutput(const QJsonObject& error);
