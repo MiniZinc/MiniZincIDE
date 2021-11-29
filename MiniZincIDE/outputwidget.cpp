@@ -40,7 +40,7 @@ OutputWidget::OutputWidget(QWidget *parent) :
     _headerTableFormat.setProperty(Property::ToggleFrame, true);
 
     _arrowFormat.setObjectType(TextObject::Arrow);
-    _arrowFormat.setProperty(Property::Expanded, false);
+    _arrowFormat.setProperty(Property::Expanded, true);
     _arrowFormat.setForeground(Qt::gray);
 
     _frameFormat.setLeftMargin(10);
