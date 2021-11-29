@@ -221,8 +221,16 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         ensureCursorVisible();
     } else if (e->key() == Qt::Key_Tab) {
         e->accept();
-        QTextCursor cursor(textCursor());
-        cursor.insertText("  ");
+        auto cursor = textCursor();
+        auto startBlock = document()->findBlock(cursor.selectionStart());
+        auto endBlock = document()->findBlock(cursor.selectionEnd());
+        auto partialLineSelection = startBlock.position() != cursor.selectionStart()
+                || endBlock.position() + endBlock.length() - 1 != cursor.selectionEnd();
+        if (startBlock == endBlock && partialLineSelection) {
+            cursor.insertText("  ");
+        } else {
+            shiftRight();
+        }
         ensureCursorVisible();
     } else if (e->key() == Qt::Key_Return) {
         e->accept();
