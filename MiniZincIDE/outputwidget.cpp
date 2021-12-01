@@ -16,6 +16,7 @@
 #include <QDebug>
 #include <QMenu>
 #include <QPainterPath>
+#include <QCheckBox>
 #include "ideutils.h"
 
 OutputWidget::OutputWidget(QWidget *parent) :
@@ -48,6 +49,11 @@ OutputWidget::OutputWidget(QWidget *parent) :
 
     _rightAlignBlockFormat.setAlignment(Qt::AlignRight);
     _rightAlignBlockFormat.setLeftMargin(10);
+#ifdef Q_OS_MAC
+    ui->toggleAll_pushButton->setMinimumWidth(85);
+#else
+    setStyleSheet("QPushButton { padding: 2px 6px; }");
+#endif
 }
 
 OutputWidget::~OutputWidget()
@@ -396,13 +402,17 @@ void OutputWidget::addMessageType(const QString &messageType)
     }
     _messageTypeVisible[messageType] = true;
 
+#ifdef Q_OS_MAC
+    auto* button = new QCheckBox(messageType);
+#else
     auto* button = new QPushButton(messageType);
     button->setCursor(Qt::PointingHandCursor);
     button->setFlat(true);
     button->setCheckable(true);
+#endif
     button->setChecked(true);
 
-    connect(button, &QPushButton::toggled, this, [=](bool checked) { setMessageTypeVisibility(messageType, checked); });
+    connect(button, &QAbstractButton::toggled, this, [=](bool checked) { setMessageTypeVisibility(messageType, checked); });
     connect(this, &OutputWidget::messageTypeToggled, button, [=] (const QString& mt, bool visible) {
         if (messageType == mt) {
             button->setChecked(visible);
@@ -544,13 +554,17 @@ void OutputWidget::addSection(const QString& section)
     }
     _sections[section] = true;
 
+#ifdef Q_OS_MAC
+    auto* button = new QCheckBox(section);
+#else
     auto* button = new QPushButton(section);
     button->setCursor(Qt::PointingHandCursor);
     button->setFlat(true);
     button->setCheckable(true);
+#endif
     button->setChecked(true);
 
-    connect(button, &QPushButton::toggled, this, [=](bool checked) { setSectionVisibility(section, checked); });
+    connect(button, &QAbstractButton::toggled, this, [=](bool checked) { setSectionVisibility(section, checked); });
     connect(this, &OutputWidget::sectionToggled, button, [=] (const QString& s, bool visible) {
         if (section == s) {
             button->setChecked(visible);
@@ -570,7 +584,7 @@ void OutputWidget::addSection(const QString& section)
     });
 
     button->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(button, &QPushButton::customContextMenuRequested, this, [=] (const QPoint &p) {
+    connect(button, &QWidget::customContextMenuRequested, this, [=] (const QPoint &p) {
         toggleSection->setText(_sections[section] ? "Hide section" : "Show section");
         menu->exec(button->mapToGlobal(p));
     });
