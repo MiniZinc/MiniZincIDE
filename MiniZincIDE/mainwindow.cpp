@@ -1143,13 +1143,15 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     if (sc.solverDefinition.isGUIApplication) {
         // Detach GUI app
+        auto* failureCtx = new QObject(this);
         ui->outputWidget->startExecution(QString("Running ") + files.join(", ") + " (detached)");
         ui->outputWidget->addText("Process will continue running detached from the IDE.\n", ui->outputWidget->commentCharFormat());
         connect(proc, &MznProcess::started, this, [=] () {
             ui->outputWidget->endExecution(0, proc->elapsedTime());
             procFinished(0);
+            delete failureCtx; // Disconnect the failure handler
         });
-        connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+        connect(proc, &MznProcess::failure, failureCtx, [=](int exitCode, MznProcess::FailureType e) {
             if (e == MznProcess::FailedToStart) {
                 QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
                 exitCode = 0;
@@ -1161,6 +1163,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
             procFinished(exitCode, proc->elapsedTime());
         });
         connect(proc, &MznProcess::finished, proc, &QObject::deleteLater);
+        connect(proc, &MznProcess::finished, failureCtx, &QObject::deleteLater);
 
         proc->start(sc, args, workingDir, ts == nullptr);
         return;
