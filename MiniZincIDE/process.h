@@ -309,11 +309,11 @@ signals:
     ///
     /// \brief Emitted when a solution message is produced.
     ///
-    void solutionOutput(const QVariantMap& sections, qint64 time = -1);
+    void solutionOutput(const QVariantMap& sections, const QStringList& sectionOrder, qint64 time = -1);
     ///
     /// \brief Emitted when a checker message is produced.
     ///
-    void checkerOutput(const QVariantMap& sections, qint64 time = -1);
+    void checkerOutput(const QVariantMap& sections, const QStringList& sectionOrder, qint64 time = -1);
     ///
     /// \brief Emitted when en error message is produced.
     ///

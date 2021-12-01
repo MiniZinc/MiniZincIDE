@@ -47,8 +47,8 @@ public slots:
     void startExecution(const QString& label);
     void associateProfilerExecution(int executionId);
     void associateServerUrl(const QString& url);
-    void addSolution(const QVariantMap& output, qint64 time = -1);
-    void addCheckerOutput(const QVariantMap& output);
+    void addSolution(const QVariantMap& output, const QStringList& order, qint64 time = -1);
+    void addCheckerOutput(const QVariantMap& output, const QStringList& order);
     void addText(const QString& text, const QString& messageType = QString());
     void addText(const QString& text, const QTextCharFormat& format, const QString& messageType = QString());
     void addHtml(const QString& html, const QString& messageType = QString());
@@ -113,7 +113,7 @@ private:
     QTextTableFormat _headerTableFormat;
     QTextFrameFormat _frameFormat;
 
-    QVariantMap _checkerOutput;
+    QVector<QPair<QString, QVariant>> _checkerOutput;
 
     void addSection(const QString& section);
     void addMessageType(const QString& messageType);

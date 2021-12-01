@@ -123,8 +123,7 @@ void OutputWidget::associateServerUrl(const QString& url)
     }
 }
 
-
-void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
+void OutputWidget::addSolution(const QVariantMap& output, const QStringList& order, qint64 time)
 {
     TextLayoutLock lock(this);
     auto limit = solutionLimit();
@@ -183,9 +182,9 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
 
     if (!_checkerOutput.isEmpty()) {
         cursor.insertText("% Solution checker report:\n", _commentCharFormat);
-        for (auto it = _checkerOutput.begin(); it != _checkerOutput.end(); it++) {
-            auto section = it.key();
-            if (section == "raw" || it.value().toString().isEmpty()) {
+        for (auto& it : _checkerOutput) {
+            auto section = it.first;
+            if (section == "raw" || it.second.toString().isEmpty()) {
                 continue;
             }
             addSection(section);
@@ -194,9 +193,9 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
             cursor.setBlockFormat(format);
             cursor.block().setVisible(_sections[section]);
             if (section == "html" || section.endsWith("_html")) {
-                addHtmlToSection(section, it.value().toString());
+                addHtmlToSection(section, it.second.toString());
             } else {
-                addTextToSection(section, "% " + it.value().toString(), _commentCharFormat);
+                addTextToSection(section, "% " + it.second.toString(), _commentCharFormat);
             }
             if (!cursor.block().text().isEmpty()) {
                 cursor.insertBlock();
@@ -205,9 +204,8 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
         _checkerOutput.clear();
     }
 
-    for (auto it = output.begin(); it != output.end(); it++) {
-        auto section = it.key();
-        if (section == "raw" || it.value().toString().isEmpty()) {
+    for (auto& section : order) {
+        if (section == "raw" || output[section].toString().isEmpty()) {
             continue;
         }
         addSection(section);
@@ -216,9 +214,9 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
         cursor.setBlockFormat(format);
         cursor.block().setVisible(_sections[section]);
         if (section == "html" || section.endsWith("_html")) {
-            addHtmlToSection(section, it.value().toString());
+            addHtmlToSection(section, output[section].toString());
         } else {
-            addTextToSection(section, it.value().toString());
+            addTextToSection(section, output[section].toString());
         }
         if (!cursor.block().text().isEmpty()) {
             cursor.insertBlock();
@@ -242,14 +240,17 @@ void OutputWidget::addSolution(const QVariantMap& output, qint64 time)
     _hierarchy.first().second++;
 }
 
-void OutputWidget::addCheckerOutput(const QVariantMap& output)
+void OutputWidget::addCheckerOutput(const QVariantMap& output, const QStringList& order)
 {
     // Print when we get solution
-    _checkerOutput = output;
+    _checkerOutput.clear();
+    for (auto& it : order) {
+        _checkerOutput.append({it, output[it]});
+    }
 }
 
 void OutputWidget::addText(const QString& text, const QString& messageType) {
-    addText(text, QTextCharFormat());
+    addText(text, QTextCharFormat(), messageType);
 }
 
 void OutputWidget::addText(const QString& text, const QTextCharFormat& format, const QString& messageType) {

@@ -539,12 +539,28 @@ void MznProcess::onStdOutLine(const QString& line)
         auto msg_type = msg["type"].toString();
         if (msg_type == "solution") {
             auto sections = msg["output"].toObject().toVariantMap();
+            QStringList order;
+            if (msg["sections"].isArray()) {
+                for (auto it : msg["sections"].toArray()) {
+                    order << it.toString();
+                }
+            } else {
+                order = sections.keys();
+            }
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
-            emit solutionOutput(sections, time);
+            emit solutionOutput(sections, order, time);
         } else if (msg_type == "checker") {
             auto sections = msg["output"].toObject().toVariantMap();
+            QStringList order;
+            if (msg["sections"].isArray()) {
+                for (auto it : msg["sections"].toArray()) {
+                    order << it.toString();
+                }
+            } else {
+                order = sections.keys();
+            }
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
-            emit checkerOutput(sections, time);
+            emit checkerOutput(sections, order, time);
         } else if (msg_type == "status") {
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
             emit finalStatus(msg["status"].toString(), time);
