@@ -30,6 +30,7 @@
 #include "highlighter.h"
 #include "exception.h"
 #include "ideutils.h"
+#include "preferencesdialog.h"
 
 #include "../cp-profiler/src/cpprofiler/execution.hh"
 #include "../cp-profiler/src/cpprofiler/options.hh"
@@ -101,10 +102,6 @@ void MainWindow::init(const QString& projectFile)
     ui->tabWidget->removeTab(0);
 #ifndef Q_OS_MAC
     ui->menuFile->addAction(ui->actionQuit);
-#else
-    if (hasDarkMode()) {
-        ui->menuView->removeAction(ui->actionDark_mode);
-    }
 #endif
 
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
@@ -220,17 +217,13 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
     editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
-    darkMode = settings.value("darkMode", false).value<bool>();
 #ifdef Q_OS_WIN
     darkModeNotifier = new DarkModeNotifier(this);
     if (darkModeNotifier->supportsDarkMode()) {
-        ui->menuView->removeAction(ui->actionDark_mode);
-        darkMode = darkModeNotifier->darkMode();
-        connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &MainWindow::on_actionDark_mode_toggled);
+        connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &MainWindow::setDarkMode);
     }
 #endif
-    ui->actionDark_mode->setChecked(darkMode);
-    on_actionDark_mode_toggled(darkMode);
+    initTheme();
     ui->outputWidget->setBrowserFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
@@ -251,14 +244,16 @@ void MainWindow::init(const QString& projectFile)
     QString mznDistribPath = settings.value("mznpath","").toString();
     settings.endGroup();
     auto& driver = MznDriver::get();
-    try {
-        driver.setLocation(mznDistribPath);
-    } catch (Exception& e) {
-        int ret = QMessageBox::warning(this, "MiniZinc IDE",
-                                       e.message() + "\nDo you want to open the settings dialog?",
-                                       QMessageBox::Ok | QMessageBox::Cancel);
-        if (ret == QMessageBox::Ok)
-            on_actionManage_solvers_triggered();
+    if (!driver.isValid()) {
+        try {
+            driver.setLocation(mznDistribPath);
+        } catch (Exception& e) {
+            int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                           e.message() + "\nDo you want to open the settings dialog?",
+                                           QMessageBox::Ok | QMessageBox::Cancel);
+            if (ret == QMessageBox::Ok)
+                on_actionManage_solvers_triggered();
+        }
     }
     ui->config_window->init();
 
@@ -619,7 +614,7 @@ void MainWindow::paintEvent(QPaintEvent *) {
     if (hasDarkMode()) {
         bool newDark = isDark();
         if (newDark != darkMode) {
-            on_actionDark_mode_toggled(newDark);
+            setDarkMode(newDark);
         }
     }
 }
@@ -1761,8 +1756,9 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
     settings.endGroup();
 
     ui->config_window->stashModifiedConfigs();
-    SolverDialog sd(addNew);
-    sd.exec();
+
+    PreferencesDialog pd(addNew, this);
+    pd.exec();
 
     checkDriver();
 
@@ -2272,13 +2268,9 @@ void MainWindow::check_code()
     code_checker->start(contents, *sc, wd);
 }
 
-void MainWindow::on_actionDark_mode_toggled(bool enable)
+void MainWindow::setDarkMode(bool enable)
 {
     darkMode = enable;
-    QSettings settings;
-    settings.beginGroup("MainWindow");
-    settings.setValue("darkMode",darkMode);
-    settings.endGroup();
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
         if (ce) {
@@ -2301,22 +2293,39 @@ void MainWindow::on_actionDark_mode_toggled(bool enable)
     ui->outputWidget->setDarkMode(darkMode);
 }
 
-void MainWindow::on_actionMangoTheme_triggered()
+void MainWindow::initTheme()
 {
-    Themes::currentTheme = Themes::mango;
-    on_actionDark_mode_toggled(darkMode); // Update all colors
+    QSettings settings;
+    settings.beginGroup("ide");
+    auto idx = settings.value("theme", 0).toInt();
+    switch (idx) {
+    case 1:
+        Themes::currentTheme = Themes::blueberry;
+        break;
+    case 2:
+        Themes::currentTheme = Themes::mango;
+        break;
+    default:
+        Themes::currentTheme = Themes::minizinc;
+        break;
+    }
+    settings.endGroup();
 
-}
+#ifdef Q_OS_WIN
+    if (darkModeNotifier->supportsDarkMode()) {
+        setDarkMode(darkModeNotifier->darkMode());
+        return;
+    }
+#elif Q_OS_MAC
+    if (hasDarkMode()) {
+        setDarkMode(isDark());
+        return;
+    }
+#endif
 
-void MainWindow::on_actionBlueberryTheme_triggered()
-{
-    Themes::currentTheme = Themes::blueberry;
-    on_actionDark_mode_toggled(darkMode); // Update all colors
-}
-void MainWindow::on_actionDefaultTheme_triggered()
-{
-    Themes::currentTheme = Themes::minizinc;
-    on_actionDark_mode_toggled(darkMode); // Update all colors
+    settings.beginGroup("MainWindow");
+    setDarkMode(settings.value("darkMode", false).toBool());
+    settings.endGroup();
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
@@ -2943,7 +2952,7 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
             vis_connector->broadcastMessage(QJsonDocument(obj));
         }
     });
-    connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, qint64 time) {
+    connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, const QStringList& sections, qint64 time) {
         if (output.contains("vis_json")) {
             auto items = output["vis_json"].toJsonValue();
             QJsonObject obj({{"event", "solution"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"items", items}});

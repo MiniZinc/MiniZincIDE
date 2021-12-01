@@ -50,19 +50,19 @@ SOURCES += main.cpp\
     highlighter.cpp \
     fzndoc.cpp \
     outputwidget.cpp \
+    preferencesdialog.cpp \
     process.cpp \
     profilecompilation.cpp \
     projectbrowser.cpp \
     server.cpp \
-    solverdialog.cpp \
     gotolinedialog.cpp \
     paramdialog.cpp \
     outputdockwidget.cpp \
     checkupdatedialog.cpp \
     project.cpp \
     moocsubmission.cpp \
-    solverconfiguration.cpp \
-    esclineedit.cpp
+    esclineedit.cpp \
+    solver.cpp
 
 HEADERS  += mainwindow.h \
     codechecker.h \
@@ -77,27 +77,27 @@ HEADERS  += mainwindow.h \
     ideutils.h \
     macos_extras.h \
     outputwidget.h \
+    preferencesdialog.h \
     process.h \
     profilecompilation.h \
     projectbrowser.h \
     server.h \
-    solverdialog.h \
     gotolinedialog.h \
     paramdialog.h \
     outputdockwidget.h \
     checkupdatedialog.h \
     project.h \
     moocsubmission.h \
-    solverconfiguration.h \
-    esclineedit.h
+    esclineedit.h \
+    solver.h
 
 FORMS    += \
     configwindow.ui \
     extraparamdialog.ui \
     mainwindow.ui \
     outputwidget.ui \
+    preferencesdialog.ui \
     projectbrowser.ui \
-    solverdialog.ui \
     gotolinedialog.ui \
     paramdialog.ui \
     checkupdatedialog.ui \

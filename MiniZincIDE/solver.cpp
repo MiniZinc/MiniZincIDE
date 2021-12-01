@@ -1,4 +1,4 @@
-#include "solverconfiguration.h"
+#include "solver.h"
 #include "process.h"
 #include "exception.h"
 
@@ -76,6 +76,184 @@ void parseArgList(const QString& s, QVariantMap& map) {
     }
 }
 
+}
+
+
+Solver::Solver(const QJsonObject& sj) {
+    json = sj;
+    name = sj["name"].toString();
+    QJsonObject extraInfo = sj["extraInfo"].toObject();
+    executable_resolved = extraInfo["executable"].toString("");
+    mznlib_resolved = extraInfo["mznlib"].toString("");
+    configFile = extraInfo["configFile"].toString("");
+    if (extraInfo["defaultFlags"].isArray()) {
+        QJsonArray ei = extraInfo["defaultFlags"].toArray();
+        for (auto df : ei) {
+            defaultFlags.push_back(df.toString());
+        }
+    }
+    isDefaultSolver = (extraInfo["isDefault"].isBool() && extraInfo["isDefault"].toBool());
+    contact = sj["contact"].toString("");
+    website = sj["website"].toString("");
+    supportsFzn = sj["supportsFzn"].toBool(true);
+    supportsMzn = sj["supportsMzn"].toBool(false);
+    if (sj["requiredFlags"].isArray()) {
+        QJsonArray rfs = sj["requiredFlags"].toArray();
+        for (auto rf : rfs) {
+            requiredFlags.push_back(rf.toString());
+        }
+    }
+    if (sj["stdFlags"].isArray()) {
+        QJsonArray sfs = sj["stdFlags"].toArray();
+        for (auto sf : sfs) {
+            stdFlags.push_back(sf.toString());
+        }
+    }
+    if (sj["extraFlags"].isArray()) {
+        QJsonArray sfs = sj["extraFlags"].toArray();
+        for (auto sf : sfs) {
+            if (sf.isArray()) {
+                QJsonArray extraFlagA = sf.toArray();
+                if (extraFlagA.size()==4) {
+                    SolverFlag extraFlag;
+                    extraFlag.min=1.0;
+                    extraFlag.max=0.0;
+                    extraFlag.name = extraFlagA[0].toString();
+                    QRegularExpression re_opt("^(int|float|bool)(:([0-9a-zA-Z.-]+):([0-9a-zA-Z.-]+))?");
+                    QRegularExpressionMatch re_opt_match = re_opt.match(extraFlagA[2].toString());
+                    if (re_opt_match.hasMatch()) {
+                        if (re_opt_match.captured(1)=="int") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_INT;
+                            } else {
+                                extraFlag.t = SolverFlag::T_INT_RANGE;
+                                extraFlag.min_ll = re_opt_match.captured(3).toLongLong();
+                                extraFlag.max_ll = re_opt_match.captured(4).toLongLong();
+                            }
+                        } else if (re_opt_match.captured(1)=="float") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_FLOAT;
+                            } else {
+                                extraFlag.t = SolverFlag::T_FLOAT_RANGE;
+                                extraFlag.min = re_opt_match.captured(3).toDouble();
+                                extraFlag.max = re_opt_match.captured(4).toDouble();
+                            }
+                        } else if (re_opt_match.captured(1)=="bool") {
+                            if (re_opt_match.captured(3).isEmpty()) {
+                                extraFlag.t = SolverFlag::T_BOOL;
+                            } else {
+                                extraFlag.t = SolverFlag::T_BOOL_ONOFF;
+                                extraFlag.options = QStringList({re_opt_match.captured(3),re_opt_match.captured(4)});
+                            }
+                        }
+                    } else {
+                        if (extraFlagA[2].toString()=="string") {
+                            extraFlag.t = SolverFlag::T_STRING;
+                        } else if (extraFlagA[2].toString().startsWith("opt:")) {
+                            extraFlag.t = SolverFlag::T_OPT;
+                            extraFlag.options = extraFlagA[2].toString().mid(4).split(":");
+//                                        } else if (extraFlagA[2].toString()=="solver") {
+//                                            extraFlag.t = SolverFlag::T_SOLVER;
+                        } else {
+                            continue;
+                        }
+                    }
+                    extraFlag.description = extraFlagA[1].toString();
+                    auto def = extraFlagA[3].toString();
+                    switch (extraFlag.t) {
+                    case SolverFlag::T_INT:
+                    case SolverFlag::T_INT_RANGE:
+                        extraFlag.def = def.toLongLong();
+                        break;
+                    case SolverFlag::T_BOOL:
+                        extraFlag.def = def == "true";
+                        break;
+                    case SolverFlag::T_BOOL_ONOFF:
+                        if (def == extraFlag.options[0]) {
+                            extraFlag.def = true;
+                        } else if (def == extraFlag.options[1]) {
+                            extraFlag.def = false;
+                        } else {
+                            extraFlag.def = def == "true";
+                        }
+                        break;
+                    case SolverFlag::T_FLOAT:
+                    case SolverFlag::T_FLOAT_RANGE:
+                        extraFlag.def = def.toDouble();
+                        break;
+                    case SolverFlag::T_STRING:
+                    case SolverFlag::T_OPT:
+                    case SolverFlag::T_SOLVER:
+                        extraFlag.def = def;
+                        break;
+                    }
+                    extraFlags.push_back(extraFlag);
+                }
+            }
+        }
+    }
+    isGUIApplication = sj["isGUIApplication"].toBool(false);
+    needsMznExecutable = sj["needsMznExecutable"].toBool(false);
+    needsStdlibDir = sj["needsStdlibDir"].toBool(false);
+    needsPathsFile = sj["needsPathsFile"].toBool(false);
+    needsSolns2Out = sj["needsSolns2Out"].toBool(true);
+    executable = sj["executable"].toString("");
+    id = sj["id"].toString();
+    version = sj["version"].toString();
+    mznlib = sj["mznlib"].toString();
+    mznLibVersion = sj["mznlibVersion"].toInt();
+}
+
+Solver& Solver::lookup(const QString& str)
+{
+    MznProcess p;
+    try {
+        auto result = p.run({ "--solver-json", str });
+        auto solver_doc = QJsonDocument::fromJson(result.stdOut.toUtf8());
+        if (!solver_doc.isObject()) {
+            throw ConfigError("Failed to find solver " + str);
+        }
+        auto solver = Solver(solver_doc.object());
+        for (auto& s: MznDriver::get().solvers()) {
+            if (solver == s) {
+                return s;
+            }
+        }
+        MznDriver::get().solvers() << solver;
+        return MznDriver::get().solvers().last();
+    } catch (Exception&) {
+        throw DriverError("Failed to lookup solver " + str);
+    }
+}
+
+Solver& Solver::lookup(const QString& id, const QString& version, bool strict)
+{
+    if (strict) {
+        return lookup(id + "@" + version);
+    }
+
+    try {
+        return lookup(id + "@" + version);
+    } catch (ConfigError&) {
+        return lookup(id);
+    }
+}
+
+bool Solver::operator==(const Solver& s) const {
+    if (configFile.isEmpty() && s.configFile.isEmpty()) {
+        return id == s.id && version == s.version;
+    }
+    return configFile == s.configFile;
+}
+
+bool Solver::hasAllRequiredFlags()
+{
+    for (auto& rf : requiredFlags) {
+        if (!defaultFlags.contains(rf)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 SolverConfiguration::SolverConfiguration(const Solver& _solver, bool builtin) :

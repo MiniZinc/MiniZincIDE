@@ -30,11 +30,11 @@
 #include <QJsonArray>
 
 #include "codeeditor.h"
-#include "solverdialog.h"
+#include "solver.h"
 #include "paramdialog.h"
 #include "project.h"
 #include "moocsubmission.h"
-#include "solverconfiguration.h"
+#include "solver.h"
 #include "process.h"
 #include "codechecker.h"
 #include "profilecompilation.h"
@@ -91,6 +91,8 @@ public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
     void stop();
+    void setDarkMode(bool enable);
+    void initTheme();
 
 private slots:
 
@@ -203,13 +205,6 @@ private slots:
     void on_actionCheat_Sheet_triggered();
     void check_code();
 
-    void on_actionDark_mode_toggled(bool arg1);
-
-    //Themes
-    void on_actionMangoTheme_triggered();
-    void on_actionBlueberryTheme_triggered();
-    void on_actionDefaultTheme_triggered();
-
     void moocFinished(int);
 
     void on_actionEditSolverConfig_triggered();
@@ -278,6 +273,7 @@ public:
     void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), bool profile = false);
     void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), QTextStream* ts = nullptr);
     QList<CodeEditor*> codeEditors();
+    bool isDarkMode() const { return darkMode; }
 private:
     Ui::MainWindow *ui;
     CodeEditor* curEditor;

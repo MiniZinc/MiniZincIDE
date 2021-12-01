@@ -1,12 +1,63 @@
-#ifndef SOLVERCONFIGURATION_H
-#define SOLVERCONFIGURATION_H
-
-#include "solverdialog.h"
+#ifndef SOLVER_H
+#define SOLVER_H
 
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QString>
 #include <QVariant>
 #include <QVector>
+
+struct SolverFlag {
+    QString name;
+    QString description;
+    enum { T_INT, T_INT_RANGE, T_BOOL, T_BOOL_ONOFF, T_FLOAT, T_FLOAT_RANGE, T_STRING, T_OPT, T_SOLVER } t;
+    double min;
+    double max;
+    qlonglong min_ll;
+    qlonglong max_ll;
+    QStringList options;
+    QVariant def;
+};
+
+Q_DECLARE_METATYPE(SolverFlag)
+
+struct Solver {
+    QString configFile;
+    QString id;
+    QString name;
+    QString executable;
+    QString executable_resolved;
+    QString mznlib;
+    QString mznlib_resolved;
+    QString version;
+    int mznLibVersion;
+    QString description;
+    QString contact;
+    QString website;
+    bool supportsMzn;
+    bool supportsFzn;
+    bool needsSolns2Out;
+    bool isGUIApplication;
+    bool needsMznExecutable;
+    bool needsStdlibDir;
+    bool needsPathsFile;
+    QStringList stdFlags;
+    QList<SolverFlag> extraFlags;
+    QStringList requiredFlags;
+    QStringList defaultFlags;
+    QStringList tags;
+    QJsonObject json;
+    bool isDefaultSolver;
+    Solver(void) {}
+
+    Solver(const QJsonObject& json);
+    static Solver& lookup(const QString& str);
+    static Solver& lookup(const QString& id, const QString& version, bool strict = true);
+
+    bool hasAllRequiredFlags(void);
+
+    bool operator==(const Solver&) const;
+};
 
 class SolverConfiguration {
 public:
@@ -75,4 +126,4 @@ public:
 };
 
 
-#endif // SOLVERCONFIGURATION_H
+#endif // SOLVER_H

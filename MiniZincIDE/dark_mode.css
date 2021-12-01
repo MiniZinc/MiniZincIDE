@@ -1,8 +1,11 @@
 * {
-    background-color: #333333;
-    alternate-background-color: #444444;
     border-color: #444444;
     color: #FFFFFF;
+}
+
+QMainWindow, QDialog, QToolBar, QAbstractScrollArea, QAction, QDockWidget {
+    background-color: #333333;
+    alternate-background-color: #444444;
 }
 
 *:disabled {
@@ -11,8 +14,15 @@
     border-color: #666666;
 }
 
-QMenuBar, QPushButton {
+QMenuBar, QPushButton,
+QTabWidget::pane QMenuBar, QTabWidget::pane QPushButton {
     background-color: #444444;
+}
+
+QToolBar::separator {
+    background-color: #444444;
+    width: 1px;
+    margin: 6px;
 }
 
 QMenuBar::item:selected, QMenu::item:selected {
@@ -31,8 +41,9 @@ QTabWidget::tab-bar, QTabWidget::pane, QTabBar {
     border: 0;
 }
 
-QTabWidget::tab-bar {
-    background-color: #3F3F3F;
+
+QTabWidget::tab-bar, QTabBar {
+    background-color: #444444;
 }
 
 QTabBar::tab {
@@ -40,15 +51,44 @@ QTabBar::tab {
 }
 
 QTabBar::tab:selected {
-    background-color: #222222;
+    background-color: #262626;
 }
 
 QTabBar::tab:hover {
-    background-color: #2A2A2A;
+    background-color: #2D2D2D;
 }
 
-QPlainTextEdit, QTextEdit, QLineEdit, QComboBox, QAbstractSlider, QAbstractSpinBox {
+QTabWidget::pane, QTabWidget::pane * {
+    background-color: #262626;
+}
+
+QPlainTextEdit,
+QTextEdit,
+QLineEdit,
+QComboBox,
+QAbstractSlider,
+QAbstractSpinBox,
+QListView,
+QTreeView,
+QTableView
+{
     background-color: #222222;
+    padding: 3px;
+    border: 1px solid #666666;
+}
+
+
+QTabWidget::pane QPlainTextEdit,
+QTabWidget::pane QTextEdit,
+QTabWidget::pane QLineEdit,
+QTabWidget::pane QComboBox,
+QTabWidget::pane QAbstractSlider,
+QTabWidget::pane QAbstractSpinBox,
+QTabWidget::pane QListView,
+QTabWidget::pane QTreeView,
+QTabWidget::pane QTableView
+{
+    background-color: #1D1D1D;
     padding: 3px;
     border: 1px solid #666666;
 }
@@ -90,6 +130,10 @@ QStatusBar::item {
     border: 0;
 }
 
+QScrollBar {
+    color: #555555;
+}
+
 QScrollBar:vertical {
     margin-top: 16px;
     margin-bottom: 16px;
@@ -102,7 +146,7 @@ QScrollBar:horizontal {
 
 QScrollBar::handle {
     border: 0;
-    background: #666666;
+    background: #444444;
 }
 
 QScrollBar::add-page, QScrollBar::sub-page {
@@ -125,14 +169,16 @@ QScrollBar::add-line:horizontal {
     width: 16px;
     subcontrol-position: right;
     subcontrol-origin: margin;
+    border: 0;
 }
 
 QScrollBar::sub-line:horizontal {
     width: 16px;
     subcontrol-position: left;
     subcontrol-origin: margin;
+    border: 0;
 }
 
 QHeaderView::section {
-    background-color: #222222;
+    background-color: #333333;
 }

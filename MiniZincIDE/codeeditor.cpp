@@ -18,8 +18,6 @@
 void
 CodeEditor::initUI(QFont& font)
 {
-    setWordWrapMode(QTextOption::NoWrap);
-
     setFont(font);
 
     setTabStopDistance(QFontMetrics(font).boundingRect("  ").width());
@@ -38,15 +36,6 @@ CodeEditor::initUI(QFont& font)
     setViewportWidth(0);
     cursorChange();
 
-// Default MiniZinc theme
-//    currentTheme = Theme(ThemeColor(Qt::black, Qt::white), // text
-//                         ThemeColor(Qt::darkGreen, QColor(0xbb86fc)), //keywords
-//                         ThemeColor(Qt::blue, QColor(0x13C4F5)), // function
-//                         ThemeColor(Qt::darkRed, QColor(0xF29F05)), // string
-//                         ThemeColor(Qt::red, QColor(0x52514C)), //comment
-//                         ThemeColor(Qt::white,QColor(0x181820)), //background
-//                         ThemeColor(QColor(0xF0F0F0),QColor(0x181820)) // line highlight
-//                         );
     highlighter = new Highlighter(font,darkMode,document());
     setDarkMode(darkMode);
 

@@ -12,7 +12,7 @@
 #include <Windows.h>
 #endif
 
-#include "solverconfiguration.h"
+#include "solver.h"
 #include "elapsedtimer.h"
 #include "profilecompilation.h"
 

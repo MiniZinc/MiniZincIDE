@@ -258,7 +258,7 @@
      <x>0</x>
      <y>0</y>
      <width>1490</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -357,20 +357,10 @@
     <property name="title">
      <string>View</string>
     </property>
-    <widget class="QMenu" name="menuTheme">
-     <property name="title">
-      <string>Theme</string>
-     </property>
-     <addaction name="actionDefaultTheme"/>
-     <addaction name="actionBlueberryTheme"/>
-     <addaction name="actionMangoTheme"/>
-    </widget>
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
     <addaction name="actionSelect_font"/>
-    <addaction name="menuTheme"/>
-    <addaction name="actionDark_mode"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
     <addaction name="actionSplit"/>
@@ -548,8 +538,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>80</width>
-          <height>663</height>
+          <width>68</width>
+          <height>786</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1052,14 +1042,6 @@
   <action name="actionCheat_Sheet">
    <property name="text">
     <string>Cheat Sheet...</string>
-   </property>
-  </action>
-  <action name="actionDark_mode">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Dark mode</string>
    </property>
   </action>
   <action name="actionDefaultSolverConfig">

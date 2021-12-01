@@ -16,7 +16,7 @@
 #include <QSet>
 #include <QStandardItemModel>
 #include <QTreeView>
-#include "solverconfiguration.h"
+#include "solver.h"
 #include "moocsubmission.h"
 #include "exception.h"
 #include "configwindow.h"

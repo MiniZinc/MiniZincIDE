@@ -12,7 +12,7 @@
 
 #include "project.h"
 #include "moocsubmission.h"
-#include "solverdialog.h"
+#include "solver.h"
 #include "process.h"
 
 #include <QFileInfo>

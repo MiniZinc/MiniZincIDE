@@ -19,8 +19,7 @@
 #include <QMenu>
 #include <QStyledItemDelegate>
 
-#include "solverconfiguration.h"
-#include "solverdialog.h"
+#include "solver.h"
 #include "extraparamdialog.h"
 
 namespace Ui {
@@ -170,7 +169,6 @@ private:
     void updateSolverConfig(SolverConfiguration* sc);
     void addExtraParam(const QString& key = "", bool backend = false, const QVariant& value = "");
     void addExtraParam(const SolverFlag& f, const QVariant& value = QVariant());
-    void watchChanges(const QList<QWidget*>& objects, std::function<void()> action);
     void invalidate(bool all);
     void populateComboBox(void);
     void resizeExtraFlagsTable(void);

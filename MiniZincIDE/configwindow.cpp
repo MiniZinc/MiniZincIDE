@@ -21,6 +21,7 @@
 
 #include "process.h"
 #include "exception.h"
+#include "ideutils.h"
 
 #include <algorithm>
 #include <limits>
@@ -62,14 +63,8 @@ ConfigWindow::ConfigWindow(QWidget *parent) :
     ui->extraParams_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->extraParams_tableWidget->setItemDelegateForColumn(3, new ExtraOptionDelegate);
 
-    QList<QWidget*> toBeWatched;
-    for (auto child : findChildren<QWidget*>()) {
-        if (child != ui->config_comboBox) {
-            toBeWatched << child;
-        }
-    }
-    watchChanges(toBeWatched, std::bind(&ConfigWindow::invalidate, this, false));
-    watchChanges(ui->options_groupBox->findChildren<QWidget*>(), std::bind(&ConfigWindow::invalidate, this, true));
+    IDEUtils::watchChildChanges(ui->options_groupBox, this, std::bind(&ConfigWindow::invalidate, this, true));
+    IDEUtils::watchChildChanges(ui->advanced_groupBox, this, std::bind(&ConfigWindow::invalidate, this, false));
 }
 
 ConfigWindow::~ConfigWindow()
@@ -524,7 +519,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
     QString additionalData = ui->additionalData_plainTextEdit->toPlainText();
     sc->additionalData = additionalData.length() > 0 ? additionalData.split("\n") : QStringList();
     sc->numThreads = ui->numThreads_spinBox->value();
-    sc->randomSeed = ui->randomSeed_checkBox->isChecked() ? ui->randomSeed_lineEdit->text() : nullptr;
+    sc->randomSeed = ui->randomSeed_checkBox->isChecked() ? ui->randomSeed_lineEdit->text() : QVariant();
     sc->freeSearch = ui->freeSearch_checkBox->isChecked();
 
     sc->extraOptions.clear();
@@ -663,38 +658,6 @@ void ConfigWindow::addExtraParam(const QString& key, bool backend, const QVarian
     });
 
     ui->extraParams_tableWidget->setCellWidget(i, 2, typeComboBox);
-}
-
-void ConfigWindow::watchChanges(const QList<QWidget*>& widgets, std::function<void()> action)
-{
-    for (auto widget : widgets) {
-        QCheckBox* checkBox;
-        QLineEdit* lineEdit;
-        QSpinBox* spinBox;
-        QDoubleSpinBox* doubleSpinBox;
-        QComboBox* comboBox;
-        QGroupBox* groupBox;
-        QTableWidget* tableWidget;
-        QPlainTextEdit* plainTextEdit;
-
-        if ((checkBox = qobject_cast<QCheckBox*>(widget))) {
-            connect(checkBox, &QCheckBox::stateChanged, [=] (int) { action(); });
-        } else if ((lineEdit = qobject_cast<QLineEdit*>(widget))) {
-            connect(lineEdit, &QLineEdit::textChanged, [=] (const QString&) { action(); });
-        } else if ((spinBox = qobject_cast<QSpinBox*>(widget))) {
-            connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=] (int) { action(); });
-        } else if ((doubleSpinBox = qobject_cast<QDoubleSpinBox*>(widget))) {
-            connect(doubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=] (double) { action(); });
-        } else if ((comboBox = qobject_cast<QComboBox*>(widget))) {
-            connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=] (int) { action(); });
-        } else if ((groupBox = qobject_cast<QGroupBox*>(widget))) {
-            connect(groupBox, &QGroupBox::toggled, [=] (bool) { action(); });
-        } else if ((tableWidget = qobject_cast<QTableWidget*>(widget))) {
-            connect(tableWidget, &QTableWidget::cellChanged, [=] (int, int) { action(); });
-        } else if ((plainTextEdit = qobject_cast<QPlainTextEdit*>(widget))) {
-            connect(plainTextEdit, &QPlainTextEdit::textChanged, [=] () { action(); });
-        }
-    }
 }
 
 void ConfigWindow::invalidate(bool all)

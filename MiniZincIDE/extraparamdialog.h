@@ -5,7 +5,7 @@
 #include <QStandardItemModel>
 #include <QSortFilterProxyModel>
 
-#include "solverdialog.h"
+#include "solver.h"
 
 namespace Ui {
 class ExtraParamDialog;

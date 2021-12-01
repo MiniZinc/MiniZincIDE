@@ -2,6 +2,15 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QGroupBox>
+#include <QTableWidget>
+#include <QPlainTextEdit>
+
 
 namespace IDEUtils {
 
@@ -32,6 +41,39 @@ QString formatTime(qint64 time) {
 bool isChildPath(const QString& parent, const QString& child)
 {
     return !QDir(parent).relativeFilePath(child).startsWith(".");
+}
+
+
+void watchChildChanges(QWidget* target, QObject* receiver, std::function<void()> action)
+{
+    for (auto widget : target->findChildren<QWidget*>()) {
+        QCheckBox* checkBox;
+        QLineEdit* lineEdit;
+        QSpinBox* spinBox;
+        QDoubleSpinBox* doubleSpinBox;
+        QComboBox* comboBox;
+        QGroupBox* groupBox;
+        QTableWidget* tableWidget;
+        QPlainTextEdit* plainTextEdit;
+
+        if ((checkBox = qobject_cast<QCheckBox*>(widget))) {
+            QObject::connect(checkBox, &QCheckBox::stateChanged, receiver, [=] (int) { action(); });
+        } else if ((lineEdit = qobject_cast<QLineEdit*>(widget))) {
+            QObject::connect(lineEdit, &QLineEdit::textChanged, receiver, [=] (const QString&) { action(); });
+        } else if ((spinBox = qobject_cast<QSpinBox*>(widget))) {
+            QObject::connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), receiver, [=] (int) { action(); });
+        } else if ((doubleSpinBox = qobject_cast<QDoubleSpinBox*>(widget))) {
+            QObject::connect(doubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), receiver, [=] (double) { action(); });
+        } else if ((comboBox = qobject_cast<QComboBox*>(widget))) {
+            QObject::connect(comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), receiver, [=] (int) { action(); });
+        } else if ((groupBox = qobject_cast<QGroupBox*>(widget))) {
+            QObject::connect(groupBox, &QGroupBox::toggled, receiver, [=] (bool) { action(); });
+        } else if ((tableWidget = qobject_cast<QTableWidget*>(widget))) {
+            QObject::connect(tableWidget, &QTableWidget::cellChanged, receiver, [=] (int, int) { action(); });
+        } else if ((plainTextEdit = qobject_cast<QPlainTextEdit*>(widget))) {
+            QObject::connect(plainTextEdit, &QPlainTextEdit::textChanged,receiver, [=] () { action(); });
+        }
+    }
 }
 
 }
