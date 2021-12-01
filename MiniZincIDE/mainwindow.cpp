@@ -107,6 +107,8 @@ void MainWindow::init(const QString& projectFile)
     }
 #endif
 
+    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
     // initialise find widget
     ui->findFrame->hide();
     ui->findWidget->installEventFilter(this);
