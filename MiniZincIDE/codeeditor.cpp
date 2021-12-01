@@ -170,7 +170,7 @@ void CodeEditor::setDarkMode(bool enable)
 //    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
 //    this->setPalette(palette);
 
-    setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
+    viewport()->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
     cursorChange(); // Ensure extra selections are the correct colours
 }
 

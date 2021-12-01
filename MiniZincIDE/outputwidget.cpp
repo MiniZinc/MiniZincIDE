@@ -69,7 +69,7 @@ void OutputWidget::setDarkMode(bool darkMode)
     _infoCharFormat.setForeground(Qt::gray);
     _commentCharFormat.setForeground(Themes::currentTheme.commentColor.get(darkMode));
 
-    ui->textBrowser->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
+    ui->textBrowser->viewport()->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
 }
 
 void OutputWidget::scrollToBottom()
