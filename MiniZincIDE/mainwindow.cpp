@@ -2757,6 +2757,7 @@ void MainWindow::updateProfileSearchButton()
 
 void MainWindow::on_progressOutput(float progress)
 {
+    progressBar->setHidden(false);
     progressBar->setValue(static_cast<int>(progress));
 }
 
