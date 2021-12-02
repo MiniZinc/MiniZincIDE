@@ -51,6 +51,7 @@ OutputWidget::OutputWidget(QWidget *parent) :
     _rightAlignBlockFormat.setLeftMargin(10);
 #ifdef Q_OS_MAC
     ui->toggleAll_pushButton->setMinimumWidth(85);
+    layout()->setSpacing(8);
 #else
     setStyleSheet("QPushButton { padding: 2px 6px; }");
 #endif
