@@ -19,7 +19,8 @@ CONFIG += c++11
 
 macx {
     ICON = mznide.icns
-    OBJECTIVE_SOURCES += macos_extras.mm
+    OBJECTIVE_SOURCES += \
+    darkmodenotifier_macos.mm
     LIBS += -framework Cocoa
     macx-xcode {
       QMAKE_INFO_PLIST = mznide-xcode.plist
@@ -29,8 +30,6 @@ macx {
 }
 
 win32 {
-    SOURCES += win_darkmode.cpp
-    HEADERS += win_darkmode.h
     LIBS += -ladvapi32
 }
 
@@ -41,6 +40,7 @@ CONFIG += embed_manifest_exe
 SOURCES += main.cpp\
     codechecker.cpp \
     configwindow.cpp \
+    darkmodenotifier.cpp \
     elapsedtimer.cpp \
     extraparamdialog.cpp \
     ide.cpp \
@@ -68,6 +68,7 @@ HEADERS  += mainwindow.h \
     codechecker.h \
     codeeditor.h \
     configwindow.h \
+    darkmodenotifier.h \
     elapsedtimer.h \
     exception.h \
     extraparamdialog.h \
@@ -75,7 +76,6 @@ HEADERS  += mainwindow.h \
     fzndoc.h \
     ide.h \
     ideutils.h \
-    macos_extras.h \
     outputwidget.h \
     preferencesdialog.h \
     process.h \

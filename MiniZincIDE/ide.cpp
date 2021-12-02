@@ -173,6 +173,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
 
     lastDefaultProject = nullptr;
 
+    darkModeNotifier = new DarkModeNotifier(this);
+
     { // Load cheat sheet
         QString fileContents;
         QFile file(":/cheat_sheet.mzn");
@@ -197,7 +199,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         defaultFont.setPointSize(13);
         QFont editorFont;
         editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
-        bool darkMode = settings.value("darkMode", false).value<bool>();
+        bool darkMode = darkModeNotifier->darkMode();
         settings.endGroup();
 
         cheatSheet = new QMainWindow;
@@ -213,6 +215,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         cheatSheet->resize(800, 600);
     }
 
+    connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &IDE::onDarkModeChanged);
+    onDarkModeChanged(darkModeNotifier->darkMode());
 
     connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
     connect(this, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(handleFocusChange(QWidget*,QWidget*)));
@@ -644,4 +648,24 @@ QString IDE::appDir(void) const {
 
 IDE* IDE::instance(void) {
     return static_cast<IDE*>(qApp);
+}
+
+void IDE::onDarkModeChanged(bool darkMode)
+{
+    static_cast<CodeEditor*>(cheatSheet->centralWidget())->setDarkMode(darkMode);
+
+    if (!darkModeNotifier->hasNativeDarkMode()) {
+        // No native dark widgets, so use stylesheet instead
+        if (darkMode) {
+            QFile sheet(":/dark_mode.css");
+            sheet.open(QFile::ReadOnly);
+            qApp->setStyleSheet(sheet.readAll());
+        } else {
+            qApp->setStyleSheet("");
+        }
+    }
+
+    for (auto* mw : qAsConst(mainWindows)) {
+        mw->setDarkMode(darkMode);
+    }
 }

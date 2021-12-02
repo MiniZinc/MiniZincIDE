@@ -40,10 +40,6 @@
 #include "profilecompilation.h"
 #include "server.h"
 
-#ifdef Q_OS_WIN
-#include "win_darkmode.h"
-#endif
-
 #include "../cp-profiler/src/cpprofiler/conductor.hh"
 #include "../cp-profiler/src/cpprofiler/execution_window.hh"
 #include "../cp-profiler/src/cpprofiler/analysis/merge_window.hh"
@@ -258,9 +254,6 @@ protected:
     virtual void closeEvent(QCloseEvent*);
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
-#ifdef Q_OS_MAC
-    virtual void paintEvent(QPaintEvent *);
-#endif
     bool eventFilter(QObject *, QEvent *);
     void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
@@ -308,10 +301,6 @@ private:
     cpprofiler::Conductor* conductor = nullptr;
     Server* server = nullptr;
     VisConnector* vis_connector = nullptr;
-
-#ifdef Q_OS_WIN
-    DarkModeNotifier* darkModeNotifier = nullptr;
-#endif
 
     void createEditor(const QString& path, bool openAsModified, bool isNewFile, bool readOnly=false, bool focus=true);
     enum ConfMode { CONF_CHECKARGS, CONF_COMPILE, CONF_RUN };

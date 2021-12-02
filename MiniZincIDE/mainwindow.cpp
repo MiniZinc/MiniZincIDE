@@ -217,12 +217,6 @@ void MainWindow::init(const QString& projectFile)
     defaultFont.setStyleHint(QFont::TypeWriter);
     defaultFont.setPointSize(13);
     editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
-#ifdef Q_OS_WIN
-    darkModeNotifier = new DarkModeNotifier(this);
-    if (darkModeNotifier->supportsDarkMode()) {
-        connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &MainWindow::setDarkMode);
-    }
-#endif
     initTheme();
     ui->outputWidget->setBrowserFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
@@ -608,17 +602,6 @@ void MainWindow::dropEvent(QDropEvent* event) {
     }
     event->acceptProposedAction();
 }
-
-#ifdef Q_OS_MAC
-void MainWindow::paintEvent(QPaintEvent *) {
-    if (hasDarkMode()) {
-        bool newDark = isDark();
-        if (newDark != darkMode) {
-            setDarkMode(newDark);
-        }
-    }
-}
-#endif
 
 void MainWindow::tabChange(int tab) {
     if (curEditor) {
@@ -2277,19 +2260,6 @@ void MainWindow::setDarkMode(bool enable)
             ce->setDarkMode(darkMode);
         }
     }
-    static_cast<CodeEditor*>(IDE::instance()->cheatSheet->centralWidget())->setDarkMode(darkMode);
-
-    if (darkMode) {
-#ifndef Q_OS_MAC
-        QFile sheet(":/dark_mode.css");
-        sheet.open(QFile::ReadOnly);
-        qApp->setStyleSheet(sheet.readAll());
-#endif
-    } else {
-#ifndef Q_OS_MAC
-        qApp->setStyleSheet("");
-#endif
-    }
     ui->outputWidget->setDarkMode(darkMode);
 }
 
@@ -2311,21 +2281,8 @@ void MainWindow::initTheme()
     }
     settings.endGroup();
 
-#ifdef Q_OS_WIN
-    if (darkModeNotifier->supportsDarkMode()) {
-        setDarkMode(darkModeNotifier->darkMode());
-        return;
-    }
-#elif Q_OS_MAC
-    if (hasDarkMode()) {
-        setDarkMode(isDark());
-        return;
-    }
-#endif
-
-    settings.beginGroup("MainWindow");
-    setDarkMode(settings.value("darkMode", false).toBool());
-    settings.endGroup();
+    auto* dm = IDE::instance()->darkModeNotifier;
+    setDarkMode(dm->darkMode());
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()

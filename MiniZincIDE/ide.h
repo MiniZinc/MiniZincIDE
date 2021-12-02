@@ -8,6 +8,7 @@
 #include <QMainWindow>
 
 #include "codeeditor.h"
+#include "darkmodenotifier.h"
 
 #ifdef Q_OS_WIN
 #define pathSep ";"
@@ -18,7 +19,6 @@
 #ifdef Q_OS_MAC
 #define fileDialogSuffix "/*"
 #define MZNOS "mac"
-#include "macos_extras.h"
 #else
 #define fileDialogSuffix "/"
 #define MZNOS "linux"
@@ -66,6 +66,8 @@ public:
     QNetworkAccessManager* networkManager;
     QNetworkReply* versionCheckReply;
 
+    DarkModeNotifier* darkModeNotifier;
+
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
     QMenu* recentFilesMenu;
@@ -101,6 +103,7 @@ protected slots:
     void fileModified(const QString&);
     void fileModifiedTimeout(void);
     void handleFocusChange(QWidget*,QWidget*);
+    void onDarkModeChanged(bool darkMode);
 public slots:
     void checkUpdate(void);
     void help(void);

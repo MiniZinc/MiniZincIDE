@@ -71,7 +71,6 @@ private:
     QMap<QString, QByteArray> _restore;
     QSet<QString> _remove;
     QString _origMznDistribPath;
-    bool _supportsDarkMode = false;
 
     bool _origDarkMode = false;
     int _origThemeIndex = 0;

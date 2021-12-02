@@ -4,6 +4,7 @@
 #include "exception.h"
 #include "ideutils.h"
 #include "mainwindow.h"
+#include "ide.h"
 
 #include <QMessageBox>
 #include <QSettings>
@@ -12,12 +13,6 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QFileDialog>
-
-#ifdef Q_OS_WIN
-#include "win_darkmode.h"
-#elif Q_OS_MAC
-#include "macos_extras.h"
-#endif
 
 PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     QDialog(parent),
@@ -86,21 +81,11 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     _origThemeIndex = settings.value("theme", 0).toInt();
     ui->theme_comboBox->setCurrentIndex(_origThemeIndex);
 
-#ifdef Q_OS_WIN
-    DarkModeNotifier d;
-    if (d.supportsDarkMode()) {
-        _supportsDarkMode = true;
-        _origDarkMode = d.darkMode();
+    auto* d = IDE::instance()->darkModeNotifier;
+    if (d->hasSystemSetting()) {
+        _origDarkMode = d->darkMode();
         ui->darkMode_checkBox->hide();
     }
-#elif Q_OS_MAC
-    ui->darkModeAuto_radioButton->setDisabled(hasDarkMode());
-    if (hasDarkMode()) {
-        _supportsDarkMode = true;
-        _origDarkMode = isDark();
-        ui->darkMode_checkBox->hide();
-    }
-#endif
     _ce->setDarkMode(_origDarkMode);
     ui->darkMode_checkBox->setChecked(_origDarkMode);
     settings.endGroup();
@@ -795,7 +780,7 @@ void PreferencesDialog::accept()
 
 void PreferencesDialog::on_PreferencesDialog_rejected()
 {
-
+    // Undo theme changes
     ui->theme_comboBox->setCurrentIndex(_origThemeIndex);
     ui->darkMode_checkBox->setChecked(_origDarkMode);
 
@@ -844,9 +829,7 @@ void PreferencesDialog::on_PreferencesDialog_accepted()
     settings.endGroup();
 
     settings.beginGroup("MainWindow");
-    if (!_supportsDarkMode) {
-        settings.setValue("darkMode", ui->darkMode_checkBox->isChecked());
-    }
+    settings.setValue("darkMode", ui->darkMode_checkBox->isChecked());
     settings.endGroup();
 
     settings.beginGroup("minizinc");
@@ -866,13 +849,8 @@ void PreferencesDialog::updateSolverLabel()
 
 void PreferencesDialog::on_darkMode_checkBox_stateChanged(int checked)
 {
-    if (_supportsDarkMode) {
-        return;
-    }
+    auto* d = IDE::instance()->darkModeNotifier;
     bool dark = checked == Qt::Checked;
-    auto* mw = qobject_cast<MainWindow*>(parentWidget());
-    if (mw != nullptr && mw->isDarkMode() != dark) {
-        mw->setDarkMode(dark);
-    }
-    _ce->setDarkMode(dark);
+    d->requestChangeDarkMode(dark);
+    _ce->setDarkMode(d->darkMode());
 }
