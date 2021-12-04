@@ -61,6 +61,8 @@ private slots:
 
     void on_darkMode_checkBox_stateChanged(int arg1);
 
+    void on_zoom_spinBox_valueChanged(int arg1);
+
 private:
     Ui::PreferencesDialog *ui;
 
@@ -81,6 +83,7 @@ private:
     bool updateSolver();
     void updateSearchPaths();
     void showMessageBox(const QString& message);
+    void updateCodeEditorFont();
 };
 
 #endif // PREFERENCESDIALOG_H

@@ -47,7 +47,8 @@ class CodeEditor : public QPlainTextEdit
     Q_OBJECT
 public:
     explicit CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                        QFont& font, bool darkMode, QTabWidget* tabs, QWidget *parent);
+                        QFont& font, int indentSize, bool useTabs, bool darkMode,
+                        QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
     void paintDebugInfo(QPaintEvent *event);
@@ -60,6 +61,8 @@ public:
     void setEditorFont(QFont& font);
     void setDocument(QTextDocument *document);
     void setDarkMode(bool);
+    void setIndentSize(int size);
+    void setIndentTab(bool useTabs0) { useTabs = useTabs0; }
     Highlighter& getHighlighter();
     void checkFile(const QVector<MiniZincError>& errors);
     void showDebugInfo(bool show);
@@ -91,6 +94,8 @@ private:
     Highlighter* highlighter;
     QCompleter* completer;
     QStringListModel completionModel;
+    int indentSize;
+    bool useTabs;
     bool darkMode;
     QList<CodeEditorError> errors;
     QSet<int> errorLines;
@@ -99,6 +104,8 @@ private:
     QTimer modificationTimer;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
+
+    void shiftSelected(int amount);
 
     QColor interpolate(QColor start,QColor end,double ratio); // This should not go here
     QColor heatColor(double ratio); // This should not go here

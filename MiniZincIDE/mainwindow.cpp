@@ -205,18 +205,9 @@ void MainWindow::init(const QString& projectFile)
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-
-    QFont defaultFont;
-    defaultFont.setFamily("Menlo");
-    if (!defaultFont.exactMatch()) {
-        defaultFont.setFamily("Consolas");
-    }
-    if (!defaultFont.exactMatch()) {
-        defaultFont.setFamily("Courier New");
-    }
-    defaultFont.setStyleHint(QFont::TypeWriter);
-    defaultFont.setPointSize(13);
-    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
+    editorFont = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    auto zoom = settings.value("zoom", 100).toInt();
+    editorFont.setPointSize(editorFont.pointSize() * zoom / 100);
     initTheme();
     ui->outputWidget->setBrowserFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
@@ -230,6 +221,11 @@ void MainWindow::init(const QString& projectFile)
     ui->check_wrap->setChecked(settings.value("findWrapAround", false).toBool());
     ui->check_re->setChecked(settings.value("findRegularExpression", false).toBool());
     ui->check_case->setChecked(settings.value("findCaseSensitive", false).toBool());
+    settings.endGroup();
+
+    settings.beginGroup("ide");
+    indentSize = settings.value("indentSize", 2).toInt();
+    useTabs = settings.value("indentTabs", false).toBool();
     settings.endGroup();
 
     IDE::instance()->setEditorFont(editorFont);
@@ -396,7 +392,7 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
                 closeTab = 0;
             }
         }
-        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,darkMode,ui->tabWidget,this);
+        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,indentSize,useTabs,darkMode,ui->tabWidget,this);
         if (readOnly || ce->filename == "_coursera" || ce->filename.endsWith(".mzc"))
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
@@ -1453,6 +1449,7 @@ void MainWindow::on_actionClear_output_triggered()
 
 void MainWindow::setEditorFont(QFont font)
 {
+    editorFont = font;
     ui->outputWidget->setBrowserFont(font);
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
@@ -1462,22 +1459,61 @@ void MainWindow::setEditorFont(QFont font)
     }
 }
 
+void MainWindow::setEditorIndent(int indentSize, bool useTabs)
+{
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        auto* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->setIndentSize(indentSize);
+            ce->setIndentTab(useTabs);
+        }
+    }
+}
+
+void MainWindow::setEditorWordWrap(QTextOption::WrapMode mode)
+{
+
+    for (int i = 0; i < ui->tabWidget->count(); i++) {
+        auto* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
+        if (ce) {
+            ce->setWordWrapMode(mode);
+        }
+    }
+}
+
 void MainWindow::on_actionBigger_font_triggered()
 {
-    editorFont.setPointSize(editorFont.pointSize()+1);
-    IDE::instance()->setEditorFont(editorFont);
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    auto zoom = std::min(settings.value("zoom", 100).toInt() + 10, 10000);
+    settings.setValue("zoom", zoom);
+    auto font = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    settings.endGroup();
+    font.setPointSize(font.pointSize() * zoom / 100);
+    IDE::instance()->setEditorFont(font);
 }
 
 void MainWindow::on_actionSmaller_font_triggered()
 {
-    editorFont.setPointSize(std::max(5, editorFont.pointSize()-1));
-    IDE::instance()->setEditorFont(editorFont);
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    auto zoom = std::max(10, settings.value("zoom", 100).toInt() - 10);
+    settings.setValue("zoom", zoom);
+    auto font = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    settings.endGroup();
+    font.setPointSize(font.pointSize() * zoom / 100);
+    IDE::instance()->setEditorFont(font);
 }
 
 void MainWindow::on_actionDefault_font_size_triggered()
 {
-    editorFont.setPointSize(13);
-    IDE::instance()->setEditorFont(editorFont);
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("zoom", 100);
+    auto font = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    settings.endGroup();
+    font.setPointSize(font.pointSize());
+    IDE::instance()->setEditorFont(font);
 }
 
 #ifndef MINIZINC_IDE_BUILD
@@ -1753,6 +1789,22 @@ void MainWindow::on_actionManage_solvers_triggered(bool addNew)
         settings.setValue("lastCheck21",QDate::currentDate().addDays(-2).toString());
         IDE::instance()->checkUpdate();
     }
+
+    indentSize = settings.value("indentSize", 2).toInt();
+    useTabs = settings.value("indentTabs", false).toBool();
+    IDE::instance()->setEditorIndent(indentSize, useTabs);
+    bool wordWrap = settings.value("wordWrap", true).toBool();
+    IDE::instance()->setEditorWordWrap(wordWrap ?
+                                           QTextOption::WrapAtWordBoundaryOrAnywhere :
+                                           QTextOption::NoWrap);
+
+    settings.endGroup();
+
+    settings.beginGroup("MainWindow");
+    editorFont = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    auto zoom = settings.value("zoom", 100).toInt();
+    editorFont.setPointSize(editorFont.pointSize() * zoom / 100);
+    IDE::instance()->setEditorFont(editorFont);
     settings.endGroup();
 
     settings.beginGroup("minizinc");
@@ -1785,16 +1837,6 @@ void MainWindow::on_actionReplace_triggered()
     ui->find->selectAll();
     ui->findFrame->raise();
     ui->findFrame->show();
-}
-
-void MainWindow::on_actionSelect_font_triggered()
-{
-    bool ok;
-    QFont newFont = QFontDialog::getFont(&ok,editorFont,this);
-    if (ok) {
-        editorFont = newFont;
-        IDE::instance()->setEditorFont(editorFont);
-    }
 }
 
 void MainWindow::on_actionGo_to_line_triggered()

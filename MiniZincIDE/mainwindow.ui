@@ -360,7 +360,6 @@
     <addaction name="actionBigger_font"/>
     <addaction name="actionSmaller_font"/>
     <addaction name="actionDefault_font_size"/>
-    <addaction name="actionSelect_font"/>
     <addaction name="separator"/>
     <addaction name="actionOnly_editor"/>
     <addaction name="actionSplit"/>

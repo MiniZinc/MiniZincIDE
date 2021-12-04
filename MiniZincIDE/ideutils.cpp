@@ -76,4 +76,21 @@ void watchChildChanges(QWidget* target, QObject* receiver, std::function<void()>
     }
 }
 
+QFont fontFromString(const QString& s)
+{
+    QStringList families({"Menlo", "Consolas", "Courier New"});
+
+    QFont font;
+    font.setPointSize(13);
+    font.setStyleHint(QFont::TypeWriter);
+    for (auto& family : families) {
+        font.setFamily(family);
+        if (font.exactMatch()) {
+            break;
+        }
+    }
+    font.fromString(s);
+    return font;
+}
+
 }

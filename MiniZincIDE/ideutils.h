@@ -12,6 +12,7 @@ namespace IDEUtils {
     void watchChildChanges(QWidget* target, T* receiver, void (T::* action)()) {
         watchChildChanges(target, receiver, std::bind(action, receiver));
     }
+    QFont fontFromString(const QString& s);
 }
 
 #endif // IDEUTILS_H

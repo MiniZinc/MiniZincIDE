@@ -19,8 +19,8 @@ void
 CodeEditor::initUI(QFont& font)
 {
     setFont(font);
-
-    setTabStopDistance(QFontMetrics(font).boundingRect("  ").width());
+    QFontMetrics metrics(font);
+    setTabStopDistance(metrics.horizontalAdvance(' ') * indentSize);
 
     lineNumbers= new LineNumbers(this);
     debugInfo = new DebugInfo(this);
@@ -47,8 +47,10 @@ CodeEditor::initUI(QFont& font)
 }
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                       QFont& font, bool darkMode0, QTabWidget* t, QWidget *parent) :
-    QPlainTextEdit(parent), loadContentsButton(nullptr), tabs(t), darkMode(darkMode0)
+                       QFont& font, int indentSize0, bool useTabs0, bool darkMode0,
+                       QTabWidget* t, QWidget *parent) :
+    QPlainTextEdit(parent), loadContentsButton(nullptr), tabs(t),
+    indentSize(indentSize0), useTabs(useTabs0), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -163,6 +165,13 @@ void CodeEditor::setDarkMode(bool enable)
     cursorChange(); // Ensure extra selections are the correct colours
 }
 
+void CodeEditor::setIndentSize(int size)
+{
+    indentSize = size;
+    QFontMetrics metrics(font());
+    setTabStopDistance(metrics.horizontalAdvance(' ') * size);
+}
+
 Highlighter& CodeEditor::getHighlighter() {
     return *highlighter;
 }
@@ -215,8 +224,28 @@ void CodeEditor::keyPressEvent(QKeyEvent *e)
         auto endBlock = document()->findBlock(cursor.selectionEnd());
         auto partialLineSelection = startBlock.position() != cursor.selectionStart()
                 || endBlock.position() + endBlock.length() - 1 != cursor.selectionEnd();
-        if (startBlock == endBlock && partialLineSelection) {
-            cursor.insertText("  ");
+        if (!cursor.hasSelection() || (startBlock == endBlock && partialLineSelection)) {
+            if (useTabs) {
+                cursor.insertText("\t");
+            } else {
+                auto posInLine = cursor.selectionStart() - startBlock.position();
+                auto distanceFromTabStop = 0;
+                auto line = startBlock.text();
+                for (int i = 0; i < posInLine; i++) {
+                    if (line[i] == '\t') {
+                        distanceFromTabStop = 0;
+                    } else if (line[i].isSpace()) {
+                        distanceFromTabStop++;
+                    } else {
+                        break;
+                    }
+                }
+                auto toAdd = distanceFromTabStop % indentSize;
+                if (toAdd == 0) {
+                    toAdd = indentSize;
+                }
+                cursor.insertText(QString(" ").repeated(toAdd));
+            }
         } else {
             shiftRight();
         }
@@ -660,6 +689,7 @@ void CodeEditor::setEditorFont(QFont& font)
     setFont(font);
     document()->setDefaultFont(font);
     highlighter->setEditorFont(font);
+    setIndentSize(indentSize);
     highlighter->rehighlight();
 }
 
@@ -774,33 +804,18 @@ void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
 
 void CodeEditor::shiftLeft()
 {
-    QTextCursor cursor = textCursor();
-    QTextBlock block = document()->findBlock(cursor.selectionStart());
-    QTextBlock endblock = document()->findBlock(cursor.selectionEnd());
-    bool atBlockStart = cursor.selectionEnd() == endblock.position();
-    if (block==endblock || !atBlockStart)
-        endblock = endblock.next();
-    QRegularExpression white("\\s");
-    QRegularExpression twowhite("\\s\\s");
-    cursor.beginEditBlock();
-    do {
-        cursor.setPosition(block.position());
-        if (block.length() > 2) {
-            cursor.movePosition(QTextCursor::Right,QTextCursor::KeepAnchor,2);
-            if (!twowhite.match(cursor.selectedText()).hasMatch()) {
-                cursor.movePosition(QTextCursor::Left,QTextCursor::KeepAnchor,1);
-            }
-            if (white.match(cursor.selectedText()).hasMatch()) {
-                cursor.removeSelectedText();
-            }
-        }
-        block = block.next();
-    } while (block.isValid() && block != endblock);
-    cursor.endEditBlock();
+    shiftSelected(-1);
 }
 
 void CodeEditor::shiftRight()
 {
+    shiftSelected(1);
+}
+
+void CodeEditor::shiftSelected(int amount)
+{
+    auto origCursor = textCursor();
+    origCursor.setKeepPositionOnInsert(true);
     QTextCursor cursor = textCursor();
     QTextBlock block = document()->findBlock(cursor.selectionStart());
     QTextBlock endblock = document()->findBlock(cursor.selectionEnd());
@@ -809,9 +824,31 @@ void CodeEditor::shiftRight()
         endblock = endblock.next();
     cursor.beginEditBlock();
     do {
-        cursor.setPosition(block.position());
-        cursor.insertText("  ");
+        auto position = block.position();
+        cursor.setPosition(position);
+        auto indentation = 0;
+        for (auto c : block.text()) {
+            if (c == '\t') {
+                indentation = indentSize * ((indentation + indentSize) / indentSize);
+            } else if (c.isSpace()) {
+                indentation++;
+            } else {
+                break;
+            }
+            position++;
+        }
+        cursor.setPosition(position, QTextCursor::KeepAnchor);
+        auto newIndent = std::max(0, indentation + indentSize * amount);
+        if (useTabs) {
+            cursor.insertText(
+                        QString("\t").repeated(newIndent / indentSize) +
+                        QString(" ").repeated(newIndent % indentSize));
+        } else {
+            cursor.insertText(QString(" ").repeated(newIndent));
+        }
         block = block.next();
     } while (block.isValid() && block != endblock);
     cursor.endEditBlock();
+    origCursor.setKeepPositionOnInsert(false);
+    setTextCursor(origCursor);
 }

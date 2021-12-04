@@ -136,8 +136,6 @@ private slots:
 
     void on_actionReplace_triggered();
 
-    void on_actionSelect_font_triggered();
-
     void on_actionGo_to_line_triggered();
 
     void on_actionShift_left_triggered();
@@ -276,6 +274,8 @@ private:
     QLabel* statusLabel;
     QLabel* statusLineColLabel;
     QFont editorFont;
+    int indentSize;
+    bool useTabs;
     bool darkMode;
     QVector<Solver> solvers;
     QStringList currentAdditionalDataFiles;
@@ -309,6 +309,8 @@ private:
     void saveProject(const QString& filepath);
     void loadProject(const QString& filepath);
     void setEditorFont(QFont font);
+    void setEditorIndent(int indentSize, bool useTabs);
+    void setEditorWordWrap(QTextOption::WrapMode mode);
     void setLastPath(const QString& s);
     QString getLastPath(void);
     QString setElapsedTime(qint64 elapsed_t);

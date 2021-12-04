@@ -92,8 +92,11 @@ public:
     QString getLastPath(void);
     void setLastPath(const QString& path);
     void setEditorFont(QFont font);
+    void setEditorIndent(int indentSize, bool useTabs);
+    void setEditorWordWrap(QTextOption::WrapMode mode);
     void addRecentFile(const QString& file);
     void addRecentProject(const QString& file);
+    void loadFont();
 protected:
     bool event(QEvent *);
 protected slots:

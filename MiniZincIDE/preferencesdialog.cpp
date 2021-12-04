@@ -24,18 +24,8 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
 
     // Get font so we can populate preview
     settings.beginGroup("MainWindow");
-    QFont defaultFont;
-    defaultFont.setFamily("Menlo");
-    if (!defaultFont.exactMatch()) {
-        defaultFont.setFamily("Consolas");
-    }
-    if (!defaultFont.exactMatch()) {
-        defaultFont.setFamily("Courier New");
-    }
-    defaultFont.setStyleHint(QFont::TypeWriter);
-    defaultFont.setPointSize(13);
-    QFont editorFont;
-    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
+    QFont editorFont = IDEUtils::fontFromString(settings.value("editorFont").toString());
+    auto zoom = settings.value("zoom", 100).toInt();
     _origDarkMode = settings.value("darkMode", false).toBool();
     settings.endGroup();
 
@@ -48,15 +38,20 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
         } else {
             qDebug() << "internal error: cannot open cheat sheet.";
         }
-        _ce = new CodeEditor(nullptr, ":/cheat_sheet.mzn", false, false, editorFont, true, nullptr, this);
+        _ce = new CodeEditor(nullptr, ":/cheat_sheet.mzn", false, false, editorFont, 2, false, _origDarkMode, nullptr, this);
         _ce->document()->setPlainText(fileContents);
         _ce->setReadOnly(true);
         ui->preview_verticalLayout->addWidget(_ce);
     }
 
     // Now everything else can get populated
-    ui->fontComboBox->setCurrentFont(editorFont);
+
+    // Separate font family from size so that combo box stays the same size
+    auto font = qApp->font();
+    font.setFamily(editorFont.family());
+    ui->fontComboBox->setCurrentFont(font);
     ui->fontSize_spinBox->setValue(editorFont.pointSize());
+    ui->zoom_spinBox->setValue(zoom);
 
     auto& driver = MznDriver::get();
     _origMznDistribPath = driver.mznDistribPath();
@@ -77,6 +72,9 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     ui->reuseVis_checkBox->setChecked(settings.value("reuseVis", false).toBool());
     ui->printCommand_checkBox->setChecked(settings.value("printCommand", false).toBool());
     ui->indentSize_spinBox->setValue(settings.value("indentSize", 2).toInt());
+    bool indentTabs = settings.value("indentTabs", false).toBool();
+    ui->indentSpaces_radioButton->setChecked(!indentTabs);
+    ui->indentTabs_radioButton->setChecked(indentTabs);
     ui->lineWrapping_checkBox->setChecked(settings.value("wordWrap", true).toBool());
     _origThemeIndex = settings.value("theme", 0).toInt();
     ui->theme_comboBox->setCurrentIndex(_origThemeIndex);
@@ -126,16 +124,13 @@ PreferencesDialog::~PreferencesDialog()
 
 void PreferencesDialog::on_fontComboBox_currentFontChanged(const QFont &f)
 {
-    auto editorFont = f;
-    _ce->setEditorFont(editorFont);
+    updateCodeEditorFont();
 }
 
 
 void PreferencesDialog::on_fontSize_spinBox_valueChanged(int size)
 {
-    auto editorFont = ui->fontComboBox->currentFont();
-    editorFont.setPointSize(size);
-    _ce->setEditorFont(editorFont);
+    updateCodeEditorFont();
 }
 
 
@@ -151,6 +146,12 @@ void PreferencesDialog::on_lineWrapping_checkBox_stateChanged(int checkstate)
     }
 }
 
+void PreferencesDialog::updateCodeEditorFont()
+{
+    auto editorFont = ui->fontComboBox->currentFont();
+    editorFont.setPointSize(ui->fontSize_spinBox->value() * ui->zoom_spinBox->value() / 100);
+    _ce->setEditorFont(editorFont);
+}
 
 void PreferencesDialog::on_theme_comboBox_currentIndexChanged(int index)
 {
@@ -824,12 +825,17 @@ void PreferencesDialog::on_PreferencesDialog_accepted()
     settings.setValue("printCommand", ui->printCommand_checkBox->isChecked());
     settings.setValue("reuseVis", ui->reuseVis_checkBox->isChecked());
     settings.setValue("theme", ui->theme_comboBox->currentIndex());
+    settings.setValue("indentTabs", ui->indentTabs_radioButton->isChecked());
     settings.setValue("indentSize", ui->indentSize_spinBox->value());
     settings.setValue("wordWrap", ui->lineWrapping_checkBox->isChecked());
     settings.endGroup();
 
     settings.beginGroup("MainWindow");
     settings.setValue("darkMode", ui->darkMode_checkBox->isChecked());
+    auto editorFont = ui->fontComboBox->currentFont();
+    editorFont.setPointSize(ui->fontSize_spinBox->value());
+    settings.setValue("editorFont", editorFont.toString());
+    settings.setValue("zoom", ui->zoom_spinBox->value());
     settings.endGroup();
 
     settings.beginGroup("minizinc");
@@ -853,4 +859,9 @@ void PreferencesDialog::on_darkMode_checkBox_stateChanged(int checked)
     bool dark = checked == Qt::Checked;
     d->requestChangeDarkMode(dark);
     _ce->setDarkMode(d->darkMode());
+}
+
+void PreferencesDialog::on_zoom_spinBox_valueChanged(int value)
+{
+    updateCodeEditorFont();
 }

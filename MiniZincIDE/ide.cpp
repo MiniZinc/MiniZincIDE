@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 
 #include "ide.h"
+#include "ideutils.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "checkupdatedialog.h"
@@ -163,6 +164,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         settings.setValue("checkforupdates21",result==QDialog::Accepted);
         settings.sync();
     }
+    bool wordWrap = settings.value("wordWrap", true).toBool();
     settings.endGroup();
     settings.beginGroup("Recent");
     recentFiles = settings.value("files",QStringList()).toStringList();
@@ -197,14 +199,18 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         }
         defaultFont.setStyleHint(QFont::TypeWriter);
         defaultFont.setPointSize(13);
-        QFont editorFont;
-        editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
+        auto editorFont = IDEUtils::fontFromString(settings.value("editorFont").toString());
+        int zoom = settings.value("zoom", 100).toInt();
+        editorFont.setPointSize(editorFont.pointSize() * zoom / 100);
         bool darkMode = darkModeNotifier->darkMode();
         settings.endGroup();
 
         cheatSheet = new QMainWindow;
         cheatSheet->setWindowTitle("MiniZinc Cheat Sheet");
-        CodeEditor* ce = new CodeEditor(nullptr,":/cheat_sheet.mzn",false,false,editorFont,darkMode,nullptr,nullptr);
+        CodeEditor* ce = new CodeEditor(nullptr,":/cheat_sheet.mzn",false,false,editorFont,2,false,darkMode,nullptr,nullptr);
+        ce->setWordWrapMode(wordWrap ?
+                                QTextOption::WrapAtWordBoundaryOrAnywhere :
+                                QTextOption::NoWrap);
         ce->document()->setPlainText(fileContents);
         QTextCursor cursor = ce->textCursor();
         cursor.movePosition(QTextCursor::Start);
@@ -428,14 +434,25 @@ void IDE::setLastPath(const QString& path) {
 
 void IDE::setEditorFont(QFont font)
 {
-    QSettings settings;
-    settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", font.toString());
-    settings.endGroup();
-    for (QSet<MainWindow*>::iterator it = IDE::instance()->mainWindows.begin();
-         it != IDE::instance()->mainWindows.end(); ++it) {
-        (*it)->setEditorFont(font);
+    for (auto* mw : qAsConst(mainWindows)) {
+        mw->setEditorFont(font);
     }
+    static_cast<CodeEditor*>(cheatSheet->centralWidget())->setEditorFont(font);
+}
+
+void IDE::setEditorIndent(int indentSize, bool useTabs)
+{
+    for (auto* mw : qAsConst(mainWindows)) {
+        mw->setEditorIndent(indentSize, useTabs);
+    }
+}
+
+void IDE::setEditorWordWrap(QTextOption::WrapMode mode)
+{
+    for (auto* mw : qAsConst(mainWindows)) {
+        mw->setEditorWordWrap(mode);
+    }
+    static_cast<CodeEditor*>(cheatSheet->centralWidget())->setWordWrapMode(mode);
 }
 
 void IDE::openFile(const QString& fileName0)
@@ -668,4 +685,26 @@ void IDE::onDarkModeChanged(bool darkMode)
     for (auto* mw : qAsConst(mainWindows)) {
         mw->setDarkMode(darkMode);
     }
+}
+
+void IDE::loadFont()
+{
+//    QSettings settings;
+//    settings.beginGroup("ide");
+
+//    QFont defaultFont;
+//    defaultFont.setFamily("Menlo");
+//    if (!defaultFont.exactMatch()) {
+//        defaultFont.setFamily("Consolas");
+//    }
+//    if (!defaultFont.exactMatch()) {
+//        defaultFont.setFamily("Courier New");
+//    }
+//    defaultFont.setStyleHint(QFont::TypeWriter);
+//    defaultFont.setPointSize(13);
+
+
+//    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
+
+
 }
