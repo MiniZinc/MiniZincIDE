@@ -120,7 +120,9 @@ private:
     void onClickTable(QTextTable* table);
     void toggleFrameVisibility(QTextFrame* frame);
     bool eventFilter(QObject* object, QEvent* event) override;
+    void resizeEvent(QResizeEvent* e) override;
     bool isFrameVisible(QTextFrame* frame);
+    void layoutButtons();
 
     int mouseToPosition(const QPoint& mousePos, Qt::HitTestAccuracy accuracy = Qt::ExactHit);
     QTextCursor fragmentCursor(int position);

@@ -25,6 +25,24 @@ OutputWidget::OutputWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    auto* sectionMenu = new QMenu(this);
+    ui->sectionMenu_pushButton->hide();
+    ui->sectionMenu_pushButton->setMenu(sectionMenu);
+    connect(sectionMenu, &QMenu::aboutToShow, this, [=] () {
+        for (auto* action : sectionMenu->actions()) {
+            action->setChecked(isSectionVisible(action->text()));
+        }
+    });
+
+    auto* messageTypeMenu = new QMenu(this);
+    ui->messageTypeMenu_pushButton->hide();
+    ui->messageTypeMenu_pushButton->setMenu(messageTypeMenu);
+    connect(messageTypeMenu, &QMenu::aboutToShow, this, [=] () {
+        for (auto* action : messageTypeMenu->actions()) {
+            action->setChecked(isMessageTypeVisible(action->text()));
+        }
+    });
+
     ui->textBrowser->installEventFilter(this);
     ui->textBrowser->viewport()->installEventFilter(this);
     ui->textBrowser->setOpenLinks(false);
@@ -52,6 +70,13 @@ OutputWidget::OutputWidget(QWidget *parent) :
 #ifdef Q_OS_MAC
     ui->toggleAll_pushButton->setMinimumWidth(85);
     layout()->setSpacing(8);
+
+    ui->buttons_widget->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    ui->sectionButtons_widget->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    ui->messageTypeButtons_widget->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    ui->sectionMenu_pushButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    ui->messageTypeMenu_pushButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    ui->toggleAll_pushButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #else
     setStyleSheet("QPushButton { padding: 2px 6px; }");
 #endif
@@ -81,6 +106,7 @@ void OutputWidget::scrollToBottom()
 
 void OutputWidget::startExecution(const QString& label)
 {
+    qDebug() << ui->messageTypeButtons_horizontalLayout->parentWidget();
     TextLayoutLock lock(this);
     auto c = ui->textBrowser->textCursor();
     c.movePosition(QTextCursor::End);
@@ -414,14 +440,21 @@ void OutputWidget::addMessageType(const QString &messageType)
 #endif
     button->setChecked(true);
 
+    auto* menuItem = ui->messageTypeMenu_pushButton->menu()->addAction(messageType, this, [=] () {
+        toggleMessageTypeVisibility(messageType);
+    });
+    menuItem->setCheckable(true);
     connect(button, &QAbstractButton::toggled, this, [=](bool checked) { setMessageTypeVisibility(messageType, checked); });
     connect(this, &OutputWidget::messageTypeToggled, button, [=] (const QString& mt, bool visible) {
         if (messageType == mt) {
             button->setChecked(visible);
+            menuItem->setChecked(visible);
         }
     });
 
+    button->setMinimumWidth(1);
     ui->messageTypeButtons_horizontalLayout->addWidget(button);
+    layoutButtons();
 }
 
 void OutputWidget::setMessageTypeVisibility(const QString& messageType, bool visible)
@@ -457,23 +490,19 @@ void OutputWidget::setMessageTypeVisibility(const QString& messageType, bool vis
 
 void OutputWidget::clear()
 {
-    auto* l1 = ui->sectionButtons_horizontalLayout;
-    while (l1->count() > 0) {
-        auto* child = l1->takeAt(0);
-        delete child->widget();
-        delete child;
-    }
-    auto* l2 = ui->messageTypeButtons_horizontalLayout;
-    while (l2->count() > 0) {
-        auto* child = l2->takeAt(0);
-        delete child->widget();
-        delete child;
-    }
     _sections.clear();
     _messageTypeVisible.clear();
     ui->textBrowser->clear();
     ui->toggleAll_pushButton->setEnabled(false);
+    ui->sectionMenu_pushButton->hide();
+    ui->sectionMenu_pushButton->menu()->clear();
+    ui->messageTypeMenu_pushButton->hide();
+    ui->messageTypeMenu_pushButton->menu()->clear();
     _frame = ui->textBrowser->document()->rootFrame();
+    qDeleteAll(ui->sectionButtons_widget->findChildren<QWidget*>("", Qt::FindDirectChildrenOnly));
+    qDeleteAll(ui->messageTypeButtons_widget->findChildren<QWidget*>("", Qt::FindDirectChildrenOnly));
+    ui->sectionButtons_widget->show();
+    ui->messageTypeButtons_widget->show();
 }
 
 void OutputWidget::setBrowserFont(const QFont& font)
@@ -567,14 +596,10 @@ void OutputWidget::addSection(const QString& section)
     button->setChecked(true);
 
     connect(button, &QAbstractButton::toggled, this, [=](bool checked) { setSectionVisibility(section, checked); });
-    connect(this, &OutputWidget::sectionToggled, button, [=] (const QString& s, bool visible) {
-        if (section == s) {
-            button->setChecked(visible);
-        }
-    });
 
     auto* menu = new QMenu(button);
-    auto* toggleSection = menu->addAction("Show section", this, [=] () { toggleSectionVisibility(section); });
+    auto handler = [=] () { toggleSectionVisibility(section); };
+    auto* toggleSection = menu->addAction("Show section", this, handler);
     menu->addSeparator();
     menu->addAction("Show only this section", this, [=] () {
         setAllSectionsVisibility(false);
@@ -591,8 +616,23 @@ void OutputWidget::addSection(const QString& section)
         menu->exec(button->mapToGlobal(p));
     });
 
+    auto* menuItem = ui->sectionMenu_pushButton->menu()->addAction(section, this, handler);
+    menuItem->setCheckable(true);
+
+    connect(this, &OutputWidget::sectionToggled, button, [=] (const QString& s, bool visible) {
+        if (section == s) {
+            button->setChecked(visible);
+            menuItem->setChecked(visible);
+        }
+    });
+
     ui->toggleAll_pushButton->setEnabled(true);
+
+    button->setMinimumWidth(1);
+
     ui->sectionButtons_horizontalLayout->addWidget(button);
+
+    layoutButtons();
 }
 
 void OutputWidget::setSectionVisibility(const QString& section, bool visible)
@@ -814,4 +854,38 @@ void OutputWidget::on_toggleAll_pushButton_clicked()
     }
     // Hide all sections since they were all previously visible
     setAllSectionsVisibility(false);
+}
+
+void OutputWidget::resizeEvent(QResizeEvent *e)
+{
+    layoutButtons();
+}
+
+void OutputWidget::layoutButtons()
+{
+    auto neededWidth = 0;
+    auto spacing = ui->sectionButtons_horizontalLayout->spacing();
+    for (auto* b : ui->sectionButtons_widget->findChildren<QAbstractButton*>()) {
+        neededWidth += b->sizeHint().width() + spacing;
+    }
+    for (auto* b : ui->messageTypeButtons_widget->findChildren<QAbstractButton*>()) {
+        neededWidth += b->sizeHint().width() + spacing;
+    }
+    auto availableWidth = ui->buttons_widget->width();
+
+    if (availableWidth > neededWidth) {
+        // Normal layout
+        if (ui->sectionMenu_pushButton->isVisible()) {
+            ui->sectionMenu_pushButton->hide();
+            ui->messageTypeMenu_pushButton->hide();
+            ui->sectionButtons_widget->show();
+            ui->messageTypeButtons_widget->show();
+        }
+    } else {
+        // Compact layout
+        ui->sectionMenu_pushButton->setVisible(!_sections.empty());
+        ui->messageTypeMenu_pushButton->setVisible(!_messageTypeVisible.empty());
+        ui->sectionButtons_widget->hide();
+        ui->messageTypeButtons_widget->hide();
+    }
 }
