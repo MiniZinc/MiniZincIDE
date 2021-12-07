@@ -2972,5 +2972,18 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
     QJsonObject obj({{"event", "window"}, {"url", url}, {"userData", userData}});
     vis_connector->broadcastMessage(QJsonDocument(obj));
     ui->outputWidget->associateServerUrl(vis_connector->url().toString());
-    QDesktopServices::openUrl(vis_connector->url());
+
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool reuseVis = settings.value("reuseVis", false).toBool();
+    settings.endGroup();
+
+    if (reuseVis) {
+        QJsonObject obj({{"event", "navigate"}, {"url", vis_connector->url().toString()}});
+        if (!server->sendToLastClient(QJsonDocument(obj))) {
+            QDesktopServices::openUrl(vis_connector->url());
+        }
+    } else {
+        QDesktopServices::openUrl(vis_connector->url());
+    }
 }

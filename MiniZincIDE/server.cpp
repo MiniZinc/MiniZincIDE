@@ -84,6 +84,18 @@ VisConnector* Server::addConnector(const QString& label, const QStringList& root
     return c;
 }
 
+bool Server::sendToLastClient(const QJsonDocument& message)
+{
+    auto json = QString::fromUtf8(message.toJson());
+    for (auto it = clients.rbegin(); it != clients.rend(); it++) {
+        if ((*it)->isValid()) {
+            (*it)->sendTextMessage(json);
+            return true;
+        }
+    }
+    return false;
+}
+
 void Server::newHttpClient()
 {
     auto socket = http->nextPendingConnection();
@@ -189,4 +201,14 @@ void Server::newWebSocketClient()
     }
     auto* c = connectors[index];
     c->newWebSocketClient(socket);
+    clients << socket;
+    connect(socket, &QWebSocket::disconnected, this, &Server::webSocketClientDisconnected);
+}
+
+void Server::webSocketClientDisconnected()
+{
+    auto* client = qobject_cast<QWebSocket*>(sender());
+    if (client) {
+        clients.removeAll(client);
+    }
 }

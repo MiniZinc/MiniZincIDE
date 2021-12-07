@@ -48,16 +48,22 @@ public:
     quint16 port() const { return http->serverPort(); }
 
     VisConnector* addConnector(const QString& label, const QStringList& roots);
+
+    bool sendToLastClient(const QJsonDocument& doc);
+
 signals:
     void solve(const QString& model, const QStringList& data, const QVariantMap& options);
 
 private slots:
     void newHttpClient();
     void newWebSocketClient();
+    void webSocketClientDisconnected();
+
 private:
     QTcpServer* http;
     QWebSocketServer* ws;
     QList<VisConnector*> connectors;
+    QList<QWebSocket*> clients;
 };
 
 #endif // SERVER_H

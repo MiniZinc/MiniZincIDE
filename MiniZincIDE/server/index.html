@@ -133,6 +133,9 @@
             ws.onmessage = e => {
                 const message = JSON.parse(e.data);
                 switch (message.event) {
+                    case 'navigate':
+                        window.location = message.url;
+                        break;
                     case 'init':
                         // Save into history in case child window needs it
                         for (const m of message.messages) {
