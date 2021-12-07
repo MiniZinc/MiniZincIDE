@@ -149,6 +149,14 @@ QScrollBar::handle {
     background: #444444;
 }
 
+QScrollBar::handle:vertical {
+    min-height: 20px;
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 20px;
+}
+
 QScrollBar::add-page, QScrollBar::sub-page {
     background: none;
 }
