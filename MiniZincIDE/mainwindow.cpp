@@ -2903,7 +2903,7 @@ void MainWindow::on_minizincError(const QJsonObject& error) {
 
 QString MainWindow::locationToLink(const QString& file, int firstLine, int firstColumn, int lastLine, int lastColumn, const QColor& color)
 {
-    QString label = file;
+    QString label = QFileInfo(file).baseName();
     if (file.endsWith("untitled_model.mzn")) {
         QFileInfo fi(file);
         for (QTemporaryDir* d : cleanupTmpDirs) {
