@@ -88,6 +88,13 @@ OutputWidget::~OutputWidget()
     delete ui;
 }
 
+QString OutputWidget::lastTraceLoc(const QString &newTraceLoc)
+{
+    QString ltl = _lastTraceLoc;
+    _lastTraceLoc = newTraceLoc;
+    return ltl;
+}
+
 void OutputWidget::setDarkMode(bool darkMode)
 {
     _noticeCharFormat.setForeground(Themes::currentTheme.functionColor.get(darkMode));
@@ -254,6 +261,9 @@ void OutputWidget::addText(const QString& text, const QString& messageType) {
 void OutputWidget::addText(const QString& text, const QTextCharFormat& format, const QString& messageType) {
     TextLayoutLock lock(this);
     auto cursor = nextInsertAt();
+    if (messageType != "trace") {
+        _lastTraceLoc = "";
+    }
     if (messageType.isEmpty()) {
         cursor.insertText(text, format);
     } else {
@@ -277,6 +287,9 @@ void OutputWidget::addText(const QString& text, const QTextCharFormat& format, c
 void OutputWidget::addHtml(const QString& html, const QString& messageType) {
     TextLayoutLock lock(this);
     auto cursor = nextInsertAt();
+    if (messageType != "trace") {
+        _lastTraceLoc = "";
+    }
     if (messageType.isEmpty()) {
         cursor.insertHtml(html);
     } else {
@@ -304,6 +317,7 @@ void OutputWidget::addTextToSection(const QString& section, const QString& text,
 {
     TextLayoutLock lock(this);
     auto cursor = nextInsertAt();
+    _lastTraceLoc = "";
     auto start = cursor.position();
     addSection(section);
     QTextBlockFormat f;
@@ -324,6 +338,7 @@ void OutputWidget::addHtmlToSection(const QString& section, const QString& html)
 {
     TextLayoutLock lock(this);
     auto cursor = nextInsertAt();
+    _lastTraceLoc = "";
     auto start = cursor.position();
     addSection(section);
     QTextBlockFormat f;
@@ -342,6 +357,7 @@ void OutputWidget::addStatistics(const QVariantMap& statistics)
 {
     TextLayoutLock lock(this);
     auto cursor = nextInsertAt();
+    _lastTraceLoc = "";
     QTextBlockFormat f;
     f.setProperty(Property::MessageType, "Statistics");
     cursor.setBlockFormat(f);
@@ -365,6 +381,7 @@ void OutputWidget::addStatistics(const QVariantMap& statistics)
 void OutputWidget::addStatus(const QString& status, qint64 time)
 {
     TextLayoutLock lock(this);
+    _lastTraceLoc = "";
     QMap<QString, QString> status_map = {
         {"ALL_SOLUTIONS", "=========="},
         {"OPTIMAL_SOLUTION", "=========="},
@@ -409,6 +426,7 @@ void OutputWidget::endExecution(int exitCode, qint64 time)
         delete doc;
     }
 
+    _lastTraceLoc = "";
     if (exitCode != 0) {
         QString msg = "Process finished with non-zero exit code %1.\n";
         nextInsertAt().insertText(msg.arg(exitCode), errorCharFormat());

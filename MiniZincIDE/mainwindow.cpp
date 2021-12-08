@@ -1181,10 +1181,47 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     });
     connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
     connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
-        ui->outputWidget->addTextToSection(section, message.toString(), ui->outputWidget->commentCharFormat());
-        if (vis_connector == nullptr && section == "vis_json") {
+        if (section == "trace_exp") {
             auto obj = message.toJsonObject();
-            startVisualisation(model, data, obj["url"].toString(), obj["userData"], proc);
+            auto msg = obj["message"].toString();
+            QRegularExpression val("\\(≡.*?\\)");
+            QRegularExpressionMatchIterator val_i = val.globalMatch(msg);
+            int pos = 0;
+            auto loc = obj["location"].toObject();
+            auto link = locationToLink(loc["filename"].toString(),
+                    loc["firstLine"].toInt(),
+                    loc["firstColumn"].toInt(),
+                    loc["lastLine"].toInt(),
+                    loc["lastColumn"].toInt(),
+                    Themes::currentTheme.warningColor.get(darkMode)
+                    );
+            auto prevLink = ui->outputWidget->lastTraceLoc(link);
+            if (prevLink != link) {
+                ui->outputWidget->addHtml(link, "trace");
+                ui->outputWidget->addText(":\n", "trace");
+            }
+
+            ui->outputWidget->addText("  ", ui->outputWidget->infoCharFormat(), "trace");
+            while (val_i.hasNext()) {
+                auto match = val_i.next();
+                if (match.capturedStart() > 0) {
+                    ui->outputWidget->addText(msg.mid(pos, match.capturedStart() - pos),
+                                              ui->outputWidget->infoCharFormat(), "trace");
+                }
+                ui->outputWidget->addText(match.captured(0), ui->outputWidget->commentCharFormat(), "trace");
+                pos = match.capturedEnd();
+            }
+            if (pos < msg.size()) {
+                ui->outputWidget->addText(msg.mid(pos, msg.size() - pos),
+                                          ui->outputWidget->infoCharFormat(), "trace");
+            }
+            ui->outputWidget->addText("\n", ui->outputWidget->infoCharFormat(), "trace");
+        } else {
+            ui->outputWidget->addTextToSection(section, message.toString(), ui->outputWidget->commentCharFormat());
+            if (vis_connector == nullptr && section == "vis_json") {
+                auto obj = message.toJsonObject();
+                startVisualisation(model, data, obj["url"].toString(), obj["userData"], proc);
+            }
         }
     });
     connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {

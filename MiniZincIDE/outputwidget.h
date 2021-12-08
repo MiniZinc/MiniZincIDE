@@ -41,6 +41,8 @@ public:
 
     int solutionLimit() { return _solutionLimit; }
 
+    QString lastTraceLoc(const QString& newTraceLoc);
+
 public slots:
     void setDarkMode(bool darkMode);
 
@@ -118,6 +120,8 @@ private:
 
     int _solutionCount = 0;
     int _effectiveSolutionLimit = 0;
+
+    QString _lastTraceLoc;
 
     void addSection(const QString& section);
     void addMessageType(const QString& messageType);
