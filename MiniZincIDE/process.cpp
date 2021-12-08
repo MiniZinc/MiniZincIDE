@@ -462,6 +462,11 @@ void MznProcess::closeStdIn()
     p.closeWriteChannel();
 }
 
+QString MznProcess::command() const
+{
+    return p.program() + " " + p.arguments().join(" ");
+}
+
 void MznProcess::processOutput()
 {
     p.setReadChannel(QProcess::ProcessChannel::StandardOutput);
