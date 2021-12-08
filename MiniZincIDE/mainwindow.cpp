@@ -1201,7 +1201,6 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     ui->outputWidget->setSolutionLimit(compressSolutions);
     ui->outputWidget->startExecution(files.join(", ").prepend("Running "));
 
-    args << extraArgs;
     proc->start(sc, args, workingDir, ts == nullptr);
 }
 
