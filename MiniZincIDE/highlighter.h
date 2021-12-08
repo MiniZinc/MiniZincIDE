@@ -215,9 +215,11 @@ struct FixedBg {
   unsigned int el;
   unsigned int ec;
 };
-typedef QMap<FixedBg, QPair<QColor, QString> > BgMap;
-inline bool operator<(const FixedBg& A, const FixedBg& B) {
-  return A.sl < B.sl || A.sc < B.sc || A.el < B.el || A.ec < B.ec;
+typedef QHash<FixedBg, QPair<QColor, QString> > BgMap;
+uint qHash(const FixedBg& key);
+
+inline bool operator==(const FixedBg &A, const FixedBg &B) {
+    return A.sl == B.sl && A.sc == B.sc && A.el == B.el && A.ec == B.ec;
 }
 
 class Highlighter : public QSyntaxHighlighter

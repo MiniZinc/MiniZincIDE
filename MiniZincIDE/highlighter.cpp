@@ -75,6 +75,10 @@ void Highlighter::setEditorFont(QFont& font)
     }
 }
 
+uint qHash(const FixedBg& key) {
+    return qHash(key.sl) ^ qHash(key.sc) ^ qHash(key.el) ^ qHash(key.ec);
+}
+
 bool fg_contains(const FixedBg& a, const FixedBg& b) {
   return (a.sl < b.sl || (a.sl == b.sl && a.sc <= b.sc))
       && (a.el > b.el || (a.el == b.el && a.ec >= b.ec));
@@ -264,7 +268,7 @@ void Highlighter::highlightBlock(const QString &text)
     setCurrentBlockUserData(bd);
 
     // Stage 4: apply highlighting
-    for(QMap<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
+    for(QHash<FixedBg, QPair<QColor, QString> >::iterator it = fixedBg.begin();
         it != fixedBg.end(); ++it) {
       const FixedBg& fb = it.key();
       QPair<QColor, QString> val = it.value();
