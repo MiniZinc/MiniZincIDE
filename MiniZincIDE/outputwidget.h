@@ -25,9 +25,7 @@ public:
 
     enum Property {
         Expanded = QTextFormat::UserProperty + 1,
-        ToggleFrame,
         Section,
-        ToggleSection,
         MessageType
     };
 
@@ -38,6 +36,8 @@ public:
     const QTextCharFormat& errorCharFormat() const { return _errorCharFormat; }
     const QTextCharFormat& infoCharFormat() const { return _infoCharFormat; }
     const QTextCharFormat& commentCharFormat() const { return _commentCharFormat; }
+
+    const QTextTableFormat headerTableFormat() const { return _headerTableFormat; }
 
     int solutionLimit() { return _solutionLimit; }
 
@@ -92,11 +92,13 @@ private:
     friend class TextLayoutLock;
 
     bool _dragging = false;
-    QVector<QPair<QTextCursor, int>> _hierarchy;
     int _solutionLimit = 100;
+    int _firstCompressedSolution = 0;
 
     QTextCursor _statusCursor;
-    QTextFrame* _frame = nullptr;
+    QTextTable* _rootTable = nullptr;
+    QTextDocument* _solutionBuffer = nullptr;
+    QTextCursor _lastSolutions[2];
 
     QMap<QString, bool> _sections;
     QMap<QString, bool> _messageTypeVisible;
@@ -111,18 +113,21 @@ private:
     QTextCharFormat _arrowFormat;
     QTextBlockFormat _rightAlignBlockFormat;
     QTextTableFormat _headerTableFormat;
-    QTextFrameFormat _frameFormat;
 
     QVector<QPair<QString, QVariant>> _checkerOutput;
 
+    int _solutionCount = 0;
+    int _effectiveSolutionLimit = 0;
+
     void addSection(const QString& section);
     void addMessageType(const QString& messageType);
-    void onClickTable(QTextTable* table);
-    void toggleFrameVisibility(QTextFrame* frame);
+    void toggleTableVisibility(QTextTable* frame);
     bool eventFilter(QObject* object, QEvent* event) override;
     void resizeEvent(QResizeEvent* e) override;
     bool isFrameVisible(QTextFrame* frame);
     void layoutButtons();
+
+    QTextCursor nextInsertAt() const;
 
     int mouseToPosition(const QPoint& mousePos, Qt::HitTestAccuracy accuracy = Qt::ExactHit);
     QTextCursor fragmentCursor(int position);

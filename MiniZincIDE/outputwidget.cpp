@@ -51,19 +51,20 @@ OutputWidget::OutputWidget(QWidget *parent) :
     auto* arrow = new OutputWidgetArrow;
     arrow->setParent(this);
     ui->textBrowser->document()->documentLayout()->registerHandler(TextObject::Arrow, arrow);
-    _frame = ui->textBrowser->document()->rootFrame();
 
     _headerTableFormat.setWidth(QTextLength(QTextLength::PercentageLength, 100));
     _headerTableFormat.setBorder(0);
     _headerTableFormat.setCellSpacing(0);
-    _headerTableFormat.setProperty(Property::ToggleFrame, true);
+    _headerTableFormat.setProperty(Property::Expanded, true);
+
+    QFontMetrics metrics(ui->textBrowser->font());
+    auto spaceNeeded = metrics.height() + 4;
+    auto cwc = { QTextLength(QTextLength::FixedLength, spaceNeeded) };
+    _headerTableFormat.setColumnWidthConstraints(cwc);
 
     _arrowFormat.setObjectType(TextObject::Arrow);
     _arrowFormat.setProperty(Property::Expanded, true);
     _arrowFormat.setForeground(Qt::gray);
-
-    _frameFormat.setLeftMargin(10);
-    _frameFormat.setProperty(Property::Expanded, true);
 
     _rightAlignBlockFormat.setAlignment(Qt::AlignRight);
     _rightAlignBlockFormat.setLeftMargin(10);
@@ -106,34 +107,29 @@ void OutputWidget::scrollToBottom()
 
 void OutputWidget::startExecution(const QString& label)
 {
-    qDebug() << ui->messageTypeButtons_horizontalLayout->parentWidget();
     TextLayoutLock lock(this);
     auto c = ui->textBrowser->textCursor();
     c.movePosition(QTextCursor::End);
 
-    // Create frame which will contain children
-    _frame = c.insertFrame(_frameFormat);
-    c = _frame->firstCursorPosition();
-    // Move back to create headings above frame (Qt inserts extra line breaks if the table is created first)
-    c.movePosition(QTextCursor::PreviousBlock);
-
     // Create table containing heading above frame
-    auto* table = c.insertTable(1, 2, _headerTableFormat);
+    _rootTable = c.insertTable(2, 3, _headerTableFormat);
+    _rootTable->mergeCells(1, 1, 1, 2);
+    _rootTable->cellAt(1, 0).firstCursorPosition().block().setVisible(false);
 
-    auto leftSideCursor = table->cellAt(0, 0).firstCursorPosition();
+    auto leftSideCursor = _rootTable->cellAt(0, 0).firstCursorPosition();
     leftSideCursor.insertText(QString(QChar::ObjectReplacementCharacter), _arrowFormat);
-    leftSideCursor.insertText(label, noticeCharFormat());
 
-    auto rightSideCursor = table->cellAt(0, 1).firstCursorPosition();
+    auto headerCursor = _rootTable->cellAt(0, 1).firstCursorPosition();
+    headerCursor.insertText(label, noticeCharFormat());
+
+    auto rightSideCursor = _rootTable->cellAt(0, 2).firstCursorPosition();
     rightSideCursor.setBlockFormat(_rightAlignBlockFormat);
     _statusCursor = rightSideCursor;
 
-    QTextCursor frameCursor = _frame->firstCursorPosition();
-    frameCursor.setKeepPositionOnInsert(true);
-    _hierarchy.clear();
-    _hierarchy.append({frameCursor, 0});
-
     _hadServerUrl = false;
+
+    _solutionCount = 0;
+    _effectiveSolutionLimit = _solutionLimit;
 }
 
 void OutputWidget::associateProfilerExecution(int executionId)
@@ -153,60 +149,7 @@ void OutputWidget::associateServerUrl(const QString& url)
 void OutputWidget::addSolution(const QVariantMap& output, const QStringList& order, qint64 time)
 {
     TextLayoutLock lock(this);
-    auto limit = solutionLimit();
-    if (limit > 0) {
-        for (auto i = 0; i < _hierarchy.size() && _hierarchy[i].second >= limit; i++) {
-            auto start = 1;
-            for (auto j = i + 1; j < _hierarchy.size(); j++){
-                start += _hierarchy[j].second * solutionLimit() * j;
-            }
-            auto end = start + static_cast<int>(pow(solutionLimit(), i + 1)) - 1;
-
-            auto cursor = _hierarchy[i].first;
-            cursor.setKeepPositionOnInsert(false);
-            cursor.clearSelection();
-            cursor.setPosition(_frame->lastPosition(), QTextCursor::KeepAnchor);
-
-            // Remove trailing newline from fragment
-            auto fragmentCursor = cursor;
-            fragmentCursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor);
-            QTextDocumentFragment fragment(fragmentCursor);
-
-            cursor.removeSelectedText();
-
-            if (i == _hierarchy.size() - 1) {
-                _hierarchy.append({_hierarchy[i].first, 1});
-            } else {
-                _hierarchy[i + 1].second++;
-            }
-
-            // Create frame which will contain children
-            auto* frame = cursor.insertFrame(_frameFormat);
-            auto c = frame->firstCursorPosition();
-            c.movePosition(QTextCursor::PreviousBlock);
-
-            // Create table containing heading above frame
-            auto* table = c.insertTable(1, 1, _headerTableFormat);
-
-            auto cellCursor = table->cellAt(0, 0).firstCursorPosition();
-            cellCursor.insertText(QString(QChar::ObjectReplacementCharacter), _arrowFormat);
-            cellCursor.insertText(QString("Solutions %1..%2").arg(start).arg(end), _defaultCharFormat);
-
-            frame->firstCursorPosition().insertFragment(fragment);
-
-            toggleFrameVisibility(frame);
-
-            auto next = _frame->lastCursorPosition();
-            next.setKeepPositionOnInsert(true);
-            for (auto j = 0; j <= i; j++) {
-                _hierarchy[j].first = next;
-            }
-            _hierarchy[i].second = 0;
-        }
-    }
-
-    QTextCursor cursor = _frame->lastCursorPosition();
-
+    QTextCursor cursor = nextInsertAt();
     if (!_checkerOutput.isEmpty()) {
         cursor.insertText("% Solution checker report:\n", _commentCharFormat);
         for (auto& it : _checkerOutput) {
@@ -264,7 +207,35 @@ void OutputWidget::addSolution(const QVariantMap& output, const QStringList& ord
     QTextBlockFormat format;
     cursor.setBlockFormat(format);
     cursor.insertText("----------\n", _defaultCharFormat);
-    _hierarchy.first().second++;
+
+    _solutionCount++;
+
+    _lastSolutions[0] = _lastSolutions[1];
+    _lastSolutions[1] = cursor;
+    _lastSolutions[1].setKeepPositionOnInsert(true);
+
+    if (_solutionLimit > 0 && _solutionCount >= _solutionLimit) {
+        if (_solutionBuffer == nullptr) {
+            _solutionBuffer = new QTextDocument(this);
+            _firstCompressedSolution = _solutionCount;
+            _effectiveSolutionLimit *= 2;
+        } else if (_solutionCount >= _effectiveSolutionLimit - 1) {
+            auto* doc = _solutionBuffer;
+            _solutionBuffer = nullptr;
+            if (!doc->isEmpty()) {
+                QTextDocumentFragment contents(doc);
+                auto cursor = nextInsertAt();
+                auto* t = cursor.insertTable(2, 2, _headerTableFormat);
+                t->cellAt(0, 0).firstCursorPosition().insertText(QString(QChar::ObjectReplacementCharacter), _arrowFormat);
+                auto label = QString("[ %1 more solutions ]").arg(_solutionCount - _firstCompressedSolution);
+                t->cellAt(0, 1).firstCursorPosition().insertText(label, noticeCharFormat());
+                t->cellAt(1, 0).firstCursorPosition().block().setVisible(false);
+                t->cellAt(1, 1).firstCursorPosition().insertFragment(contents);
+                toggleTableVisibility(t);
+            }
+            delete doc;
+        }
+    }
 }
 
 void OutputWidget::addCheckerOutput(const QVariantMap& output, const QStringList& order)
@@ -282,7 +253,7 @@ void OutputWidget::addText(const QString& text, const QString& messageType) {
 
 void OutputWidget::addText(const QString& text, const QTextCharFormat& format, const QString& messageType) {
     TextLayoutLock lock(this);
-    auto cursor = _frame->lastCursorPosition();
+    auto cursor = nextInsertAt();
     if (messageType.isEmpty()) {
         cursor.insertText(text, format);
     } else {
@@ -305,7 +276,7 @@ void OutputWidget::addText(const QString& text, const QTextCharFormat& format, c
 
 void OutputWidget::addHtml(const QString& html, const QString& messageType) {
     TextLayoutLock lock(this);
-    auto cursor = _frame->lastCursorPosition();
+    auto cursor = nextInsertAt();
     if (messageType.isEmpty()) {
         cursor.insertHtml(html);
     } else {
@@ -332,7 +303,7 @@ void OutputWidget::addTextToSection(const QString& section, const QString& text)
 void OutputWidget::addTextToSection(const QString& section, const QString& text, const QTextCharFormat& format)
 {
     TextLayoutLock lock(this);
-    auto cursor = _frame->lastCursorPosition();
+    auto cursor = nextInsertAt();
     auto start = cursor.position();
     addSection(section);
     QTextBlockFormat f;
@@ -352,7 +323,7 @@ void OutputWidget::addTextToSection(const QString& section, const QString& text,
 void OutputWidget::addHtmlToSection(const QString& section, const QString& html)
 {
     TextLayoutLock lock(this);
-    auto cursor = _frame->lastCursorPosition();
+    auto cursor = nextInsertAt();
     auto start = cursor.position();
     addSection(section);
     QTextBlockFormat f;
@@ -370,7 +341,7 @@ void OutputWidget::addHtmlToSection(const QString& section, const QString& html)
 void OutputWidget::addStatistics(const QVariantMap& statistics)
 {
     TextLayoutLock lock(this);
-    auto cursor = _frame->lastCursorPosition();
+    auto cursor = nextInsertAt();
     QTextBlockFormat f;
     f.setProperty(Property::MessageType, "Statistics");
     cursor.setBlockFormat(f);
@@ -405,21 +376,47 @@ void OutputWidget::addStatus(const QString& status, qint64 time)
     };
     auto it = status_map.find(status);
     if (it != status_map.end()) {
-        _frame->lastCursorPosition().insertText(*it + "\n", _defaultCharFormat);
+        nextInsertAt().insertText(*it + "\n", _defaultCharFormat);
     }
 }
 
 void OutputWidget::endExecution(int exitCode, qint64 time)
 {
     TextLayoutLock lock(this);
+
+    if (_solutionBuffer != nullptr) {
+        auto* doc = _solutionBuffer;
+        _solutionBuffer = nullptr;
+
+        // Print compressed solutions
+        QTextCursor cursor(doc);
+        cursor.setPosition(_lastSolutions[0].position(), QTextCursor::KeepAnchor);
+        if (cursor.hasSelection()) {
+            auto* t = nextInsertAt().insertTable(2, 2, _headerTableFormat);
+            t->cellAt(0, 0).firstCursorPosition().insertText(QString(QChar::ObjectReplacementCharacter), _arrowFormat);
+            auto label = QString("[ %1 more solutions ]").arg(_solutionCount - _firstCompressedSolution - 1);
+            t->cellAt(0, 1).firstCursorPosition().insertText(label, noticeCharFormat());
+            t->cellAt(1, 0).firstCursorPosition().block().setVisible(false);
+            t->cellAt(1, 1).firstCursorPosition().insertFragment(QTextDocumentFragment(cursor));
+            toggleTableVisibility(t);
+        }
+
+        // Print last solution
+        cursor.setPosition(_lastSolutions[0].position());
+        cursor.setPosition(_lastSolutions[1].position(), QTextCursor::KeepAnchor);
+        nextInsertAt().insertFragment(QTextDocumentFragment(cursor));
+
+        delete doc;
+    }
+
     if (exitCode != 0) {
         QString msg = "Process finished with non-zero exit code %1.\n";
-        _frame->lastCursorPosition().insertText(msg.arg(exitCode), errorCharFormat());
+        nextInsertAt().insertText(msg.arg(exitCode), errorCharFormat());
     }
     auto t = IDEUtils::formatTime(time);
-    _frame->lastCursorPosition().insertText(QString("Finished in %1.").arg(t), noticeCharFormat());
+    nextInsertAt().insertText(QString("Finished in %1.").arg(t), noticeCharFormat());
     _statusCursor.insertText(t, infoCharFormat());
-    _frame = ui->textBrowser->document()->rootFrame();
+    _rootTable = nullptr;
 }
 
 
@@ -490,6 +487,11 @@ void OutputWidget::setMessageTypeVisibility(const QString& messageType, bool vis
 
 void OutputWidget::clear()
 {
+    if (_rootTable != nullptr) {
+        // Can't clear in middle of run
+        return;
+    }
+
     _sections.clear();
     _messageTypeVisible.clear();
     ui->textBrowser->clear();
@@ -498,7 +500,7 @@ void OutputWidget::clear()
     ui->sectionMenu_pushButton->menu()->clear();
     ui->messageTypeMenu_pushButton->hide();
     ui->messageTypeMenu_pushButton->menu()->clear();
-    _frame = ui->textBrowser->document()->rootFrame();
+    _rootTable = nullptr;
     qDeleteAll(ui->sectionButtons_widget->findChildren<QWidget*>("", Qt::FindDirectChildrenOnly));
     qDeleteAll(ui->messageTypeButtons_widget->findChildren<QWidget*>("", Qt::FindDirectChildrenOnly));
     ui->sectionButtons_widget->show();
@@ -514,6 +516,11 @@ void OutputWidget::setBrowserFont(const QFont& font)
     cursor.movePosition(QTextCursor::Start);
     cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
     cursor.mergeCharFormat(format);
+
+    QFontMetrics metrics(font);
+    auto spaceNeeded = metrics.height() + 4;
+    auto cwc = { QTextLength(QTextLength::FixedLength, spaceNeeded) };
+    _headerTableFormat.setColumnWidthConstraints(cwc);
 }
 
 void OutputWidget::onAnchorClicked(const QUrl& link)
@@ -521,61 +528,58 @@ void OutputWidget::onAnchorClicked(const QUrl& link)
     emit anchorClicked(link);
 }
 
-void OutputWidget::onClickTable(QTextTable* table) {
-    TextLayoutLock lock(this, false);
-    auto tableFormat = table->format();
-    if (tableFormat.hasProperty(Property::ToggleFrame)) {
-        auto tableCursor = table->lastCursorPosition();
-        tableCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, 2);
-        auto* frame = tableCursor.currentFrame();
-        toggleFrameVisibility(frame);
-        auto cursor = table->cellAt(0, 0).firstCursorPosition();
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
-        auto arrowFormat = cursor.charFormat();
-        arrowFormat.setProperty(Property::Expanded, frame->frameFormat().property(Property::Expanded));
-        cursor.setCharFormat(arrowFormat);
-    }
-}
-
-void OutputWidget::toggleFrameVisibility(QTextFrame* frame)
+void OutputWidget::toggleTableVisibility(QTextTable* table)
 {
-    TextLayoutLock lock(this, false);
-    auto frameFormat = frame->frameFormat();
-    auto visible = !frameFormat.property(Property::Expanded).toBool();
-    frameFormat.setProperty(Property::Expanded, visible);
-    frame->setFrameFormat(frameFormat);
+    auto format = table->format();
+    if (!format.hasProperty(Property::Expanded)) {
+        return;
+    }
 
-    auto parentVisible = isFrameVisible(frame->parentFrame());
+    TextLayoutLock lock(this, false);
+    auto visible = !format.property(Property::Expanded).toBool();
+    format.setProperty(Property::Expanded, visible);
+    table->setFormat(format);
+
+    auto arrowCell = table->cellAt(0, 0);
+    auto arrowCursor = arrowCell.firstCursorPosition();
+    arrowCursor.setPosition(arrowCell.lastPosition(), QTextCursor::KeepAnchor);
+    auto arrowFormat = arrowCursor.charFormat();
+    arrowFormat.setProperty(Property::Expanded, visible);
+    arrowCursor.setCharFormat(arrowFormat);
+
+    auto parentVisible = isFrameVisible(table->parentFrame());
     if (!parentVisible) {
         return;
     }
 
     // Set visibility of TextBlocks
-    auto cursor = frame->firstCursorPosition();
-    auto end = frame->lastCursorPosition();
-    while (cursor < end) {
-        auto* childFrame = cursor.currentFrame();
-        if (childFrame != nullptr && childFrame != frame) {
-            auto childFormat = frame->frameFormat();
-            auto childVisible = !frameFormat.property(Property::Expanded).toBool();
-            if (childVisible == visible) {
-                cursor = childFrame->lastCursorPosition();
-                cursor.movePosition(QTextCursor::NextBlock);
-                continue;
+    auto cell = table->cellAt(1, 1);
+    for (auto c = cell.firstCursorPosition();
+         c <= cell.lastCursorPosition();
+         c.movePosition(QTextCursor::NextBlock)) {
+        auto block = c.block();
+        auto v = visible;
+        auto* table = c.currentTable();
+        if (v && table != nullptr) {
+            QTextFrame* f = table;
+            if (table->cellAt(c).row() == 0 && table->format().hasProperty(Property::Expanded)) {
+                // Header is part of parent
+                f = table->parentFrame();
+            }
+            while (v && f != nullptr) {
+                auto format = f->format();
+                if (format.hasProperty(Property::Expanded)) {
+                    v &= format.property(Property::Expanded).toBool();
+                }
+                f = f->parentFrame();
             }
         }
-
-        auto block = cursor.block();
-        auto blockFormat = block.blockFormat();
-        auto blockVisible = true;
-        if (blockFormat.hasProperty(Property::Section)) {
-            blockVisible = _sections[blockFormat.property(Property::Section).toString()];
-        } else if (blockFormat.hasProperty(Property::MessageType)) {
-            blockVisible = _messageTypeVisible[blockFormat.property(Property::MessageType).toString()];
-        }
-        block.setVisible(isFrameVisible(cursor.currentFrame()) && blockVisible);
-        cursor.movePosition(QTextCursor::NextBlock);
+        block.setVisible(v);
     }
+
+    auto start = cell.firstPosition();
+    auto length = cell.lastPosition() - start;
+    ui->textBrowser->document()->markContentsDirty(start, length);
 }
 
 void OutputWidget::addSection(const QString& section)
@@ -755,13 +759,19 @@ bool OutputWidget::eventFilter(QObject* object, QEvent* event)
                         cursor.setPosition(position);
                         auto* table = cursor.currentTable();
                         if (table != nullptr) {
-                            onClickTable(table);
+                            auto cell = table->cellAt(cursor);
+                            if (cell.isValid() && cell.row() == 0) {
+                                toggleTableVisibility(table);
+                            }
                         }
                     }
                 } else if (!cursor.charFormat().isAnchor()) {
                     auto* table = cursor.currentTable();
                     if (table != nullptr) {
-                        onClickTable(table);
+                        auto cell = table->cellAt(cursor);
+                        if (cell.isValid() && cell.row() == 0) {
+                            toggleTableVisibility(table);
+                        }
                     }
                 }
             }
@@ -802,10 +812,10 @@ bool OutputWidget::isFrameVisible(QTextFrame* frame)
 }
 
 OutputWidget::TextLayoutLock::TextLayoutLock(OutputWidget* o, bool scroll) : _o(o), _scroll(scroll) {
-    if (_o->_frame != _o->ui->textBrowser->document()->rootFrame()) {
-        auto frameVisible = _o->isFrameVisible(_o->_frame);
+    if (_o->_rootTable != nullptr) {
+        auto frameVisible = _o->isFrameVisible(_o->_rootTable);
         if (!frameVisible) {
-            _o->toggleFrameVisibility(_o->_frame);
+            _o->toggleTableVisibility(_o->_rootTable);
         }
     }
     _o->ui->textBrowser->textCursor().beginEditBlock();
@@ -828,15 +838,28 @@ QSizeF OutputWidgetArrow::intrinsicSize(QTextDocument* doc, int posInDocument, c
 void OutputWidgetArrow::drawObject(QPainter* painter, const QRectF& rect, QTextDocument* doc, int posInDocument, const QTextFormat& format)
 {
     QFontMetrics metrics(format.toCharFormat().font());
-    qreal hh = metrics.ascent() / 2.0;
-    qreal hw = hh / 2.0;
+
+    QTextCursor cursor(doc);
+    cursor.setPosition(posInDocument);
+    auto t = cursor.currentTable();
+    if (t != nullptr) {
+        auto f = t->format();
+        auto requiredFormat = static_cast<OutputWidget*>(parent())->headerTableFormat();
+        if (f.columnWidthConstraints()[0].rawValue() !=
+                requiredFormat.columnWidthConstraints()[0].rawValue()) {
+            t->setFormat(requiredFormat);
+        }
+    }
+
+    auto h2 = metrics.ascent() / 2;
+    auto w2 = h2 / 2;
+
     QPainterPath p;
-    p.moveTo(-hw, -hh);
-    p.lineTo(hw, 0);
-    p.lineTo(-hw, hh);
+    p.moveTo(-w2, -h2);
+    p.lineTo(w2, 0);
+    p.lineTo(-w2, h2);
     p.closeSubpath();
     painter->translate(rect.center());
-    painter->translate(-metrics.descent(), metrics.descent());
     if (format.property(OutputWidget::Property::Expanded).toBool()) {
         painter->rotate(90);
     }
@@ -888,4 +911,22 @@ void OutputWidget::layoutButtons()
         ui->sectionButtons_widget->hide();
         ui->messageTypeButtons_widget->hide();
     }
+}
+
+QTextCursor OutputWidget::nextInsertAt() const
+{
+    if (_solutionBuffer != nullptr) {
+        QTextCursor cursor(_solutionBuffer);
+        cursor.movePosition(QTextCursor::End);
+        return cursor;
+    }
+
+    if (_rootTable != nullptr) {
+        auto cursor = _rootTable->cellAt(1, 1).lastCursorPosition();
+        return cursor;
+    }
+
+    QTextCursor cursor(ui->textBrowser->document());
+    cursor.movePosition(QTextCursor::End);
+    return cursor;
 }
