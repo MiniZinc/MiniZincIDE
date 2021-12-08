@@ -10,7 +10,7 @@
   "needsStdlibDir": true,
   "needsPathsFile": false,
   "needsMznExecutable": false,
-  "stdFlags": ["--output-html", "-v", "-s", "-t"],
+  "stdFlags": ["--output-html", "-v", "-s", "-a", "-n", "-t", "--json-stream"],
   "extraFlags": [
     ["-a", "Find all MUSes", "bool", "true"],
     ["-n", "Number of MUSes to find", "int", "1"],
