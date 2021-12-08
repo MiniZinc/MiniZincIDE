@@ -264,6 +264,8 @@ public:
     ///
     void closeStdIn();
 
+    QString command() const;
+
 signals:
     ///
     /// \brief Emitted when the process is started.

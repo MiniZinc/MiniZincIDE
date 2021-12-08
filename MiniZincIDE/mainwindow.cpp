@@ -993,6 +993,11 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
 
     QFileInfo fi(model);
 
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool printCommand = settings.value("printCommand", false).toBool();
+    settings.endGroup();
+
     QTemporaryDir* fznTmpDir = new QTemporaryDir;
     if (!fznTmpDir->isValid()) {
         QMessageBox::critical(this, "MiniZinc IDE", "Could not create temporary directory for compilation.");
@@ -1084,6 +1089,13 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     }
     ui->outputWidget->startExecution(files.join(", ").prepend("Compiling "));
     proc->start(compileSc, args, fi.canonicalPath());
+
+    if (printCommand) {
+        auto cmdMessage = QString("Command: %1\n").arg(proc->command());
+        ui->outputWidget->addText(cmdMessage, ui->outputWidget->infoCharFormat(), "Commands");
+        auto confMessage = QString("Configuration:\n%1").arg(QString::fromUtf8(sc.toJSON()));
+        ui->outputWidget->addText(confMessage, ui->outputWidget->infoCharFormat(), "Commands");
+    }
 }
 
 void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, QTextStream* ts)
@@ -1098,6 +1110,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     QSettings settings;
     settings.beginGroup("ide");
     int compressSolutions = settings.value("compressSolutions", 100).toInt();
+    bool printCommand = settings.value("printCommand", false).toBool();
     settings.endGroup();
 
     auto* proc = new MznProcess(this);
@@ -1203,6 +1216,13 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     args << extraArgs;
     proc->start(sc, args, workingDir, ts == nullptr);
+
+    if (printCommand) {
+        auto cmdMessage = QString("Command: %1\n").arg(proc->command());
+        ui->outputWidget->addText(cmdMessage, ui->outputWidget->infoCharFormat(), "Commands");
+        auto confMessage = QString("Configuration:\n%1").arg(QString::fromUtf8(sc.toJSON()));
+        ui->outputWidget->addText(confMessage, ui->outputWidget->infoCharFormat(), "Commands");
+    }
 }
 
 QString MainWindow::currentSolverConfigName(void) {
