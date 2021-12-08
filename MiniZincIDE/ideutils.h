@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QWidget>
+#include <functional>
 
 namespace IDEUtils {
     QString formatTime(qint64 time);
