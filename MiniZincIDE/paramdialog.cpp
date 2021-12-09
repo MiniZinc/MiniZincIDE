@@ -89,8 +89,11 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
             QFileInfo fi(dataFiles[i]);
             QListWidgetItem* lwi = new QListWidgetItem(fi.fileName());
             selectedFiles->addItem(lwi);
-            if (previousDataFiles.contains(dataFiles[i]))
+            if (previousDataFiles.contains(dataFiles[i])) {
                 lwi->setSelected(true);
+                selectedFiles->setCurrentItem(lwi);
+                selectedFiles->scrollToItem(lwi);
+            }
         }
         tw->addTab(selectedFiles, "Select data file");
         if (!fillPrevious || !previousWasManual)
