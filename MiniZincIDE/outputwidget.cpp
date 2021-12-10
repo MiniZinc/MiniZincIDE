@@ -18,6 +18,7 @@
 #include <QPainterPath>
 #include <QCheckBox>
 #include "ideutils.h"
+#include "highlighter.h"
 
 OutputWidget::OutputWidget(QWidget *parent) :
     QWidget(parent),
@@ -81,6 +82,14 @@ OutputWidget::OutputWidget(QWidget *parent) :
 #else
     setStyleSheet("QPushButton { padding: 2px 6px; }");
 #endif
+    _contextMenu = new QMenu(this);
+    _contextMenu->addAction("Copy selected", this, [=] () { copySelectionToClipboard(false); });
+    _contextMenu->addAction("Copy selected including hidden", this, [=] () { copySelectionToClipboard(true); });
+    _contextMenu->addSeparator();
+    _contextMenu->addAction("Select All", this, [=] () { ui->textBrowser->selectAll(); });
+
+    connect(ui->textBrowser, &QTextBrowser::customContextMenuRequested, this, &OutputWidget::onBrowserContextMenu);
+    ui->textBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 OutputWidget::~OutputWidget()
@@ -761,9 +770,20 @@ QTextCursor OutputWidget::fragmentCursor(int position)
 
 bool OutputWidget::eventFilter(QObject* object, QEvent* event)
 {
-    if (object == ui->textBrowser->viewport() && event->type() == QEvent::MouseButtonRelease) {
+    if (object == ui->textBrowser->viewport() && event->type() == QEvent::MouseButtonPress) {
         auto* e = static_cast<QMouseEvent*>(event);
         if (e->button() == Qt::LeftButton) {
+            _pressed = true;
+        }
+    } else if (object == ui->textBrowser->viewport() && event->type() == QEvent::MouseMove) {
+        auto* e = static_cast<QMouseEvent*>(event);
+        if (_pressed) {
+            _dragging = true;
+        }
+    } else if (object == ui->textBrowser->viewport() && event->type() == QEvent::MouseButtonRelease) {
+        auto* e = static_cast<QMouseEvent*>(event);
+        if (e->button() == Qt::LeftButton) {
+            _pressed = false;
             if (_dragging) {
                 _dragging = false;
             } else {
@@ -797,23 +817,64 @@ bool OutputWidget::eventFilter(QObject* object, QEvent* event)
     } else if (object == ui->textBrowser && event->type() == QEvent::KeyPress) {
         auto* e = static_cast<QKeyEvent*>(event);
         if (e == QKeySequence::Copy || e == QKeySequence::Cut) {
-            auto* clipboard = QApplication::clipboard();
-            QString contents;
-            QTextStream ts(&contents);
-            auto cursor = ui->textBrowser->textCursor();
-
-            auto block = ui->textBrowser->document()->begin();
-            while (block.isValid()) {
-                if (block.isVisible()) {
-                    ts << block.text().remove(QChar::ObjectReplacementCharacter);
-                }
-                block = block.next();
-            }
-            clipboard->setText(contents);
+            copySelectionToClipboard(false);
             return true;
         }
     }
     return false;
+}
+
+void OutputWidget::copySelectionToClipboard(bool includeHidden)
+{
+    auto cursor = ui->textBrowser->textCursor();
+    if (!cursor.hasSelection()) {
+        return;
+    }
+
+    // Copy text to new document and remove hidden/object replacement characters
+    auto* doc = new QTextDocument(this);
+    QTextCursor c(doc);
+    c.insertFragment(ui->textBrowser->textCursor().selection());
+    c.setPosition(0);
+
+    while (!c.atEnd()) {
+        auto* table = c.currentTable();
+        if (table != nullptr) {
+            auto f = table->format();
+            if (f.hasProperty(Property::Expanded) && table->rows() == 2) {
+                auto cell = table->cellAt(0, 0);
+                auto cursor = cell.firstCursorPosition();
+                cursor.setPosition(cell.lastPosition(), QTextCursor::KeepAnchor);
+                cursor.removeSelectedText();
+                if (!f.property(Property::Expanded).toBool()) {
+                    table->removeRows(1, 1);
+                }
+            }
+        }
+        if (!includeHidden) {
+            auto format = c.block().blockFormat();
+            qDebug() << c.block().text() << format.property(Property::Section).toString() << format.property(Property::MessageType).toString();
+
+            bool remove = format.hasProperty(Property::Section)
+                    && !isSectionVisible(format.property(Property::Section).toString());
+            remove |= format.hasProperty(Property::MessageType)
+                    && !isMessageTypeVisible(format.property(Property::MessageType).toString());
+            if (remove) {
+                c.setPosition(c.block().position());
+                c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                c.removeSelectedText();
+            }
+        }
+        c.movePosition(QTextCursor::NextBlock);
+    }
+
+    IDEUtils::MimeDataExporter te;
+    te.setDocument(doc);
+    te.selectAll();
+    QMimeData* mimeData = te.md();
+    QApplication::clipboard()->setMimeData(mimeData);
+
+    delete doc;
 }
 
 bool OutputWidget::isFrameVisible(QTextFrame* frame)
@@ -947,4 +1008,9 @@ QTextCursor OutputWidget::nextInsertAt() const
     QTextCursor cursor(ui->textBrowser->document());
     cursor.movePosition(QTextCursor::End);
     return cursor;
+}
+
+void OutputWidget::onBrowserContextMenu(const QPoint& pos)
+{
+    _contextMenu->popup(ui->textBrowser->viewport()->mapToGlobal(pos));
 }

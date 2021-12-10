@@ -13,6 +13,7 @@
 #include <QDebug>
 
 #include "highlighter.h"
+#include "ideutils.h"
 
 Theme Themes::currentTheme = Themes::minizinc;
 
@@ -313,15 +314,6 @@ void Highlighter::highlightBlock(const QString &text)
 #include <QClipboard>
 #include <QMimeData>
 
-class MyMimeDataExporter : public QTextEdit {
-public:
-    QMimeData* md(void) const {
-        QMimeData* mymd = createMimeDataFromSelection();
-        mymd->removeFormat("text/plain");
-        return mymd;
-    }
-};
-
 void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
 {
     QTextDocument* tempDocument(new QTextDocument);
@@ -362,7 +354,7 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
     blockFormat.setNonBreakableLines(true);
     tempCursor.setBlockFormat(blockFormat);
 
-    MyMimeDataExporter te;
+    IDEUtils::MimeDataExporter te;
     te.setDocument(tempDocument);
     te.selectAll();
     QMimeData* mimeData = te.md();

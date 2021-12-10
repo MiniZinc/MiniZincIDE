@@ -6,6 +6,7 @@
 #include <QTextObjectInterface>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QMenu>
 
 namespace Ui {
 class OutputWidget;
@@ -45,6 +46,8 @@ public:
 
 public slots:
     void setDarkMode(bool darkMode);
+
+    void copySelectionToClipboard(bool includeHidden = false);
 
     void startExecution(const QString& label);
     void associateProfilerExecution(int executionId);
@@ -93,7 +96,10 @@ private:
     };
     friend class TextLayoutLock;
 
+    QMenu* _contextMenu = nullptr;
+
     bool _dragging = false;
+    bool _pressed = false;
     int _solutionLimit = 100;
     int _firstCompressedSolution = 0;
 
@@ -139,6 +145,7 @@ private:
 private slots:
     void onAnchorClicked(const QUrl& link);
     void on_toggleAll_pushButton_clicked();
+    void onBrowserContextMenu(const QPoint& pos);
 };
 
 class OutputWidgetArrow : public QObject, public QTextObjectInterface

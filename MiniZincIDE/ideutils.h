@@ -3,6 +3,8 @@
 
 #include <QString>
 #include <QWidget>
+#include <QMimeData>
+#include <QTextEdit>
 #include <functional>
 
 namespace IDEUtils {
@@ -14,6 +16,16 @@ namespace IDEUtils {
         watchChildChanges(target, receiver, std::bind(action, receiver));
     }
     QFont fontFromString(const QString& s);
+
+    class MimeDataExporter : public QTextEdit {
+    public:
+        QMimeData* md(void) const {
+            QMimeData* mymd = createMimeDataFromSelection();
+            mymd->removeFormat("text/plain");
+            return mymd;
+        }
+    };
+
 }
 
 #endif // IDEUTILS_H
