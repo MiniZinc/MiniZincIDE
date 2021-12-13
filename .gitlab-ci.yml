@@ -39,7 +39,7 @@ build:osx:
     GIT_STRATEGY: clone
   script:
     - mkdir -p build; cd build
-    - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
+    - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" QMAKE_APPLE_DEVICE_ARCHS="x86_64 arm64" ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
     - cp -r MiniZincIDE.app ..
   tags: [osx, cpp, qt]
