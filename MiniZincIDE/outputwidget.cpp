@@ -861,11 +861,16 @@ void OutputWidget::copySelectionToClipboard(bool includeHidden)
                     && !isMessageTypeVisible(format.property(Property::MessageType).toString());
             if (remove) {
                 c.setPosition(c.block().position());
-                c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                if (!c.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor)) {
+                    c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                }
                 c.removeSelectedText();
+                continue;
             }
         }
-        c.movePosition(QTextCursor::NextBlock);
+        if (!c.movePosition(QTextCursor::NextBlock)) {
+            break;
+        }
     }
 
     IDEUtils::MimeDataExporter te;
