@@ -97,23 +97,18 @@ package:linux:
     - mv minizinc/bin/* $PACKAGE/bin/
     - mv minizinc/share $PACKAGE/share
     ### Package vendor solvers
-    - mv vendor/gecode/bin/fzn-gecode $PACKAGE/bin/
-    - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/bin/fzn-gecode-gist
-    - cp -r vendor/gecode/share/minizinc/* $PACKAGE/share/minizinc/
+    - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/bin/
+    - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/bin/
-    - mv globalizer/share/globalizer/mznlib $PACKAGE/share/minizinc/globalizer
+    - cp -r globalizer/share/minizinc/* $PACKAGE/share/minizinc/
     ### Package findMUS
     - mv findMUS/bin/findMUS $PACKAGE/bin/
-    ### Package solver scripts
-    - cp resources/scripts/run-fzn-gecode-gist $PACKAGE/bin/
-    ### Package default settings
-    - mkdir -p $PACKAGE/share/minizinc/solvers/
-    - cp resources/solvers/*.msc $PACKAGE/share/minizinc/solvers/
+    - cp -r findMUS/share/minizinc/* $PACKAGE/share/minizinc/
     ### Strip included binaries
-    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Compress package
     - tar -czf $PACKAGE.tgz $PACKAGE
@@ -140,25 +135,21 @@ package:osx:
     - mv minizinc/share/minizinc/* $MZNDIR/
     ### Package vendor solvers
     - mkdir -p $DIR/bin/
-    - mv vendor/gecode/bin/fzn-gecode $DIR/bin/
-    - mv vendor/gecode_gist/bin/fzn-gecode $DIR/bin/fzn-gecode-gist
-    - cp -r vendor/gecode/share/minizinc/* $MZNDIR/
+    - mv vendor/gecode_gist/bin/fzn-gecode $DIR/bin/fzn-gecode
+    - cp -r vendor/gecode_gist/share/minizinc/* $MZNDIR/
     - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
 
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - cp -r vendor/chuffed/share/minizinc/* $MZNDIR/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $DIR/bin/
-    - mv globalizer/share/globalizer/mznlib $MZNDIR/globalizer
+    - cp -r globalizer/share/minizinc/* $MZNDIR/
     ### Package findMUS
     - mv findMUS/bin/findMUS $DIR/bin/
-    ### Package solver scripts
-    - cp resources/scripts/run-fzn-gecode-gist $DIR/bin/
-    ### Package default settings
-    - cp resources/solvers/*.msc $MZNDIR/solvers
+    - cp -r findMUS/share/minizinc/* $MZNDIR/
     ### Strip included binaries
     - (cd $DIR; strip minizinc mzn2doc)
-    - (cd $DIR/bin; strip fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer)
+    - (cd $DIR/bin; strip fzn-gecode fzn-chuffed findMUS minizinc-globalizer)
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode-gist
   artifacts:
@@ -218,24 +209,19 @@ package:appimage:
     - mv minizinc/bin/* $PACKAGE/usr/bin/
     - mv minizinc/share $PACKAGE/usr/share
     ### Package vendor solvers
-    - mv vendor/gecode/bin/fzn-gecode $PACKAGE/usr/bin/
-    - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/usr/bin/fzn-gecode-gist
-    - cp -r vendor/gecode/share/minizinc/* $PACKAGE/usr/share/minizinc/
+    - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/usr/bin/
+    - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/usr/share/minizinc/
 
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
-    - mv globalizer/share/globalizer/mznlib $PACKAGE/usr/share/minizinc/globalizer
+    - cp -r globalizer/share/minizinc/* $PACKAGE/usr/share/minizinc/
     ### Package findMUS
     - mv findMUS/bin/findMUS $PACKAGE/usr/bin/
-    ### Package solver scripts
-    - cp resources/scripts/run-fzn-gecode-gist $PACKAGE/usr/bin/
-    ### Package default settings
-    - mkdir -p $PACKAGE/usr/share/minizinc/solvers/
-    - cp resources/solvers/*.msc $PACKAGE/usr/share/minizinc/solvers/
+    - cp -r findMUS/share/minizinc/* $PACKAGE/usr/share/minizinc/
     ### Strip included binaries
-    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-gecode-gist fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Assemble AppImage
     - cp resources/scripts/AppRun $PACKAGE
@@ -297,7 +283,7 @@ package:docker_ubuntu:
     DOWNLOAD_FINDMUS: 1
   <<: *packaging_setup
   script:
-    - strip minizinc/bin/minizinc vendor/gecode/bin/fzn-gecode vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
+    - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - apt-get update -y
     - snapcraft

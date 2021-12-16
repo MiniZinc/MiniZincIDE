@@ -41,22 +41,19 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyAppDirectory}\ide\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\vendor\openssl\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\resources\scripts\run-fzn-gecode-gist.bat"; DestDir: "{app}\bin"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\minizinc\bin\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\minizinc\share\minizinc\*"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppDirectory}\resources\solvers\*.msc"; DestDir: "{app}\share\minizinc\solvers"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\vendor\gecode\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\vendor\gecode_gist\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; DestName: "fzn-gecode-gist.exe"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\vendor\gecode\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\vendor\gecode_gist\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; DestName: "fzn-gecode.exe"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\gecode_gist\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\bin"; DestName: "qt.conf"; Flags: ignoreversion
 
 Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\globalizer\share\globalizer\mznlib\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 
@@ -485,3 +482,4 @@ Type: files; Name: "{app}\solns2dzn.exe"
 Type: files; Name: "{app}\solns2out.exe"
 Type: files; Name: "{app}\ssleay32.dll"
 Type: files; Name: "{app}\vccorlib120.dll"
+Type: files; Name: "{app}\bin\fzn-gecode-gist.bat"

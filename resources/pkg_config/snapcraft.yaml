@@ -31,17 +31,12 @@ parts:
       - bin/
       - lib/
       - lib_fallback/
-      - libexec/
       - plugins/
-      - resources/
-      - translations/
   deps:
     plugin: nil
     stage-packages:
       # Additional IDE dependencies which linuxdeployqt does not include.
       # Cannot put in the ide part because it reorganizes the directory structure.
-      - libasound2
-      - libegl1
       - libfontconfig1
       - libfreetype6
       - libgl1
@@ -67,10 +62,9 @@ parts:
     plugin: dump
     source: vendor/
     organize:
-      gecode/bin/fzn-gecode: bin/
-      gecode_gist/bin/fzn-gecode: bin/fzn-gecode-gist
-      gecode/share/minizinc/solvers/*: share/minizinc/solvers/
-      gecode/share/minizinc/gecode: share/minizinc/gecode
+      gecode_gist/bin/fzn-gecode: bin/
+      gecode_gist/share/minizinc/solvers/*: share/minizinc/solvers/
+      gecode_gist/share/minizinc/gecode: share/minizinc/gecode
       chuffed/bin/fzn-chuffed: bin/
       chuffed/share/minizinc/solvers/*: share/minizinc/solvers/
       chuffed/share/minizinc/chuffed: share/minizinc/chuffed
@@ -78,22 +72,18 @@ parts:
   globalizer:
     plugin: dump
     source: globalizer/
-    organize:
-      share/globalizer/mznlib: share/minizinc/globalizer
     stage: [bin/, share/minizinc/]
   findmus:
     plugin: dump
     source: findMUS/
-    stage: [bin/]
+    stage: [bin/, share/minizinc/]
   resources:
     plugin: dump
     source: resources/
     organize:
-      scripts/run-fzn-gecode-gist: bin/
-      solvers/*.msc: share/minizinc/solvers/
       misc/MiniZincIDE.desktop: share/applications/
       scripts/MiniZincIDE.sh: /
-    stage: [bin/, share/, MiniZincIDE.sh]
+    stage: [share/, MiniZincIDE.sh]
   # This part installs a `desktop-launch` script to initialise desktop-specific
   # features such as fonts, themes and the XDG environment.
   #
