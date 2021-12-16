@@ -26,6 +26,7 @@ public:
 
     enum Property {
         Expanded = QTextFormat::UserProperty + 1,
+        ToggleFrame,
         Section,
         MessageType
     };
@@ -39,6 +40,7 @@ public:
     const QTextCharFormat& commentCharFormat() const { return _commentCharFormat; }
 
     const QTextTableFormat headerTableFormat() const { return _headerTableFormat; }
+    const QTextFrameFormat frameFormat() const { return _frameFormat; }
 
     int solutionLimit() { return _solutionLimit; }
 
@@ -104,7 +106,7 @@ private:
     int _firstCompressedSolution = 0;
 
     QTextCursor _statusCursor;
-    QTextTable* _rootTable = nullptr;
+    QTextFrame* _frame = nullptr;
     QTextDocument* _solutionBuffer = nullptr;
     QTextCursor _lastSolutions[2];
 
@@ -121,6 +123,7 @@ private:
     QTextCharFormat _arrowFormat;
     QTextBlockFormat _rightAlignBlockFormat;
     QTextTableFormat _headerTableFormat;
+    QTextFrameFormat _frameFormat;
 
     QVector<QPair<QString, QVariant>> _checkerOutput;
 
@@ -131,7 +134,8 @@ private:
 
     void addSection(const QString& section);
     void addMessageType(const QString& messageType);
-    void toggleTableVisibility(QTextTable* frame);
+    void onClickTable(QTextTable* table);
+    void toggleFrameVisibility(QTextFrame* frame);
     bool eventFilter(QObject* object, QEvent* event) override;
     void resizeEvent(QResizeEvent* e) override;
     bool isFrameVisible(QTextFrame* frame);
