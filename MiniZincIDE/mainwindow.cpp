@@ -733,6 +733,12 @@ void MainWindow::compileOrRun(
         return;
     }
 
+    if (curEditor != nullptr && curEditor->filepath.endsWith(".mzc.mzn") && cm == CM_COMPILE) {
+        // Compile the current checker
+        compileSolutionChecker(curEditor->filepath);
+        return;
+    }
+
     // Use either the provided solver config, or the currently active one
     auto solverConfig = sc ? sc : getCurrentSolverConfig();
     if (!solverConfig) {
@@ -983,6 +989,72 @@ void MainWindow::statusTimerEvent(qint64 time)
     }
     ui->statusbar->showMessage(txt);
     setElapsedTime(time);
+}
+
+void MainWindow::compileSolutionChecker(const QString& checker)
+{
+    if (!requireMiniZinc()) {
+        return;
+    }
+
+    QFileInfo fi(checker);
+
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool printCommand = settings.value("printCommand", false).toBool();
+    settings.endGroup();
+
+    auto proc = new MznProcess(this);
+    QStringList args;
+    args << "--compile-solution-checker"
+         << checker;
+    connect(this, &MainWindow::terminating, proc, [=] () {
+        proc->disconnect();
+        proc->stop();
+        proc->deleteLater();
+    });
+    connect(ui->actionStop, &QAction::triggered, proc, [=] () {
+        ui->actionStop->setDisabled(true);
+        proc->stop();
+        ui->outputWidget->addText("Stopped.");
+    });
+    connect(proc, &MznProcess::success, [=] (bool cancelled) {
+        if (!cancelled) {
+            openCompiledFzn(checker.left(checker.size() - 4));
+        }
+        procFinished(0, proc->elapsedTime());
+        ui->outputWidget->endExecution(0, proc->elapsedTime());
+    });
+    connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
+        QTextCharFormat f;
+        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        ui->outputWidget->addText(d, f, "Standard Error");
+    });
+    connect(proc, &MznProcess::finished, [=] () {
+        proc->deleteLater();
+    });
+    connect(proc, &MznProcess::failure, [=](int exitCode, MznProcess::FailureType e) {
+        if (e == MznProcess::FailedToStart) {
+            QMessageBox::critical(this, "MiniZinc IDE", "Failed to start MiniZinc. Check your path settings.");
+            exitCode = 0;
+        } else if (e != MznProcess::NonZeroExit) {
+            QMetaEnum metaEnum = QMetaEnum::fromType<MznProcess::FailureType>();
+            QMessageBox::critical(this, "MiniZinc IDE", "Unknown error while executing MiniZinc: " + QString(metaEnum.valueToKey(e)));
+        }
+        ui->outputWidget->endExecution(0, proc->elapsedTime());
+        procFinished(exitCode, proc->elapsedTime());
+    });
+    connect(proc, &MznProcess::timeUpdated, this, &MainWindow::statusTimerEvent);
+    updateUiProcessRunning(true);
+    ui->outputWidget->startExecution(QString("Compiling %1").arg(fi.fileName()));
+    proc->start(args, fi.canonicalPath());
+
+    if (printCommand) {
+        auto cmdMessage = QString("Command: %1\n").arg(proc->command());
+        ui->outputWidget->addText(cmdMessage, ui->outputWidget->infoCharFormat(), "Commands");
+    }
 }
 
 void MainWindow::compile(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, bool profile)
@@ -1382,7 +1454,6 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::openCompiledFzn(const QString& fzn)
 {
-
     QFile file(fzn);
     int fsize = file.size() / (1024 * 1024);
     if (fsize > 10) {
@@ -1417,7 +1488,7 @@ void MainWindow::openCompiledFzn(const QString& fzn)
             break;
         }
     }
-    createEditor(fzn, !fzn.endsWith(".mzc"), true, false);
+    createEditor(fzn, !fzn.endsWith(".mzc"), !fzn.endsWith(".mzc"), false);
 }
 
 void MainWindow::profileCompiledFzn(const QVector<TimingEntry>& timing, const QVector<PathEntry>& paths)

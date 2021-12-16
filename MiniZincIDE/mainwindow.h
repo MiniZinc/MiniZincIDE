@@ -253,7 +253,6 @@ protected:
     virtual void dragEnterEvent(QDragEnterEvent *);
     virtual void dropEvent(QDropEvent *);
     bool eventFilter(QObject *, QEvent *);
-    void compileAndRun(const QString& modelPath, const QString& additionalCmdlineParams, const QStringList& additionalDataFiles, const QStringList& additionalMznParams);
 public:
     QString currentSolver(void) const;
     QString currentSolverConfigName(void);
@@ -261,6 +260,7 @@ public:
     void setCheckSolutions(bool b);
     SolverConfiguration* getCurrentSolverConfig(void);
     const Solver* getCurrentSolver(void);
+    void compileSolutionChecker(const QString& checker);
     void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), bool profile = false);
     void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), QTextStream* ts = nullptr);
     QList<CodeEditor*> codeEditors();
