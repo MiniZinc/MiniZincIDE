@@ -906,7 +906,7 @@ bool OutputWidget::isFrameVisible(QTextFrame* frame)
     return true;
 }
 
-OutputWidget::TextLayoutLock::TextLayoutLock(OutputWidget* o, bool scroll) : _o(o), _scroll(scroll) {
+TextLayoutLock::TextLayoutLock(OutputWidget* o, bool scroll) : _o(o), _scroll(scroll) {
     if (_o->_frame != _o->ui->textBrowser->document()->rootFrame()) {
         auto frameVisible = _o->isFrameVisible(_o->_frame);
         if (!frameVisible) {
@@ -916,7 +916,7 @@ OutputWidget::TextLayoutLock::TextLayoutLock(OutputWidget* o, bool scroll) : _o(
     _o->ui->textBrowser->textCursor().beginEditBlock();
 }
 
-OutputWidget::TextLayoutLock::~TextLayoutLock()
+TextLayoutLock::~TextLayoutLock()
 {
     _o->ui->textBrowser->textCursor().endEditBlock();
     if (_scroll) {

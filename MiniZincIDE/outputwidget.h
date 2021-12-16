@@ -88,14 +88,6 @@ signals:
 private:
     Ui::OutputWidget *ui;
 
-    class TextLayoutLock {
-    public:
-        explicit TextLayoutLock(OutputWidget* o, bool scroll = true);
-        ~TextLayoutLock();
-    private:
-        bool _scroll;
-        OutputWidget* _o;
-    };
     friend class TextLayoutLock;
 
     QMenu* _contextMenu = nullptr;
@@ -160,6 +152,15 @@ class OutputWidgetArrow : public QObject, public QTextObjectInterface
 public:
     QSizeF intrinsicSize(QTextDocument* doc, int posInDocument, const QTextFormat& format) override;
     void drawObject(QPainter* painter, const QRectF& rect, QTextDocument* doc, int posInDocument, const QTextFormat& format) override;
+};
+
+class TextLayoutLock {
+public:
+    explicit TextLayoutLock(OutputWidget* o, bool scroll = true);
+    ~TextLayoutLock();
+private:
+    bool _scroll;
+    OutputWidget* _o;
 };
 
 #endif // OUTPUTWIDGET_H

@@ -1182,6 +1182,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
     connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
         if (section == "trace_exp") {
+            TextLayoutLock lock(ui->outputWidget);
             auto obj = message.toJsonObject();
             auto msg = obj["message"].toString();
             QRegularExpression val("\\(≡.*?\\)");
