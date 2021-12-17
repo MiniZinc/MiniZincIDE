@@ -158,6 +158,19 @@ package:osx:
   needs: ["build:osx"]
   tags: [osx, qt]
 
+package:osx:ide_only:
+  stage: package
+  variables:
+    MZNARCH: "osx"
+  script:
+    ### Run automated Qt deployment tool
+    - macdeployqt ./MiniZincIDE.app
+  artifacts:
+    name: "minizinc_ide_mac_${CI_PIPELINE_ID}"
+    paths: [MiniZincIDE.app]
+  needs: ["build:osx"]
+  tags: [osx, qt]
+
 package:win64:
   stage: package
   variables:
