@@ -2396,9 +2396,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
                 return true;
             }
         }
-    } else {
-        return QMainWindow::eventFilter(obj,ev);
     }
+    return QMainWindow::eventFilter(obj,ev);
 }
 
 void MainWindow::on_actionCheat_Sheet_triggered()
