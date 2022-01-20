@@ -22,7 +22,7 @@ build:linux:
     - cd ..
     # Download Gecode Gist so linuxdeployqt can include its dependencies
     - curl --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" --silent https://gitlab.com/api/v4/snippets/1796163/raw | tr -d '\r' > download.sh
-    - sh download.sh vendor master gecode_gist:linux vendor.zip
+    - sh download.sh minizinc-vendor master gecode_gist:linux vendor.zip
     - unzip -q vendor.zip
     # Workaround for: https://github.com/probonopd/linuxdeployqt/issues/35
     - linuxdeployqt ide/usr/bin/MiniZincIDE -executable=vendor/gecode_gist/bin/fzn-gecode -bundle-non-qt-libs -no-translations -no-copy-copyright-files
@@ -75,7 +75,7 @@ build:win64:
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
     - unzip -q minizinc.zip
-    - '[ ${DOWNLOAD_SOLVERS:-1} -eq 1 ] && curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fvendor/jobs/artifacts/master/download?job=bundle:$MZNARCH" && unzip -q vendor.zip'
+    - '[ ${DOWNLOAD_SOLVERS:-1} -eq 1 ] && curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:$MZNARCH" && unzip -q vendor.zip'
     - '[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH" && unzip -q globalizer.zip'
     - '[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/$FINDMUSREF/download?job=build:$MZNARCH" && unzip -q findmus.zip'
 
@@ -189,7 +189,7 @@ package:win64:
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
     - unzip -q minizinc.zip
-    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fvendor/jobs/artifacts/master/download?job=bundle:%MZNARCH%"
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:%MZNARCH%"
     - unzip -q vendor.zip
     - curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fglobalizer/jobs/artifacts/master/download?job=build:%MZNARCH%"
     - unzip -q globalizer.zip
