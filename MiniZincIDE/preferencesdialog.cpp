@@ -88,6 +88,7 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     ui->darkMode_checkBox->setChecked(_origDarkMode);
     settings.endGroup();
     // Load user solver search paths
+    ui->configuration_groupBox->setEnabled(driver.isValid());
     auto& userConfigFile = driver.userConfigFile();
     QFile uc(userConfigFile);
     if (uc.exists() && uc.open(QFile::ReadOnly)) {
@@ -104,7 +105,11 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     }
 
     IDEUtils::watchChildChanges(ui->solverFrame, this, [=] () {
-        _editingSolverIndex = ui->solvers_combo->currentIndex();
+        auto& driver = MznDriver::get();
+        auto& solvers = driver.solvers();
+        if (!solvers.isEmpty()) {
+            _editingSolverIndex = ui->solvers_combo->currentIndex();
+        }
     });
 
     connect(ui->name, &QLineEdit::textChanged, this, &PreferencesDialog::updateSolverLabel);
@@ -203,7 +208,7 @@ QByteArray PreferencesDialog::allowFileRestore(const QString& path)
     return QByteArray();
 }
 
-bool PreferencesDialog::loadDriver(bool showError)
+void PreferencesDialog::loadDriver(bool showError)
 {
     auto& driver = MznDriver::get();
     auto& solvers = driver.solvers();
@@ -211,6 +216,7 @@ bool PreferencesDialog::loadDriver(bool showError)
     _solversPopulated = false;
     auto dest = ui->solvers_combo->currentIndex();
     bool destExists = dest < solvers.size();
+    bool addNew = dest == ui->solvers_combo->count() - 1;
     QString matchId;
     QString matchVersion;
     if (dest == _editingSolverIndex) {
@@ -231,11 +237,28 @@ bool PreferencesDialog::loadDriver(bool showError)
             showMessageBox(e.message());
         }
         ui->mzn2fzn_version->setText(e.message());
-        return false;
+    }
+
+    // Load user solver search paths
+    ui->extraSearchPath_listWidget->clear();
+    ui->configuration_groupBox->setEnabled(driver.isValid());
+    auto& userConfigFile = driver.userConfigFile();
+    QFile uc(userConfigFile);
+    if (uc.exists() && uc.open(QFile::ReadOnly)) {
+        QJsonDocument doc = QJsonDocument::fromJson(uc.readAll());
+        auto obj = doc.object();
+        if (obj.contains("mzn_solver_path")) {
+            for (auto it : obj["mzn_solver_path"].toArray()) {
+                auto path = it.toString();
+                if (!path.isEmpty()) {
+                    ui->extraSearchPath_listWidget->addItem(path);
+                }
+            }
+        }
     }
 
     populateSolvers();
-    int index = 0;
+    int index = addNew ? ui->solvers_combo->count() - 1 : 0;
     if (destExists) {
         int i = 0;
         for (auto& solver : solvers) {
@@ -245,8 +268,6 @@ bool PreferencesDialog::loadDriver(bool showError)
             }
             i++;
         }
-    } else {
-        index = ui->solvers_combo->count() - 1;
     }
 
     if (ui->solvers_combo->currentIndex() == index) {
@@ -254,8 +275,6 @@ bool PreferencesDialog::loadDriver(bool showError)
     } else {
         ui->solvers_combo->setCurrentIndex(index);
     }
-
-    return true;
 }
 
 void PreferencesDialog::populateSolvers()
@@ -269,14 +288,19 @@ void PreferencesDialog::populateSolvers()
     auto& driver = MznDriver::get();
     auto& solvers = driver.solvers();
 
-    while (ui->solvers_combo->count() > 0) {
-        ui->solvers_combo->removeItem(0);
-    }
+    ui->solvers_combo->clear();
 
     for (auto& solver : solvers) {
         ui->solvers_combo->addItem(solver.name + " " + solver.version);
     }
+
+    if (solvers.empty()) {
+        ui->solvers_combo->addItem("(No solvers found)");
+    }
+
     ui->solvers_combo->addItem("Add new...");
+
+    ui->solvers_tab->setEnabled(driver.isValid());
 
     _solversPopulated = true;
 }
@@ -496,8 +520,13 @@ void PreferencesDialog::on_deleteButton_clicked()
     int index = ui->solvers_combo->currentIndex();
     if (index >= solvers.size()) {
         _editingSolverIndex = -1;
+        if (solvers.size() == 0) {
+            // No solver to switch back to, so create dummy
+            ui->solvers_combo->insertItem(0, "(No solvers found)");
+            index++;
+        }
+        ui->solvers_combo->setCurrentIndex(index > 0 ? index - 1 : 0);
         ui->solvers_combo->removeItem(index);
-        on_solvers_combo_currentIndexChanged(0);
         return;
     }
     if (QMessageBox::warning(this,
@@ -513,9 +542,13 @@ void PreferencesDialog::on_deleteButton_clicked()
             return;
         }
         solvers.remove(index);
+        if (solvers.size() == 0) {
+            // No solver to switch back to, so create dummy
+            ui->solvers_combo->insertItem(0, "(No solvers found)");
+            index++;
+        }
+        ui->solvers_combo->setCurrentIndex(index > 0 ? index - 1 : 0);
         ui->solvers_combo->removeItem(index);
-        _editingSolverIndex = -1;
-        on_solvers_combo_currentIndexChanged(ui->solvers_combo->currentIndex());
     }
 }
 
@@ -719,9 +752,6 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         }
         _editingSolverIndex = -1;
     } else {
-        ui->solvers_combo->setItemText(index, "New solver");
-        ui->solvers_combo->addItem("Add new...");
-
         ui->name->setText("");
         ui->solverId->setText("");
         ui->version->setText("");
@@ -742,7 +772,23 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_t->setChecked(false);
         ui->requiredFlags->hide();
 
-        _editingSolverIndex = index;
+        bool addNew = index == ui->solvers_combo->count() - 1;
+
+        if (addNew) {
+            if (solvers.isEmpty()) {
+                // Remove dummy solver
+                ui->solvers_combo->removeItem(0);
+                return;
+            }
+            ui->solvers_combo->setItemText(index, "New solver");
+            ui->solvers_combo->addItem("Add new...");
+            _editingSolverIndex = index;
+        } else {
+            _editingSolverIndex = -1;
+        }
+
+        ui->deleteButton->setEnabled(addNew);
+        ui->solverFrame->setEnabled(addNew);
     }
 }
 

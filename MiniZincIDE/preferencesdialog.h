@@ -78,7 +78,7 @@ private:
     int _origThemeIndex = 0;
 
     QByteArray allowFileRestore(const QString& path);
-    bool loadDriver(bool showError);
+    void loadDriver(bool showError);
     void populateSolvers();
     bool updateSolver();
     void updateSearchPaths();
