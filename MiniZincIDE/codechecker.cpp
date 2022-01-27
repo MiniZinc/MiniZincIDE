@@ -65,7 +65,10 @@ void CodeChecker::onLine(const QString& l)
     e.last_line = loc["lastLine"].toInt();
     e.last_col = loc["lastColumn"].toInt();
     e.msg = msg["message"].toString();
-    mznErrors.push_back(e);
+    if (e.filename == "stdin") {
+        // Ignore errors that aren't from this file
+        mznErrors.push_back(e);
+    }
 }
 
 void CodeChecker::onFinished()
