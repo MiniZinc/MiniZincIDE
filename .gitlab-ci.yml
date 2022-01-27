@@ -50,6 +50,7 @@ build:win64:
   stage: build
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
+    MZNARCH: "win64"
   script:
     - if not exist "build" mkdir build
     - if not exist "ide" mkdir ide
@@ -57,8 +58,12 @@ build:win64:
     - qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"%CI_PIPELINE_ID%\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
     - nmake
     - cp release/MiniZincIDE.exe ../ide
-    - cd ../ide
-    - windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe
+    - cd ../
+    # Download Gecode Gist so windeployqt can include its dependencies
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc-vendor/jobs/artifacts/master/download?job=gecode_gist:%MZNARCH%"
+    - unzip -q vendor.zip
+    - cd ide
+    - windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler MiniZincIDE.exe ../vendor/gecode_gist/bin/fzn-gecode.exe
   tags: [win64, cpp, qt]
   artifacts:
     paths: [ide/]
@@ -151,7 +156,7 @@ package:osx:
     - (cd $DIR; strip minizinc mzn2doc)
     - (cd $DIR/bin; strip fzn-gecode fzn-chuffed findMUS minizinc-globalizer)
     ### Run automated Qt deployment tool
-    - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode-gist
+    - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
     paths: [MiniZincIDE.app]
