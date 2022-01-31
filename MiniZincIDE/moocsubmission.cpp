@@ -192,14 +192,14 @@ void MOOCSubmission::cancelOperation()
     case S_NONE:
         return;
     case S_WAIT_PWD:
-        disconnect(mw, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+        disconnect(mw, &MainWindow::finished, this, &MOOCSubmission::rcvLoginCheckResponse);
         break;
     case S_WAIT_SOLVE:
-        disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
+        disconnect(mw, &MainWindow::finished, this, &MOOCSubmission::solverFinished);
         mw->stop();
         break;
     case S_WAIT_SUBMIT:
-        disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
+        disconnect(reply, &QNetworkReply::finished, this, &MOOCSubmission::rcvSubmissionResponse);
         break;
     }
     ui->textBrowser->insertPlainText("Aborted.\n");
@@ -236,7 +236,7 @@ void MOOCSubmission::solveNext() {
     if (_current_model < n_problems) {
 
         MOOCAssignmentItem& item = project.problems[_current_model];
-        connect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
+        connect(mw, &MainWindow::finished, this, &MOOCSubmission::solverFinished);
         ui->textBrowser->insertPlainText("Running "+item.name+" with time out " + QString().setNum(item.timeout)+ "s\n");
         _cur_phase = S_WAIT_SOLVE;
         _output_string = "";
@@ -315,15 +315,23 @@ void MOOCSubmission::submitToMOOC()
 
     _cur_phase = S_WAIT_SUBMIT;
     reply = IDE::instance()->networkManager->post(request,doc.toJson());
-    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
-    connect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
+#if QT_VERSION >= 0x060000
+    connect(reply, &QNetworkReply::errorOccurred, this, &MOOCSubmission::rcvErrorResponse);
+#else
+    connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &MOOCSubmission::rcvErrorResponse);
+#endif
+    connect(reply, &QNetworkReply::finished, this, &MOOCSubmission::rcvSubmissionResponse);
     ui->textBrowser->insertPlainText("Submitting to "+project.moocName+" for grading...\n");
 }
 
 void MOOCSubmission::rcvSubmissionResponse()
 {
-    disconnect(reply, SIGNAL(finished()), this, SLOT(rcvSubmissionResponse()));
-    disconnect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
+    disconnect(reply, &QNetworkReply::finished, this, &MOOCSubmission::rcvSubmissionResponse);
+#if QT_VERSION >= 0x060000
+    disconnect(reply, &QNetworkReply::errorOccurred, this, &MOOCSubmission::rcvErrorResponse);
+#else
+    disconnect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &MOOCSubmission::rcvErrorResponse);
+#endif
     reply->deleteLater();
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
@@ -346,7 +354,7 @@ void MOOCSubmission::rcvSubmissionResponse()
 
 void MOOCSubmission::solverFinished()
 {
-    disconnect(mw, SIGNAL(finished()), this, SLOT(solverFinished()));
+    disconnect(mw, &MainWindow::finished, this, &MOOCSubmission::solverFinished);
 
     QStringList solutions = _output_string.split("----------");
     if (solutions.size() >= 2) {
@@ -396,8 +404,12 @@ void MOOCSubmission::on_runButton_clicked()
         _cur_phase = S_WAIT_PWD;
         disableUI();
         reply = IDE::instance()->networkManager->post(request,doc.toJson());
-        connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
-        connect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
+#if QT_VERSION >= 0x060000
+        connect(reply, &QNetworkReply::errorOccurred, this, &MOOCSubmission::rcvErrorResponse);
+#else
+        connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &MOOCSubmission::rcvErrorResponse);
+#endif
+        connect(reply, &QNetworkReply::finished, this, &MOOCSubmission::rcvLoginCheckResponse);
         ui->textBrowser->insertPlainText("Checking login and assignment token...\n");
     } else {
         cancelOperation();
@@ -406,8 +418,12 @@ void MOOCSubmission::on_runButton_clicked()
 
 void MOOCSubmission::rcvLoginCheckResponse()
 {
-    disconnect(reply, SIGNAL(finished()), this, SLOT(rcvLoginCheckResponse()));
-    disconnect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(rcvErrorResponse(QNetworkReply::NetworkError)));
+    disconnect(reply, &QNetworkReply::finished, this, &MOOCSubmission::rcvLoginCheckResponse);
+#if QT_VERSION >= 0x060000
+    disconnect(reply, &QNetworkReply::errorOccurred, this, &MOOCSubmission::rcvErrorResponse);
+#else
+    disconnect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &MOOCSubmission::rcvErrorResponse);
+#endif
     reply->deleteLater();
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
