@@ -9,7 +9,7 @@ namespace utils
 MaybeCaller::MaybeCaller(int min_ms) : min_elapsed_(min_ms)
 {
     updateTimer.setSingleShot(true);
-    connect(&updateTimer, SIGNAL(timeout()), this, SLOT(callViaTimer()));
+    connect(&updateTimer, &QTimer::timeout, this, &MaybeCaller::callViaTimer);
     last_call_time = std::chrono::system_clock::now();
 }
 

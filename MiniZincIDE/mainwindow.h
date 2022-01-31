@@ -89,6 +89,7 @@ public slots:
     void stop();
     void setDarkMode(bool enable);
     void initTheme();
+    void closeFindWidget();
 
 private slots:
 

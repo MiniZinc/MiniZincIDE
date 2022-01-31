@@ -46,7 +46,7 @@ void Process::start(const QString &program, const QStringList &arguments, const 
     _wputenv_s(L"PATH", (addPath + pathSep + curPath).toStdWString().c_str());
     if (IsWindows8OrGreater()) {
         jobObject = CreateJobObject(nullptr, nullptr);
-        connect(this, SIGNAL(started()), this, SLOT(attachJob()));
+        connect(this, &QProcess::started, this, &Process::attachJob);
     } else {
         // Workaround PCA automatically adding to a job for Windows 7
         setCreateProcessArgumentsModifier([] (QProcess::CreateProcessArguments *args) {

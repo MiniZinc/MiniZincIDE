@@ -144,8 +144,8 @@ void MainWindow::init(const QString& projectFile)
     minimizeAction = new QAction("&Minimize",this);
     minimizeAction->setShortcut(Qt::CTRL | Qt::Key_M);
 #ifdef Q_OS_MAC
-    connect(ui->menuWindow, SIGNAL(aboutToShow()), this, SLOT(showWindowMenu()));
-    connect(ui->menuWindow, SIGNAL(triggered(QAction*)), this, SLOT(windowMenuSelected(QAction*)));
+    connect(ui->menuWindow, &QMenu::aboutToShow, this, &MainWindow::showWindowMenu);
+    connect(ui->menuWindow, &QMenu::triggered, this, &MainWindow::windowMenuSelected);
     ui->menuWindow->addAction(minimizeAction);
     ui->menuWindow->addSeparator();
 #else
@@ -179,11 +179,11 @@ void MainWindow::init(const QString& projectFile)
 
     updateRecentProjects("");
     updateRecentFiles("");
-    connect(ui->menuRecent_Files, SIGNAL(triggered(QAction*)), this, SLOT(recentFileMenuAction(QAction*)));
-    connect(ui->menuRecent_Projects, SIGNAL(triggered(QAction*)), this, SLOT(recentProjectMenuAction(QAction*)));
+    connect(ui->menuRecent_Files, &QMenu::triggered, this, &MainWindow::recentFileMenuAction);
+    connect(ui->menuRecent_Projects, &QMenu::triggered, this, &MainWindow::recentProjectMenuAction);
 
-    connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
-    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChange(int)));
+    connect(ui->tabWidget, &QTabWidget::tabCloseRequested, this, &MainWindow::tabCloseRequest);
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::tabChange);
 
     progressBar = new QProgressBar;
     progressBar->setRange(0, 100);
@@ -247,7 +247,7 @@ void MainWindow::init(const QString& projectFile)
     }
     ui->config_window->init();
 
-    connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(onClipboardChanged()));
+    connect(QApplication::clipboard(), &QClipboard::dataChanged, this, &MainWindow::onClipboardChanged);
 
     ui->projectExplorerDockWidget->hide();
     ui->configWindow_dockWidget->hide();
@@ -601,20 +601,21 @@ void MainWindow::dropEvent(QDropEvent* event) {
 
 void MainWindow::tabChange(int tab) {
     if (curEditor) {
-        disconnect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
-        disconnect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
-        disconnect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
-        disconnect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
-        disconnect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
-        disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
-        disconnect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
-        disconnect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                   this, SLOT(setWindowModified(bool)));
-        disconnect(curEditor->document(), SIGNAL(undoAvailable(bool)),
-                   ui->actionUndo, SLOT(setEnabled(bool)));
-        disconnect(curEditor->document(), SIGNAL(redoAvailable(bool)),
-                   ui->actionRedo, SLOT(setEnabled(bool)));
-        disconnect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
+        disconnect(ui->actionCopy, &QAction::triggered, curEditor, &CodeEditor::copy);
+        disconnect(ui->actionPaste, &QAction::triggered, curEditor, &CodeEditor::paste);
+        disconnect(ui->actionCut, &QAction::triggered, curEditor, &CodeEditor::cut);
+        disconnect(ui->actionSelect_All, &QAction::triggered, curEditor, &CodeEditor::selectAll);
+        disconnect(ui->actionUndo, &QAction::triggered, curEditor, &CodeEditor::undo);
+        disconnect(ui->actionRedo, &QAction::triggered, curEditor, &CodeEditor::redo);
+        disconnect(curEditor, &CodeEditor::copyAvailable, ui->actionCopy, &QAction::setEnabled);
+        disconnect(curEditor, &CodeEditor::copyAvailable, ui->actionCut, &QAction::setEnabled);
+        disconnect(curEditor->document(), &QTextDocument::modificationChanged,
+                   this, &MainWindow::setWindowModified);
+        disconnect(curEditor->document(), &QTextDocument::undoAvailable,
+                   ui->actionUndo, &QAction::setEnabled);
+        disconnect(curEditor->document(), &QTextDocument::redoAvailable,
+                   ui->actionRedo, &QAction::setEnabled);
+        disconnect(curEditor, &CodeEditor::cursorPositionChanged, this, &MainWindow::editor_cursor_position_changed);
         disconnect(code_checker, &CodeChecker::finished, curEditor, &CodeEditor::checkFile);
         disconnect(curEditor, &CodeEditor::changedDebounced, this, &MainWindow::check_code);
     }
@@ -624,21 +625,21 @@ void MainWindow::tabChange(int tab) {
         ui->findFrame->hide();
     } else {
         setEditorMenuItemsEnabled(true);
-        connect(ui->actionCopy, SIGNAL(triggered()), curEditor, SLOT(copy()));
-        connect(ui->actionPaste, SIGNAL(triggered()), curEditor, SLOT(paste()));
-        connect(ui->actionCut, SIGNAL(triggered()), curEditor, SLOT(cut()));
-        connect(ui->actionSelect_All, SIGNAL(triggered()), curEditor, SLOT(selectAll()));
-        connect(ui->actionUndo, SIGNAL(triggered()), curEditor, SLOT(undo()));
-        connect(ui->actionRedo, SIGNAL(triggered()), curEditor, SLOT(redo()));
-        connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCopy, SLOT(setEnabled(bool)));
-        connect(curEditor, SIGNAL(copyAvailable(bool)), ui->actionCut, SLOT(setEnabled(bool)));
-        connect(curEditor->document(), SIGNAL(modificationChanged(bool)),
-                this, SLOT(setWindowModified(bool)));
-        connect(curEditor->document(), SIGNAL(undoAvailable(bool)),
-                ui->actionUndo, SLOT(setEnabled(bool)));
-        connect(curEditor->document(), SIGNAL(redoAvailable(bool)),
-                ui->actionRedo, SLOT(setEnabled(bool)));
-        connect(curEditor, SIGNAL(cursorPositionChanged()), this, SLOT(editor_cursor_position_changed()));
+        connect(ui->actionCopy, &QAction::triggered, curEditor, &CodeEditor::copy);
+        connect(ui->actionPaste, &QAction::triggered, curEditor, &CodeEditor::paste);
+        connect(ui->actionCut, &QAction::triggered, curEditor, &CodeEditor::cut);
+        connect(ui->actionSelect_All, &QAction::triggered, curEditor, &CodeEditor::selectAll);
+        connect(ui->actionUndo, &QAction::triggered, curEditor, &CodeEditor::undo);
+        connect(ui->actionRedo, &QAction::triggered, curEditor, &CodeEditor::redo);
+        connect(curEditor, &CodeEditor::copyAvailable, ui->actionCopy, &QAction::setEnabled);
+        connect(curEditor, &CodeEditor::copyAvailable, ui->actionCut, &QAction::setEnabled);
+        connect(curEditor->document(), &QTextDocument::modificationChanged,
+                this, &MainWindow::setWindowModified);
+        connect(curEditor->document(), &QTextDocument::undoAvailable,
+                ui->actionUndo, &QAction::setEnabled);
+        connect(curEditor->document(), &QTextDocument::redoAvailable,
+                ui->actionRedo, &QAction::setEnabled);
+        connect(curEditor, &CodeEditor::cursorPositionChanged, this, &MainWindow::editor_cursor_position_changed);
         connect(code_checker, &CodeChecker::finished, curEditor, &CodeEditor::checkFile);
         connect(curEditor, &CodeEditor::changedDebounced, this, &MainWindow::check_code);
         setWindowModified(curEditor->document()->isModified());
@@ -2376,7 +2377,7 @@ void MainWindow::on_actionSubmit_to_MOOC_triggered()
     }
 
     moocSubmission = new MOOCSubmission(this, getProject().moocAssignment());
-    connect(moocSubmission, SIGNAL(finished(int)), this, SLOT(moocFinished(int)));
+    connect(moocSubmission, &MOOCSubmission::finished, this, &MainWindow::moocFinished);
     setEnabled(false);
     moocSubmission->show();
 }
@@ -2518,6 +2519,11 @@ void MainWindow::on_b_replaceall_clicked()
 }
 
 void MainWindow::on_closeFindWidget_clicked()
+{
+    closeFindWidget();
+}
+
+void MainWindow::closeFindWidget()
 {
     ui->findFrame->hide();
     curEditor->setFocus();

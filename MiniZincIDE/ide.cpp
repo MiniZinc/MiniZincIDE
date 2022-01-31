@@ -129,7 +129,7 @@ void IDE::checkUpdate(void) {
             // Check if an update is available
             QNetworkRequest request(QUrl("http://www.minizinc.org/version-info.php"));
             versionCheckReply = networkManager->get(request);
-            connect(versionCheckReply, SIGNAL(finished()), this, SLOT(versionCheckFinished()));
+            connect(versionCheckReply, &QNetworkReply::finished, this, &IDE::versionCheckFinished);
         }
         QTimer::singleShot(24*60*60*1000, this, SLOT(checkUpdate()));
     }
@@ -224,9 +224,9 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     connect(darkModeNotifier, &DarkModeNotifier::darkModeChanged, this, &IDE::onDarkModeChanged);
     onDarkModeChanged(darkModeNotifier->darkMode());
 
-    connect(&fsWatch, SIGNAL(fileChanged(QString)), this, SLOT(fileModified(QString)));
-    connect(this, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(handleFocusChange(QWidget*,QWidget*)));
-    connect(&modifiedTimer, SIGNAL(timeout()), this, SLOT(fileModifiedTimeout()));
+    connect(&fsWatch, &QFileSystemWatcher::fileChanged, this, &IDE::fileModified);
+    connect(this, &IDE::focusChanged, this, &IDE::handleFocusChange);
+    connect(&modifiedTimer, &QTimer::timeout, this, &IDE::fileModifiedTimeout);
 
 #ifdef Q_OS_MAC
     MainWindow* mw = new MainWindow(QString());
@@ -234,8 +234,8 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     defaultMenuBar = new QMenuBar(0);
     recentFilesMenu = new QMenu("Recent files");
     recentProjectsMenu = new QMenu("Recent projects");
-    connect(recentFilesMenu, SIGNAL(triggered(QAction*)), this, SLOT(recentFileMenuAction(QAction*)));
-    connect(recentProjectsMenu, SIGNAL(triggered(QAction*)), this, SLOT(recentProjectMenuAction(QAction*)));
+    connect(recentFilesMenu, &QMenu::triggered, this, &IDE::recentFileMenuAction);
+    connect(recentProjectsMenu, &QMenu::triggered, this, &IDE::recentProjectMenuAction);
     addRecentFile("");
     addRecentProject("");
 
@@ -256,13 +256,13 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
                             QAction* na = nm->addAction(a->text());
                             na->setShortcut(a->shortcut());
                             if (a==mw->ui->actionQuit) {
-                                connect(na,SIGNAL(triggered()),this,SLOT(quit()));
+                                connect(na, &QAction::triggered, this, &IDE::quit);
                             } else if (a==mw->ui->actionNewModel_file || a==mw->ui->actionNew_project) {
-                                connect(na,SIGNAL(triggered()),this,SLOT(newProject()));
+                                connect(na, &QAction::triggered, this, &IDE::newProject);
                             } else if (a==mw->ui->actionOpen) {
-                                connect(na,SIGNAL(triggered()),this,SLOT(openFile()));
+                                connect(na, &QAction::triggered, this, [=] () { openFile(); });
                             } else if (a==mw->ui->actionHelp) {
-                                connect(na,SIGNAL(triggered()),this,SLOT(help()));
+                                connect(na, &QAction::triggered, this, &IDE::help);
                             } else {
                                 na->setEnabled(false);
                             }

@@ -26,12 +26,12 @@ CodeEditor::initUI(QFont& font)
     debugInfo = new DebugInfo(this);
     editorHeader = new EditorHeader(this);
     debugInfo->hide();
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
-    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
-    connect(document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
-    connect(document(), SIGNAL(contentsChanged()), this, SLOT(contentsChanged()));
+    connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::setViewportWidth);
+    connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setLineNumbers);
+    connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setDebugInfoPos);
+    connect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::cursorChange);
+    connect(document(), &QTextDocument::modificationChanged, this, &CodeEditor::docChanged);
+    connect(document(), &QTextDocument::contentsChanged, this, &CodeEditor::contentsChanged);
 
     setViewportWidth(0);
     cursorChange();
@@ -66,7 +66,7 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     if (large) {
         setReadOnly(true);
         QPushButton* pb = new QPushButton("Big file. Load contents?", this);
-        connect(pb, SIGNAL(clicked()), this, SLOT(loadContents()));
+        connect(pb, &QPushButton::clicked, this, &CodeEditor::loadContents);
         loadContentsButton = pb;
     }
     completer = new QCompleter(this);
@@ -85,13 +85,14 @@ CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, 
     completer->setWrapAround(false);
     completer->setWidget(this);
     completer->setCompletionMode(QCompleter::PopupCompletion);
-    QObject::connect(completer, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
+    QObject::connect(completer, QOverload<const QString&>::of(&QCompleter::activated), this, &CodeEditor::insertCompletion);
 
     modificationTimer.setSingleShot(true);
-    QObject::connect(&modificationTimer, SIGNAL(timeout()), this, SLOT(contentsChangedWithTimeout()));
+    QObject::connect(&modificationTimer, &QTimer::timeout, this, &CodeEditor::contentsChangedWithTimeout);
 
-    if (parent) {
-        QObject::connect(this, SIGNAL(escPressed()), parent, SLOT(on_closeFindWidget_clicked()));
+    auto* mw = qobject_cast<MainWindow*>(parent);
+    if (mw != nullptr) {
+        QObject::connect(this, &CodeEditor::escPressed, mw, &MainWindow::closeFindWidget);
     }
 
     setAcceptDrops(false);
@@ -126,11 +127,11 @@ void CodeEditor::setDocument(QTextDocument *document)
         delete highlighter;
         highlighter = nullptr;
     }
-    disconnect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
-    disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
-    disconnect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
-    disconnect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
-    disconnect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    disconnect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::setViewportWidth);
+    disconnect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setLineNumbers);
+    disconnect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setDebugInfoPos);
+    disconnect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::cursorChange);
+    disconnect(this->document(), &QTextDocument::modificationChanged, this, &CodeEditor::docChanged);
     QList<QTextEdit::ExtraSelection> noSelections;
     setExtraSelections(noSelections);
     QPlainTextEdit::setDocument(document);
@@ -138,11 +139,11 @@ void CodeEditor::setDocument(QTextDocument *document)
         QFont f= font();
         highlighter = new Highlighter(f,darkMode,document);
     }
-    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(setViewportWidth(int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setLineNumbers(QRect,int)));
-    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(setDebugInfoPos(QRect,int)));
-    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(cursorChange()));
-    connect(this->document(), SIGNAL(modificationChanged(bool)), this, SLOT(docChanged(bool)));
+    connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::setViewportWidth);
+    connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setLineNumbers);
+    connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setDebugInfoPos);
+    connect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::cursorChange);
+    connect(this->document(), &QTextDocument::modificationChanged, this, &CodeEditor::docChanged);
 }
 
 void CodeEditor::setDarkMode(bool enable)
