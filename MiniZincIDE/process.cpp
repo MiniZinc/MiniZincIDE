@@ -193,7 +193,7 @@ void MznDriver::setLocation(const QString &mznDistribPath)
         throw DriverError(message);
     }
 
-    auto minVersion = QVersionNumber(2, 5, 0);
+    auto minVersion = QVersionNumber(2, 6, 0);
     if (_version < minVersion) {
         clear();
         throw DriverError("Versions of MiniZinc before " + minVersion.toString() + " are not supported.");
