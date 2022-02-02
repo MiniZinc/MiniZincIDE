@@ -77,6 +77,8 @@ private:
     bool _origDarkMode = false;
     int _origThemeIndex = 0;
 
+    QMultiMap<QString, QString> _userDefaultFlags;
+
     QByteArray allowFileRestore(const QString& path);
     void loadDriver(bool showError);
     void populateSolvers();

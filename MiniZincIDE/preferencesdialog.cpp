@@ -102,6 +102,14 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
                 }
             }
         }
+        if (obj.contains("solverDefaults")) {
+            for (auto it : obj["solverDefaults"].toArray()) {
+                auto arr = it.toArray();
+                auto solverId = arr[0].toString();
+                auto flag = arr[1].toString();
+                _userDefaultFlags.insert(solverId, flag);
+            }
+        }
     }
 
     IDEUtils::watchChildChanges(ui->solverFrame, this, [=] () {
@@ -242,6 +250,7 @@ void PreferencesDialog::loadDriver(bool showError)
     // Load user solver search paths
     ui->extraSearchPath_listWidget->clear();
     ui->configuration_groupBox->setEnabled(driver.isValid());
+    _userDefaultFlags.clear();
     auto& userConfigFile = driver.userConfigFile();
     QFile uc(userConfigFile);
     if (uc.exists() && uc.open(QFile::ReadOnly)) {
@@ -253,6 +262,14 @@ void PreferencesDialog::loadDriver(bool showError)
                 if (!path.isEmpty()) {
                     ui->extraSearchPath_listWidget->addItem(path);
                 }
+            }
+        }
+        if (obj.contains("solverDefaults")) {
+            for (auto it : obj["solverDefaults"].toArray()) {
+                auto arr = it.toArray();
+                auto solverId = arr[0].toString();
+                auto flag = arr[1].toString();
+                _userDefaultFlags.insert(solverId, flag);
             }
         }
     }
@@ -317,7 +334,7 @@ bool PreferencesDialog::updateSolver()
     auto& userSolverConfigDir = driver.userSolverConfigDir();
 
     if (!ui->requiredFlags->isHidden()) {
-        // This is an internal solver, we are only updating the required flags
+        // Update the required flags/user set flags
 
         QGridLayout* rfLayout = static_cast<QGridLayout*>(ui->requiredFlags->layout());
         QVector<QStringList> defaultFlags;
@@ -384,8 +401,9 @@ bool PreferencesDialog::updateSolver()
             return false;
         }
 
-    } else {
+    }
 
+    if (ui->solverFrame->isEnabled()) {
         if (ui->name->text().trimmed().isEmpty()) {
             showMessageBox("You need to specify a name for the solver.");
             return false;
@@ -734,12 +752,18 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->has_stdflag_v->setChecked(solvers[index].stdFlags.contains("-v"));
         ui->has_stdflag_t->setChecked(solvers[index].stdFlags.contains("-t"));
 
-        if (solvers[index].requiredFlags.size()==0) {
+        auto flags = _userDefaultFlags.values(solvers[index].id);
+        for (auto& rf : solvers[index].requiredFlags) {
+            if (!flags.contains(rf)) {
+                flags << rf;
+            }
+        }
+        if (flags.empty()) {
             ui->requiredFlags->hide();
         } else {
             ui->requiredFlags->show();
             int row = 0;
-            for (auto& rf : solvers[index].requiredFlags) {
+            for (auto& rf : flags) {
                 QString val;
                 int foundFlag = solvers[index].defaultFlags.indexOf(rf);
                 if (foundFlag != -1 && foundFlag < solvers[index].defaultFlags.size()-1) {
@@ -749,6 +773,14 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
                 rfLayout->addWidget(new QLineEdit(val), row, 1);
                 row++;
             }
+
+            IDEUtils::watchChildChanges(ui->requiredFlags, this, [=] () {
+                auto& driver = MznDriver::get();
+                auto& solvers = driver.solvers();
+                if (!solvers.isEmpty()) {
+                    _editingSolverIndex = ui->solvers_combo->currentIndex();
+                }
+            });
         }
         _editingSolverIndex = -1;
     } else {
