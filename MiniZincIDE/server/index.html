@@ -161,7 +161,7 @@
                         e.source.postMessage({
                             event: 'response',
                             id: message.id,
-                            data: solutionMessages.length
+                            payload: solutionMessages.length
                         });
                         break;
                     case 'getSolution': {
