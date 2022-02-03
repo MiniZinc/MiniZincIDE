@@ -25,6 +25,8 @@ void ElapsedTimer::start(int updateRate) {
 
 void ElapsedTimer::stop() {
     _interval.stop();
-    finalTime = _elapsed.elapsed();
-    _elapsed.invalidate();
+    if (_elapsed.isValid()) {
+        finalTime = _elapsed.elapsed();
+        _elapsed.invalidate();
+    }
 }
