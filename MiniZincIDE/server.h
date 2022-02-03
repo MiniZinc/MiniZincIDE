@@ -14,7 +14,12 @@ private:
     QString _label;
     QStringList _roots;
     QList<QWebSocket*> _clients;
-    QJsonArray _history;
+
+    QJsonArray _windows;
+    QVector<QJsonArray> _solutions;
+    QJsonValue _finalStatus;
+    qint64 _finishTime = -1;
+
     QUrl _url;
 
     friend class Server;
@@ -25,14 +30,19 @@ public:
     QUrl url() const { return _url; }
 
 signals:
-    void receiveMessage(const QJsonDocument& message);
+    void solveRequested(const QString& modelFile, const QStringList& dataFiles, const QVariantMap& options);
+
 public slots:
-    void broadcastMessage(const QJsonDocument& message);
+    void addWindow(const QString& url, const QJsonValue& userData);
+    void addSolution(const QJsonArray& items, qint64 time);
+    void setFinalStatus(const QString& status, qint64 time);
+    void setFinished(qint64 time);
 
 private slots:
     void newWebSocketClient(QWebSocket* s);
     void webSocketClientDisconnected();
     void webSocketMessageReceived(const QString& message);
+    void broadcastMessage(const QJsonDocument& message);
 };
 
 ///
@@ -48,6 +58,7 @@ public:
     quint16 port() const { return http->serverPort(); }
 
     VisConnector* addConnector(const QString& label, const QStringList& roots);
+    void clear();
 
     bool sendToLastClient(const QJsonDocument& doc);
 

@@ -26,21 +26,21 @@
                 width: 100%;
                 height: 100%;
             }
-            #message {
+            #notice {
                 width: 100vw;
                 position: absolute;
                 top: 20vw;
                 left: 0;
                 text-align: center;
             }
-            #message:empty {
+            #notice:empty {
                 display: none;
             }
         </style>
     </head>
     <body>
         <div id="windows"></div>
-        <div id="message">Connecting...</div>
+        <div id="notice">Connecting...</div>
         <script>
             const layoutGrid = (container) => {
                 const numChildren = container.children.length;
@@ -50,44 +50,63 @@
             const windows = document.getElementById('windows');
             const buffers = [];
             const ws = new WebSocket('%1/%2');
-            const message = document.getElementById('message');
+            const notice = document.getElementById('notice');
             
-            const solutionMessages = [];
-            let statusMessage = null;
-            let finishMessage = null;
-            const saveHistory = (message) => {
-                switch (message.event) {
-                    case 'window':
-                        const frame = document.createElement("iframe");
-                        const buffer = {
-                            ready: false,
-                            queue: [{event: 'init', payload: message.userData}]
-                        };
-                        frame.addEventListener('load', () => {
-                            buffer.ready = true;
-                        });
-                        frame.src = `%2/${message.url}`;
-                        windows.appendChild(frame);
-                        buffers.push(buffer);
-                        layoutGrid(windows);
-                        break;
-                    case 'solution':
-                        solutionMessages.push(message);
-                        break;
-                    case 'status':
-                        statusMessage = {
-                            status: message.status,
-                            time: message.time
-                        };
-                    case 'finish':
-                        finishMessage = {
-                            time: message.time
-                        };
-                        break;
-                }
+            const addWindow = (url, userData) => {
+                const frame = document.createElement("iframe");
+                const buffer = {
+                    ready: false,
+                    queue: [{event: 'init', payload: userData}]
+                };
+                frame.addEventListener('load', () => {
+                    buffer.ready = true;
+                });
+                frame.src = `%2/${url}`;
+                windows.appendChild(frame);
+                buffers.push(buffer);
+                layoutGrid(windows);
+            }
+
+            ws.onopen = () => {
+                notice.textContent = '';
             };
-            const handleEvent = (message) => {
+            ws.onerror = e => {
+                notice.textContent = `A WebSocket error occurred (code ${e.code}).`;
+                console.log('WebSocket error: ', e);
+            };
+            ws.onclose = () => {
+                notice.textContent = 'Disconnected. Refresh the page to try again.';
+            };
+            ws.onmessage = e => {
+                const message = JSON.parse(e.data);
                 switch (message.event) {
+                    case 'navigate':
+                        window.location = message.url;
+                        break;
+                    case 'init':
+                        for (const w of message.windows) {
+                            addWindow(w.url, w.userData);
+                        }
+                        break;
+                    case 'window':
+                        addWindow(message.url, message.userData);
+                        break;
+                    case 'response':
+                        // Pass response to child
+                        buffers[message.window].queue.push({
+                            event: 'response',
+                            id: message.id,
+                            payload: message.payload
+                        });
+                        break;
+                    case 'error':
+                        // Pass error to child
+                        buffers[message.window].queue.push({
+                            event: 'error',
+                            id: message.id,
+                            message: message.message
+                        });
+                        break;
                     case 'solution':
                         // Pass solution to children
                         for (let i = 0; i < message.items.length; i++) {
@@ -118,35 +137,6 @@
                         }
                         break;
                 }
-            }
-
-            ws.onopen = () => {
-                message.textContent = '';
-            };
-            ws.onerror = e => {
-                message.textContent = `A WebSocket error occurred (code ${e.code}).`;
-                console.log('WebSocket error: ', e);
-            };
-            ws.onclose = () => {
-                message.textContent = 'Disconnected. Refresh the page to try again.';
-            };
-            ws.onmessage = e => {
-                const message = JSON.parse(e.data);
-                switch (message.event) {
-                    case 'navigate':
-                        window.location = message.url;
-                        break;
-                    case 'init':
-                        // Save into history in case child window needs it
-                        for (const m of message.messages) {
-                            saveHistory(m);
-                        }
-                        break;
-                    default:
-                        handleEvent(message);
-                        saveHistory(message);
-                        break;
-                }
             };
             window.addEventListener('message', e => {
                 const message = e.data;
@@ -157,91 +147,27 @@
                             buffer.queue.push(message.message);
                         }
                         break;
-                    case 'getNumSolutions':
-                        e.source.postMessage({
-                            event: 'response',
-                            id: message.id,
-                            payload: solutionMessages.length
-                        });
-                        break;
-                    case 'getSolution': {
-                        let index = message.index < 0 ? message.index + solutionMessages.length : message.index;
-                        if (index < 0 || index >= solutionMessages.length) {
-                            e.source.postMessage({
-                                event: 'error',
-                                id: message.id,
-                                message: 'Index out of range'
-                            });
-                            return;
-                        }
-
-                        let windowIndex = -1;
-                        for (let i = 0; i < windows.children.length; i++) {
-                            if (windows.children[i].contentWindow === e.source) {
-                                windowIndex = i;
-                            }
-                        }
-                        if (windowIndex === -1) {
-                            e.source.postMessage({
-                                event: 'error',
-                                id: message.id,
-                                message: 'Could not determine source window'
-                            });
-                            return;
-                        }
-
-                        e.source.postMessage({
-                            event: 'response',
-                            id: message.id,
-                            payload: {
-                                time: solutionMessages[index].time,
-                                data: solutionMessages[index].items[windowIndex]
-                            }
-                        });
-                        break;
-                    }
-                    case 'getAllSolutions': {
-                        let windowIndex = -1;
-                        for (let i = 0; i < windows.children.length; i++) {
-                            if (windows.children[i].contentWindow === e.source) {
-                                windowIndex = i;
-                            }
-                        }
-                        if (windowIndex === -1) {
-                            e.source.postMessage({
-                                event: 'error',
-                                id: message.id,
-                                message: 'Could not determine source window'
-                            });
-                            return;
-                        }
-                        e.source.postMessage({
-                            event: 'response',
-                            id: message.id,
-                            payload: solutionMessages.map(message => ({
-                                time: message.time,
-                                data: message.items[windowIndex]
-                            }))
-                        });
-                        break;
-                    }
-                    case 'getStatus':
-                        e.source.postMessage({
-                            event: 'response',
-                            id: message.id,
-                            payload: statusMessage
-                        });
-                        break;
-                    case 'getFinish':
-                        e.source.postMessage({
-                            event: 'response',
-                            id: message.id,
-                            payload: finishMessage
-                        });
-                        break;
                     default:
                         // Pass on to IDE
-                        ws.send(JSON.stringify(message));
+                        let windowIndex = -1;
+                        for (let i = 0; i < windows.children.length; i++) {
+                            if (windows.children[i].contentWindow === e.source) {
+                                windowIndex = i;
+                            }
+                        }
+                        if (windowIndex === -1) {
+                            console.error('Could not determine source window for message');
+                            e.source.postMessage({
+                                event: 'error',
+                                id: message.id,
+                                message: 'Could not determine source window'
+                            });
+                            return;
+                        }
+                        ws.send(JSON.stringify({
+                            ...message,
+                            window: windowIndex
+                        }));
                         break;
                 }
             });

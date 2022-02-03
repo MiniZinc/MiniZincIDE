@@ -290,7 +290,7 @@ void MznProcess::start(const QStringList& args, const QString& cwd)
         timer.start(200);
         emit started();
     });
-    connect(&p, QOverload<int, QProcess::ExitStatus>::of(&Process::finished), [=](int code, QProcess::ExitStatus e) {
+    connect(&p, QOverload<int, QProcess::ExitStatus>::of(&Process::finished), this, [=](int code, QProcess::ExitStatus e) {
         flushOutput();
         timer.stop();
         if (code == 0 || cancelled) {
@@ -301,7 +301,7 @@ void MznProcess::start(const QStringList& args, const QString& cwd)
         p.disconnect();
         emit(finished(elapsedTime()));
     });
-    connect(&p, &QProcess::errorOccurred, [=](QProcess::ProcessError e) {
+    connect(&p, &QProcess::errorOccurred, this, [=](QProcess::ProcessError e) {
         timer.stop();
         if (!cancelled) {
             flushOutput();
@@ -364,7 +364,7 @@ void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, c
     if (sc.timeLimit != 0) {
         auto* hardTimer = new QTimer(this);
         hardTimer->setSingleShot(true);
-        connect(hardTimer, &QTimer::timeout, hardTimer, [=] () {
+        connect(hardTimer, &QTimer::timeout, this, [=] () {
             stop();
         });
         connect(this, &MznProcess::started, hardTimer, [=] () {
@@ -422,12 +422,12 @@ void MznProcess::stop()
     p.sendInterrupt();
     auto* killTimer = new QTimer(this);
     killTimer->setSingleShot(true);
-    connect(killTimer, &QTimer::timeout, killTimer, [=] () {
+    connect(killTimer, &QTimer::timeout, this, [=] () {
         if (p.state() == QProcess::Running) {
             terminate();
         }
     });
-    connect(this, &MznProcess::finished, [=] () {
+    connect(this, &MznProcess::finished, killTimer, [=] () {
         killTimer->stop();
         delete killTimer;
     });

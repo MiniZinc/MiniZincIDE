@@ -15,9 +15,11 @@ const MiniZincIDE = (() => {
                 break;
             }
             default:
-                callbacks[e.data.event].forEach(callback => {
-                    callback(e.data.payload);
-                });
+                if (e.data.event in callbacks) {
+                    callbacks[e.data.event].forEach(callback => {
+                        callback(e.data.payload);
+                    });
+                }
                 break;
         }
     });
@@ -72,7 +74,7 @@ const MiniZincIDE = (() => {
             event: 'rebroadcast',
             message: {
                 event: 'goToSolution',
-                index: idx
+                payload: idx
             }
         }, '*');
     }
@@ -100,6 +102,16 @@ const MiniZincIDE = (() => {
             event: 'getAllSolutions'
         });
     }
+    function getStatus() {
+        return createPromise({
+            event: 'getStatus'
+        });
+    }
+    function getFinishTime() {
+        return createPromise({
+            event: 'getFinishTime'
+        });
+    }
 
     return {
         getUserData,
@@ -109,6 +121,8 @@ const MiniZincIDE = (() => {
         solve,
         getNumSolutions,
         getSolution,
-        getAllSolutions
+        getAllSolutions,
+        getStatus,
+        getFinishTime
     };
 })();

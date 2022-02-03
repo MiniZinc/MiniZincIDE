@@ -1574,6 +1574,9 @@ void MainWindow::on_actionClear_output_triggered()
 {
     progressBar->setHidden(true);
     ui->outputWidget->clear();
+    if (server != nullptr) {
+        server->clear();
+    }
 }
 
 void MainWindow::setEditorFont(QFont font)
@@ -3037,73 +3040,59 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
     auto label = files.join(", ");
     QStringList roots({workingDir, MznDriver::get().mznStdlibDir()});
     vis_connector = server->addConnector(label, roots);
-    connect(vis_connector, &VisConnector::receiveMessage, [=] (const QJsonDocument& message) {
-        auto msg = message.object();
-        auto event = msg["event"].toString();
-        if (event == "solve") {
-            auto* origSc = getCurrentSolverConfig();
-            if (origSc == nullptr) {
-                return;
-            }
-            QStringList df;
-            bool modelFileGiven = msg["modelFile"].isString();
-            auto m = modelFileGiven ? workingDir + "/" + msg["modelFile"].toString() : model;
-            if (!IDEUtils::isChildPath(workingDir, m)) {
-                return;
-            }
-            if (msg["dataFiles"].isArray()) {
-                for (auto it : msg["dataFiles"].toArray()) {
-                    auto d = workingDir + "/" + it.toString();
-                    if (!IDEUtils::isChildPath(workingDir, d)) {
-                        return;
-                    }
-                    df << d;
-                }
-            } else if (!modelFileGiven) {
-                // No model, no data, so use previous
-                df = data;
-            }
-            auto options = msg["options"].toObject().toVariantMap();
-            SolverConfiguration rsc(*origSc);
-            QMapIterator<QString, QVariant> i(options);
-            while (i.hasNext()) {
-                i.next();
-                rsc.extraOptions[i.key()] = i.value();
-            }
-
-            if (processRunning) {
-                proc->terminate();
-            }
-            run(rsc, m, df);
+    connect(vis_connector, &VisConnector::solveRequested, [=] (const QString& modelFile, const QStringList& dataFiles, const QVariantMap& options) {
+        auto* origSc = getCurrentSolverConfig();
+        if (origSc == nullptr) {
+            return;
         }
+        QStringList df;
+        bool modelFileGiven = !modelFile.isEmpty();
+        auto m = modelFileGiven ? workingDir + "/" + modelFile : model;
+        if (!IDEUtils::isChildPath(workingDir, m)) {
+            return;
+        }
+        if (!dataFiles.isEmpty()) {
+            for (const auto& it : dataFiles) {
+                auto d = workingDir + "/" + it;
+                if (!IDEUtils::isChildPath(workingDir, d)) {
+                    return;
+                }
+                df << d;
+            }
+        } else if (!modelFileGiven) {
+            // No model, no data, so use previous
+            df = data;
+        }
+        SolverConfiguration rsc(*origSc);
+        QMapIterator<QString, QVariant> i(options);
+        while (i.hasNext()) {
+            i.next();
+            rsc.extraOptions[i.key()] = i.value();
+        }
+
+        if (processRunning) {
+            proc->terminate();
+        }
+        run(rsc, m, df);
     });
     connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
         if (section == "vis_json") {
             auto obj = message.toJsonObject();
-            obj["event"] = "window";
-            vis_connector->broadcastMessage(QJsonDocument(obj));
+            vis_connector->addWindow(obj["url"].toString(), obj["userData"]);
         }
     });
     connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, const QStringList& sections, qint64 time) {
         if (output.contains("vis_json")) {
-            auto items = output["vis_json"].toJsonValue();
-            QJsonObject obj({{"event", "solution"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"items", items}});
-            QJsonDocument doc(obj);
-            vis_connector->broadcastMessage(doc);
+            auto items = output["vis_json"].toJsonArray();
+            vis_connector->addSolution(items, time == -1 ? proc->elapsedTime() : time);
         }
     });
     connect(proc, &MznProcess::finalStatus, [=](const QString& status, qint64 time) {
-        QJsonObject obj({{"event", "status"}, {"time", time == -1 ? proc->elapsedTime() : time}, {"status", status}});
-        QJsonDocument doc(obj);
-        vis_connector->broadcastMessage(doc);
+        vis_connector->setFinalStatus(status, time == -1 ? proc->elapsedTime() : time);
     });
-    connect(proc, &MznProcess::finished, [=](qint64 time) {
-        QJsonObject obj({{"event", "finish"}, {"time", time}});
-        QJsonDocument doc(obj);
-        vis_connector->broadcastMessage(doc);
-    });
-    QJsonObject obj({{"event", "window"}, {"url", url}, {"userData", userData}});
-    vis_connector->broadcastMessage(QJsonDocument(obj));
+    connect(proc, &MznProcess::finished, vis_connector, &VisConnector::setFinished);
+    vis_connector->addWindow(url, userData);
+
     ui->outputWidget->associateServerUrl(vis_connector->url().toString());
 
     QSettings settings;
