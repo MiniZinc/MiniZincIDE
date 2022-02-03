@@ -1010,8 +1010,7 @@ void MainWindow::compileSolutionChecker(const QString& checker)
     args << "--compile-solution-checker"
          << checker;
     connect(this, &MainWindow::terminating, proc, [=] () {
-        proc->disconnect();
-        proc->stop();
+        proc->terminate();
         proc->deleteLater();
     });
     connect(ui->actionStop, &QAction::triggered, proc, [=] () {
@@ -1091,8 +1090,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
              << "--output-detailed-timing";
     }
     connect(this, &MainWindow::terminating, proc, [=] () {
-        proc->disconnect();
-        proc->stop();
+        proc->terminate();
         proc->deleteLater();
     });
     connect(ui->actionStop, &QAction::triggered, proc, [=] () {
@@ -1189,8 +1187,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     auto* proc = new MznProcess(this);
 
     connect(this, &MainWindow::terminating, proc, [=] () {
-        proc->disconnect();
-        proc->stop();
+        proc->terminate();
         proc->deleteLater();
     });
 
