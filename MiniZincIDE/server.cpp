@@ -19,7 +19,9 @@ void VisConnector::newWebSocketClient(QWebSocket* socket)
     _clients << socket;
     connect(socket, &QWebSocket::disconnected, this, &VisConnector::webSocketClientDisconnected);
     connect(socket, &QWebSocket::textMessageReceived, this, &VisConnector::webSocketMessageReceived);
-    QJsonObject obj({{"event", "init"}, {"windows", _windows}});
+    QJsonObject obj({{"event", "init"},
+                     {"windows", _windows},
+                     {"numSolutions", _solutions.isEmpty() ? 0 : _solutions.first().size()}});
     auto json = QString::fromUtf8(QJsonDocument(obj).toJson());
     socket->sendTextMessage(json);
 }
@@ -105,7 +107,6 @@ void VisConnector::webSocketMessageReceived(const QString& message)
         auto opts = msg["options"].toObject().toVariantMap();
         emit solveRequested(mf, dfs, opts);
     } else if (event == "getNumSolutions") {
-        assert(!_solutions.isEmpty());
         QJsonObject obj({{"event", "response"},
                          {"id", msg["id"]},
                          {"window", msg["window"]},
@@ -232,10 +233,24 @@ bool Server::sendToLastClient(const QJsonDocument& message)
 
 void Server::newHttpClient()
 {
-    auto socket = http->nextPendingConnection();
+    auto* socket = http->nextPendingConnection();
+    connect(socket, &QTcpSocket::readyRead, this, &Server::handleHttpRequest);
+    connect(socket, &QTcpSocket::stateChanged, this, [=] (QAbstractSocket::SocketState s) {
+        if (s == QAbstractSocket::UnconnectedState) {
+            socket->deleteLater();
+        }
+    });
+}
+
+void Server::handleHttpRequest()
+{
+    auto* socket = qobject_cast<QTcpSocket*>(sender());
+    if (!socket->canReadLine()) {
+        return;
+    }
+
     QTextStream ts(socket);
-    socket->waitForReadyRead();
-    auto parts = ts.readAll().split(QRegularExpression("\\s+"));
+    auto parts = ts.readLine().split(QRegularExpression("\\s+"));
     if (parts.length() < 3 || parts[0] != "GET") {
         return;
     }

@@ -69,6 +69,7 @@ private slots:
     void newHttpClient();
     void newWebSocketClient();
     void webSocketClientDisconnected();
+    void handleHttpRequest();
 
 private:
     QTcpServer* http;
