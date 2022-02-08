@@ -444,9 +444,9 @@ void OutputWidget::endExecution(int exitCode, qint64 time)
             toggleFrameVisibility(f);
         }
 
-        // Print last solution
+        // Print last solution and final status/stats
         cursor.setPosition(_lastSolutions[0].position());
-        cursor.setPosition(_lastSolutions[1].position(), QTextCursor::KeepAnchor);
+        cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         nextInsertAt().insertFragment(QTextDocumentFragment(cursor));
 
         delete doc;

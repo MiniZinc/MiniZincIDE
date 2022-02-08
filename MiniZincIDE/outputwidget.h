@@ -34,6 +34,7 @@ public:
     bool isSectionVisible(const QString& section) { return _sections.value(section, false); }
     bool isMessageTypeVisible(const QString& messageType) { return _messageTypeVisible.value(messageType, false); }
 
+    const QTextCharFormat& defaultCharFormat() const { return _defaultCharFormat; }
     const QTextCharFormat& noticeCharFormat() const { return _noticeCharFormat; }
     const QTextCharFormat& errorCharFormat() const { return _errorCharFormat; }
     const QTextCharFormat& infoCharFormat() const { return _infoCharFormat; }
