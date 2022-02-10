@@ -78,11 +78,11 @@ const MiniZincIDE = (() => {
             }
         }, '*');
     }
-    function solve(model, data, options) {
+    function solve(modelFile, dataFiles, options) {
         window.parent.postMessage({
             event: 'solve',
-            model,
-            data,
+            modelFile,
+            dataFiles,
             options
         }, '*');
     }

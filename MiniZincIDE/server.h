@@ -30,7 +30,7 @@ public:
     QUrl url() const { return _url; }
 
 signals:
-    void solveRequested(const QString& modelFile, const QStringList& dataFiles, const QVariantMap& options);
+    void solveRequested(const QString& modelFile, bool dataFilesGiven, const QStringList& dataFiles, const QVariantMap& options);
 
 public slots:
     void addWindow(const QString& url, const QJsonValue& userData);

@@ -230,20 +230,10 @@
                         updateControls();
                         break;
                     case 'status':
-                        // Pass on to all children
-                        for (const buffer of buffers) {
-                            buffer.queue.push({
-                                status: message.status,
-                                time: message.time
-                            });
-                        }
-                        break;
                     case 'finish':
                         // Pass on to all children
                         for (const buffer of buffers) {
-                            buffer.queue.push({
-                                time: message.time
-                            });
+                            buffer.queue.push(message);
                         }
                         break;
                 }

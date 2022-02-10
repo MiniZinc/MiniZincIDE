@@ -69,8 +69,10 @@ void VisConnector::setFinalStatus(const QString& status, qint64 time)
 {
     _finalStatus = QJsonObject({{"time", time}, {"status", status}});
     QJsonObject obj({{"event", "status"},
-                     {"time", time},
-                     {"status", status}});
+                     {"payload", QJsonObject({
+                        {"time", time},
+                        {"status", status}
+                     })}});
     broadcastMessage(QJsonDocument(obj));
 }
 
@@ -78,7 +80,7 @@ void VisConnector::setFinished(qint64 time)
 {
     _finishTime = time;
     QJsonObject obj({{"event", "finish"},
-                     {"time", time}});
+                     {"payload", time}});
     broadcastMessage(QJsonDocument(obj));
 }
 
@@ -101,11 +103,13 @@ void VisConnector::webSocketMessageReceived(const QString& message)
     if (event == "solve") {
         auto mf = msg["modelFile"].toString();
         QStringList dfs;
-        for (auto v : msg["dataFiles"].toArray()) {
+        auto dataFiles = msg["dataFiles"];
+        bool dataFilesGiven = dataFiles.isArray();
+        for (auto v : dataFiles.toArray()) {
             dfs << v.toString();
         }
         auto opts = msg["options"].toObject().toVariantMap();
-        emit solveRequested(mf, dfs, opts);
+        emit solveRequested(mf, dataFilesGiven, dfs, opts);
     } else if (event == "getNumSolutions") {
         QJsonObject obj({{"event", "response"},
                          {"id", msg["id"]},
@@ -154,7 +158,7 @@ void VisConnector::webSocketMessageReceived(const QString& message)
                          {"window", windowIndex},
                          {"payload", _solutions[windowIndex]}});
         socket->sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson()));
-    } else if (event == "getFinalStatus") {
+    } else if (event == "getStatus") {
         QJsonObject obj({{"event", "response"},
                          {"id", msg["id"]},
                          {"window", msg["window"]},

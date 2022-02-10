@@ -3037,7 +3037,7 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
     auto label = files.join(", ");
     QStringList roots({workingDir, MznDriver::get().mznStdlibDir()});
     vis_connector = server->addConnector(label, roots);
-    connect(vis_connector, &VisConnector::solveRequested, [=] (const QString& modelFile, const QStringList& dataFiles, const QVariantMap& options) {
+    connect(vis_connector, &VisConnector::solveRequested, [=] (const QString& modelFile, bool dataFilesGiven, const QStringList& dataFiles, const QVariantMap& options) {
         auto* origSc = getCurrentSolverConfig();
         if (origSc == nullptr) {
             return;
@@ -3048,7 +3048,7 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
         if (!IDEUtils::isChildPath(workingDir, m)) {
             return;
         }
-        if (!dataFiles.isEmpty()) {
+        if (dataFilesGiven) {
             for (const auto& it : dataFiles) {
                 auto d = workingDir + "/" + it;
                 if (!IDEUtils::isChildPath(workingDir, d)) {
