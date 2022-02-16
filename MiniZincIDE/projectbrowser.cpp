@@ -39,15 +39,6 @@ void ProjectBrowser::setupContextMenu()
         emit openRequested(proj->getFileNames(selected));
     });
 
-    contextMenu->addAction("Remove from project", [=] () {
-        auto selected = ui->treeView->selectionModel()->selectedIndexes();
-        emit removeRequested(proj->getFileNames(selected));
-    });
-
-    auto rename = contextMenu->addAction("Rename file", [=] () {
-        ui->treeView->edit(ui->treeView->currentIndex());
-    });
-
     auto runWith = contextMenu->addAction("Run model with this data", [=] () {
         auto selected = ui->treeView->selectionModel()->selectedIndexes();
         emit runRequested(proj->getFileNames(selected));
@@ -59,6 +50,15 @@ void ProjectBrowser::setupContextMenu()
         if (fileNames.count()) {
             IDE::instance()->setLastPath(QFileInfo(fileNames.last()).absolutePath() + "/");
         }
+    });
+
+    auto rename = contextMenu->addAction("Rename file", [=] () {
+        ui->treeView->edit(ui->treeView->currentIndex());
+    });
+
+    contextMenu->addAction("Remove from project", [=] () {
+        auto selected = ui->treeView->selectionModel()->selectedIndexes();
+        emit removeRequested(proj->getFileNames(selected));
     });
 
     connect(ui->treeView, &QWidget::customContextMenuRequested, [=] (const QPoint& pos) {

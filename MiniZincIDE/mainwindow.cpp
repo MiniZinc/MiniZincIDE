@@ -2785,6 +2785,13 @@ void MainWindow::on_projectBrowser_removeRequested(const QStringList& files)
         if (ret == QMessageBox::Cancel) {
             return;
         }
+    } else {
+        int ret = QMessageBox::warning(this, "MiniZinc IDE",
+                                       "Are you sure you wish to remove the selected file(s) from the project?",
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        if (ret == QMessageBox::Cancel) {
+            return;
+        }
     }
 
     for (auto ce : editors) {
