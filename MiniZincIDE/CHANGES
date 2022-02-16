@@ -1,3 +1,26 @@
+2021-02-18
+  v2.6.0
+-  Add support for specifying submission terms for MOOC.
+-  Ensure newly loaded configs override synced options (#144).
+-  Fix check for empty project to avoid incorrect warnings when closing.
+-  Maintain modified solver configurations when using preferences dialog.
+-  Support using arm64 version of MiniZinc with x86_64 IDE build on macOS.
+-  Fix crash when no solver configurations are available.
+-  Remove WebEngine-based visualisation feature and implement HTTP/WebSocket
+   server based visualisations.
+-  Add support for dark mode detection on Windows.
+-  Implement foldable output widget supporting output sections.
+-  Support both Qt 5 and Qt 6.
+-  Allow tab to shift multiple lines right.
+-  Re-implement support for detached solver processes.
+-  Allow the project/solver configuration panes to take the full height of the
+   main window.
+-  Implement new multi-tabbed preferences dialog.
+-  Ignore errors in non-current files during background code checking.
+-  Fix undefined behaviour in main window event filter (#154).
+-  Fix crash when terminating solvers due to closing the main window.
+-  Confirm before removing files from project (#149).
+
 2021-03-19
   v2.5.5
 -  Fix editing of custom string parameters so they don't get converted to
