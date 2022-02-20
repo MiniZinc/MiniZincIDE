@@ -686,25 +686,3 @@ void IDE::onDarkModeChanged(bool darkMode)
         mw->setDarkMode(darkMode);
     }
 }
-
-void IDE::loadFont()
-{
-//    QSettings settings;
-//    settings.beginGroup("ide");
-
-//    QFont defaultFont;
-//    defaultFont.setFamily("Menlo");
-//    if (!defaultFont.exactMatch()) {
-//        defaultFont.setFamily("Consolas");
-//    }
-//    if (!defaultFont.exactMatch()) {
-//        defaultFont.setFamily("Courier New");
-//    }
-//    defaultFont.setStyleHint(QFont::TypeWriter);
-//    defaultFont.setPointSize(13);
-
-
-//    editorFont.fromString(settings.value("editorFont", defaultFont.toString()).value<QString>());
-
-
-}

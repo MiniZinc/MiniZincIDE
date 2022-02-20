@@ -96,7 +96,6 @@ public:
     void setEditorWordWrap(QTextOption::WrapMode mode);
     void addRecentFile(const QString& file);
     void addRecentProject(const QString& file);
-    void loadFont();
 protected:
     bool event(QEvent *);
 protected slots:
