@@ -78,9 +78,13 @@ void watchChildChanges(QWidget* target, QObject* receiver, std::function<void()>
 
 QFont fontFromString(const QString& s)
 {
+    QFont font;
+    if (font.fromString(s)) {
+        return font;
+    }
+
     QStringList families({"Menlo", "Consolas", "Courier New"});
 
-    QFont font;
     font.setPointSize(13);
     font.setStyleHint(QFont::TypeWriter);
     for (auto& family : families) {
@@ -89,7 +93,6 @@ QFont fontFromString(const QString& s)
             break;
         }
     }
-    font.fromString(s);
     return font;
 }
 
