@@ -568,7 +568,6 @@ void MainWindow::closeEvent(QCloseEvent* e) {
 
     QSettings settings;
     settings.beginGroup("MainWindow");
-    settings.setValue("editorFont", editorFont.toString());
     settings.setValue("darkMode", darkMode);
     settings.setValue("size", size());
     settings.setValue("pos", pos());
