@@ -8,7 +8,7 @@ QT       += core gui widgets websockets
 TARGET = MiniZincIDE
 TEMPLATE = app
 
-VERSION = 2.5.6
+VERSION = 2.6.0
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
