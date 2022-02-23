@@ -15,6 +15,10 @@ bundled {
     DEFINES += MINIZINC_IDE_BUNDLED
 }
 
+output_version {
+    write_file($$OUT_PWD/version, VERSION)
+}
+
 CONFIG += c++11
 
 macx {

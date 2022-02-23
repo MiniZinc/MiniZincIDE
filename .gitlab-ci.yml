@@ -84,6 +84,25 @@ build:win64:
     - '[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH" && unzip -q globalizer.zip'
     - '[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/$FINDMUSREF/download?job=build:$MZNARCH" && unzip -q findmus.zip'
 
+package:check_version:
+  stage: package
+  image: ghcr.io/minizinc/docker-build-environment:qt
+  variables:
+    MZNARCH: "linux"
+    DOWNLOAD_SOLVERS: 0
+  <<: *packaging_setup
+  script:
+    - mkdir -p build; cd build
+    - qmake -makefile "CONFIG+=output_version" ../MiniZincIDE/MiniZincIDE.pro
+    - IDE_VERSION=$(tr -s ' ' < version)
+    - MZN_VERSION=$(../minizinc/bin/minizinc --version | grep -Po '(?<=version )[^,]+')
+    - echo IDE is version ${IDE_VERSION}
+    - echo MiniZinc is version ${MZN_VERSION}
+    - if [ "$IDE_VERSION" != "$MZN_VERSION" ]; then echo 'Version mismatch!'; exit 1; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then echo Tag is "$CI_COMMIT_TAG"; if [ "$CI_COMMIT_TAG" != "$MZN_VERSION" ]; then echo 'Version mismatch!'; exit 1; fi; fi
+  needs: []
+  tags: [linux, docker]
+
 package:linux:
   stage: package
   image: ghcr.io/minizinc/docker-build-environment:package
