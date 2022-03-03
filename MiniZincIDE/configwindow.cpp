@@ -227,12 +227,17 @@ void ConfigWindow::unstashModifiedConfigs()
 
     QList<SolverConfiguration*> merge;
     for (auto& item : stash) {
-        merge.append(item.consume());
+        try {
+            merge.append(item.consume());
+        }
+        catch (...) {
+            // Ignore
+        }
     }
     mergeConfigs(merge);
 
     int i = -1;
-    if (stashSelectedModifiedConfig != -1) {
+    if (stashSelectedModifiedConfig >= 0 && stashSelectedModifiedConfig < merge.size()) {
         i = configs.indexOf(merge[stashSelectedModifiedConfig]);
     } else if (!stashSelectedParamFile.isEmpty()) {
         i = findConfigFile(stashSelectedParamFile);
