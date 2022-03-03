@@ -702,7 +702,7 @@ void ConfigWindow::populateComboBox()
     initialized = false;
     ui->config_comboBox->clear();
     ui->config_comboBox->addItems(items);
-    if (oldIndex > 0 && oldIndex < configs.length()) {
+    if (oldIndex >= 0 && oldIndex < configs.length()) {
         setCurrentIndex(oldIndex);
     } else {
         // Index no longer valid, just go back to default solver
