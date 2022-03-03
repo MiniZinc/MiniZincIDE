@@ -53,9 +53,10 @@ Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\b
 Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
-Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\globalizer"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\findMUS\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
