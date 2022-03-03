@@ -1,4 +1,8 @@
-2021-02-18
+2022-03-03
+  v2.6.1
+  - Update to MiniZinc 2.6.1.
+
+2022-02-18
   v2.6.0
 -  Add support for specifying submission terms for MOOC.
 -  Ensure newly loaded configs override synced options (#144).
