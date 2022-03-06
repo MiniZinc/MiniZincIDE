@@ -453,10 +453,20 @@ void MOOCSubmission::rcvLoginCheckResponse()
     }
 }
 
-void MOOCSubmission::rcvErrorResponse(QNetworkReply::NetworkError)
+void MOOCSubmission::rcvErrorResponse(QNetworkReply::NetworkError e)
 {
-    if (!reply->errorString().endsWith("Bad Request")) {
-        ui->textBrowser->insertPlainText("Error:\n"+reply->errorString()+"\n\n");
+    switch (e) {
+    case QNetworkReply::ProtocolInvalidOperationError:
+    case QNetworkReply::AuthenticationRequiredError:
+        // ProtocolInvalidOperationError expected when checking auth succeeds
+        // AuthenticationRequiredError expected when checking auth fails
+        break;
+    default:
+        // Unknown networking error
+        // TODO: can probably remove this check since it should be covered by the ProtocolInvalidOperationError
+        if (!reply->errorString().endsWith("Bad Request")) {
+            ui->textBrowser->insertPlainText("Error:\n" + reply->errorString() + "\n\n");
+        }
     }
 }
 
