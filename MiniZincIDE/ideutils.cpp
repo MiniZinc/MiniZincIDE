@@ -79,7 +79,7 @@ void watchChildChanges(QWidget* target, QObject* receiver, std::function<void()>
 QFont fontFromString(const QString& s)
 {
     QFont font;
-    if (font.fromString(s)) {
+    if (!s.isEmpty() && font.fromString(s)) {
         return font;
     }
 
