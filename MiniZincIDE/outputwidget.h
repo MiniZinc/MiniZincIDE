@@ -15,6 +15,7 @@ class OutputWidget;
 class OutputWidget : public QWidget
 {
     Q_OBJECT
+    friend class TestIDE;
 
 public:
     explicit OutputWidget(QWidget *parent = nullptr);

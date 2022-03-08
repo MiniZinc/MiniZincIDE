@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - package
   - publish
 
@@ -56,7 +57,7 @@ build:win64:
     - if not exist "ide" mkdir ide
     - cd build
     - qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"%CI_PIPELINE_ID%\\\\\\\"\"" ../MiniZincIDE/MiniZincIDE.pro
-    - nmake
+    - jom -j4
     - cp release/MiniZincIDE.exe ../ide
     - cd ../
     # Download Gecode Gist so windeployqt can include its dependencies
@@ -67,6 +68,73 @@ build:win64:
   tags: [win64, cpp, qt]
   artifacts:
     paths: [ide/]
+
+# ----------- Test MiniZincIDE -----------
+
+.tests_template: &tests_template
+  image: ghcr.io/minizinc/docker-build-environment:qt
+  before_script:
+    - 'if [ -n "$CI_COMMIT_TAG" ]; then MZNREF="$CI_COMMIT_TAG"; elif [ "$CI_COMMIT_REF_NAME" = "master" ]; then MZNREF="master"; else MZNREF="develop"; fi'
+    ### Download Dependencies
+    - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
+    - unzip -q minizinc.zip
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:$MZNARCH"
+    - unzip -q vendor.zip
+    ### Add MiniZinc to path
+    - export PATH=$CI_PROJECT_DIR/minizinc/bin:$PATH
+  script:
+    ### Build tests
+    - mkdir -p test; cd test
+    - qmake -makefile ../tests/tests.pro
+    - make -j4
+    ### Run tests
+    - make check
+  needs: []
+
+.tests_vars: &tests_vars
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_STRATEGY: clone
+  QT_QPA_PLATFORM: offscreen
+  MZN_SOLVER_PATH: ${CI_PROJECT_DIR}/vendor/gecode/share/minizinc/solvers/
+
+test:linux:
+  <<: *tests_template
+  variables:
+    <<: *tests_vars
+    MZNARCH: linux
+  tags: [linux, docker]
+
+test:osx:
+  <<: *tests_template
+  variables:
+    <<: *tests_vars
+    MZNARCH: osx
+  tags: [osx, cpp, qt]
+
+test:win64:
+  <<: *tests_template
+  variables:
+    <<: *tests_vars
+    MZNARCH: win64
+  before_script:
+    ### Choose the MiniZinc compiler branch
+    - if defined CI_COMMIT_TAG (set MZNREF=%CI_COMMIT_TAG%) else if %CI_COMMIT_REF_NAME%==master (set MZNREF=master) else (set MZNREF=develop)
+    ### Download Dependencies
+    - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
+    - unzip -q minizinc.zip
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:%MZNARCH%"
+    - unzip -q vendor.zip
+    ### Add MiniZinc to path
+    - set PATH=%CI_PROJECT_DIR%/minizinc/bin;%PATH%
+  script:
+    ### Build tests
+    - if not exist "test" mkdir test
+    - cd test
+    - qmake ../tests/tests.pro
+    - jom -j4
+    ### Run tests
+    - jom check
+  tags: [win64, cpp, qt]
 
 # ----------- MiniZinc Packaging -----------
 .packaging_setup: &packaging_setup

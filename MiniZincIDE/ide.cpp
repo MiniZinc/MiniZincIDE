@@ -17,6 +17,10 @@
 #include "ui_mainwindow.h"
 #include "checkupdatedialog.h"
 
+#ifdef MINIZINC_IDE_TESTING
+#include "tests/testide.h"
+#endif
+
 IDEStatistics::IDEStatistics(void)
     : errorsShown(0), errorsClicked(0), modelsRun(0) {}
 
@@ -141,10 +145,13 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     setApplicationVersion(MINIZINC_IDE_VERSION);
     setOrganizationName("MiniZinc");
     setOrganizationDomain("minizinc.org");
-#ifndef MINIZINC_IDE_BUNDLED
-    setApplicationName("MiniZinc IDE");
-#else
+#ifdef MINIZINC_IDE_TESTING
+    setApplicationName("MiniZinc IDE Test Suite");
+    TestMocker::resetSettings();
+#elif MINIZINC_IDE_BUNDLED
     setApplicationName("MiniZinc IDE (bundled)");
+#else
+    setApplicationName("MiniZinc IDE");
 #endif
 
     networkManager = new QNetworkAccessManager(this);

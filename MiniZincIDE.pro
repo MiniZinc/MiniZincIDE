@@ -1,6 +1,8 @@
 TEMPLATE = subdirs
 
-SUBDIRS = MiniZincIDE
+SUBDIRS = \
+    MiniZincIDE \
+    tests
 
 libminizinc {
   SUBDIRS += libminizinc

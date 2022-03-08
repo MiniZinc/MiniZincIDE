@@ -57,6 +57,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
     friend class IDE;
+    friend class TestIDE;
+
 public:
     explicit MainWindow(const QString& project = QString());
     explicit MainWindow(const QStringList& files);

@@ -29,6 +29,7 @@ class ConfigWindow;
 class ConfigWindow : public QWidget
 {
     Q_OBJECT
+    friend class TestIDE;
 
 public:
     explicit ConfigWindow(QWidget *parent = nullptr);

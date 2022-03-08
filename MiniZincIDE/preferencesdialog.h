@@ -13,6 +13,7 @@ class PreferencesDialog;
 class PreferencesDialog : public QDialog
 {
     Q_OBJECT
+    friend class TestIDE;
 
 public:
     explicit PreferencesDialog(bool addNewSolver, QWidget *parent = nullptr);

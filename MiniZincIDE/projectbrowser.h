@@ -17,6 +17,7 @@ class ProjectBrowser;
 class ProjectBrowser : public QWidget
 {
     Q_OBJECT
+    friend class TestIDE;
 
 public:
     explicit ProjectBrowser(QWidget *parent = nullptr);

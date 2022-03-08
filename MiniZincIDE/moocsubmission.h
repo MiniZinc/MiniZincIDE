@@ -50,6 +50,7 @@ private:
 class MOOCSubmission : public QDialog
 {
     Q_OBJECT
+    friend class TestIDE;
 
 public:
     explicit MOOCSubmission(MainWindow* mw, MOOCAssignment& cp);

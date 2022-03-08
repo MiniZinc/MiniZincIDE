@@ -32,8 +32,8 @@
 #include "ideutils.h"
 #include "preferencesdialog.h"
 
-#include "../cp-profiler/src/cpprofiler/execution.hh"
-#include "../cp-profiler/src/cpprofiler/options.hh"
+#include "cp-profiler/src/cpprofiler/execution.hh"
+#include "cp-profiler/src/cpprofiler/options.hh"
 
 #include <QtGlobal>
 
