@@ -1,4 +1,5 @@
-* {
+*,
+QTableView::item {
     border-color: #444444;
     color: #FFFFFF;
 }
@@ -14,8 +15,8 @@ QMainWindow, QDialog, QToolBar, QAbstractScrollArea, QAction, QDockWidget {
     border-color: #666666;
 }
 
-QMenuBar, QPushButton,
-QTabWidget::pane QMenuBar, QTabWidget::pane QPushButton {
+QMenuBar, QPushButton, QToolButton,
+QTabWidget::pane QMenuBar, QTabWidget::pane QPushButton, QTabWidget::pane QToolButton {
     background-color: #444444;
 }
 
@@ -70,7 +71,8 @@ QAbstractSlider,
 QAbstractSpinBox,
 QListView,
 QTreeView,
-QTableView
+QTableView,
+QTableView::item
 {
     background-color: #222222;
     padding: 3px;
@@ -86,7 +88,8 @@ QTabWidget::pane QAbstractSlider,
 QTabWidget::pane QAbstractSpinBox,
 QTabWidget::pane QListView,
 QTabWidget::pane QTreeView,
-QTabWidget::pane QTableView
+QTabWidget::pane QTableView,
+QTabWidget::pane QTableView::item
 {
     background-color: #1D1D1D;
     padding: 3px;
