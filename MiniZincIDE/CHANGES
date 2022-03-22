@@ -1,7 +1,12 @@
+2022-03-22
+  v2.6.2
+-  Don't print expected error messages for MOOC submissions.
+-  Fix custom parameter widget dark mode CSS.
+
 2022-03-03
   v2.6.1
-  - Fix crash when the solver for an unsaved configuration is removed.
-  - Fix bug where the selected solver could incorrectly change when a
+-  Fix crash when the solver for an unsaved configuration is removed.
+-  Fix bug where the selected solver could incorrectly change when a
     configuration option is altered.
 
 2022-02-18
