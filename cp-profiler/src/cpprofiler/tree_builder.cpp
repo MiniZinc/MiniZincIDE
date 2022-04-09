@@ -1,6 +1,6 @@
 #include "tree_builder.hh"
 
-#include "../cpp-integration/message.hpp"
+#include "message_wrapper.hh"
 
 #include "utils/perf_helper.hh"
 #include "utils/debug.hh"
@@ -70,14 +70,13 @@ void TreeBuilder::finishBuilding()
     emit buildingDone();
 }
 
-void TreeBuilder::handleNode(Message *node)
+void TreeBuilder::handleNode(MessageWrapper& node)
 {
-
-    std::unique_ptr<Message> node_msg{node};
     // print("node: {}", *node);
+    auto& msg = node.msg();
 
-    const auto n_uid = node->nodeUID();
-    const auto p_uid = node->parentUID();
+    const auto n_uid = msg.nodeUID();
+    const auto p_uid = msg.parentUID();
 
     auto &tree = m_execution.tree();
 
@@ -89,10 +88,10 @@ void TreeBuilder::handleNode(Message *node)
         pid = m_execution.solver_data().getNodeId({p_uid.nid, p_uid.rid, p_uid.tid});
     }
 
-    const auto kids = node->kids();
-    const auto alt = node->alt();
-    const auto status = static_cast<tree::NodeStatus>(node->status());
-    const auto &label = node->has_label() ? node->label() : tree::emptyLabel;
+    const auto kids = msg.kids();
+    const auto alt = msg.alt();
+    const auto status = static_cast<tree::NodeStatus>(msg.status());
+    const auto &label = msg.has_label() ? msg.label() : tree::emptyLabel;
 
     NodeID nid;
 
@@ -120,25 +119,25 @@ void TreeBuilder::handleNode(Message *node)
 
     m_execution.solver_data().setNodeId({n_uid.nid, n_uid.rid, n_uid.tid}, nid);
 
-    if (node->has_nogood())
+    if (msg.has_nogood())
     {
         const auto nm = m_execution.nameMap();
 
         if (nm)
         {
             /// Construct a renamed nogood using the name map
-            const auto renamed = m_execution.nameMap()->replaceNames(node->nogood());
-            m_execution.solver_data().setNogood(nid, node->nogood(), renamed);
+            const auto renamed = m_execution.nameMap()->replaceNames(msg.nogood());
+            m_execution.solver_data().setNogood(nid, msg.nogood(), renamed);
         }
         else
         {
-            m_execution.solver_data().setNogood(nid, node->nogood());
+            m_execution.solver_data().setNogood(nid, msg.nogood());
         }
     }
 
-    if (node->has_info() && !node->info().empty())
+    if (msg.has_info() && !msg.info().empty())
     {
-        m_execution.solver_data().processInfo(nid, node->info());
+        m_execution.solver_data().processInfo(nid, msg.info());
     }
 }
 

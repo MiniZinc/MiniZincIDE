@@ -4,7 +4,7 @@
 #include <QObject>
 #include <memory>
 
-#include "../cpp-integration/message.hpp"
+#include "message_wrapper.hh"
 
 class QTcpSocket;
 
@@ -13,7 +13,6 @@ namespace cpprofiler
 
 class Conductor;
 class Execution;
-class Message;
 class Settings;
 
 class ReceiverWorker : public QObject
@@ -55,7 +54,7 @@ class ReceiverWorker : public QObject
   signals:
 
     void notifyStart(const std::string &ex_name, int ex_id, bool restarts);
-    void newNode(Message *node);
+    void newNode(MessageWrapper& node);
     void doneReceiving();
 
   public:

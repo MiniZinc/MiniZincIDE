@@ -1,11 +1,11 @@
 #pragma once
 
+#include "message_wrapper.hh"
 #include <QObject>
 
 namespace cpprofiler
 {
 
-class Message;
 class Execution;
 
 class TreeBuilder : public QObject
@@ -26,7 +26,7 @@ class TreeBuilder : public QObject
 
     void finishBuilding();
 
-    void handleNode(Message *node);
+    void handleNode(MessageWrapper& node);
 
   signals:
 

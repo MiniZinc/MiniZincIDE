@@ -2,6 +2,7 @@
 
 #include "receiver_worker.hh"
 #include "execution.hh"
+#include "../cpp-integration/message.hpp"
 
 #include <iostream>
 #include <thread>
@@ -12,12 +13,12 @@
 namespace cpprofiler
 {
 
-class Message;
-
 ReceiverThread::ReceiverThread(intptr_t socket_desc, const Settings &s)
     : m_socket_desc(socket_desc), m_settings(s)
 {
     std::cerr << "socket descriptor: " << socket_desc << std::endl;
+
+    qRegisterMetaType<MessageWrapper>();
 }
 
 void ReceiverThread::run()

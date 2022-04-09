@@ -121,6 +121,7 @@ HEADERS += \
     $$PWD/src/cpprofiler/solver_data.hh \
     $$PWD/src/cpprofiler/nogood_dialog.hh \
     $$PWD/src/cpprofiler/analysis/nogood_analysis_dialog.hh \
+    $$PWD/src/cpprofiler/message_wrapper.hh \
 
 SOURCES += \
     $$PWD/src/cpprofiler/tests/tree_test.cpp \

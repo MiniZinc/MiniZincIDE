@@ -5,11 +5,12 @@
 #include <memory>
 #include <QThread>
 
+#include "message_wrapper.hh"
+
 namespace cpprofiler
 {
 
 class Conductor;
-class Message;
 class Execution;
 class ReceiverWorker;
 class Settings;
@@ -27,7 +28,7 @@ class ReceiverThread : public QThread
   signals:
 
     void notifyStart(const std::string &ex_name, int ex_id, bool restarts);
-    void newNode(Message *node);
+    void newNode(MessageWrapper& node);
     void doneReceiving();
 
   public:

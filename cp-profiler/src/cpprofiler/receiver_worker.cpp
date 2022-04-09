@@ -156,9 +156,8 @@ void ReceiverWorker::handleMessage(const Message &msg)
 
         try
         {
-            /// NOTE(maxim): the messae will be deleted by the builder thread
-            auto node_msg = new Message{msg};
-            emit newNode(node_msg);
+            MessageWrapper m(msg);
+            emit newNode(m);
         }
         catch (std::exception &e)
         {
