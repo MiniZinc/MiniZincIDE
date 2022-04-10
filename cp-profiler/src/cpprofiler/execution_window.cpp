@@ -22,6 +22,7 @@
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QToolButton>
+#include <QToolBar>
 
 #include "tree/node_tree.hh"
 
@@ -140,10 +141,10 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
 //        setMenuBar(menuBar);
 //#endif
 
-        auto widget = new QWidget();
-        auto button_layout = new QHBoxLayout();
-        button_layout->setContentsMargins(0, 0, 0, 0);
-        widget->setLayout(button_layout);
+        auto toolbar = addToolBar("CP Profiler");
+        toolbar->setAllowedAreas(Qt::TopToolBarArea);
+        toolbar->setFloatable(false);
+        toolbar->setMovable(false);
 
         {
             auto nodeMenu = new QMenu("&Node");
@@ -198,13 +199,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             nodeMenu->addAction(showNodeInfo);
             connect(showNodeInfo, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::showNodeInfo);
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
-            button->setText("Node");
+            button->setText("&Node");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
             button->setMenu(nodeMenu);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 
         {
@@ -241,13 +241,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             navMenu->addAction(navRight);
             connect(navRight, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::navRight);
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
-            button->setText("Navigation");
+            button->setText("Na&vigation");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
             button->setMenu(navMenu);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 
         {
@@ -272,13 +271,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
 
             connect(toggleLanternTree, &QAction::triggered, this, &ExecutionWindow::toggleLanternView);
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
             button->setMenu(viewMenu);
-            button->setText("View");
+            button->setText("Vie&w");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 
         {
@@ -288,13 +286,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             dataMenu->addAction(showBookmarks);
             connect(showBookmarks, &QAction::triggered, this, &ExecutionWindow::showBookmarks);
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
-            button->setText("Data");
+            button->setText("&Data");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
             button->setMenu(dataMenu);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 
         {
@@ -316,13 +313,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             analysisMenu->addAction(saveSearch);
             connect(saveSearch, &QAction::triggered, [this]() { emit needToSaveSearch(&execution_); });
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
-            button->setText("Analyses");
+            button->setText("&Analyses");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
             button->setMenu(analysisMenu);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 
 #ifdef DEBUG_MODE
@@ -357,13 +353,12 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
             debugMenu->addAction(debugMode);
             connect(debugMode, &QAction::triggered, traditional_view_.get(), &tree::TraditionalView::setDebugMode);
 
-            auto button = new QToolButton(widget);
-            button->setStyleSheet("padding: 3px;");
+            auto button = new QToolButton;
             button->setPopupMode(QToolButton::InstantPopup);
-            button->setText("Debug");
+            button->setText("Debu&g");
             button->setToolButtonStyle(Qt::ToolButtonTextOnly);
             button->setMenu(debugMenu);
-            button_layout->addWidget(button);
+            toolbar->addWidget(button);
         }
 #endif
 
@@ -372,9 +367,6 @@ ExecutionWindow::ExecutionWindow(Execution &ex, QWidget* parent)
         // debugText->setReadOnly(true);
 
         // layout->addWidget(debugText, 2, 0);
-
-        button_layout->addStretch();
-        layout->addWidget(widget, 0, 0, 1, 0);
     }
 }
 
