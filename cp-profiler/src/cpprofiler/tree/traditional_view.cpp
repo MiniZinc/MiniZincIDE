@@ -845,5 +845,11 @@ void TraditionalView::setDebugMode(bool v)
     emit needsRedrawing();
 }
 
+void TraditionalView::setDarkMode(bool d)
+{
+    scroll_area_->setDarkMode(d);
+    emit needsRedrawing();
+}
+
 } // namespace tree
 } // namespace cpprofiler

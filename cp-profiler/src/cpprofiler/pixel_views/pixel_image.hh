@@ -32,6 +32,8 @@ private:
 
   int pixel_size_ = DEFAULT_PIXEL_SIZE;
 
+  bool dark_mode_ = false;
+
   void setPixel(std::vector<uint32_t> &buffer, int x, int y, QRgb color);
 
 public:
@@ -58,6 +60,8 @@ public:
   void setPixelSize(int size) { pixel_size_ = size; }
 
   int pixel_size() const { return pixel_size_; }
+
+  void setDarkMode(bool d) { dark_mode_ = d; }
 
 public slots:
 

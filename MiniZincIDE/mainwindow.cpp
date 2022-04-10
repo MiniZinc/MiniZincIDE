@@ -288,6 +288,7 @@ void MainWindow::updateUiProcessRunning(bool pr)
         fakeRunAction->setEnabled(true);
         ui->actionRun->setEnabled(false);
         ui->actionProfile_compilation->setEnabled(false);
+        ui->actionProfile_search->setEnabled(false);
         fakeCompileAction->setEnabled(true);
         ui->actionCompile->setEnabled(false);
         fakeStopAction->setEnabled(false);
@@ -2430,6 +2431,9 @@ void MainWindow::setDarkMode(bool enable)
         }
     }
     ui->outputWidget->setDarkMode(darkMode);
+    if (conductor != nullptr) {
+        conductor->setDarkMode(darkMode);
+    }
 }
 
 void MainWindow::initTheme()
@@ -2836,6 +2840,7 @@ void MainWindow::on_actionShow_search_profiler_triggered()
 
         cpprofiler::Options opts;
         conductor = new cpprofiler::Conductor(opts, this);
+        conductor->setDarkMode(darkMode);
         conductor->setWindowFlags(Qt::Widget);
         connect(conductor, &cpprofiler::Conductor::executionStart, [=] (cpprofiler::Execution* e) {
             ui->outputWidget->associateProfilerExecution(e->id());

@@ -37,6 +37,8 @@ class DrawingCursor : public NodeCursor
 
     const bool debug_mode_;
 
+    const bool dark_mode_;
+
     QPainter &painter_;
     const QRect clippingRect;
 
@@ -53,7 +55,8 @@ class DrawingCursor : public NodeCursor
                   QPainter &painter,
                   QPoint start_pos,
                   const QRect &clippingRect0,
-                  bool debug);
+                  bool debug,
+                  bool darkMode);
 
     void processCurrentNode();
 

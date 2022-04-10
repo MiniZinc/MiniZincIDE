@@ -218,6 +218,9 @@ class TraditionalView : public QObject
 
     /// Whether labels on nodes are true labels or NodeIDs
     void setDebugMode(bool v);
+
+    /// Set dark mode
+    void setDarkMode(bool d);
 };
 
 } // namespace tree

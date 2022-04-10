@@ -118,9 +118,13 @@ class Conductor : public QMainWindow
     std::unordered_map<const Execution *, ExecutionWindow*>
         execution_windows_;
 
+    bool dark_mode_ = false;
+
   public slots:
 
     void computeHeatMap(ExecID eid, std::vector<NodeID>);
+
+    void setDarkMode(bool d);
 };
 
 } // namespace cpprofiler

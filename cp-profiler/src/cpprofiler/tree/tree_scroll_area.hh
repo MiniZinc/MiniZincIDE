@@ -41,6 +41,7 @@ class TreeScrollArea : public QAbstractScrollArea
     NodeID m_start_node;
 
     bool debug_mode_ = false;
+    bool dark_mode_ = false;
 
     QPoint getNodeCoordinate(NodeID nid);
     NodeID findNodeClicked(int x, int y);
@@ -68,6 +69,8 @@ class TreeScrollArea : public QAbstractScrollArea
     void setScale(int val);
 
     void changeStartNode(NodeID nid);
+    
+    void setDarkMode(bool d);
 };
 
 } // namespace tree

@@ -57,6 +57,8 @@ class IcicleCanvas : public QWidget
     /// highlight the node on the view; to be called via signals/slots only!
     void selectNode(NodeID n);
 
+    void setDarkMode(bool darkMode);
+
   signals:
     void nodeClicked(NodeID n);
 };

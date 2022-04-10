@@ -341,7 +341,8 @@ ExecutionWindow &Conductor::getExecutionWindow(Execution *e)
     {
         execution_windows_[e] = new ExecutionWindow(*e, this);
 
-        const auto ex_window = execution_windows_[e];
+        auto* ex_window = execution_windows_[e];
+        ex_window->setDarkMode(dark_mode_);
 
         connect(ex_window, &ExecutionWindow::needToSaveSearch, [this, e]() {
             saveSearch(e);
@@ -645,6 +646,14 @@ void Conductor::computeHeatMap(ExecID eid, std::vector<NodeID> ns)
     }
 
     emit showNogood(url.c_str(), label.str().c_str(), false);
+}
+
+void Conductor::setDarkMode(bool d)
+{
+    dark_mode_ = d;
+    for (auto& it : execution_windows_) {
+        it.second->setDarkMode(d);
+    }
 }
 
 } // namespace cpprofiler

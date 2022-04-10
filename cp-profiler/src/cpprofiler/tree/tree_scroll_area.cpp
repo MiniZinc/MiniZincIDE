@@ -135,7 +135,7 @@ void TreeScrollArea::paintEvent(QPaintEvent *event)
 
     utils::MutexLocker tree_locker(&m_tree.treeMutex());
 
-    DrawingCursor dc(m_start_node, m_tree, m_layout, user_data_, m_vis_flags, painter, start_pos, clip, debug_mode_);
+    DrawingCursor dc(m_start_node, m_tree, m_layout, user_data_, m_vis_flags, painter, start_pos, clip, debug_mode_, dark_mode_);
     PreorderNodeVisitor<DrawingCursor>(dc).run();
 }
 
@@ -296,6 +296,11 @@ void TreeScrollArea::centerPoint(int x, int y)
 void TreeScrollArea::changeStartNode(NodeID nid)
 {
     m_start_node = nid;
+}
+
+void TreeScrollArea::setDarkMode(bool d)
+{
+    dark_mode_ = d;
 }
 
 } // namespace tree

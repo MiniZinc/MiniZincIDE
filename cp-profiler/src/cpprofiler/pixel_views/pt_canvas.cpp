@@ -205,7 +205,7 @@ void PtCanvas::drawPixelTree(bool all)
         /// is silce selected?
         bool selected = selected_slices_.find(slice) != selected_slices_.end();
 
-        QRgb color = qRgb(30, 40, 30);
+        QRgb color = dark_mode_ ? qRgb(215, 225, 215) : qRgb(30, 40, 30);
 
         if (selected)
         {
@@ -289,6 +289,13 @@ void PtCanvas::selectNodes(int vbegin, int vend)
 
     emit nodesSelected(selected_nodes);
 
+    redrawAll();
+}
+
+void PtCanvas::setDarkMode(bool d)
+{
+    dark_mode_ = d;
+    pimage_->setDarkMode(dark_mode_);
     redrawAll();
 }
 

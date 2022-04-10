@@ -54,14 +54,16 @@ DrawingCursor::DrawingCursor(NodeID start,
                              QPainter &painter,
                              QPoint start_pos,
                              const QRect &clip,
-                             bool debug)
+                             bool debug,
+                             bool dark_mode)
     : NodeCursor(start, tree),
       layout_(layout),
       user_data_(user_data),
       vis_flags_(flags),
       painter_(painter),
       clippingRect(clip),
-      debug_mode_(debug)
+      debug_mode_(debug),
+      dark_mode_(dark_mode)
 {
     cur_x = start_pos.x();
     cur_y = start_pos.y();
@@ -151,7 +153,7 @@ void DrawingCursor::processCurrentNode()
 
     bool phantom_node = false;
 
-    painter_.setPen(QColor{Qt::black});
+    painter_.setPen(QColor{dark_mode_ ? Qt::white : Qt::black});
 
     const auto node = cur_node();
 

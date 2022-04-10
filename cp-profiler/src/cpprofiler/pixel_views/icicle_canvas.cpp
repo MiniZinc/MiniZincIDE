@@ -403,5 +403,11 @@ void IcicleCanvas::selectNode(NodeID n)
     redrawAll();
 }
 
+void IcicleCanvas::setDarkMode(bool d)
+{
+    pimage_->setDarkMode(d);
+    redrawAll();
+}
+
 } // namespace pixel_view
 } // namespace cpprofiler

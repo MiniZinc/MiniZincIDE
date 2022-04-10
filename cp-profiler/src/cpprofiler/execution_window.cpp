@@ -476,6 +476,7 @@ void ExecutionWindow::showPixelTree()
         pt_dock_->setAllowedAreas(Qt::BottomDockWidgetArea);
         addDockWidget(Qt::BottomDockWidgetArea, pt_dock_);
         pixel_tree_.reset(new pixel_view::PtCanvas(tree));
+        pixel_tree_->setDarkMode(dark_mode_);
         pt_dock_->setWidget(pixel_tree_.get());
 
         connect(pixel_tree_.get(), &pixel_view::PtCanvas::nodesSelected, [this](const std::vector<NodeID> &nodes) {
@@ -511,6 +512,7 @@ void ExecutionWindow::showIcicleTree()
         addDockWidget(Qt::TopDockWidgetArea, it_dock_);
 
         icicle_tree_.reset(new pixel_view::IcicleCanvas(tree));
+        icicle_tree_->setDarkMode(dark_mode_);
         it_dock_->setWidget(icicle_tree_.get());
 
         connect(icicle_tree_.get(), &pixel_view::IcicleCanvas::nodeClicked, this, &ExecutionWindow::nodeSelected);
@@ -547,6 +549,18 @@ void ExecutionWindow::toggleLanternView(bool checked)
         traditional_view_->undoLanterns();
         traditional_view_->unhideAll();
         lantern_widget->hide();
+    }
+}
+
+void ExecutionWindow::setDarkMode(bool d)
+{
+    dark_mode_ = d;
+    traditional_view_->setDarkMode(dark_mode_);
+    if (pixel_tree_ != nullptr) {
+        pixel_tree_->setDarkMode(dark_mode_);
+    }
+    if (icicle_tree_ != nullptr) {
+        icicle_tree_->setDarkMode(dark_mode_);
     }
 }
 

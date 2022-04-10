@@ -49,6 +49,8 @@ class PtCanvas : public QWidget
     /// which slices are currently selected
     std::set<int> selected_slices_;
 
+    bool dark_mode_ = false;
+
   private:
     void drawPixelTree(bool all = false);
 
@@ -65,6 +67,8 @@ class PtCanvas : public QWidget
     /// How many vertical slices does the tree span
     int totalSlices() const;
     void setCompression(int c) { compression_ = c; }
+
+    void setDarkMode(bool d);
 
   signals:
 

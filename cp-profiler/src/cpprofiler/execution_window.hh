@@ -72,6 +72,8 @@ class ExecutionWindow : public QMainWindow
   /// Settings widget for lantern tree
   LanternMenu *lantern_widget = nullptr;
 
+  bool dark_mode_ = false;
+
 public:
   tree::TraditionalView &traditional_view();
 
@@ -101,6 +103,8 @@ public slots:
 
   /// Toggle the tree lantern tree version of the visualisation
   void toggleLanternView(bool checked);
+
+  void setDarkMode(bool d);
 
 signals:
 
