@@ -169,6 +169,7 @@ static int getRandomExID()
 void Conductor::onExecutionDone(Execution *e)
 {
     e->tree().setDone();
+    emit executionFinish(e);
 
     if (options_.save_search_path != "")
     {

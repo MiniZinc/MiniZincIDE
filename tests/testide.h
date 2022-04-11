@@ -18,6 +18,8 @@ private slots:
     void testMoocProject();
     void testMoocTerms();
     void testMoocSubmission();
+
+    void testCPProfiler();
 };
 
 class TestMocker {

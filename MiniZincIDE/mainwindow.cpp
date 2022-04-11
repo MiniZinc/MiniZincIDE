@@ -2909,7 +2909,10 @@ void MainWindow::on_cpprofiler_dockWidget_visibilityChanged(bool visible)
 void MainWindow::updateProfileSearchButton()
 {
     auto sc = getCurrentSolverConfig();
-    ui->actionProfile_search->setDisabled(!curEditor || !sc || !sc->solverDefinition.stdFlags.contains("--cp-profiler"));
+    ui->actionProfile_search->setDisabled(processRunning ||
+                                          !curEditor ||
+                                          !sc ||
+                                          !sc->solverDefinition.stdFlags.contains("--cp-profiler"));
 }
 
 void MainWindow::on_progressOutput(float progress)

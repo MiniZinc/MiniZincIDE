@@ -11,6 +11,7 @@ INCLUDEPATH += \
     $$PWD/../MiniZincIDE
 
 SOURCES += \
+    testcpprofier.cpp \
     testide.cpp \
     testeditor.cpp \
     testmooc.cpp
