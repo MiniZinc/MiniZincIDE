@@ -70,7 +70,7 @@ void TreeBuilder::finishBuilding()
     emit buildingDone();
 }
 
-void TreeBuilder::handleNode(MessageWrapper& node)
+void TreeBuilder::handleNode(const MessageWrapper& node)
 {
     // print("node: {}", *node);
     auto& msg = node.msg();

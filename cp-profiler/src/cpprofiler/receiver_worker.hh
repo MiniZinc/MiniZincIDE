@@ -54,7 +54,7 @@ class ReceiverWorker : public QObject
   signals:
 
     void notifyStart(const std::string &ex_name, int ex_id, bool restarts);
-    void newNode(MessageWrapper& node);
+    void newNode(const cpprofiler::MessageWrapper& node);
     void doneReceiving();
 
   public:

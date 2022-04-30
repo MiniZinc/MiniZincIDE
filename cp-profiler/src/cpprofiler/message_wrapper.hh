@@ -22,6 +22,7 @@ public:
     MessageWrapper(const Message& msg): _msg(msg) {}
 
     Message& msg() { return _msg; }
+    const Message& msg() const { return _msg; }
 
 private:
     Message _msg;

@@ -26,7 +26,7 @@ class TreeBuilder : public QObject
 
     void finishBuilding();
 
-    void handleNode(MessageWrapper& node);
+    void handleNode(const cpprofiler::MessageWrapper& node);
 
   signals:
 
