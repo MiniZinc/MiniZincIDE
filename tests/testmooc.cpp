@@ -60,17 +60,23 @@ void TestIDE::testMoocSubmission()
     QJsonObject parts;
     for (int i = 0; i < 2; i++) {
         // 1st time is auth check, 2nd time is submission
-        spy.wait(30000);
+        QVERIFY(spy.wait(30000));
         QVERIFY(s->hasPendingConnections());
         auto* client = s->nextPendingConnection();
         QSignalSpy spy2(client, &QTcpSocket::readyRead);
-        spy2.wait();
-        auto request = client->readAll();
+        QByteArray request;
+        while (spy2.wait(100)) {
+            // Hack for reading packet data until there's nothing for 100ms
+            request.append(client->readAll());
+        }
+        qDebug() << QString::fromUtf8(request);
         QTextStream ts(client);
         ts << "HTTP/1.1 200 OK\r\n"
            << "\r\n"
            << "{\"message\": \"Success\"}";
         client->close();
+        QSignalSpy spy3(client, &QTcpSocket::disconnected);
+        QVERIFY(spy3.wait());
         auto raw = request.mid(request.indexOf("\r\n\r\n"));
         auto body = QJsonDocument::fromJson(raw).object();
         QCOMPARE(body["assignmentKey"].toString(), "0GSb2Dj7kA");
@@ -105,4 +111,9 @@ void TestIDE::testMoocSubmission()
         auto actual = parts[it.first].toObject()["output"].toString();
         QCOMPARE(actual.replace("\r", ""), it.second.replace("\r", ""));
     }
+
+    QVERIFY(QTest::qWaitFor([=] () {
+        return w->moocSubmission->_cur_phase == MOOCSubmission::S_NONE;
+    }));
+    w->moocSubmission->close();
 }
