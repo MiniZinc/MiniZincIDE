@@ -58,4 +58,7 @@ class Execution
 
 } // namespace cpprofiler
 
+
+Q_DECLARE_METATYPE(cpprofiler::Execution*);
+
 #endif

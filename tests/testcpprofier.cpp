@@ -20,12 +20,14 @@ void TestIDE::testCPProfiler()
     doc->setModified(false);
     w->on_actionShow_search_profiler_triggered();
 
-    connect(w->conductor, &cpprofiler::Conductor::executionFinish, [=] (cpprofiler::Execution* ex) {
-        QVERIFY(ex != nullptr);
-        QCOMPARE(ex->tree().nodeCount(), 5);
-    });
-
-    QSignalSpy spy(w->conductor, &cpprofiler::Conductor::executionFinish);
+    qRegisterMetaType<cpprofiler::Execution*>();
+    QSignalSpy spy(w->conductor, &cpprofiler::Conductor::executionStart);
     w->on_actionProfile_search_triggered();
-    spy.wait();
+    QVERIFY(spy.wait());
+    auto args = spy.takeFirst();
+    auto* ex = args[0].value<cpprofiler::Execution*>();
+    QVERIFY(ex != nullptr);
+    QVERIFY(QTest::qWaitFor([=] () {
+        return ex->tree().nodeCount() == 5;
+    }, 30000));
 }

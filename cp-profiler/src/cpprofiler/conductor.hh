@@ -77,8 +77,8 @@ class Conductor : public QMainWindow
 
   signals:
 
-    void executionStart(Execution *e);
-    void executionFinish(Execution *e);
+    void executionStart(cpprofiler::Execution *e);
+    void executionFinish(cpprofiler::Execution *e);
 
     /// For a heatmap in the IDE
     void showNogood(QString url, QString name, bool record);
