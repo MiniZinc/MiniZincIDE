@@ -148,14 +148,18 @@ void Project::loadJSON(const QJsonObject& obj, const QFileInfo& fi, ConfigWindow
                 warnings << "Failed to read solver builtin solver config";
                 continue;
             }
-            SolverConfiguration* loaded;
-            if (version >= 106) {
-                loaded = new (SolverConfiguration) (SolverConfiguration::loadJSON(QJsonDocument(config.toObject())));
-            } else {
-                loaded = new (SolverConfiguration) (SolverConfiguration::loadLegacy(QJsonDocument(config.toObject())));
+            try {
+                SolverConfiguration* loaded;
+                if (version >= 106) {
+                    loaded = new (SolverConfiguration) (SolverConfiguration::loadJSON(QJsonDocument(config.toObject()), warnings));
+                } else {
+                    loaded = new (SolverConfiguration) (SolverConfiguration::loadLegacy(QJsonDocument(config.toObject()), warnings));
+                }
+                loaded->isBuiltin = true;
+                configs << loaded;
+            } catch (Exception& e) {
+                warnings << e.message();
             }
-            loaded->isBuiltin = true;
-            configs << loaded;
         }
     }
 
@@ -164,10 +168,14 @@ void Project::loadJSON(const QJsonObject& obj, const QFileInfo& fi, ConfigWindow
             if (!config.isObject()) {
                 warnings << "Failed to read solver project solver config";
                 continue;
+            }            
+            try {
+                auto loaded = new (SolverConfiguration) (SolverConfiguration::loadLegacy(QJsonDocument(config.toObject()), warnings));
+                loaded->modified = true;
+                configs << loaded;
+            } catch (Exception& e) {
+                warnings << e.message();
             }
-            auto loaded = new (SolverConfiguration) (SolverConfiguration::loadLegacy(QJsonDocument(config.toObject())));
-            loaded->modified = true;
-            configs << loaded;
         }
     }
 

@@ -276,7 +276,7 @@ SolverConfiguration::SolverConfiguration(const Solver& _solver, bool builtin) :
     solver = _solver.id + "@" + _solver.version;
 }
 
-SolverConfiguration SolverConfiguration::loadJSON(const QString& filename)
+SolverConfiguration SolverConfiguration::loadJSON(const QString& filename, QStringList& warnings)
 {
     QFile file(filename);
     QFileInfo fi(file);
@@ -298,42 +298,33 @@ SolverConfiguration SolverConfiguration::loadJSON(const QString& filename)
            << ".";
         throw ConfigError(message);
     }
-    auto sc = loadJSON(json);
+    auto sc = loadJSON(json, warnings);
     sc.paramFile = fi.canonicalFilePath();
     return sc;
 }
 
-SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
+SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json, QStringList& warnings)
 {
     auto configObject = json.object();
     QString solverValue = configObject.value("--solver").isUndefined() ? configObject.value("solver").toString() : configObject.value("--solver").toString();
-    auto solver = Solver::lookup(solverValue);
-    int i = 0;
-    auto& solvers = MznDriver::get().solvers();
-    for (auto& s : solvers) {
-        if (solver == s) {
-            // Solver already loaded
-            break;
-        }
-        i++;
+    Solver* solver = nullptr;
+    try {
+        solver = &Solver::lookup(solverValue);
+    } catch (Exception& e) {
+        warnings << e.message();
+        warnings << "Using default solver instead.";
+        solver = MznDriver::get().defaultSolver();
     }
-    if (i == solvers.length()) {
-        solvers.append(solver);
+
+    if (solver == nullptr) {
+        throw ConfigError("Failed to load fallback solver.");
     }
-    bool syncedPrintIntermediate = true;
-    int syncedNumSolutions = 1;
-    int syncedNumOptimal = 1;
-    SolverConfiguration sc(solvers[i]);
+
+    SolverConfiguration sc(*solver);
     for (auto it = configObject.begin(); it != configObject.end(); it++) {
         QString key = (it.key().startsWith("-") || it.key().startsWith("_")) ? it.key() : "--" + it.key();
         if (key == "--solver") {
             sc.solver = it.value().toString();
-        } else if (key == "_syncedPrintIntermediate") {
-            syncedPrintIntermediate = it.value().toBool(true);
-        } else if (key == "_syncedNumSolutions") {
-            syncedNumSolutions= it.value().toInt(1);
-        } else if (key == "_syncedNumOptimal") {
-            syncedNumOptimal = it.value().toInt(1);
         } else if (key == "-t" || key == "--time-limit") {
             sc.timeLimit = it.value().toInt();
         } else if (key == "-a" || key == "--all-solutions") {
@@ -403,7 +394,7 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
         }
     }
 
-    for (auto f : solver.extraFlags) {
+    for (auto f : solver->extraFlags) {
         if (f.t == SolverFlag::T_BOOL_ONOFF && sc.extraOptions.contains(f.name)) {
             // Convert on/off string to bool (TODO: would be nice to handle this in minizinc)
             sc.extraOptions[f.name] = sc.extraOptions[f.name] == f.options[0];
@@ -412,12 +403,24 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json)
     return sc;
 }
 
-SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
+SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json, QStringList& warnings)
 {
     auto sco = json.object();
-    auto& solver = Solver::lookup(sco["id"].toString(), sco["version"].toString(), false);
 
-    SolverConfiguration newSc(solver);
+    Solver* solver = nullptr;
+    try {
+        solver = &Solver::lookup(sco["id"].toString(), sco["version"].toString(), false);
+    } catch (Exception& e) {
+        warnings << e.message();
+        warnings << "Using default solver instead.";
+        solver = MznDriver::get().defaultSolver();
+    }
+
+    if (solver == nullptr) {
+        throw ConfigError("Failed to load fallback solver.");
+    }
+
+    SolverConfiguration newSc(*solver);
 //    if (sco["name"].isString()) {
 //        newSc.name = sco["name"].toString();
 //    }
@@ -472,7 +475,7 @@ SolverConfiguration SolverConfiguration::loadLegacy(const QJsonDocument &json)
     if (sco["extraOptions"].isObject() && sco["useExtraOptions"].toBool()) {
         QJsonObject extraOptions = sco["extraOptions"].toObject();
 
-        for (auto& f : solver.extraFlags) {
+        for (auto& f : solver->extraFlags) {
             if (extraOptions.contains(f.name) && f.def.toString() != extraOptions[f.name].toString()) {
                 newSc.extraOptions[f.name] = extraOptions[f.name].toString();
                 extraOptions.remove(f.name);

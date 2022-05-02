@@ -85,6 +85,7 @@ void ConfigWindow::loadConfigs(void)
 {
     try {
         QStringList files;
+        QStringList warnings;
         for (auto config : configs) {
             if (!config->paramFile.isEmpty()) {
                 files.append(config->paramFile);
@@ -99,11 +100,14 @@ void ConfigWindow::loadConfigs(void)
         }
         if (!files.empty()) {
             for (auto fileName : files) {
-                configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName)));
+                configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName, warnings)));
             }
         }
         populateComboBox();
         updateGUI(true);
+        if (!warnings.empty()) {
+            QMessageBox::warning(this, "MiniZinc IDE", warnings.join("\n"), QMessageBox::Ok);
+        }
     } catch (Exception& e) {
         QMessageBox::warning(this, "Parameter configuration error", e.message(), QMessageBox::Ok);
     }
@@ -119,8 +123,9 @@ bool ConfigWindow::addConfig(const QString &fileName)
     }
 
     try {
+        QStringList warnings;
         updateSolverConfig(configs[currentIndex()]);
-        configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName)));
+        configs.append(new (SolverConfiguration) (SolverConfiguration::loadJSON(fileName, warnings)));
         for (auto sc : configs) {
             if (!sc->syncedOptionsMatch(*(configs.last()))) {
                 populating = true; // Make sure this doesn't mark the config as modified
@@ -140,6 +145,10 @@ bool ConfigWindow::addConfig(const QString &fileName)
             populating = true; // Make sure this doesn't mark the config as modified
             ui->sync_checkBox->setChecked(true);
             populating = false;
+        }
+
+        if (!warnings.empty()) {
+            QMessageBox::warning(this, "MiniZinc IDE", warnings.join("\n"), QMessageBox::Ok);
         }
 
         return true;
@@ -947,7 +956,8 @@ ConfigWindow::StashItem::StashItem(SolverConfiguration* sc) :
 {}
 
 SolverConfiguration* ConfigWindow::StashItem::consume() {
-    auto* sc = new (SolverConfiguration) (SolverConfiguration::loadJSON(QJsonDocument(json)));
+    QStringList warnings;
+    auto* sc = new (SolverConfiguration) (SolverConfiguration::loadJSON(QJsonDocument(json), warnings));
     sc->isBuiltin = isBuiltIn;
     sc->paramFile = paramFile;
     return sc;

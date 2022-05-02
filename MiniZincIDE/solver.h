@@ -63,9 +63,9 @@ class SolverConfiguration {
 public:
     SolverConfiguration(const Solver& solver, bool builtin = false);
 
-    static SolverConfiguration loadJSON(const QString& filename);
-    static SolverConfiguration loadJSON(const QJsonDocument& json);
-    static SolverConfiguration loadLegacy(const QJsonDocument& json);
+    static SolverConfiguration loadJSON(const QString& filename, QStringList& warnings);
+    static SolverConfiguration loadJSON(const QJsonDocument& json, QStringList& warnings);
+    static SolverConfiguration loadLegacy(const QJsonDocument& json, QStringList& warnings);
 
     QString solver;
     const Solver& solverDefinition;
