@@ -1,0 +1,39 @@
+{
+    "builtinSolverConfigs": [
+    ],
+    "openFiles": ["models/model1.mzn", "data/data1.dzn"],
+    "openTab": 0,
+    "projectFiles": [
+        "data/data1.dzn",
+        "data/data2.dzn",
+		"models/model1.mzn",
+		"models/model2.mzn"
+    ],
+    "projectSolverConfigs": [
+        {
+            "additionalCompilerCommandline": "",
+            "additionalData": "",
+            "clearOutputWindow": false,
+            "compressSolutionOutput": 100,
+            "defaultBehavior": true,
+            "flatteningStats": false,
+            "freeSearch": false,
+            "id": "org.chuffed.chuffed",
+            "nThreads": 1,
+            "name": "Project solver configuration",
+            "optimizationLevel": 1,
+            "outputTiming": false,
+            "printIntermediate": false,
+            "runSolutionChecker": true,
+            "solverFlags": "",
+            "solvingStats": false,
+            "stopAfter": 1,
+            "timeLimit": 0,
+            "verboseFlattening": false,
+            "verboseSolving": false,
+            "version": "0.9.0"
+        }
+    ],
+    "selectedProjectConfig": 0,
+    "version": 105
+}

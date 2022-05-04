@@ -15,6 +15,11 @@ private slots:
     void testFindReplace();
     void testFindReplace_data();
 
+    void testProject106Good();
+    void testProject106Bad();
+    void testProject105Good();
+    void testProject105Bad();
+
     void testMoocProject();
     void testMoocTerms();
     void testMoocSubmission();

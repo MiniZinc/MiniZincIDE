@@ -14,7 +14,8 @@ SOURCES += \
     testcpprofier.cpp \
     testide.cpp \
     testeditor.cpp \
-    testmooc.cpp
+    testmooc.cpp \
+    testproject.cpp
 
 HEADERS += \
     testide.h

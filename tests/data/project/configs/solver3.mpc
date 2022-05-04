@@ -1,0 +1,6 @@
+{
+    "-O": 2,
+    "free-search": true,
+    "intermediate-solutions": true,
+    "solver": "invalid.solver@1.0.0"
+}
