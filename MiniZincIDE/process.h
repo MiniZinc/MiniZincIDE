@@ -126,7 +126,7 @@ public:
     /// \brief The built-in solvers as found by running with --solvers-json
     /// \return The built-in solvers
     ///
-    QVector<Solver>& solvers(void)
+    QList<Solver*>& solvers(void)
     {
         return _solvers;
     }
@@ -161,7 +161,7 @@ private:
     QString _userSolverConfigDir;
     QString _userConfigFile;
     QString _mznStdlibDir;
-    QVector<Solver> _solvers;
+    QList<Solver*> _solvers;
     QVersionNumber _version;
 
     void clear()
@@ -172,6 +172,9 @@ private:
         _userSolverConfigDir.clear();
         _userConfigFile.clear();
         _mznStdlibDir.clear();
+        for (auto* s : _solvers) {
+            delete s;
+        }
         _solvers.clear();
         _version = QVersionNumber();
     }

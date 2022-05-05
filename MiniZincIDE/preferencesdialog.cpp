@@ -234,8 +234,8 @@ void PreferencesDialog::loadDriver(bool showError)
         destExists = true;
     } else if (destExists) {
         // Switching to different solver
-        matchId = solvers[dest].id;
-        matchVersion = solvers[dest].version;
+        matchId = solvers[dest]->id;
+        matchVersion = solvers[dest]->version;
     }
     try {
         driver.setLocation(ui->mznDistribPath->text());
@@ -278,8 +278,8 @@ void PreferencesDialog::loadDriver(bool showError)
     int index = addNew ? ui->solvers_combo->count() - 1 : 0;
     if (destExists) {
         int i = 0;
-        for (auto& solver : solvers) {
-            if (solver.id == matchId && solver.version == matchVersion) {
+        for (auto* solver : solvers) {
+            if (solver->id == matchId && solver->version == matchVersion) {
                 index = i;
                 break;
             }
@@ -308,7 +308,7 @@ void PreferencesDialog::populateSolvers()
     ui->solvers_combo->clear();
 
     for (auto& solver : solvers) {
-        ui->solvers_combo->addItem(solver.name + " " + solver.version);
+        ui->solvers_combo->addItem(solver->name + " " + solver->version);
     }
 
     if (solvers.empty()) {
@@ -422,65 +422,65 @@ bool PreferencesDialog::updateSolver()
         }
         int index = _editingSolverIndex;
         for (int i=0; i<solvers.size(); i++) {
-            if (i != index && ui->solverId->text().trimmed()==solvers[i].id) {
+            if (i != index && ui->solverId->text().trimmed()==solvers[i]->id) {
                 showMessageBox("A solver with that solver ID already exists.");
                 return false;
             }
         }
         if (index==solvers.size()) {
-            Solver s;
-            s.configFile = userSolverConfigDir+"/"+ui->solverId->text().trimmed()+".msc";
+            auto* s = new Solver;
+            s->configFile = userSolverConfigDir+"/"+ui->solverId->text().trimmed()+".msc";
             if (!QDir().mkpath(userSolverConfigDir)) {
                 showMessageBox("Cannot create user configuration directory "+userSolverConfigDir);
                 return false;
             }
             solvers.append(s);
-            allowFileRestore(s.configFile);
+            allowFileRestore(s->configFile);
         }
 
-        solvers[index].executable = ui->executable->text().trimmed();
-        solvers[index].mznlib = ui->mznpath->text();
-        solvers[index].name = ui->name->text().trimmed();
-        solvers[index].id = ui->solverId->text().trimmed();
-        solvers[index].version = ui->version->text().trimmed();
-        solvers[index].isGUIApplication= ui->detach->isChecked();
-        solvers[index].supportsMzn = !ui->needs_mzn2fzn->isChecked();
-        solvers[index].needsSolns2Out = ui->needs_solns2out->isChecked();
+        solvers[index]->executable = ui->executable->text().trimmed();
+        solvers[index]->mznlib = ui->mznpath->text();
+        solvers[index]->name = ui->name->text().trimmed();
+        solvers[index]->id = ui->solverId->text().trimmed();
+        solvers[index]->version = ui->version->text().trimmed();
+        solvers[index]->isGUIApplication= ui->detach->isChecked();
+        solvers[index]->supportsMzn = !ui->needs_mzn2fzn->isChecked();
+        solvers[index]->needsSolns2Out = ui->needs_solns2out->isChecked();
 
-        solvers[index].stdFlags.removeAll("-a");
+        solvers[index]->stdFlags.removeAll("-a");
         if (ui->has_stdflag_a->isChecked()) {
-            solvers[index].stdFlags.push_back("-a");
+            solvers[index]->stdFlags.push_back("-a");
         }
-        solvers[index].stdFlags.removeAll("-n");
+        solvers[index]->stdFlags.removeAll("-n");
         if (ui->has_stdflag_n->isChecked()) {
-            solvers[index].stdFlags.push_back("-n");
+            solvers[index]->stdFlags.push_back("-n");
         }
-        solvers[index].stdFlags.removeAll("-p");
+        solvers[index]->stdFlags.removeAll("-p");
         if (ui->has_stdflag_p->isChecked()) {
-            solvers[index].stdFlags.push_back("-p");
+            solvers[index]->stdFlags.push_back("-p");
         }
-        solvers[index].stdFlags.removeAll("-s");
+        solvers[index]->stdFlags.removeAll("-s");
         if (ui->has_stdflag_s->isChecked()) {
-            solvers[index].stdFlags.push_back("-s");
+            solvers[index]->stdFlags.push_back("-s");
         }
-        solvers[index].stdFlags.removeAll("-v");
+        solvers[index]->stdFlags.removeAll("-v");
         if (ui->has_stdflag_v->isChecked()) {
-            solvers[index].stdFlags.push_back("-v");
+            solvers[index]->stdFlags.push_back("-v");
         }
-        solvers[index].stdFlags.removeAll("-r");
+        solvers[index]->stdFlags.removeAll("-r");
         if (ui->has_stdflag_r->isChecked()) {
-            solvers[index].stdFlags.push_back("-r");
+            solvers[index]->stdFlags.push_back("-r");
         }
-        solvers[index].stdFlags.removeAll("-f");
+        solvers[index]->stdFlags.removeAll("-f");
         if (ui->has_stdflag_f->isChecked()) {
-            solvers[index].stdFlags.push_back("-f");
+            solvers[index]->stdFlags.push_back("-f");
         }
-        solvers[index].stdFlags.removeAll("-t");
+        solvers[index]->stdFlags.removeAll("-t");
         if (ui->has_stdflag_t->isChecked()) {
-            solvers[index].stdFlags.push_back("-t");
+            solvers[index]->stdFlags.push_back("-t");
         }
 
-        QJsonObject json = solvers[index].json;
+        QJsonObject json = solvers[index]->json;
         json.remove("extraInfo");
         json["executable"] = ui->executable->text().trimmed();
         json["mznlib"] = ui->mznpath->text();
@@ -490,16 +490,16 @@ bool PreferencesDialog::updateSolver()
         json["isGUIApplication"] = ui->detach->isChecked();
         json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
         json["needsSolns2Out"] = ui->needs_solns2out->isChecked();
-        json["stdFlags"] = QJsonArray::fromStringList(solvers[index].stdFlags);
+        json["stdFlags"] = QJsonArray::fromStringList(solvers[index]->stdFlags);
         QJsonDocument jdoc(json);
-        QFile jdocFile(solvers[index].configFile);
-        allowFileRestore(solvers[index].configFile);
+        QFile jdocFile(solvers[index]->configFile);
+        allowFileRestore(solvers[index]->configFile);
         if (!jdocFile.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-            showMessageBox("Cannot save configuration file "+solvers[index].configFile);
+            showMessageBox("Cannot save configuration file "+solvers[index]->configFile);
             return false;
         }
         if (jdocFile.write(jdoc.toJson())==-1) {
-            showMessageBox("Cannot save configuration file "+solvers[index].configFile);
+            showMessageBox("Cannot save configuration file "+solvers[index]->configFile);
             return false;
         }
     }
@@ -549,17 +549,17 @@ void PreferencesDialog::on_deleteButton_clicked()
     }
     if (QMessageBox::warning(this,
                                                        "MiniZinc IDE",
-                                                       "Delete solver " + solvers[index].name + "?",
+                                                       "Delete solver " + solvers[index]->name + "?",
                                                        QMessageBox::Ok | QMessageBox::Cancel)
             == QMessageBox::Ok) {
-        auto configFile = solvers[index].configFile;
+        auto configFile = solvers[index]->configFile;
         allowFileRestore(configFile);
         QFile sf(configFile);
         if (!sf.remove()) {
-            showMessageBox("Cannot remove configuration file "+solvers[index].configFile);
+            showMessageBox("Cannot remove configuration file "+solvers[index]->configFile);
             return;
         }
-        solvers.remove(index);
+        solvers.removeAt(index);
         if (solvers.size() == 0) {
             // No solver to switch back to, so create dummy
             ui->solvers_combo->insertItem(0, "(No solvers found)");
@@ -723,18 +723,18 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
     clearRequiredFlagsLayout(rfLayout);
     QString userSolverConfigCanonical = QFileInfo(driver.userSolverConfigDir()).canonicalPath();
     if (index<solvers.size()) {
-        ui->name->setText(solvers[index].name);
-        ui->solverId->setText(solvers[index].id);
-        ui->version->setText(solvers[index].version);
-        ui->executable->setText(solvers[index].executable);
-        ui->exeNotFoundLabel->setVisible(!solvers[index].executable.isEmpty() && solvers[index].executable_resolved.isEmpty());
-        ui->detach->setChecked(solvers[index].isGUIApplication);
-        ui->needs_mzn2fzn->setChecked(!solvers[index].supportsMzn);
-        ui->needs_solns2out->setChecked(solvers[index].needsSolns2Out);
-        ui->mznpath->setText(solvers[index].mznlib);
+        ui->name->setText(solvers[index]->name);
+        ui->solverId->setText(solvers[index]->id);
+        ui->version->setText(solvers[index]->version);
+        ui->executable->setText(solvers[index]->executable);
+        ui->exeNotFoundLabel->setVisible(!solvers[index]->executable.isEmpty() && solvers[index]->executable_resolved.isEmpty());
+        ui->detach->setChecked(solvers[index]->isGUIApplication);
+        ui->needs_mzn2fzn->setChecked(!solvers[index]->supportsMzn);
+        ui->needs_solns2out->setChecked(solvers[index]->needsSolns2Out);
+        ui->mznpath->setText(solvers[index]->mznlib);
         bool solverConfigIsUserEditable = false;
-        if (!solvers[index].configFile.isEmpty()) {
-            QFileInfo configFileInfo(solvers[index].configFile);
+        if (!solvers[index]->configFile.isEmpty()) {
+            QFileInfo configFileInfo(solvers[index]->configFile);
             if (configFileInfo.canonicalPath().startsWith(userSolverConfigCanonical)) {
                 solverConfigIsUserEditable = true;
             }
@@ -743,17 +743,17 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->deleteButton->setEnabled(solverConfigIsUserEditable);
         ui->solverFrame->setEnabled(solverConfigIsUserEditable);
 
-        ui->has_stdflag_a->setChecked(solvers[index].stdFlags.contains("-a"));
-        ui->has_stdflag_p->setChecked(solvers[index].stdFlags.contains("-p"));
-        ui->has_stdflag_r->setChecked(solvers[index].stdFlags.contains("-r"));
-        ui->has_stdflag_n->setChecked(solvers[index].stdFlags.contains("-n"));
-        ui->has_stdflag_s->setChecked(solvers[index].stdFlags.contains("-s"));
-        ui->has_stdflag_f->setChecked(solvers[index].stdFlags.contains("-f"));
-        ui->has_stdflag_v->setChecked(solvers[index].stdFlags.contains("-v"));
-        ui->has_stdflag_t->setChecked(solvers[index].stdFlags.contains("-t"));
+        ui->has_stdflag_a->setChecked(solvers[index]->stdFlags.contains("-a"));
+        ui->has_stdflag_p->setChecked(solvers[index]->stdFlags.contains("-p"));
+        ui->has_stdflag_r->setChecked(solvers[index]->stdFlags.contains("-r"));
+        ui->has_stdflag_n->setChecked(solvers[index]->stdFlags.contains("-n"));
+        ui->has_stdflag_s->setChecked(solvers[index]->stdFlags.contains("-s"));
+        ui->has_stdflag_f->setChecked(solvers[index]->stdFlags.contains("-f"));
+        ui->has_stdflag_v->setChecked(solvers[index]->stdFlags.contains("-v"));
+        ui->has_stdflag_t->setChecked(solvers[index]->stdFlags.contains("-t"));
 
-        auto flags = _userDefaultFlags.values(solvers[index].id);
-        for (auto& rf : solvers[index].requiredFlags) {
+        auto flags = _userDefaultFlags.values(solvers[index]->id);
+        for (auto& rf : solvers[index]->requiredFlags) {
             if (!flags.contains(rf)) {
                 flags << rf;
             }
@@ -765,9 +765,9 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
             int row = 0;
             for (auto& rf : flags) {
                 QString val;
-                int foundFlag = solvers[index].defaultFlags.indexOf(rf);
-                if (foundFlag != -1 && foundFlag < solvers[index].defaultFlags.size()-1) {
-                    val = solvers[index].defaultFlags[foundFlag+1];
+                int foundFlag = solvers[index]->defaultFlags.indexOf(rf);
+                if (foundFlag != -1 && foundFlag < solvers[index]->defaultFlags.size()-1) {
+                    val = solvers[index]->defaultFlags[foundFlag+1];
                 }
                 rfLayout->addWidget(new QLabel(rf), row, 0);
                 rfLayout->addWidget(new QLineEdit(val), row, 1);

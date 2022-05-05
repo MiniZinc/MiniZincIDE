@@ -93,9 +93,9 @@ void ConfigWindow::loadConfigs(void)
             delete config;
         }
         configs.clear();
-        for (auto& solver : MznDriver::get().solvers()) {
-            if (solver.hasAllRequiredFlags()) {
-                configs.append(new SolverConfiguration(solver, true));
+        for (auto* solver : MznDriver::get().solvers()) {
+            if (solver->hasAllRequiredFlags()) {
+                configs.append(new SolverConfiguration(*solver, true));
             }
         }
         if (!files.empty()) {
@@ -818,8 +818,8 @@ QWidget* ExtraOptionDelegate::createEditor(QWidget* parent, const QStyleOptionVi
         case SolverFlag::T_SOLVER:
         {
             auto field = new QComboBox(parent);
-            for (auto& solver : MznDriver::get().solvers()) {
-                field->addItem(solver.name);
+            for (auto* solver : MznDriver::get().solvers()) {
+                field->addItem(solver->name);
             }
             return field;
         }

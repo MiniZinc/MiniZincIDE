@@ -213,14 +213,15 @@ Solver& Solver::lookup(const QString& str)
         if (!solver_doc.isObject()) {
             throw ConfigError("Failed to find solver " + str);
         }
-        auto solver = Solver(solver_doc.object());
-        for (auto& s: MznDriver::get().solvers()) {
-            if (solver == s) {
-                return s;
+        Solver solver(solver_doc.object());
+        auto& solvers = MznDriver::get().solvers();
+        for (auto* s: solvers) {
+            if (solver == *s) {
+                return *s;
             }
         }
-        MznDriver::get().solvers() << solver;
-        return MznDriver::get().solvers().last();
+        solvers << new Solver(solver);
+        return *solvers.last();
     } catch (Exception&) {
         throw DriverError("Failed to lookup solver " + str);
     }

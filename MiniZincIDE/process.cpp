@@ -211,21 +211,23 @@ void MznDriver::setLocation(const QString &mznDistribPath)
     allOutput = p.run({"--solvers-json"}).stdOut.toUtf8();
     jd = QJsonDocument::fromJson(allOutput.toUtf8());
     if (!jd.isNull()) {
+        for (auto* s : _solvers) {
+            delete s;
+        }
         _solvers.clear();
         QJsonArray allSolvers = jd.array();
         for (auto item : allSolvers) {
             QJsonObject sj = item.toObject();
-            Solver s(sj);
-            _solvers.append(s);
+            _solvers.append(new Solver(sj));
         }
     }
 }
 
 Solver* MznDriver::defaultSolver(void)
 {
-    for (auto& solver : solvers()) {
-        if (solver.isDefaultSolver) {
-            return &solver;
+    for (auto* solver : solvers()) {
+        if (solver->isDefaultSolver) {
+            return solver;
         }
     }
     return nullptr;
@@ -233,8 +235,8 @@ Solver* MznDriver::defaultSolver(void)
 
 void MznDriver::setDefaultSolver(const Solver& s)
 {
-    for (auto& solver : solvers()) {
-        solver.isDefaultSolver = &solver == &s;
+    for (auto* solver : solvers()) {
+        solver->isDefaultSolver = *solver == s;
     }
 
     QFile uc(userConfigFile());
