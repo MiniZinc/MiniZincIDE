@@ -1,3 +1,10 @@
+2022-05-06
+  v2.6.3
+-  Improve UI and dark mode for CP Profiler.
+-  Fix CP Profiler tree-builder signal/slot connection (#160).
+-  Fix deadlock in CP Profiler tree building (#162).
+-  Make project loading more resilient to errors (#165).
+
 2022-03-22
   v2.6.2
 -  Don't print expected error messages for MOOC submissions.
