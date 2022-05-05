@@ -22,6 +22,7 @@ void TestIDE::testCPProfiler()
 
     qRegisterMetaType<cpprofiler::Execution*>();
     QSignalSpy spy(w->conductor, &cpprofiler::Conductor::executionStart);
+    QSignalSpy spy2(w, &MainWindow::finished);
     w->on_actionProfile_search_triggered();
     QVERIFY(spy.wait());
     auto args = spy.takeFirst();
@@ -30,4 +31,5 @@ void TestIDE::testCPProfiler()
     QVERIFY(QTest::qWaitFor([=] () {
         return ex->tree().nodeCount() == 5;
     }, 30000));
+    QVERIFY(spy2.count() > 0 || spy2.wait());
 }
