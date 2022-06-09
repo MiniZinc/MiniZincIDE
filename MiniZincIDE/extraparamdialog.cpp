@@ -106,6 +106,7 @@ void ExtraParamDialog::resetControls()
 {
     ui->filter_lineEdit->clear();
     ui->params_listView->selectionModel()->clear();
+    _filterModel->setFilterFixedString("");
 }
 
 void ExtraParamDialog::mousePressEvent(QMouseEvent* event)
