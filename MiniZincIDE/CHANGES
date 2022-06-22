@@ -1,3 +1,7 @@
+2022-06-23
+  v2.6.4
+-  Ensure the extra parameter filter is cleared when the textbox is cleared.
+
 2022-05-06
   v2.6.3
 -  Improve UI and dark mode for CP Profiler.
