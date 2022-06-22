@@ -344,18 +344,16 @@ package:appimage:
 
 package:docker_alpine:
   stage: package
-  parallel: 2
   variables:
     MZNARCH: "musl"
   <<: *packaging_setup
   script:
-    - BASES=("null" "alpine:latest" "alpine:3.11")
-    - EXTS=("null" "-alpine" "-alpine3.11")
-    - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
-    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
-    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
+    - echo "Building image based on \"alpine:latest\" with tag extension \"-alpine\""
+    - docker pull alpine:latest
+    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE='alpine:latest' -q .)"
+    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}-alpine && docker push minizinc/minizinc:${CI_COMMIT_TAG}-alpine; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest-alpine && docker push minizinc/minizinc:latest-alpine; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge-alpine && docker push minizinc/minizinc:edge-alpine; fi
   needs: []
   only: [tags, master, develop]
   tags: [docker-cli]
@@ -367,9 +365,10 @@ package:docker_ubuntu:
     MZNARCH: "linux"
   <<: *packaging_setup
   script:
-    - BASES=("null" "ubuntu:latest" "ubuntu:bionic" "ubuntu:xenial")
-    - EXTS=("null" "" "-bionic" "-xenial")
+    - BASES=("null" "ubuntu:latest" "ubuntu:focal" "ubuntu:bionic")
+    - EXTS=("null" "" "-focal" "-bionic")
     - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
+    - docker pull ${BASES[CI_NODE_INDEX]}
     - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
     - echo $HASH
     - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
