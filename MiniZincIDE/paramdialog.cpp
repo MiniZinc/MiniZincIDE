@@ -35,8 +35,9 @@ int ParamDialog::getModel(const QStringList& modelFiles) {
         QFileInfo fi(modelFiles[i]);
         QListWidgetItem* lwi = new QListWidgetItem(fi.fileName());
         selectedFiles->addItem(lwi);
-        if (previousModelFile==modelFiles[i])
-            lwi->setSelected(true);
+        if (previousModelFile==modelFiles[i]) {
+            selectedFiles->setCurrentItem(lwi);
+        }
     }
     if (selectedFiles->selectedItems().size()==0) {
         selectedFiles->item(0)->setSelected(true);
