@@ -834,7 +834,7 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
     try {
         auto result = p.run(checkConfig, args, QFileInfo(model).absolutePath());
 
-        QStringList additionalDataFiles;
+        QStringList additionalDataFiles = data;
         QStringList additionalArgs;
         if (result.exitCode == 0) {
             auto jdoc = QJsonDocument::fromJson(result.stdOut.toUtf8());
@@ -867,7 +867,12 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
                 return false;
             }
         }
-        data << additionalDataFiles;
+        for (const auto& d : additionalDataFiles) {
+            if (!data.contains(d)) {
+                // Ensure we don't add the same data file twice
+                data << d;
+            }
+        }
         extraArgs << additionalArgs;
         return true;
     } catch (ProcessError& e) {
