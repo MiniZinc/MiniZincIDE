@@ -694,6 +694,11 @@ void PreferencesDialog::updateSearchPaths()
     } else if (obj.contains("mzn_solver_path")) {
         obj.remove("mzn_solver_path");
     }
+
+    QFileInfo uc_info(userConfigFile);
+    if (!QDir().mkpath(uc_info.absoluteDir().absolutePath())) {
+        showMessageBox("Cannot create user configuration directory "+uc_info.absoluteDir().absolutePath());
+    }
     if (uc.open(QFile::ReadWrite | QIODevice::Truncate)) {
         uc.write(QJsonDocument(obj).toJson());
         uc.close();
