@@ -412,7 +412,6 @@ package:snap_manual:
   image: ghcr.io/minizinc/docker-build-environment:snap
   tags: [linux, docker]
   script:
-    - snapcraft login --with $SNAPCRAFT_LOGIN
     - snapcraft upload minizinc*.snap --release $SNAPCRAFT_CHANNEL
   needs: ["package:snap"]
 
