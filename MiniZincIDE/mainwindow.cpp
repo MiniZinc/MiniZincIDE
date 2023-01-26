@@ -212,6 +212,22 @@ void MainWindow::init(const QString& projectFile)
     ui->outputWidget->setBrowserFont(editorFont);
     resize(settings.value("size", QSize(800, 600)).toSize());
     move(settings.value("pos", QPoint(100, 100)).toPoint());
+
+    auto frameGeom = frameGeometry();
+    bool positionValid = false;
+    for (auto* screen: QGuiApplication::screens()) {
+        auto geom = screen->availableGeometry();
+        if (geom.intersects(frameGeom)) {
+            positionValid = true;
+            break;
+        }
+    }
+    if (!positionValid) {
+        // Window is outside of view
+        resize(800, 600);
+        move(100, 100);
+    }
+
     if (settings.value("toolbarHidden", false).toBool()) {
         on_actionHide_tool_bar_triggered();
     }
