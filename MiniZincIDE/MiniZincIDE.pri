@@ -39,6 +39,7 @@ SOURCES += \
     $$PWD/darkmodenotifier.cpp \
     $$PWD/elapsedtimer.cpp \
     $$PWD/extraparamdialog.cpp \
+    $$PWD/history.cpp \
     $$PWD/ide.cpp \
     $$PWD/ideutils.cpp \
     $$PWD/mainwindow.cpp \
@@ -61,6 +62,7 @@ SOURCES += \
     $$PWD/solver.cpp
 
 HEADERS += \
+    $$PWD/history.h \
     $$PWD/mainwindow.h \
     $$PWD/codechecker.h \
     $$PWD/codeeditor.h \

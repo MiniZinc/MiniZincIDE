@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QFileInfo>
+#include "history.h"
 
 class QNetworkReply;
 class MainWindow;
@@ -39,9 +40,15 @@ public:
     bool sendMeta;
     QList<MOOCAssignmentItem> problems;
     QList<MOOCAssignmentItem> models;
+    History* history = nullptr;
+
+    QString moocFile;
+    QJsonObject json;
 
     MOOCAssignment(void) {}
     MOOCAssignment(const QString& file);
+
+    ~MOOCAssignment() { delete history; }
 
 private:
     void loadJSON(const QJsonObject& obj, const QFileInfo& fi);

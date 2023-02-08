@@ -16,7 +16,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-MOOCAssignment::MOOCAssignment(const QString& fileName)
+MOOCAssignment::MOOCAssignment(const QString& fileName) : moocFile(fileName)
 {
     QFile f(fileName);
     QFileInfo fi(f);
@@ -69,6 +69,20 @@ void MOOCAssignment::loadJSON(const QJsonObject& obj, const QFileInfo& fi)
         QFileInfo model_fi(fi.dir(), modelO["model"].toString());
         MOOCAssignmentItem item(modelO["id"].toString(), model_fi.absoluteFilePath(), modelO["name"].toString(), modelO["required"].toBool(false));
         models.append(item);
+    }
+
+    json = obj;
+    if (obj["history"].isObject()) {
+        history = new History(obj["history"].toObject(), fi.absoluteDir());
+        QObject::connect(IDE::instance(), &IDE::reloadedFile, history, &History::updateFileContents);
+        QObject::connect(history, &History::historyChanged, [=] () {
+            json["history"] = history->toJSON();
+            QFile file(moocFile);
+            if (file.open(QFile::WriteOnly)) {
+                file.write(QJsonDocument(json).toJson());
+                file.close();
+            }
+        });
     }
 }
 
@@ -310,6 +324,9 @@ void MOOCSubmission::submitToMOOC()
         metadata["prettyProductName"] = QSysInfo::prettyProductName();
         _submission["metadata"] = metadata;
     }
+    if (project.history != nullptr) {
+        _submission["history"] = project.history->toJSON();
+    }
 
     QJsonDocument doc(_submission);
 
@@ -333,7 +350,12 @@ void MOOCSubmission::rcvSubmissionResponse()
     disconnect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &MOOCSubmission::rcvErrorResponse);
 #endif
     reply->deleteLater();
-
+    int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status != 200) {
+        ui->textBrowser->insertPlainText(QString("Error %1: ").arg(status));
+    } else if (project.history != nullptr) {
+        project.history->commit();
+    }
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
     if (doc.object().contains("message")) {
         ui->textBrowser->insertPlainText("== "+doc.object()["message"].toString()+"\n");

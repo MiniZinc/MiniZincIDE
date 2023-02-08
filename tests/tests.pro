@@ -12,6 +12,7 @@ INCLUDEPATH += \
 
 SOURCES += \
     testcpprofier.cpp \
+    testdiff.cpp \
     testide.cpp \
     testeditor.cpp \
     testmooc.cpp \

@@ -360,8 +360,10 @@ void IDE::fileModifiedTimeout(void)
                     } else {
                         QFile file(*s_it);
                         if (file.open(QFile::ReadOnly | QFile::Text)) {
-                            it.value()->td.setPlainText(file.readAll());
+                            QString contents = file.readAll();
+                            it.value()->td.setPlainText(contents);
                             it.value()->td.setModified(false);
+                            emit reloadedFile(*s_it, contents);
                         } else {
                             QMessageBox::warning(nullptr, "MiniZinc IDE",
                                                  "Could not reload file "+*s_it,

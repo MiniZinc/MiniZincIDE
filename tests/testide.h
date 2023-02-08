@@ -25,6 +25,11 @@ private slots:
     void testMoocSubmission();
 
     void testCPProfiler();
+
+    void testDiff();
+    void testDiffApply();
+    void testDiffApply_data();
+    void testHistory();
 };
 
 class TestMocker {

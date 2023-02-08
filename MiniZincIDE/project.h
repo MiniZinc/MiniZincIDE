@@ -20,6 +20,7 @@
 #include "moocsubmission.h"
 #include "exception.h"
 #include "configwindow.h"
+#include "history.h"
 
 class Project : public QObject {
     Q_OBJECT
@@ -209,6 +210,14 @@ public:
     QAbstractItemModel* model(void)
     {
         return itemModel;
+    }
+
+    History* history() const
+    {
+        if (mooc == nullptr) {
+            return nullptr;
+        }
+        return mooc->history;
     }
 
 signals:

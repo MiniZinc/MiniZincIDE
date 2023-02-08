@@ -13,7 +13,7 @@
 #include "project.h"
 #include "moocsubmission.h"
 #include "solver.h"
-#include "process.h"
+#include "ide.h"
 
 #include <QFileInfo>
 #include <QDir>
@@ -548,3 +548,4 @@ void Project::on_itemChanged(QStandardItem* item)
         item->setText(fi.fileName());
     }
 }
+

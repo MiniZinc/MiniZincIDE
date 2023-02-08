@@ -424,9 +424,17 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
             curEditor->document()->setPlainText(fileContents);
             curEditor->document()->setModified(openAsModified);
             tabChange(ui->tabWidget->currentIndex());
+            auto* history = getProject().history();
+            if (history != nullptr) {
+                history->updateFileContents(absPath, fileContents);
+            }
         } else if (doc) {
             if (!absPath.endsWith(".fzn")) {
                 getProject().add(absPath);
+                auto* history = getProject().history();
+                if (history != nullptr) {
+                    history->updateFileContents(absPath, doc->toPlainText());
+                }
             }
             IDE::instance()->registerEditor(absPath,curEditor);
         }
@@ -1406,7 +1414,8 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
 #if QT_VERSION < 0x060000
                 out.setCodec(QTextCodec::codecForName("UTF-8"));
 #endif
-                out << ce->document()->toPlainText();
+                auto contents = ce->document()->toPlainText();
+                out << contents;
                 file.close();
                 if (filepath != ce->filepath) {
                     QTextDocument* newdoc =
@@ -1425,6 +1434,10 @@ void MainWindow::saveFile(CodeEditor* ce, const QString& f)
                 updateRecentFiles(filepath);
                 if (ce==curEditor)
                     tabChange(tabIndex);
+                auto* history = getProject().history();
+                if (history != nullptr) {
+                    history->updateFileContents(filepath, contents);
+                }
             } else {
                 QMessageBox::warning(this,"MiniZinc IDE","Could not save file");
             }
@@ -2158,7 +2171,12 @@ void MainWindow::saveProject(const QString& f)
     }
     p.openTabsChanged(getOpenFiles(), ui->tabWidget->currentIndex());
     p.activeSolverConfigChanged(getCurrentSolverConfig());
-    p.saveProject();
+    try {
+        p.saveProject();
+    } catch (FileError& f) {
+        QMessageBox::critical(this, "MiniZinc IDE", f.message(), QMessageBox::Ok);
+    }
+
     updateRecentProjects(p.projectFile());
 }
 

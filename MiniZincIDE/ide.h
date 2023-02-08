@@ -109,6 +109,8 @@ protected slots:
 public slots:
     void checkUpdate(void);
     void help(void);
+signals:
+    void reloadedFile(const QString& file, const QString& contents);
 };
 
 #endif // IDE_H
