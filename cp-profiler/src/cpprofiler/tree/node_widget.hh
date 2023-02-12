@@ -83,6 +83,29 @@ class NodeWidget : public QWidget
     {
         setMinimumSize(WIDTH, WIDTH);
         setMaximumSize(WIDTH, WIDTH);
+        switch (m_status)
+        {
+        case NodeStatus::SOLVED:
+            setToolTip("Solutions");
+            break;
+        case NodeStatus::FAILED:
+            setToolTip("Failures");
+            break;
+        case NodeStatus::SKIPPED:
+            setToolTip("Skipped");
+            break;
+        case NodeStatus::BRANCH:
+            setToolTip("Branches");
+            break;
+        case NodeStatus::UNDETERMINED:
+            setToolTip("Undetermined");
+            break;
+        case NodeStatus::MERGED:
+            setToolTip("Merged");
+            break;
+        default:
+            break;
+        }
     }
 
     ~NodeWidget()
