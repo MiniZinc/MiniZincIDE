@@ -1,3 +1,12 @@
+2023-02-23
+  v2.7.0
+-  Fix a bug where model selection dialog could run the wrong model.
+-  Fix a bug where the same data file could be added to the MiniZinc command twice.
+-  Ensure user config directory is created when modifying solver search paths (#167).
+-  Ensure that IDE windows cannot spawn off-screen.
+-  Add tooltips to the CP-Profiler status bar legend.
+-  Add support for mooc submissions which include file editing history.
+
 2022-06-23
   v2.6.4
 -  Ensure the extra parameter filter is cleared when the textbox is cleared.
