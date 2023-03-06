@@ -154,7 +154,7 @@ void Highlighter::highlightBlock(const QString &text)
                     } else {
                         // /*
                         highlightingState.push_back(HS_COMMENT);
-                        curPosition = nxt+1;
+                        curPosition = nxt+2;
                     }
                 }
             }
@@ -183,7 +183,7 @@ void Highlighter::highlightBlock(const QString &text)
         case HS_COMMENT:
             {
                 int nxt = commentRegexp.match(text, curPosition).capturedStart();
-                int commentStartIdx = curPosition==0 ? 0 : curPosition-1;
+                int commentStartIdx = curPosition <= 1 ? 0 : curPosition - 2;
                 if (nxt==-1) {
                     // EOL -> stay in COMMENT state
                     setFormat(commentStartIdx, text.size()-commentStartIdx, commentFormat);
@@ -191,7 +191,7 @@ void Highlighter::highlightBlock(const QString &text)
                 } else {
                     // finish comment
                     setFormat(commentStartIdx, nxt-commentStartIdx+2, commentFormat);
-                    curPosition = nxt+1;
+                    curPosition = nxt+2;
                     highlightingState.pop_back();
                 }
             }
