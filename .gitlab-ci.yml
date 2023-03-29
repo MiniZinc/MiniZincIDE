@@ -15,20 +15,20 @@ build:linux:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     GIT_STRATEGY: clone
+    DISABLE_COPYRIGHT_FILES_DEPLOYMENT: '1'
+    DEBUG: '1'
   script:
     - mkdir -p build; cd build
     - qmake -makefile "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${CI_PIPELINE_ID}\\\\\\\"\"" PREFIX=/usr ../MiniZincIDE/MiniZincIDE.pro
     - make -j4
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
-    # Download Gecode Gist so linuxdeployqt can include its dependencies
+    # Download Gecode Gist so linuxdeploy can include its dependencies
     - curl --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" --silent https://gitlab.com/api/v4/snippets/1796163/raw | tr -d '\r' > download.sh
     - sh download.sh minizinc-vendor master gecode_gist:linux vendor.zip
     - unzip -q vendor.zip
-    # Workaround for: https://github.com/probonopd/linuxdeployqt/issues/35
-    - linuxdeployqt ide/usr/bin/MiniZincIDE -executable=vendor/gecode_gist/bin/fzn-gecode -bundle-non-qt-libs -no-translations -no-copy-copyright-files
-    - mkdir ide/usr/lib_fallback
-    - mv ide/usr/lib/libnss3.so ide/usr/lib/libnssutil3.so ide/usr/lib_fallback/
+    - linuxdeploy --appdir ide --executable vendor/gecode_gist/bin/fzn-gecode --plugin qt -v0
+    - rm -rf ide/usr/share ide/usr/translations ide/usr/bin/fzn-gecode
   tags: [linux, docker]
   artifacts:
     paths: [ide/]
@@ -365,8 +365,8 @@ package:docker_ubuntu:
     MZNARCH: "linux"
   <<: *packaging_setup
   script:
-    - BASES=("null" "ubuntu:latest" "ubuntu:focal" "ubuntu:bionic")
-    - EXTS=("null" "" "-focal" "-bionic")
+    - BASES=("null" "ubuntu:latest" "ubuntu:jammy" "ubuntu:focal")
+    - EXTS=("null" "" "-jammy" "-focal")
     - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
     - docker pull ${BASES[CI_NODE_INDEX]}
     - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"

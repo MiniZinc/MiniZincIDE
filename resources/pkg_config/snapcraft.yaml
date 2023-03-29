@@ -10,7 +10,7 @@ description: |
   solver input language that is understood by a wide range of solvers.
 
 confinement: classic
-base: core18
+base: core20
 
 apps:
   minizinc:
@@ -30,7 +30,6 @@ parts:
     stage:
       - bin/
       - lib/
-      - lib_fallback/
       - plugins/
   deps:
     plugin: nil
