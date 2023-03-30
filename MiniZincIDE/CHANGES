@@ -1,3 +1,10 @@
+2023-03-31
+  v2.7.1
+-  Fix highlighting of multiline comments starting with /*/ (#172).
+-  Fix bundling of incompatible OpenSSL version in linux packages.
+-  Remove support for glibc 2.27 and earlier from AppImage and tarball linux
+   packages. The Snap package may be used instead on such systems.
+
 2023-02-23
   v2.7.0
 -  Fix a bug where model selection dialog could run the wrong model.
