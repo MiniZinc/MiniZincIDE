@@ -36,6 +36,7 @@ parts:
     stage-packages:
       # Additional IDE dependencies which linuxdeployqt does not include.
       # Cannot put in the ide part because it reorganizes the directory structure.
+      - libegl1
       - libfontconfig1
       - libfreetype6
       - libgl1
