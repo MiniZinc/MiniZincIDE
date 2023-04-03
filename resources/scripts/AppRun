@@ -6,10 +6,6 @@ export PATH=$HERE/usr/bin:$PATH
 export LD_LIBRARY_PATH=$HERE/usr/lib:$LD_LIBRARY_PATH
 export QT_PLUGIN_PATH=$HERE/usr/plugins
 
-if ldd "$HERE"/usr/bin/MiniZincIDE | grep -q 'libnss3.so => not found' ; then
-    export LD_LIBRARY_PATH="$HERE"/usr/lib_fallback:$LD_LIBRARY_PATH
-fi
-
 if [ ! -z $APPIMAGE ]; then
   BINARY_NAME=$(basename "$ARGV0")
   if [ -e "$HERE/usr/bin/$BINARY_NAME" ]; then
