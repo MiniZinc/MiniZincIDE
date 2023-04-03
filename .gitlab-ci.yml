@@ -191,6 +191,7 @@ package:linux:
     - mv minizinc/share $PACKAGE/share
     ### Package vendor solvers
     - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/bin/
+    - patchelf --set-rpath '$ORIGIN/../lib' $PACKAGE/bin/fzn-gecode
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
@@ -317,7 +318,6 @@ package:appimage:
     ### Package vendor solvers
     - mv vendor/gecode_gist/bin/fzn-gecode $PACKAGE/usr/bin/
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/usr/share/minizinc/
-
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
     ### Package Globalizer
