@@ -1,6 +1,6 @@
 QT       += core gui widgets websockets
 
-VERSION = 2.7.2
+VERSION = 2.7.3
 DEFINES += MINIZINC_IDE_VERSION=\\\"$$VERSION\\\"
 
 bundled {
