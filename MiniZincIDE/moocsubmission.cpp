@@ -351,7 +351,7 @@ void MOOCSubmission::rcvSubmissionResponse()
 #endif
     reply->deleteLater();
     int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if (status != 200) {
+    if (status >= 400) {
         ui->textBrowser->insertPlainText(QString("Error %1: ").arg(status));
     } else if (project.history != nullptr) {
         project.history->commit();
