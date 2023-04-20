@@ -1,3 +1,7 @@
+2023-04-20
+  v2.7.3
+-  Only show MOOC error code when response is actually an error (#176).
+
 2023-04-05
   v2.7.2
 -  Fix patching of `RPATH` for binaries and libraries in Snap package.
