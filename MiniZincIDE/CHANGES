@@ -1,3 +1,7 @@
+2023-05-11
+  v2.7.4
+-  Update to MiniZinc 2.7.4.
+
 2023-04-20
   v2.7.3
 -  Only show MOOC error code when response is actually an error (#176).
