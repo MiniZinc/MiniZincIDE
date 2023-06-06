@@ -51,9 +51,6 @@
      <property name="text">
       <string>Add parameter</string>
      </property>
-     <property name="default">
-      <bool>true</bool>
-     </property>
     </widget>
    </item>
    <item>
