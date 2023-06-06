@@ -120,3 +120,9 @@ void ExtraParamDialog::mouseReleaseEvent(QMouseEvent* event)
     // Hack which stops the menu from closing when clicking on the widget empty space
     event->accept();
 }
+
+void ExtraParamDialog::on_params_listView_activated(const QModelIndex &index)
+{
+    on_add_pushButton_clicked();
+}
+

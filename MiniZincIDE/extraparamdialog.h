@@ -45,6 +45,8 @@ private slots:
 
     void resetControls();
 
+    void on_params_listView_activated(const QModelIndex &index);
+
 private:
     Ui::ExtraParamDialog* ui;
     QStandardItemModel* _sourceModel;
