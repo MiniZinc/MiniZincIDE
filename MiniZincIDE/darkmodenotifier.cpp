@@ -1,5 +1,6 @@
 #include "darkmodenotifier.h"
 
+#include <QApplication>
 #include <QSettings>
 
 DarkModeNotifier::DarkModeNotifier(QObject *parent) : QObject(parent)
@@ -116,8 +117,16 @@ bool DarkModeNotifier::hasSystemSetting() const
 
 bool DarkModeNotifier::hasNativeDarkMode() const
 {
+#if QT_VERSION < 0x060500
     // Have to style using CSS, no native dark widgets
     return false;
+#else
+    if (hasSystemSetting()) {
+        QApplication::setStyle("Fusion");
+        return true;
+    }
+    return false;
+#endif
 }
 
 #elif !defined(Q_OS_MAC)
