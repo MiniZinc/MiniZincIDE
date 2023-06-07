@@ -1,3 +1,8 @@
+2023-06-07
+  v2.7.5
+-  Use native Qt dark mode on Windows where supported.
+-  Improve behaviour of the custom solver parameter dialog.
+
 2023-05-11
   v2.7.4
 -  Update to MiniZinc 2.7.4.
