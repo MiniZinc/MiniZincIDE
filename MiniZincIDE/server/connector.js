@@ -63,7 +63,10 @@ const MiniZincIDE = (() => {
     function getUserData() {
         return new Promise((resolve, reject) => {
             if (userData === undefined) {
-                on('init', resolve);
+                on('init', (data) => {
+                    userData = data;
+                    resolve(userData);
+                });
             } else {
                 resolve(userData);
             }
