@@ -63,13 +63,13 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
 {
     setWindowTitle("Model parameters");
     QVector<QLineEdit*> le;
-    formLayout = new QFormLayout;
 
     QFormLayout* mainLayout = new QFormLayout;
 
     QTabWidget* tw = new QTabWidget(this);
 
     QWidget* manual = new QWidget;
+    auto* formLayout = new QFormLayout;
     manual->setLayout(formLayout);
     bool fillPrevious = previousParams == params;
     for (int i=0; i<params.size(); i++) {
@@ -96,9 +96,12 @@ void ParamDialog::getParams(QStringList params, const QStringList& dataFiles, QS
                 selectedFiles->scrollToItem(lwi);
             }
         }
-        tw->addTab(selectedFiles, "Select data file");
-        if (!fillPrevious || !previousWasManual)
+        tw->addTab(selectedFiles, "");
+        if (!fillPrevious || !previousWasManual) {
             tw->setCurrentIndex(1);
+        }
+        // Set now to workaround Qt bug where first tab doesn't appear
+        tw->setTabText(1, "Select data file");
     }
     mainLayout->addRow(tw);
     ui->frame->setLayout(mainLayout);

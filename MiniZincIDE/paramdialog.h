@@ -33,7 +33,6 @@ public:
     int getModel(const QStringList& modelFiles);
 private:
     Ui::ParamDialog *ui;
-    QFormLayout* formLayout;
     QListWidget* selectedFiles;
     QStringList previousParams;
     QStringList previousValues;
