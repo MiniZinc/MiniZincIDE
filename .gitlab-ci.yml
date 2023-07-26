@@ -378,6 +378,33 @@ package:docker_ubuntu:
   only: [tags, master, develop]
   tags: [docker-cli]
 
+minizinc:linux:nogui:
+  image: ghcr.io/minizinc/docker-build-environment:package
+  stage: package
+  variables:
+    MZNARCH: "linux"
+  <<: *packaging_setup
+  script:
+    - PACKAGE=MiniZinc-${MZNVERSION}-linux-x86_64
+    - mkdir -p $PACKAGE/bin
+    ### Package MiniZinc
+    - mv minizinc/bin/* $PACKAGE/bin/
+    - mv minizinc/share $PACKAGE/share
+    ### Package vendor solvers
+    - mv vendor/gecode/bin/fzn-gecode $PACKAGE/bin/
+    - cp -r vendor/gecode/share/minizinc/* $PACKAGE/share/minizinc/
+    - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
+    - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    ### Strip included binaries
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed mzn2doc)
+    ### Compress package
+    - tar -czf $PACKAGE.tar.gz $PACKAGE
+  artifacts:
+    name: "minizinc_linux_nogui_${CI_PIPELINE_ID}"
+    paths: [MiniZinc*.tar.gz]
+  needs: []
+  tags: [linux, docker]
+
 .snap_job: &snap_job
   stage: package
   image: ghcr.io/minizinc/docker-build-environment:snap
