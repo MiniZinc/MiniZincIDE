@@ -186,7 +186,15 @@ void OutputWidget::addSolution(const QVariantMap& output, const QStringList& ord
             if (section == "html" || section.endsWith("_html")) {
                 addHtmlToSection(section, it.second.toString());
             } else {
-                addTextToSection(section, "% " + it.second.toString(), _commentCharFormat);
+                auto lines = it.second.toString().split("\n");
+                if (lines.last().isEmpty()) {
+                    lines.pop_back();
+                }
+                bool first = true;
+                for (auto& line : lines) {
+                    addTextToSection(section, (first ? "% " : "\n% ") + line, _commentCharFormat);
+                    first = false;
+                }
             }
             if (!cursor.block().text().isEmpty()) {
                 cursor.insertBlock();

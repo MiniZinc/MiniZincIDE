@@ -557,17 +557,34 @@ void MznProcess::onStdOutLine(const QString& line)
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
             emit solutionOutput(sections, order, time);
         } else if (msg_type == "checker") {
-            auto sections = msg["output"].toObject().toVariantMap();
-            QStringList order;
-            if (msg["sections"].isArray()) {
-                for (auto it : msg["sections"].toArray()) {
-                    order << it.toString();
+            auto checkerSol = [&] (QJsonObject& msg) {
+                auto sections = msg["output"].toObject().toVariantMap();
+                QStringList order;
+                if (msg["sections"].isArray()) {
+                    for (auto it : msg["sections"].toArray()) {
+                        order << it.toString();
+                    }
+                } else {
+                    order = sections.keys();
+                }
+                qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
+                emit checkerOutput(sections, order, time);
+            };
+
+            if (msg["messages"].isArray()) {
+                for (auto it : msg["messages"].toArray()) {
+                    auto msg = it.toObject();
+                    auto msg_type = msg["type"].toString();
+                    if (msg_type == "solution" || msg_type == "trace") {
+                        checkerSol(msg);
+                    } else if (msg_type == "comment") {
+                        auto comment = msg["comment"].toString();
+                        emit commentOutput(comment);
+                    }
                 }
             } else {
-                order = sections.keys();
+                checkerSol(msg);
             }
-            qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
-            emit checkerOutput(sections, order, time);
         } else if (msg_type == "status") {
             qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
             emit finalStatus(msg["status"].toString(), time);
