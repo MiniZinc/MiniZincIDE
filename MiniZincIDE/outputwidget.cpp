@@ -126,6 +126,8 @@ void OutputWidget::scrollToBottom()
 
 void OutputWidget::startExecution(const QString& label)
 {
+    _checkerOutput.clear();
+
     TextLayoutLock lock(this);
     auto c = ui->textBrowser->textCursor();
     c.movePosition(QTextCursor::End);
@@ -276,8 +278,6 @@ void OutputWidget::addSolution(const QVariantMap& output, const QStringList& ord
 
 void OutputWidget::addCheckerOutput(const QVariantMap& output, const QStringList& order)
 {
-    // Print when we get solution
-    _checkerOutput.clear();
     for (auto& it : order) {
         _checkerOutput.append({it, output[it]});
     }

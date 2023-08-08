@@ -575,11 +575,19 @@ void MznProcess::onStdOutLine(const QString& line)
                 for (auto it : msg["messages"].toArray()) {
                     auto msg = it.toObject();
                     auto msg_type = msg["type"].toString();
-                    if (msg_type == "solution" || msg_type == "trace") {
+                    if (msg_type == "solution") {
                         checkerSol(msg);
+                    } else if (msg_type == "trace") {
+                        auto section = msg["section"].toString();
+                        qint64 time = msg["time"].isDouble() ? static_cast<qint64>(msg["time"].toDouble()) : -1;
+                        emit checkerOutput({{section, msg["message"].toString()}}, {section}, time);
                     } else if (msg_type == "comment") {
                         auto comment = msg["comment"].toString();
                         emit commentOutput(comment);
+                    } else if (msg_type == "warning") {
+                        emit warningOutput(msg);
+                    } else if (msg_type == "error") {
+                        emit errorOutput(msg);
                     }
                 }
             } else {
