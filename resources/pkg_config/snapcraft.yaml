@@ -77,6 +77,10 @@ parts:
     plugin: dump
     source: findMUS/
     stage: [bin/, share/minizinc/]
+  mzn-analyse:
+    plugin: dump
+    source: mzn-analyse/
+    stage: [bin/]
   resources:
     plugin: dump
     source: resources/

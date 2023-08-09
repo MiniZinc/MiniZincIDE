@@ -146,12 +146,15 @@ test:win64:
     - 'if [ -n "$CI_COMMIT_TAG" ]; then MZNREF="$CI_COMMIT_TAG"; elif [ "$CI_COMMIT_REF_NAME" = "master" ]; then MZNREF="master"; else MZNREF="develop"; fi'
     ### Choose the FindMUS branch
     - 'if  [ -n "$CI_COMMIT_TAG" ] || [ "$CI_COMMIT_REF_NAME" = "master" ]; then FINDMUSREF="master"; else FINDMUSREF="develop"; fi'
+    ### Choose the FindMUS branch
+    - 'if  [ -n "$CI_COMMIT_TAG" ] || [ "$CI_COMMIT_REF_NAME" = "master" ]; then ANALYSEREF="master"; else ANALYSEREF="develop"; fi'
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH"
     - unzip -q minizinc.zip
     - '[ ${DOWNLOAD_SOLVERS:-1} -eq 1 ] && curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:$MZNARCH" && unzip -q vendor.zip'
     - '[ ${DOWNLOAD_GLOBALIZER:-0} -eq 1 ] && curl --silent -o globalizer.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FGlobalizer/jobs/artifacts/master/download?job=build:$MZNARCH" && unzip -q globalizer.zip'
     - '[ ${DOWNLOAD_FINDMUS:-0} -eq 1 ] && curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2FFindMUS/jobs/artifacts/$FINDMUSREF/download?job=build:$MZNARCH" && unzip -q findmus.zip'
+    - '[ ${DOWNLOAD_ANALYSE:-0} -eq 1 ] && curl --silent -o mzn-analyse.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fmzn-analyse/jobs/artifacts/$ANALYSEREF/download?job=build:$MZNARCH" && unzip -q mzn-analyse.zip'
 
 package:check_version:
   stage: package
@@ -179,6 +182,7 @@ package:linux:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
     DOWNLOAD_FINDMUS: 1
+    DOWNLOAD_ANALYSE: 1
   <<: *packaging_setup
   script:
     - PACKAGE=MiniZincIDE-${MZNVERSION}-bundle-linux-x86_64
@@ -201,8 +205,10 @@ package:linux:
     ### Package findMUS
     - mv findMUS/bin/findMUS $PACKAGE/bin/
     - cp -r findMUS/share/minizinc/* $PACKAGE/share/minizinc/
+    ### Package mzn-analyse
+    - mv mzn-analyse/bin/mzn-analyse $PACKAGE/bin/
     ### Strip included binaries
-    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Compress package
     - tar -czf $PACKAGE.tgz $PACKAGE
@@ -220,6 +226,7 @@ package:osx:
     MZNARCH: "osx"
     DOWNLOAD_GLOBALIZER: 1
     DOWNLOAD_FINDMUS: 1
+    DOWNLOAD_ANALYSE: 1
   <<: *packaging_setup
   script:
     - "DIR=MiniZincIDE.app/Contents/Resources; MZNDIR=$DIR/share/minizinc"
@@ -241,9 +248,11 @@ package:osx:
     ### Package findMUS
     - mv findMUS/bin/findMUS $DIR/bin/
     - cp -r findMUS/share/minizinc/* $MZNDIR/
+    ### Package mzn-analyse
+    - mv mzn-analyse/bin/mzn-analyse $DIR/bin/
     ### Strip included binaries
     - (cd $DIR; strip minizinc mzn2doc)
-    - (cd $DIR/bin; strip fzn-gecode fzn-chuffed findMUS minizinc-globalizer)
+    - (cd $DIR/bin; strip fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer)
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
   artifacts:
@@ -280,6 +289,7 @@ package:win64:
     ### Choose the MiniZinc compiler branch
     - if defined CI_COMMIT_TAG (set MZNREF=%CI_COMMIT_TAG%) else if %CI_COMMIT_REF_NAME%==master (set MZNREF=master) else (set MZNREF=develop)
     - if defined CI_COMMIT_TAG (set FINDMUSREF=master) else if %CI_COMMIT_REF_NAME%==master (set FINDMUSREF=master) else (set FINDMUSREF=develop)
+    - if defined CI_COMMIT_TAG (set ANALYSEREF=master) else if %CI_COMMIT_REF_NAME%==master (set ANALYSEREF=master) else (set ANALYSEREF=develop)
     ### Download Dependencies
     - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fminizinc/jobs/artifacts/%MZNREF%/download?job=build:%MZNARCH%"
     - unzip -q minizinc.zip
@@ -289,6 +299,8 @@ package:win64:
     - unzip -q globalizer.zip
     - curl --silent -o findmus.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2FFindMus/jobs/artifacts/%FINDMUSREF%/download?job=build:%MZNARCH%"
     - unzip -q findmus.zip
+    - curl --silent -o mzn-analyse.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fmzn-analyse/jobs/artifacts/%ANALYSEREF%/download?job=build:%MZNARCH%"
+    - unzip -q mzn-analyse.zip
   script:
     - '"C:/Program Files (x86)/Inno Setup 6/ISCC.exe" /dMyAppVersion="%MZNVERSION%" /dMyMZNVersion="%MZNVERSION%" /dMyAppDirectory="%CI_PROJECT_DIR%" /dMyMSVCRedist="%MSVCREDIST%" /dMyUCRTRedist="%UCRTREDIST%" /dMyAPPArch="%MZNARCH%" /dMyApp64Bit="%ISSARCH%" /dMyAppArchitectures="%ISSARCHALLOWED%" /O"%CI_PROJECT_DIR%" resources/pkg_config/minizinc-bundle.iss'
     ### Generate checksum
@@ -306,6 +318,7 @@ package:appimage:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
     DOWNLOAD_FINDMUS: 1
+    DOWNLOAD_ANALYSE: 1
     PACKAGE: "MiniZinc.AppDir"
   <<: *packaging_setup
   script:
@@ -326,8 +339,10 @@ package:appimage:
     ### Package findMUS
     - mv findMUS/bin/findMUS $PACKAGE/usr/bin/
     - cp -r findMUS/share/minizinc/* $PACKAGE/usr/share/minizinc/
+    ### Package mzn-analyse
+    - mv mzn-analyse/bin/mzn-analyse $PACKAGE/usr/bin/
     ### Strip included binaries
-    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Assemble AppImage
     - cp resources/scripts/AppRun $PACKAGE
@@ -413,9 +428,10 @@ minizinc:linux:nogui:
     MZNARCH: "linux"
     DOWNLOAD_GLOBALIZER: 1
     DOWNLOAD_FINDMUS: 1
+    DOWNLOAD_ANALYSE: 1
   <<: *packaging_setup
   script:
-    - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
+    - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS mzn-analyse/bin/mzn-analyse globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - apt-get update -y
     - snapcraft

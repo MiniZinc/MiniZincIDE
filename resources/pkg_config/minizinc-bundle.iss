@@ -58,6 +58,8 @@ Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\m
 Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\findMUS\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+Source: "{#MyAppDirectory}\mzn-analyse\bin\mzn-analyse.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+
 Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
@@ -124,6 +126,7 @@ Type: files; Name: "{app}\Qt5WebView.dll"
 Type: files; Name: "{app}\bin\fzn-gecode-gist.bat"
 Type: files; Name: "{app}\bin\mzn-gecode.bat"
 Type: files; Name: "{app}\findMUS.exe"
+Type: files; Name: "{app}\mzn-analyse.exe"
 Type: files; Name: "{app}\flatzinc.exe"
 Type: files; Name: "{app}\fzn-chuffed.exe"
 Type: files; Name: "{app}\fzn-gecode-gist.bat"
