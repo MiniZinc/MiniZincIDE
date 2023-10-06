@@ -68,7 +68,8 @@ parts:
       chuffed/bin/fzn-chuffed: bin/
       chuffed/share/minizinc/solvers/*: share/minizinc/solvers/
       chuffed/share/minizinc/chuffed: share/minizinc/chuffed
-    stage: [bin/, share/minizinc/]
+      highs/lib64/libhighs.so: lib/
+    stage: [bin/, lib/, share/minizinc/]
   globalizer:
     plugin: dump
     source: globalizer/
