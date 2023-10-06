@@ -186,7 +186,7 @@ package:linux:
   <<: *packaging_setup
   script:
     - PACKAGE=MiniZincIDE-${MZNVERSION}-bundle-linux-x86_64
-    - mkdir -p $PACKAGE/
+    - mkdir -p $PACKAGE/lib/
     ### Package IDE
     - mv ide/usr/* $PACKAGE/
     - cp resources/scripts/MiniZincIDE.sh $PACKAGE/
@@ -199,6 +199,7 @@ package:linux:
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/bin/
     - cp -r globalizer/share/minizinc/* $PACKAGE/share/minizinc/
@@ -236,12 +237,13 @@ package:osx:
     - mv minizinc/share/minizinc/* $MZNDIR/
     ### Package vendor solvers
     - mkdir -p $DIR/bin/
+    - mkdir -p $DIR/lib/
     - mv vendor/gecode_gist/bin/fzn-gecode $DIR/bin/fzn-gecode
     - cp -r vendor/gecode_gist/share/minizinc/* $MZNDIR/
     - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
-
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - cp -r vendor/chuffed/share/minizinc/* $MZNDIR/
+    - cp vendor/highs/lib/libhighs.dylib $DIR/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $DIR/bin/
     - cp -r globalizer/share/minizinc/* $MZNDIR/
@@ -322,7 +324,7 @@ package:appimage:
     PACKAGE: "MiniZinc.AppDir"
   <<: *packaging_setup
   script:
-    - mkdir -p $PACKAGE/usr/
+    - mkdir -p $PACKAGE/usr/lib
     ### Package IDE
     - mv ide/usr/* $PACKAGE/usr/
     ### Package MiniZinc
@@ -333,6 +335,7 @@ package:appimage:
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/usr/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
+    - cp vendor/highs/lib64/libhighs.so $PACKAGE/usr/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
     - cp -r globalizer/share/minizinc/* $PACKAGE/usr/share/minizinc/
@@ -402,6 +405,7 @@ minizinc:linux:nogui:
   script:
     - PACKAGE=MiniZinc-${MZNVERSION}-linux-x86_64
     - mkdir -p $PACKAGE/bin
+    - mkdir -p $PACKAGE/lib
     ### Package MiniZinc
     - mv minizinc/bin/* $PACKAGE/bin/
     - mv minizinc/share $PACKAGE/share
@@ -410,6 +414,7 @@ minizinc:linux:nogui:
     - cp -r vendor/gecode/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Strip included binaries
     - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed mzn2doc)
     ### Compress package

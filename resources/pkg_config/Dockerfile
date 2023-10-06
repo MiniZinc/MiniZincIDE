@@ -8,6 +8,7 @@ COPY minizinc/share/minizinc /usr/local/share/minizinc
 # Install vendor solvers
 COPY vendor/gecode /usr/local
 COPY vendor/chuffed /usr/local
+COPY vendor/highs /usr/local
 
 # Strip all binaries
 RUN [ -f "/etc/alpine-release" ] && apk add --no-cache binutils || (apt-get update -y && apt-get install -y binutils)
@@ -20,3 +21,4 @@ RUN [ ! -f "/etc/alpine-release" ] || apk add --no-cache libstdc++
 
 COPY --from=composer /usr/local/bin/* /usr/local/bin/
 COPY --from=composer /usr/local/share/minizinc /usr/local/share/minizinc
+COPY --from=composer /usr/local/lib64/libhighs.so /usr/local/lib/
