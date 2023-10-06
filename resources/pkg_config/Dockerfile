@@ -21,4 +21,4 @@ RUN [ ! -f "/etc/alpine-release" ] || apk add --no-cache libstdc++
 
 COPY --from=composer /usr/local/bin/* /usr/local/bin/
 COPY --from=composer /usr/local/share/minizinc /usr/local/share/minizinc
-COPY --from=composer /usr/local/lib64/libhighs.so /usr/local/lib/
+COPY --from=composer /usr/local/lib*/libhighs.so /usr/local/lib/

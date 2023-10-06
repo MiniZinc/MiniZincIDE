@@ -373,7 +373,6 @@ package:docker_alpine:
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest-alpine && docker push minizinc/minizinc:latest-alpine; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge-alpine && docker push minizinc/minizinc:edge-alpine; fi
   needs: []
-  only: [tags, master, develop]
   tags: [docker-cli]
 
 package:docker_ubuntu:
@@ -393,7 +392,6 @@ package:docker_ubuntu:
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
   needs: []
-  only: [tags, master, develop]
   tags: [docker-cli]
 
 minizinc:linux:nogui:
