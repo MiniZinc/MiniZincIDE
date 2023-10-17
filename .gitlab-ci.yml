@@ -199,6 +199,8 @@ package:linux:
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    - mv vendor/or-tools/bin/fzn-ortools $PACKAGE/bin/
+    - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/share/minizinc/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/bin/
@@ -209,7 +211,7 @@ package:linux:
     ### Package mzn-analyse
     - mv mzn-analyse/bin/mzn-analyse $PACKAGE/bin/
     ### Strip included binaries
-    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed fzn-ortools findMUS mzn-analyse minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Compress package
     - tar -czf $PACKAGE.tgz $PACKAGE
@@ -243,6 +245,8 @@ package:osx:
     - cp resources/misc/osx-gecode-qt.conf $DIR/bin/qt.conf
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - cp -r vendor/chuffed/share/minizinc/* $MZNDIR/
+    - mv vendor/or-tools/bin/fzn-ortools $DIR/bin/
+    - cp -r vendor/or-tools/share/minizinc/* $MZNDIR/
     - cp vendor/highs/lib/libhighs.dylib $DIR/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $DIR/bin/
@@ -254,7 +258,7 @@ package:osx:
     - mv mzn-analyse/bin/mzn-analyse $DIR/bin/
     ### Strip included binaries
     - (cd $DIR; strip minizinc mzn2doc)
-    - (cd $DIR/bin; strip fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer)
+    - (cd $DIR/bin; strip fzn-gecode fzn-chuffed fzn-ortools findMUS mzn-analyse minizinc-globalizer)
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
   artifacts:
@@ -335,6 +339,8 @@ package:appimage:
     - cp -r vendor/gecode_gist/share/minizinc/* $PACKAGE/usr/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/usr/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
+    - mv vendor/or-tools/bin/fzn-ortools $PACKAGE/usr/bin/
+    - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/usr/share/minizinc/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/usr/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
@@ -345,7 +351,7 @@ package:appimage:
     ### Package mzn-analyse
     - mv mzn-analyse/bin/mzn-analyse $PACKAGE/usr/bin/
     ### Strip included binaries
-    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed findMUS mzn-analyse minizinc-globalizer mzn2doc)
+    - (cd $PACKAGE/usr/bin; strip minizinc fzn-gecode fzn-chuffed fzn-ortools findMUS mzn-analyse minizinc-globalizer mzn2doc)
     - cp resources/misc/README $PACKAGE
     ### Assemble AppImage
     - cp resources/scripts/AppRun $PACKAGE
@@ -412,9 +418,11 @@ minizinc:linux:nogui:
     - cp -r vendor/gecode/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
+    - mv vendor/or-tools/bin/fzn-ortools $PACKAGE/bin/
+    - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/share/minizinc/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Strip included binaries
-    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed mzn2doc)
+    - (cd $PACKAGE/bin; strip minizinc fzn-gecode fzn-chuffed fzn-ortools mzn2doc)
     ### Compress package
     - tar -czf $PACKAGE.tar.gz $PACKAGE
   artifacts:
@@ -434,7 +442,7 @@ minizinc:linux:nogui:
     DOWNLOAD_ANALYSE: 1
   <<: *packaging_setup
   script:
-    - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed findMUS/bin/findMUS mzn-analyse/bin/mzn-analyse globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
+    - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed vendor/or-tools/bin/fzn-ortools findMUS/bin/findMUS mzn-analyse/bin/mzn-analyse globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - apt-get update -y
     - snapcraft
