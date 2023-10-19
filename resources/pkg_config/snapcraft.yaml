@@ -68,9 +68,9 @@ parts:
       chuffed/bin/fzn-chuffed: bin/
       chuffed/share/minizinc/solvers/*: share/minizinc/solvers/
       chuffed/share/minizinc/chuffed: share/minizinc/chuffed
-      or-tools/bin/fzn-ortools: bin/
+      or-tools/bin/fzn-cp-sat: bin/
       or-tools/share/minizinc/solvers/*: share/minizinc/solvers/
-      or-tools/share/minizinc/ortools: share/minizinc/ortools
+      or-tools/share/minizinc/cpsat: share/minizinc/cpsat
       highs/lib64/libhighs.so: lib/
     stage: [bin/, lib/, share/minizinc/]
   globalizer:

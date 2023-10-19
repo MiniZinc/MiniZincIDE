@@ -52,7 +52,7 @@ Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\b
 Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\vendor\or-tools\bin\fzn-ortools.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\or-tools\bin\fzn-cp-sat.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
 Source: "{#MyAppDirectory}\vendor\or-tools\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\vendor\highs\bin\highs.dll"; DestDir:"{app}\bin"; Flags: ignoreversion
