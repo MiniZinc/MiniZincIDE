@@ -20,6 +20,7 @@
 #include <QTimer>
 
 #include "highlighter.h"
+#include "theme.h"
 
 class CodeEditorError {
 public:
@@ -47,7 +48,7 @@ class CodeEditor : public QPlainTextEdit
     Q_OBJECT
 public:
     explicit CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                        QFont& font, int indentSize, bool useTabs, bool darkMode,
+                        QFont& font, int indentSize, bool useTabs, const Theme& theme, bool darkMode,
                         QTabWidget* tabs, QWidget *parent);
     void paintLineNumbers(QPaintEvent *event);
     int lineNumbersWidth();
@@ -60,7 +61,7 @@ public:
     QString playgroundTempFile;
     void setEditorFont(QFont& font);
     void setDocument(QTextDocument *document);
-    void setDarkMode(bool);
+    void setTheme(const Theme& t, bool d);
     void setIndentSize(int size);
     void setIndentTab(bool useTabs0) { useTabs = useTabs0; }
     Highlighter& getHighlighter();
@@ -96,12 +97,13 @@ private:
     QStringListModel completionModel;
     int indentSize;
     bool useTabs;
-    bool darkMode;
     QList<CodeEditorError> errors;
     QSet<int> errorLines;
     QSet<int> warningLines;
     QHash<QString,QString> idMap;
     QTimer modificationTimer;
+    Theme theme;
+    bool darkMode;
     int matchLeft(QTextBlock block, QChar b, int i, int n);
     int matchRight(QTextBlock block, QChar b, int i, int n);
 

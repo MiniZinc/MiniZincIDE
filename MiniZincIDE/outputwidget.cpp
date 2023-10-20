@@ -107,15 +107,16 @@ QString OutputWidget::lastTraceLoc(const QString &newTraceLoc)
     return ltl;
 }
 
-void OutputWidget::setDarkMode(bool darkMode)
+void OutputWidget::setTheme(const Theme& theme, bool darkMode)
 {
-    _noticeCharFormat.setForeground(Themes::currentTheme.functionColor.get(darkMode));
-    _errorCharFormat.setForeground(Themes::currentTheme.errorColor.get(darkMode));
-    _errorCharFormat.setForeground(Themes::currentTheme.errorColor.get(darkMode));
+    _defaultCharFormat.setForeground(theme.textColor.get(darkMode));
+    _noticeCharFormat.setForeground(theme.functionColor.get(darkMode));
+    _errorCharFormat.setForeground(theme.errorColor.get(darkMode));
+    _errorCharFormat.setForeground(theme.errorColor.get(darkMode));
     _infoCharFormat.setForeground(Qt::gray);
-    _commentCharFormat.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+    _commentCharFormat.setForeground(theme.commentColor.get(darkMode));
 
-    ui->textBrowser->viewport()->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
+    ui->textBrowser->viewport()->setStyleSheet(theme.styleSheet(darkMode));
 }
 
 void OutputWidget::scrollToBottom()

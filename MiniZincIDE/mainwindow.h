@@ -39,6 +39,7 @@
 #include "codechecker.h"
 #include "profilecompilation.h"
 #include "server.h"
+#include "theme.h"
 
 #include "../cp-profiler/src/cpprofiler/conductor.hh"
 #include "../cp-profiler/src/cpprofiler/execution_window.hh"
@@ -89,7 +90,7 @@ public slots:
 
     void openFile(const QString &path = QString(), bool openAsModified=false, bool focus=true);
     void stop();
-    void setDarkMode(bool enable);
+    void setTheme(const Theme& theme, bool darkMode);
     void initTheme();
     void closeFindWidget();
 

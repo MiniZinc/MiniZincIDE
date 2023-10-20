@@ -183,6 +183,7 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
     lastDefaultProject = nullptr;
 
     darkModeNotifier = new DarkModeNotifier(this);
+    themeManager = new ThemeManager(this);
 
     { // Load cheat sheet
         QString fileContents;
@@ -210,11 +211,14 @@ IDE::IDE(int& argc, char* argv[]) : QApplication(argc,argv) {
         int zoom = settings.value("zoom", 100).toInt();
         editorFont.setPointSize(editorFont.pointSize() * zoom / 100);
         bool darkMode = darkModeNotifier->darkMode();
+        auto themeIdx = settings.value("theme", 0).toInt();
+        themeManager->current(themeIdx);
+        auto& theme = themeManager->current();
         settings.endGroup();
 
         cheatSheet = new QMainWindow;
         cheatSheet->setWindowTitle("MiniZinc Cheat Sheet");
-        CodeEditor* ce = new CodeEditor(nullptr,":/cheat_sheet.mzn",false,false,editorFont,2,false,darkMode,nullptr,nullptr);
+        CodeEditor* ce = new CodeEditor(nullptr,":/cheat_sheet.mzn",false,false,editorFont,2,false,theme,darkMode,nullptr,nullptr);
         ce->setWordWrapMode(wordWrap ?
                                 QTextOption::WrapAtWordBoundaryOrAnywhere :
                                 QTextOption::NoWrap);
@@ -676,9 +680,16 @@ IDE* IDE::instance(void) {
     return static_cast<IDE*>(qApp);
 }
 
-void IDE::onDarkModeChanged(bool darkMode)
+void IDE::onDarkModeChanged(bool)
 {
-    static_cast<CodeEditor*>(cheatSheet->centralWidget())->setDarkMode(darkMode);
+    refreshTheme();
+}
+
+void IDE::refreshTheme()
+{
+    auto& theme = themeManager->current();
+    bool darkMode = darkModeNotifier->darkMode();
+    static_cast<CodeEditor*>(cheatSheet->centralWidget())->setTheme(theme, darkMode);
 
     if (!darkModeNotifier->hasNativeDarkMode()) {
         // No native dark widgets, so use stylesheet instead
@@ -692,6 +703,6 @@ void IDE::onDarkModeChanged(bool darkMode)
     }
 
     for (auto* mw : qAsConst(mainWindows)) {
-        mw->setDarkMode(darkMode);
+        mw->setTheme(theme, darkMode);
     }
 }

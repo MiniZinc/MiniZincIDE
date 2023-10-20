@@ -9,6 +9,7 @@
 
 #include "codeeditor.h"
 #include "darkmodenotifier.h"
+#include "theme.h"
 
 #ifdef Q_OS_WIN
 #define pathSep ";"
@@ -67,6 +68,7 @@ public:
     QNetworkReply* versionCheckReply;
 
     DarkModeNotifier* darkModeNotifier;
+    ThemeManager* themeManager;
 
 #ifdef Q_OS_MAC
     QMenuBar* defaultMenuBar;
@@ -96,6 +98,7 @@ public:
     void setEditorWordWrap(QTextOption::WrapMode mode);
     void addRecentFile(const QString& file);
     void addRecentProject(const QString& file);
+    void refreshTheme();
 protected:
     bool event(QEvent *);
 protected slots:

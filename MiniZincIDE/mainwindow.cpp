@@ -409,7 +409,8 @@ void MainWindow::createEditor(const QString& path, bool openAsModified, bool isN
                 closeTab = 0;
             }
         }
-        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,indentSize,useTabs,darkMode,ui->tabWidget,this);
+        auto& theme = IDE::instance()->themeManager->current();
+        CodeEditor* ce = new CodeEditor(doc,absPath,isNewFile,large,editorFont,indentSize,useTabs,theme,darkMode,ui->tabWidget,this);
         if (readOnly || ce->filename == "_coursera" || ce->filename.endsWith(".mzc"))
             ce->setReadOnly(true);
         int tab = ui->tabWidget->addTab(ce, ce->filename);
@@ -1058,7 +1059,7 @@ void MainWindow::compileSolutionChecker(const QString& checker)
     connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
     connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
         QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        f.setForeground(IDE::instance()->themeManager->current().commentColor.get(darkMode));
         ui->outputWidget->addText(d, f, "Standard Error");
     });
     connect(proc, &MznProcess::finished, [=] () {
@@ -1162,7 +1163,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     connect(proc, &MznProcess::progressOutput, this, &MainWindow::on_progressOutput);
     connect(proc, &MznProcess::outputStdError, this, [=] (const QString& d) {
         QTextCharFormat f;
-        f.setForeground(Themes::currentTheme.commentColor.get(darkMode));
+        f.setForeground(IDE::instance()->themeManager->current().commentColor.get(darkMode));
         ui->outputWidget->addText(d, f, "Standard Error");
     });
     connect(proc, &MznProcess::finished, [=] () {
@@ -1293,7 +1294,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
                     loc["firstColumn"].toInt(),
                     loc["lastLine"].toInt(),
                     loc["lastColumn"].toInt(),
-                    Themes::currentTheme.warningColor.get(darkMode)
+                    IDE::instance()->themeManager->current().warningColor.get(darkMode)
                     );
             auto prevLink = ui->outputWidget->lastTraceLoc(link);
             if (prevLink != link) {
@@ -2460,16 +2461,16 @@ void MainWindow::check_code()
     code_checker->start(contents, *sc, wd);
 }
 
-void MainWindow::setDarkMode(bool enable)
+void MainWindow::setTheme(const Theme& theme, bool dark)
 {
-    darkMode = enable;
+    darkMode = dark;
     for (int i=0; i<ui->tabWidget->count(); i++) {
         CodeEditor* ce = qobject_cast<CodeEditor*>(ui->tabWidget->widget(i));
         if (ce) {
-            ce->setDarkMode(darkMode);
+            ce->setTheme(theme, darkMode);
         }
     }
-    ui->outputWidget->setDarkMode(darkMode);
+    ui->outputWidget->setTheme(theme, darkMode);
     if (conductor != nullptr) {
         conductor->setDarkMode(darkMode);
     }
@@ -2477,24 +2478,9 @@ void MainWindow::setDarkMode(bool enable)
 
 void MainWindow::initTheme()
 {
-    QSettings settings;
-    settings.beginGroup("ide");
-    auto idx = settings.value("theme", 0).toInt();
-    switch (idx) {
-    case 1:
-        Themes::currentTheme = Themes::blueberry;
-        break;
-    case 2:
-        Themes::currentTheme = Themes::mango;
-        break;
-    default:
-        Themes::currentTheme = Themes::minizinc;
-        break;
-    }
-    settings.endGroup();
-
+    auto* tm = IDE::instance()->themeManager;
     auto* dm = IDE::instance()->darkModeNotifier;
-    setDarkMode(dm->darkMode());
+    setTheme(tm->current(), dm->darkMode());
 }
 
 void MainWindow::on_actionEditSolverConfig_triggered()
@@ -2962,8 +2948,9 @@ void MainWindow::on_progressOutput(float progress)
 
 void MainWindow::on_minizincError(const QJsonObject& error) {
     bool isError = error["type"].toString() == "error";
-    auto color = isError ? Themes::currentTheme.errorColor.get(darkMode)
-                         : Themes::currentTheme.warningColor.get(darkMode);
+    auto& currentTheme = IDE::instance()->themeManager->current();
+    auto color = isError ? currentTheme.errorColor.get(darkMode)
+                         : currentTheme.warningColor.get(darkMode);
     QString messageType = isError ? "Errors" : "Warnings";
 
     if (error["stack"].isArray()) {

@@ -36,8 +36,8 @@ CodeEditor::initUI(QFont& font)
     setViewportWidth(0);
     cursorChange();
 
-    highlighter = new Highlighter(font,darkMode,document());
-    setDarkMode(darkMode);
+    highlighter = new Highlighter(font,theme,darkMode,document());
+    setTheme(theme, darkMode);
 
     QTextCursor cursor(textCursor());
     cursor.movePosition(QTextCursor::Start);
@@ -47,10 +47,10 @@ CodeEditor::initUI(QFont& font)
 }
 
 CodeEditor::CodeEditor(QTextDocument* doc, const QString& path, bool isNewFile, bool large,
-                       QFont& font, int indentSize0, bool useTabs0, bool darkMode0,
+                       QFont& font, int indentSize0, bool useTabs0, const Theme& theme0, bool darkMode0,
                        QTabWidget* t, QWidget *parent) :
     QPlainTextEdit(parent), loadContentsButton(nullptr), tabs(t),
-    indentSize(indentSize0), useTabs(useTabs0), darkMode(darkMode0)
+    indentSize(indentSize0), useTabs(useTabs0), theme(theme0), darkMode(darkMode0)
 {
     if (doc) {
         QPlainTextEdit::setDocument(doc);
@@ -137,7 +137,7 @@ void CodeEditor::setDocument(QTextDocument *document)
     QPlainTextEdit::setDocument(document);
     if (document) {
         QFont f= font();
-        highlighter = new Highlighter(f,darkMode,document);
+        highlighter = new Highlighter(f, theme, darkMode, document);
     }
     connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::setViewportWidth);
     connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::setLineNumbers);
@@ -146,23 +146,21 @@ void CodeEditor::setDocument(QTextDocument *document)
     connect(this->document(), &QTextDocument::modificationChanged, this, &CodeEditor::docChanged);
 }
 
-void CodeEditor::setDarkMode(bool enable)
+void CodeEditor::setTheme(const Theme& _theme, bool _darkMode)
 {
-    darkMode = enable;
-    highlighter->setDarkMode(enable);
+    darkMode = _darkMode;
+    theme = _theme;
+    highlighter->setTheme(theme, darkMode);
     highlighter->rehighlight();
 
-//// Palettes stop working when stylesheets are used for the same object.
-//// Since dark-mode is handeled via css on non-macOS systems, the more efficient pallet code cannot be used.
-//// Instead we have to generate css on the fly.
-//    auto palette = this->palette();
-//    palette.setColor(QPalette::Text, Themes::currentTheme.textColor.get(darkMode));
-//    palette.setColor(QPalette::Base, Themes::currentTheme.backgroundColor.get(darkMode));
-//    palette.setColor(QPalette::Highlight, Themes::currentTheme.textHighlightColor.get(darkMode));
-//    palette.setColor(QPalette::HighlightedText, Themes::currentTheme.textColor.get(darkMode));
-//    this->setPalette(palette);
+    auto palette = this->palette();
+    palette.setColor(QPalette::Text, theme.textColor.get(darkMode));
+    palette.setColor(QPalette::Base, theme.backgroundColor.get(darkMode));
+    palette.setColor(QPalette::Highlight, theme.textHighlightColor.get(darkMode));
+    palette.setColor(QPalette::HighlightedText, theme.textColor.get(darkMode));
+    this->setPalette(palette);
 
-    viewport()->setStyleSheet(Themes::currentTheme.styleSheet(darkMode));
+    viewport()->setStyleSheet(theme.styleSheet(darkMode));
     cursorChange(); // Ensure extra selections are the correct colours
 }
 
@@ -404,7 +402,7 @@ void CodeEditor::cursorChange()
 
     {
         QTextEdit::ExtraSelection highlightLineSelection;
-        QColor lineColor = Themes::currentTheme.lineHighlightColor.get(darkMode);
+        QColor lineColor = theme.lineHighlightColor.get(darkMode);
         highlightLineSelection.format.setBackground(lineColor);
         highlightLineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
         highlightLineSelection.cursor = textCursor();
@@ -412,8 +410,8 @@ void CodeEditor::cursorChange()
         extraSelections.append(highlightLineSelection);
     }
 
-    auto ec = Themes::currentTheme.errorColor.get(darkMode);
-    auto wc = Themes::currentTheme.warningColor.get(darkMode);
+    auto ec = theme.errorColor.get(darkMode);
+    auto wc = theme.warningColor.get(darkMode);
     foreach (QTextEdit::ExtraSelection sel, allExtraSels) {
         if (sel.format.underlineColor() == ec || sel.format.underlineColor() == wc) {
             extraSelections.append(sel);
@@ -447,7 +445,7 @@ void CodeEditor::cursorChange()
             if (parenPos0 != -1 && parenPos1 != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                format.setBackground(Themes::currentTheme.bracketsMatchColor.get(darkMode));
+                format.setBackground(theme.bracketsMatchColor.get(darkMode));
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(parenPos0);
@@ -462,7 +460,7 @@ void CodeEditor::cursorChange()
             if (errPos != -1) {
                 QTextEdit::ExtraSelection sel;
                 QTextCharFormat format = sel.format;
-                format.setBackground(Themes::currentTheme.bracketsNoMatchColor.get(darkMode));
+                format.setBackground(theme.bracketsNoMatchColor.get(darkMode));
                 sel.format = format;
                 QTextCursor cursor = textCursor();
                 cursor.setPosition(errPos);
@@ -548,7 +546,7 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
     QFontMetrics fm2(lineNoFont);
     int ascentDiff = fontMetrics().ascent() - fm2.ascent();
     painter.setFont(lineNoFont);
-    painter.fillRect(event->rect(), Themes::currentTheme.lineNumberbackground.get(darkMode));
+    painter.fillRect(event->rect(), theme.lineNumberbackground.get(darkMode));
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -566,13 +564,13 @@ void CodeEditor::paintLineNumbers(QPaintEvent *event)
             int textTop = top + ascentDiff;
 
             if (errorLines.contains(blockNumber)) {
-                painter.setPen(Themes::currentTheme.errorColor.get(darkMode));
+                painter.setPen(theme.errorColor.get(darkMode));
             } else if (warningLines.contains(blockNumber)) {
-                painter.setPen(Themes::currentTheme.warningColor.get(darkMode));
+                painter.setPen(theme.warningColor.get(darkMode));
             } else if (blockNumber == curLine) {
-                painter.setPen(Themes::currentTheme.foregroundActiveColor.get(darkMode));
+                painter.setPen(theme.foregroundActiveColor.get(darkMode));
             } else {
-                painter.setPen(Themes::currentTheme.foregroundInactiveColor.get(darkMode));
+                painter.setPen(theme.foregroundInactiveColor.get(darkMode));
             }
 
             painter.drawText(0, textTop, lineNumbers->width(), fm2.height(),
@@ -602,7 +600,7 @@ QColor CodeEditor::heatColor(double ratio)
 {
 //return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), QColor(Qt::transparent), ratio);
 //    QColor bg =  darkMode?QColor(0x26, 0x26, 0x26):Qt::white;
-    QColor bg = Themes::currentTheme.backgroundColor.get(darkMode);
+    QColor bg = theme.backgroundColor.get(darkMode);
     bg.setAlpha(50);
     return interpolate(darkMode?QColor(191, 0, 0):QColor(Qt::red).lighter(110), bg, ratio);
 }
@@ -618,7 +616,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
     int heightDiff = (origFontHeight-fm2.height());
     painter.setFont(lineNoFont);
 
-    painter.fillRect(event->rect(), Themes::currentTheme.backgroundColor.get(darkMode));
+    painter.fillRect(event->rect(), theme.backgroundColor.get(darkMode));
 
     // TODO: This should be pre-computed only once and stored in each block.
     // Statistics should not be recounted at eack redraw...
@@ -630,7 +628,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
 
     int curLine = textCursor().blockNumber();
 
-    painter.setPen(Themes::currentTheme.foregroundActiveColor.get(darkMode));
+    painter.setPen(theme.foregroundActiveColor.get(darkMode));
     while (block.isValid() && top <= event->rect().bottom()) {
         BracketData* bd = static_cast<BracketData*>(block.userData());
         if (block.isVisible() && bottom >= event->rect().top() && bd->d.hasData()) {
@@ -661,7 +659,7 @@ void CodeEditor::paintDebugInfo(QPaintEvent *event)
         ++blockNumber;
     }
 
-    painter.setPen(Themes::currentTheme.foregroundInactiveColor.get(darkMode));
+    painter.setPen(theme.foregroundInactiveColor.get(darkMode));
     painter.drawLine(0,0,0,event->rect().bottom());
 }
 
@@ -677,9 +675,9 @@ void CodeEditor::paintHeader(QPaintEvent *event)
     painter.setFont(lineNoFont);
 
 
-    painter.fillRect(event->rect(), Themes::currentTheme.backgroundColor.get(darkMode));
+    painter.fillRect(event->rect(), theme.backgroundColor.get(darkMode));
     int baseX = debugInfo->geometry().x();
-    painter.setPen(Themes::currentTheme.textColor.get(darkMode));
+    painter.setPen(theme.textColor.get(darkMode));
     painter.drawText(baseX, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Cons");
     painter.drawText(baseX + DEBUG_TAB_SIZE, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Vars");
     painter.drawText(baseX + DEBUG_TAB_SIZE*2, heightDiff/2, DEBUG_TAB_SIZE, debugInfoOffset(), Qt::AlignCenter, "Time");
@@ -754,8 +752,8 @@ void CodeEditor::cut()
 
 void CodeEditor::checkFile(const QVector<MiniZincError>& mznErrors)
 {
-    auto errorColor = Themes::currentTheme.errorColor.get(darkMode);
-    auto warningColor = Themes::currentTheme.warningColor.get(darkMode);
+    auto errorColor = theme.errorColor.get(darkMode);
+    auto warningColor = theme.warningColor.get(darkMode);
 
     QList<QTextEdit::ExtraSelection> allExtraSels = extraSelections();
 

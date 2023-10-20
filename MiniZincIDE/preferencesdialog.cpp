@@ -38,7 +38,8 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
         } else {
             qDebug() << "internal error: cannot open cheat sheet.";
         }
-        _ce = new CodeEditor(nullptr, ":/cheat_sheet.mzn", false, false, editorFont, 2, false, _origDarkMode, nullptr, this);
+        auto& origTheme = IDE::instance()->themeManager->get(_origThemeIndex);
+        _ce = new CodeEditor(nullptr, ":/cheat_sheet.mzn", false, false, editorFont, 2, false, origTheme, _origDarkMode, nullptr, this);
         _ce->document()->setPlainText(fileContents);
         _ce->setReadOnly(true);
         ui->preview_verticalLayout->addWidget(_ce);
@@ -84,7 +85,8 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
         _origDarkMode = d->darkMode();
         ui->darkMode_checkBox->hide();
     }
-    _ce->setDarkMode(_origDarkMode);
+    auto* t = IDE::instance()->themeManager;
+    _ce->setTheme(t->get(_origThemeIndex), _origDarkMode);
     ui->darkMode_checkBox->setChecked(_origDarkMode);
     settings.endGroup();
     // Load user solver search paths
@@ -168,24 +170,10 @@ void PreferencesDialog::updateCodeEditorFont()
 
 void PreferencesDialog::on_theme_comboBox_currentIndexChanged(int index)
 {
-    switch (index) {
-    case 1:
-        Themes::currentTheme = Themes::blueberry;
-        break;
-    case 2:
-        Themes::currentTheme = Themes::mango;
-        break;
-    default:
-        Themes::currentTheme = Themes::minizinc;
-    }
-
-    auto* mw = qobject_cast<MainWindow*>(parentWidget());
-    if (mw != nullptr) {
-        // Refresh style
-        mw->setDarkMode(mw->isDarkMode());
-    }
-
-    _ce->setDarkMode(ui->darkMode_checkBox->isChecked());
+    auto* t = IDE::instance()->themeManager;
+    t->current(index);
+    IDE::instance()->refreshTheme();
+    _ce->setTheme(t->current(), ui->darkMode_checkBox->isChecked());
 }
 
 QByteArray PreferencesDialog::allowFileRestore(const QString& path)
@@ -939,9 +927,10 @@ void PreferencesDialog::updateSolverLabel()
 void PreferencesDialog::on_darkMode_checkBox_stateChanged(int checked)
 {
     auto* d = IDE::instance()->darkModeNotifier;
+    auto* t = IDE::instance()->themeManager;
     bool dark = checked == Qt::Checked;
     d->requestChangeDarkMode(dark);
-    _ce->setDarkMode(d->darkMode());
+    _ce->setTheme(t->current(), d->darkMode());
 }
 
 void PreferencesDialog::on_zoom_spinBox_valueChanged(int value)

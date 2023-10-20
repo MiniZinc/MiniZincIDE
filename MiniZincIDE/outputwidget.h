@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QMenu>
+#include "theme.h"
 
 namespace Ui {
 class OutputWidget;
@@ -49,7 +50,7 @@ public:
     QString lastTraceLoc(const QString& newTraceLoc);
 
 public slots:
-    void setDarkMode(bool darkMode);
+    void setTheme(const Theme& theme, bool darkMode);
 
     void copySelectionToClipboard(bool includeHidden = false);
 

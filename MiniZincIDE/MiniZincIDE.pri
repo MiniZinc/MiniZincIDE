@@ -59,7 +59,8 @@ SOURCES += \
     $$PWD/project.cpp \
     $$PWD/moocsubmission.cpp \
     $$PWD/esclineedit.cpp \
-    $$PWD/solver.cpp
+    $$PWD/solver.cpp \
+    $$PWD/theme.cpp
 
 HEADERS += \
     $$PWD/history.h \
@@ -88,7 +89,8 @@ HEADERS += \
     $$PWD/project.h \
     $$PWD/moocsubmission.h \
     $$PWD/esclineedit.h \
-    $$PWD/solver.h
+    $$PWD/solver.h \
+    $$PWD/theme.h
 
 FORMS += \
     $$PWD/configwindow.ui \

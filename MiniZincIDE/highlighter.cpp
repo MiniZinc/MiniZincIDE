@@ -15,9 +15,7 @@
 #include "highlighter.h"
 #include "ideutils.h"
 
-Theme Themes::currentTheme = Themes::minizinc;
-
-Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
+Highlighter::Highlighter(QFont& font, const Theme& theme, bool dm, QTextDocument *parent)
     : QSyntaxHighlighter(parent), keywordColor(Qt::darkGreen), functionColor(Qt::blue), stringColor(Qt::darkRed), commentColor(Qt::red)
 
 {
@@ -64,7 +62,7 @@ Highlighter::Highlighter(QFont& font, bool dm, QTextDocument *parent)
     commentStartExp = QRegularExpression("/\\*");
     commentEndExp = QRegularExpression("\\*/");
 
-    setDarkMode(dm);
+    setTheme(theme, dm);
 
 }
 
@@ -362,13 +360,12 @@ void Highlighter::copyHighlightedToClipboard(QTextCursor cursor)
     delete tempDocument;
 }
 
-void Highlighter::setDarkMode(bool enable)
+void Highlighter::setTheme(const Theme& theme, bool darkMode)
 {
-    darkMode = enable;
-    keywordColor = Themes::currentTheme.keywordColor.get(darkMode);
-    functionColor = Themes::currentTheme.functionColor.get(darkMode);
-    stringColor = Themes::currentTheme.stringColor.get(darkMode);
-    commentColor = Themes::currentTheme.commentColor.get(darkMode);
+    keywordColor = theme.keywordColor.get(darkMode);
+    functionColor = theme.functionColor.get(darkMode);
+    stringColor = theme.stringColor.get(darkMode);
+    commentColor = theme.commentColor.get(darkMode);
     commentFormat.setForeground(commentColor);
     rules[0].format.setForeground(functionColor);
     for (int i=1; i<rules.size(); i++) {
