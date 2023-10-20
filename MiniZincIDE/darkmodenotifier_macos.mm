@@ -70,9 +70,9 @@ void DarkModeNotifier::init()
     auto handler = [=] () {
         bool newDarkMode = getDarkMode();
         if (_darkMode != newDarkMode) {
+            _darkMode = newDarkMode;
             emit darkModeChanged(newDarkMode);
         }
-        _darkMode = newDarkMode;
     };
 
     _internal->darkModeObserver = [[DarkModeObserver alloc] initWithHandler:handler];
