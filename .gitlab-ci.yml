@@ -261,9 +261,35 @@ package:osx:
     - (cd $DIR/bin; strip fzn-gecode fzn-chuffed fzn-cp-sat findMUS mzn-analyse minizinc-globalizer)
     ### Run automated Qt deployment tool
     - macdeployqt ./MiniZincIDE.app -executable=$DIR/bin/fzn-gecode
+    ### Sign package
+    - if [ -z "$OSX_DEVELOPER_ID" ]; then
+    -   exit 0
+    - fi
+    - security unlock-keychain -p "$OSX_KEYCHAIN_PASSWORD" "$OSX_KEYCHAIN_PATH"
+    - security set-key-partition-list -S 'apple-tool:,apple:' -s -k "$OSX_KEYCHAIN_PASSWORD" "$OSX_KEYCHAIN_PATH"
+    - security list-keychains -d user -s "$OSX_KEYCHAIN_PATH" login.keychain
+    - for f in MiniZincIDE.app/Contents/Frameworks/*.framework; do \
+    -   codesign --options runtime --force --sign "$OSX_DEVELOPER_ID" $f/Versions/*/`basename $f .framework`; \
+    - done
+    - find MiniZincIDE.app/Contents/PlugIns MiniZincIDE.app/Contents/Frameworks -type f -name '*.dylib' -exec codesign --options runtime --force --sign "$OSX_DEVELOPER_ID" {} \;
+    - find MiniZincIDE.app/Contents/Resources -type f -perm +111 -exec codesign --options runtime --entitlements resources/misc/entitlements.xml --force --sign "$OSX_DEVELOPER_ID" {} \;
+    - codesign --options runtime --force --sign "$OSX_DEVELOPER_ID" MiniZincIDE.app
+    - ditto -c -k --sequesterRsrc --keepParent MiniZincIDE.app signed_bundle.zip
+    - xcrun notarytool submit signed_bundle.zip --team-id "$OSX_NOTARY_TOOL_TEAM_ID" --apple-id "$OSX_NOTARY_TOOL_APPLE_ID" --password "$OSX_NOTARY_TOOL_PASSWORD" --wait
+    - xcrun stapler staple MiniZincIDE.app
+    - cp "$OSX_TEMPLATE_IMAGE" signed_bundle.sparseimage
+    - hdiutil detach -quiet signed_bundle || true
+    - hdiutil attach -mountpoint signed_bundle signed_bundle.sparseimage
+    - diskutil rename signed_bundle "MiniZinc IDE $MZNVERSION (bundled)"
+    - rm -rf signed_bundle/MiniZincIDE.app
+    - mv MiniZincIDE.app signed_bundle/
+    - hdiutil detach signed_bundle
+    - hdiutil convert -format UDZO -o MiniZincIDE-$MZNVERSION-bundled.dmg signed_bundle.sparseimage
+  after_script:
+    - security lock-keychain "$OSX_KEYCHAIN_PATH"
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
-    paths: [MiniZincIDE.app]
+    paths: [MiniZincIDE.app, MiniZincIDE-*-bundled.dmg]
   needs: ["build:osx"]
   tags: [osx, qt]
 
