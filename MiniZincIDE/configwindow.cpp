@@ -444,6 +444,7 @@ void ConfigWindow::updateGUI(bool overrideSync)
         }
 
         ui->timingInfo_checkBox->setChecked(sc->outputTiming);
+        ui->outputObjective_checkBox->setChecked(sc->outputObjective);
     }
 
     ui->numSolutions_spinBox->setEnabled(ui->numSolutions_checkBox->isEnabled() && ui->numSolutions_checkBox->isChecked());
@@ -527,6 +528,7 @@ void ConfigWindow::updateSolverConfig(SolverConfiguration* sc)
         s->compilationStats = ui->compilationStats_checkBox->isChecked();
         s->solvingStats = ui->solvingStats_checkBox->isChecked();
         s->outputTiming = ui->timingInfo_checkBox->isChecked();
+        s->outputObjective = ui->outputObjective_checkBox->isChecked();
     }
 
     sc->optimizationLevel = ui->optimizationLevel_comboBox->currentIndex();

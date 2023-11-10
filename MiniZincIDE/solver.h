@@ -80,6 +80,7 @@ public:
     bool compilationStats;
     bool solvingStats;
     bool outputTiming;
+    bool outputObjective;
     int optimizationLevel;
     QStringList additionalData;
     int numThreads;

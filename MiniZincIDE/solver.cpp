@@ -269,6 +269,7 @@ SolverConfiguration::SolverConfiguration(const Solver& _solver, bool builtin) :
     compilationStats(false),
     solvingStats(false),
     outputTiming(false),
+    outputObjective(true),
     optimizationLevel(1),
     numThreads(1),
     freeSearch(false),
@@ -351,6 +352,8 @@ SolverConfiguration SolverConfiguration::loadJSON(const QJsonDocument& json, QSt
             sc.solvingStats = it.value().toBool();
         } else if (key == "--output-time") {
             sc.outputTiming = it.value().toBool();
+        } else if (key == "--output-objective") {
+            sc.outputObjective = it.value().toBool();
         } else if (key == "-O0" && it.value().toBool()) {
             sc.optimizationLevel = 0;
         } else if (key == "-O1" && it.value().toBool()) {
@@ -558,6 +561,7 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
     if (outputTiming) {
         config["output-time"] = outputTiming;
     }
+    config["output-objective"] = outputObjective;
     if (optimizationLevel != 1) {
         config["-O"] = optimizationLevel;
     }
@@ -655,6 +659,10 @@ bool SolverConfiguration::syncedOptionsMatch(const SolverConfiguration& sc) cons
         return false;
     }
 
+    if (outputObjective != sc.outputObjective) {
+        return false;
+    }
+
     return true;
 }
 
@@ -677,6 +685,7 @@ bool SolverConfiguration::operator==(const SolverConfiguration& sc) const
             compilationStats == sc.compilationStats &&
             solvingStats == sc.solvingStats &&
             outputTiming == sc.outputTiming &&
+            outputObjective == sc.outputObjective &&
             optimizationLevel == sc.optimizationLevel &&
             additionalData == sc.additionalData &&
             numThreads == sc.numThreads &&
