@@ -273,7 +273,7 @@ void MOOCSubmission::solveNext() {
             solverConfig.extraOptions["output-mode"] = "checker";
         }
 
-        mw->run(solverConfig, item.model, files, QStringList(), &_output_stream);
+        mw->run(solverConfig, item.model, files, QStringList(), QStringList(), &_output_stream);
         return;
     } else {
         submitToMOOC();

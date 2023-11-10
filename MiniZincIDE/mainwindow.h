@@ -76,7 +76,7 @@ private:
             const QStringList& data = QStringList(),
             const QString& checker = QString(),
             const QStringList& extraArgs = QStringList());
-    bool getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, QStringList& extraArgs);
+    bool getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, const QStringList& extraArgs, QStringList& inlineData);
     QString currentModelFile(void);
     bool promptSaveModified(void);
     void setEditorMenuItemsEnabled(bool enabled);
@@ -265,8 +265,8 @@ public:
     SolverConfiguration* getCurrentSolverConfig(void);
     const Solver* getCurrentSolver(void);
     void compileSolutionChecker(const QString& checker);
-    void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), bool profile = false);
-    void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), QTextStream* ts = nullptr);
+    void compile(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), const QStringList& inlineData = QStringList(), bool profile = false);
+    void run(const SolverConfiguration& sc, const QString& model, const QStringList& data = QStringList(), const QStringList& extraArgs = QStringList(), const QStringList& inlineData = QStringList(), QTextStream* ts = nullptr);
     QList<CodeEditor*> codeEditors();
     bool isDarkMode() const { return darkMode; }
 private:

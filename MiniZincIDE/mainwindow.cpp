@@ -782,6 +782,7 @@ void MainWindow::compileOrRun(
     auto dataFiles = data;
     auto checkerFile = checker;
     auto extraArguments = extraArgs;
+    QStringList inlineData;
 
     // If we didn't specify any data but the current file is a data file, use it
     if (dataFiles.isEmpty() && curEditor && (curEditor->filepath.endsWith(".dzn") || curEditor->filepath.endsWith(".json"))) {
@@ -789,7 +790,7 @@ void MainWindow::compileOrRun(
     }
 
     // Prompt for data if necessary
-    if (!getModelParameters(*solverConfig, modelFile, dataFiles, extraArguments)) {
+    if (!getModelParameters(*solverConfig, modelFile, dataFiles, extraArguments, inlineData)) {
         return;
     }
 
@@ -829,18 +830,18 @@ void MainWindow::compileOrRun(
     // Compile/run
     switch (cm) {
     case CM_RUN:
-        run(*solverConfig, modelFile, dataFiles, extraArguments);
+        run(*solverConfig, modelFile, dataFiles, extraArguments, inlineData);
         break;
     case CM_COMPILE:
-        compile(*solverConfig, modelFile, dataFiles, extraArguments);
+        compile(*solverConfig, modelFile, dataFiles, extraArguments, inlineData);
         break;
     case CM_PROFILE:
-        compile(*solverConfig, modelFile, dataFiles, extraArguments, true);
+        compile(*solverConfig, modelFile, dataFiles, extraArguments, inlineData, true);
         break;
     }
 }
 
-bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, QStringList& extraArgs)
+bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString& model, QStringList& data, const QStringList& extraArgs, QStringList& inlineData)
 {
     if (!requireMiniZinc()) {
         return false;
@@ -860,7 +861,6 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
         auto result = p.run(checkConfig, args, QFileInfo(model).absolutePath());
 
         QStringList additionalDataFiles = data;
-        QStringList additionalArgs;
         if (result.exitCode == 0) {
             auto jdoc = QJsonDocument::fromJson(result.stdOut.toUtf8());
             if (jdoc.isObject() && jdoc.object()["input"].isObject() && jdoc.object()["method"].isString()) {
@@ -880,7 +880,7 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
                                     return false;
                                 }
                             } else {
-                                additionalArgs << "-D" << undefinedArgs[i] + "=" + params[i] + ";";
+                                inlineData << undefinedArgs[i] + " = " + params[i];
                             }
                         }
                     }
@@ -898,7 +898,6 @@ bool MainWindow::getModelParameters(const SolverConfiguration& sc, const QString
                 data << d;
             }
         }
-        extraArgs << additionalArgs;
         return true;
     } catch (ProcessError& e) {
          QMessageBox::critical(this, "MiniZinc IDE", e.message());
@@ -1087,7 +1086,7 @@ void MainWindow::compileSolutionChecker(const QString& checker)
     }
 }
 
-void MainWindow::compile(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, bool profile)
+void MainWindow::compile(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, const QStringList& inlineData, bool profile)
 {
     if (!requireMiniZinc()) {
         return;
@@ -1115,6 +1114,9 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
          << model
          << data
          << extraArgs;
+    for (auto dzn : inlineData) {
+        args << "-D" << dzn;
+    }
     if (profile) {
         args << "--output-paths-to-stdout"
              << "--output-detailed-timing";
@@ -1188,7 +1190,12 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     for (auto& d : data) {
         files << QFileInfo(d).fileName();
     }
-    ui->outputWidget->startExecution(files.join(", ").prepend("Compiling "));
+    auto label = files.join(", ").prepend("Compiling ");
+    if (!inlineData.isEmpty()) {
+        label.append(" with ");
+        label.append(inlineData.join(", "));
+    }
+    ui->outputWidget->startExecution(label);
     proc->start(compileSc, args, fi.canonicalPath());
 
     if (printCommand) {
@@ -1199,7 +1206,7 @@ void MainWindow::compile(const SolverConfiguration& sc, const QString& model, co
     }
 }
 
-void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, QTextStream* ts)
+void MainWindow::run(const SolverConfiguration& sc, const QString& model, const QStringList& data, const QStringList& extraArgs, const QStringList& inlineData, QTextStream* ts)
 {
     if (!requireMiniZinc()) {
         return;
@@ -1229,11 +1236,20 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
         files << QFileInfo(arg).fileName();
     }
     args << extraArgs;
+    for (auto& dzn : inlineData) {
+        args << "-D" << dzn;
+    }
+
+    QString label = "Running ";
+    label.append(files.join(", "));
+    if (!inlineData.isEmpty()) {
+        label.append(" with ").append(inlineData.join(", "));
+    }
 
     if (sc.solverDefinition.isGUIApplication) {
         // Detach GUI app
         auto* failureCtx = new QObject(this);
-        ui->outputWidget->startExecution(QString("Running ") + files.join(", ") + " (detached)");
+        ui->outputWidget->startExecution(label + " (detached)");
         ui->outputWidget->addText("Process will continue running detached from the IDE.\n", ui->outputWidget->commentCharFormat());
         connect(proc, &MznProcess::started, this, [=] () {
             ui->outputWidget->endExecution(0, proc->elapsedTime());
@@ -1350,7 +1366,7 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
 
     vis_connector = nullptr;
     ui->outputWidget->setSolutionLimit(compressSolutions);
-    ui->outputWidget->startExecution(files.join(", ").prepend("Running "));
+    ui->outputWidget->startExecution(label);
 
     proc->start(sc, args, workingDir, ts == nullptr);
 
