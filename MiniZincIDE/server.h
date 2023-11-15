@@ -15,9 +15,10 @@ private:
     QStringList _roots;
     QList<QWebSocket*> _clients;
 
-    QJsonArray _windows;
-    QVector<QJsonArray> _solutions;
+    QJsonObject _windows;
+    QMap<QString, QJsonArray> _solutions;
     QJsonValue _finalStatus;
+    int _solutionCount = 0;
     qint64 _finishTime = -1;
 
     QUrl _url;
@@ -33,8 +34,8 @@ signals:
     void solveRequested(const QString& modelFile, bool dataFilesGiven, const QStringList& dataFiles, const QVariantMap& options);
 
 public slots:
-    void addWindow(const QString& url, const QJsonValue& userData);
-    void addSolution(const QJsonArray& items, qint64 time);
+    void addWindow(const QString& key, const QString& url, const QJsonValue& userData);
+    void addSolution(const QJsonObject& solution, qint64 time);
     void setFinalStatus(const QString& status, qint64 time);
     void setFinished(qint64 time);
 

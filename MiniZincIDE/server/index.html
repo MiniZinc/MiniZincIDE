@@ -1,294 +1,301 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <title>%3 | MiniZincIDE</title>
-        <style>
-            html, body {
-                margin: 0;
-                padding: 0;
-                font-family: sans-serif;
-                font-size: 14px;
-            }
-            * {
-                box-sizing: border-box;
-            }
 
-            #container {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                width: 100vw;
-                height: 100vh;
-            }
+<head>
+    <meta charset="utf-8">
+    <title>%3 | MiniZincIDE</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
 
-            #top {
-                display: none;
-            }
+        * {
+            box-sizing: border-box;
+        }
 
-            #top.has-solutions {
-                display: flex;
-                background: #F4F4F4;
-                padding: 5px 10px;
-                align-items: center;
-                gap: 5px;
-            }
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            width: 100vw;
+            height: 100vh;
+        }
 
-            #solutionSlider {
-                flex: 1 1 auto;
-            }
+        #top {
+            display: none;
+        }
 
-            #wrapper {
-                flex: 1 0 auto;
-            }
+        #top.has-solutions {
+            display: flex;
+            background: #F4F4F4;
+            padding: 5px 10px;
+            align-items: center;
+            gap: 5px;
+        }
 
-            #windows {
-                width: 100%;
-                height: 100%;
-                display: grid;
-                grid-auto-rows: auto;
-                gap: 1px;
-                background: #CCC;
-            }
-            #windows > * {
-                background: #FFF;
-                border: 0;
-                width: 100%;
-                height: 100%;
-            }
-            #notice {
-                width: 100vw;
-                position: absolute;
-                top: 20vw;
-                left: 0;
-                text-align: center;
-            }
-            #notice:empty {
-                display: none;
-            }
+        #solutionSlider {
+            flex: 1 1 auto;
+        }
 
-            .hidden {
-                display: none !important;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="container">
-            <div id="top">
-                <label for="solutionNumber">Solution:</label>
-                <input type="number" id="solutionNumber" min="0">
-                <input type="range" id="solutionSlider" min="0">
-                <input type="checkbox" id="followLatest">
-                <label for="followLatest">Follow latest solution</label>
-            </div>
-            <div id="wrapper">
-                <div id="windows"></div>
-            </div>
+        #wrapper {
+            flex: 1 0 auto;
+        }
+
+        #windows {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-auto-rows: auto;
+            gap: 1px;
+            background: #CCC;
+        }
+
+        #windows>* {
+            background: #FFF;
+            border: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #notice {
+            width: 100vw;
+            position: absolute;
+            top: 20vw;
+            left: 0;
+            text-align: center;
+        }
+
+        #notice:empty {
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="top">
+            <label for="solutionNumber">Solution:</label>
+            <input type="number" id="solutionNumber" min="0">
+            <input type="range" id="solutionSlider" min="0">
+            <input type="checkbox" id="followLatest">
+            <label for="followLatest">Follow latest solution</label>
         </div>
-        <div id="notice">Connecting...</div>
-        <script>
-            const layoutGrid = (container) => {
-                const numChildren = container.children.length;
-                const cols = Math.ceil(Math.sqrt(numChildren));
-                container.style = `grid-template-columns: repeat(${cols}, auto);`;
-            };
-            const windows = document.getElementById('windows');
-            const buffers = [];
-            const ws = new WebSocket('%1/%2');
-            const notice = document.getElementById('notice');
+        <div id="wrapper">
+            <div id="windows"></div>
+        </div>
+    </div>
+    <div id="notice">Connecting...</div>
+    <script>
+        const layoutGrid = (container) => {
+            const numChildren = container.children.length;
+            const cols = Math.ceil(Math.sqrt(numChildren));
+            container.style = `grid-template-columns: repeat(${cols}, auto);`;
+        };
+        const windows = document.getElementById('windows');
+        const buffers = {};
+        const ws = new WebSocket('%1/%2');
+        const notice = document.getElementById('notice');
 
-            let numSolutions = 0;
-            let currentSolution = 0;
+        let numSolutions = 0;
+        let currentSolution = 0;
 
-            const topBar = document.getElementById('top');
-            const solNumberInput = document.getElementById('solutionNumber');
-            const solSliderInput = document.getElementById('solutionSlider');
-            const followLatestInput = document.getElementById('followLatest');
+        const topBar = document.getElementById('top');
+        const solNumberInput = document.getElementById('solutionNumber');
+        const solSliderInput = document.getElementById('solutionSlider');
+        const followLatestInput = document.getElementById('followLatest');
 
-            const updateControls = () => {
-                if (numSolutions > 0) {
-                    topBar.classList.add('has-solutions');
-                }
-                if (followLatestInput.checked) {
-                    currentSolution = numSolutions;
-                }
-                solNumberInput.min = numSolutions > 0 ? 1 : 0;
-                solNumberInput.max = numSolutions;
-                solNumberInput.value = currentSolution;
-                solSliderInput.min = numSolutions > 0 ? 1 : 0;
-                solSliderInput.max = numSolutions;
-                solSliderInput.value = currentSolution;
-            };
-
-            solNumberInput.addEventListener('change', () => {
-                if (solNumberInput.value !== currentSolution) {
-                    currentSolution = solNumberInput.value;
-                    followLatestInput.checked = false;
-                    updateControls();
-                    for (const buffer of buffers) {
-                        buffer.queue.push({
-                            event: 'goToSolution',
-                            payload: currentSolution - 1
-                        });
-                    }
-                }
-            });
-            solSliderInput.addEventListener('change', () => {
-                if (solSliderInput.value !== currentSolution) {
-                    currentSolution = solSliderInput.value;
-                    followLatestInput.checked = false;
-                    updateControls();
-                    for (const buffer of buffers) {
-                        buffer.queue.push({
-                            event: 'goToSolution',
-                            payload: currentSolution - 1
-                        });
-                    }
-                }
-            });
-            followLatestInput.addEventListener('change', () => {
+        const updateControls = () => {
+            if (numSolutions > 0) {
+                topBar.classList.add('has-solutions');
+            }
+            if (followLatestInput.checked) {
                 currentSolution = numSolutions;
+            }
+            solNumberInput.min = numSolutions > 0 ? 1 : 0;
+            solNumberInput.max = numSolutions;
+            solNumberInput.value = currentSolution;
+            solSliderInput.min = numSolutions > 0 ? 1 : 0;
+            solSliderInput.max = numSolutions;
+            solSliderInput.value = currentSolution;
+        };
+
+        solNumberInput.addEventListener('change', () => {
+            if (solNumberInput.value !== currentSolution) {
+                currentSolution = solNumberInput.value;
+                followLatestInput.checked = false;
                 updateControls();
-                for (const buffer of buffers) {
+                for (const buffer of Object.values(buffers)) {
                     buffer.queue.push({
                         event: 'goToSolution',
-                        payload: followLatestInput.checked ? -1 : numSolutions - 1
+                        payload: currentSolution - 1
                     });
                 }
-            });
-
-            const addWindow = (url, userData) => {
-                const frame = document.createElement("iframe");
-                const buffer = {
-                    ready: false,
-                    queue: [{event: 'init', payload: userData}]
-                };
-                frame.addEventListener('load', () => {
-                    buffer.ready = true;
-                });
-                frame.src = `%2/${url}`;
-                windows.appendChild(frame);
-                buffers.push(buffer);
-                layoutGrid(windows);
             }
+        });
+        solSliderInput.addEventListener('change', () => {
+            if (solSliderInput.value !== currentSolution) {
+                currentSolution = solSliderInput.value;
+                followLatestInput.checked = false;
+                updateControls();
+                for (const buffer of Object.values(buffers)) {
+                    buffer.queue.push({
+                        event: 'goToSolution',
+                        payload: currentSolution - 1
+                    });
+                }
+            }
+        });
+        followLatestInput.addEventListener('change', () => {
+            currentSolution = numSolutions;
+            updateControls();
+            for (const buffer of Object.values(buffers)) {
+                buffer.queue.push({
+                    event: 'goToSolution',
+                    payload: followLatestInput.checked ? -1 : numSolutions - 1
+                });
+            }
+        });
 
-            ws.onopen = () => {
-                notice.textContent = '';
+        const addWindow = (key, url, userData) => {
+            const frame = document.createElement("iframe");
+            const buffer = {
+                ready: false,
+                frame,
+                queue: [{ event: 'init', payload: userData }]
             };
-            ws.onerror = e => {
-                notice.textContent = `A WebSocket error occurred (code ${e.code}).`;
-                console.log('WebSocket error: ', e);
-            };
-            ws.onclose = () => {
-                notice.textContent = 'Disconnected. Refresh the page to try again.';
-            };
-            ws.onmessage = e => {
-                const message = JSON.parse(e.data);
-                switch (message.event) {
-                    case 'navigate':
-                        window.location = message.url;
-                        break;
-                    case 'init':
-                        for (const w of message.windows) {
-                            addWindow(w.url, w.userData);
-                        }
-                        numSolutions = message.numSolutions;
-                        followLatestInput.checked = true;
-                        updateControls();
-                        break;
-                    case 'window':
-                        addWindow(message.url, message.userData);
-                        break;
-                    case 'response':
-                        // Pass response to child
-                        buffers[message.window].queue.push({
-                            event: 'response',
-                            id: message.id,
-                            payload: message.payload
-                        });
-                        break;
-                    case 'error':
-                        // Pass error to child
-                        buffers[message.window].queue.push({
-                            event: 'error',
-                            id: message.id,
-                            message: message.message
-                        });
-                        break;
-                    case 'solution':
-                        // Pass solution to children
-                        for (let i = 0; i < message.items.length; i++) {
-                            buffers[i].queue.push({
-                                event: 'solution',
-                                payload: {
-                                    time: message.time,
-                                    data: message.items[i]
-                                }
-                            });
-                        }                        
-                        numSolutions++;
-                        updateControls();
-                        break;
-                    case 'status':
-                    case 'finish':
-                        // Pass on to all children
-                        for (const buffer of buffers) {
-                            buffer.queue.push(message);
-                        }
-                        break;
-                }
-            };
-            window.addEventListener('message', e => {
-                const message = e.data;
-                switch (message.event) {
-                    case 'rebroadcast':
-                        // Rebroadcast to all children
-                        for (const buffer of buffers) {
-                            buffer.queue.push(message.message);
-                        }
-                        if (message.message.event === 'goToSolution') {
-                            followLatestInput.checked = message.message.payload === -1;
-                            currentSolution = message.message.payload;
-                            updateControls();
-                        }
-                        break;
-                    default:
-                        // Pass on to IDE
-                        let windowIndex = -1;
-                        for (let i = 0; i < windows.children.length; i++) {
-                            if (windows.children[i].contentWindow === e.source) {
-                                windowIndex = i;
-                            }
-                        }
-                        if (windowIndex === -1) {
-                            console.error('Could not determine source window for message');
-                            e.source.postMessage({
-                                event: 'error',
-                                id: message.id,
-                                message: 'Could not determine source window'
-                            });
-                            return;
-                        }
-                        ws.send(JSON.stringify({
-                            ...message,
-                            window: windowIndex
-                        }));
-                        break;
-                }
+            frame.addEventListener('load', () => {
+                buffer.ready = true;
             });
-            window.setInterval(() => {
-                for (let i = 0; i < buffers.length; i++) {
-                    if (buffers[i].ready) {
-                        const frame = windows.children[i];
-                        if (frame) {
-                            for (const message of buffers[i].queue) {
-                                frame.contentWindow.postMessage(message, '*');
+            frame.src = `%2/${url}`;
+            windows.appendChild(frame);
+            buffers[key] = buffer;
+            layoutGrid(windows);
+        }
+
+        ws.onopen = () => {
+            notice.textContent = '';
+        };
+        ws.onerror = e => {
+            notice.textContent = `A WebSocket error occurred (code ${e.code}).`;
+            console.log('WebSocket error: ', e);
+        };
+        ws.onclose = () => {
+            notice.textContent = 'Disconnected. Refresh the page to try again.';
+        };
+        ws.onmessage = e => {
+            const message = JSON.parse(e.data);
+            switch (message.event) {
+                case 'navigate':
+                    window.location = message.url;
+                    break;
+                case 'init':
+                    for (const k in message.windows) {
+                        addWindow(k, message.windows[k].url, message.windows[k].userData);
+                    }
+                    numSolutions = message.numSolutions;
+                    followLatestInput.checked = true;
+                    updateControls();
+                    break;
+                case 'window':
+                    addWindow(message.windowId, message.url, message.userData);
+                    break;
+                case 'response':
+                    // Pass response to child
+                    buffers[message.window].queue.push({
+                        event: 'response',
+                        id: message.id,
+                        payload: message.payload
+                    });
+                    break;
+                case 'error':
+                    // Pass error to child
+                    buffers[message.window].queue.push({
+                        event: 'error',
+                        id: message.id,
+                        message: message.message
+                    });
+                    break;
+                case 'solution':
+                    // Pass solution to children
+                    for (const key in message.solution) {
+                        buffers[key].queue.push({
+                            event: 'solution',
+                            payload: {
+                                time: message.time,
+                                data: message.solution[key]
                             }
-                            buffers[i].queue = [];
+                        });
+                    }
+                    numSolutions++;
+                    updateControls();
+                    break;
+                case 'status':
+                case 'finish':
+                    // Pass on to all children
+                    for (const buffer of Object.values(buffers)) {
+                        buffer.queue.push(message);
+                    }
+                    break;
+            }
+        };
+        window.addEventListener('message', e => {
+            const message = e.data;
+            switch (message.event) {
+                case 'rebroadcast':
+                    // Rebroadcast to all children
+                    for (const buffer of Object.values(buffers)) {
+                        buffer.queue.push(message.message);
+                    }
+                    if (message.message.event === 'goToSolution') {
+                        followLatestInput.checked = message.message.payload === -1;
+                        currentSolution = message.message.payload;
+                        updateControls();
+                    }
+                    break;
+                default:
+                    // Pass on to IDE
+                    let windowId = null;
+                    for (const key in buffers) {
+                        if (buffers[key].frame.contentWindow === e.source) {
+                            windowId = key;
+                            break;
                         }
                     }
+                    if (windowId === null) {
+                        console.error('Could not determine source window for message');
+                        e.source.postMessage({
+                            event: 'error',
+                            id: message.id,
+                            message: 'Could not determine source window'
+                        });
+                        return;
+                    }
+                    ws.send(JSON.stringify({
+                        ...message,
+                        window: windowId
+                    }));
+                    break;
+            }
+        });
+        window.setInterval(() => {
+            for (const buffer of Object.values(buffers)) {
+                if (buffer.ready) {
+                    for (const message of buffer.queue) {
+                        buffer.frame.contentWindow.postMessage(message, '*');
+                    }
+                    buffer.queue = [];
                 }
-            }, 1);
-        </script>
-    </body>
+            }
+        }, 1);
+    </script>
+</body>
+
 </html>

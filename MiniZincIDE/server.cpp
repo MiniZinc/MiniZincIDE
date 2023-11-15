@@ -35,32 +35,31 @@ void VisConnector::webSocketClientDisconnected()
     }
 }
 
-void VisConnector::addWindow(const QString& url, const QJsonValue& userData)
+void VisConnector::addWindow(const QString& key, const QString& url, const QJsonValue& userData)
 {
-    _windows << QJsonObject({{"url", url}, {"userData", userData}});
-    _solutions.append(QJsonArray());
+    _windows[key] = QJsonObject({{"url", url}, {"userData", userData}});
+    _solutions[key] = QJsonArray();
     QJsonObject obj({{"event", "window"},
+                     {"windowId", key},
                      {"url", url},
                      {"userData", userData}});
     broadcastMessage(QJsonDocument(obj));
 }
 
-void VisConnector::addSolution(const QJsonArray& items, qint64 time)
+void VisConnector::addSolution(const QJsonObject& solution, qint64 time)
 {
-    if (_solutions.isEmpty() || items.size() != _solutions.size()) {
-        assert(false);
-        return;
-    }
-    auto solIndex = _solutions.first().size();
-    for (auto i = 0; i < items.size(); i++) {
-        QJsonObject it({{"time", time},
-                        {"data", items[i]},
+    auto solIndex = _solutionCount++;
+    for (auto it = solution.begin(); it != solution.end(); it++) {
+        QJsonObject sol({{"time", time},
+                        {"data", it.value()},
                         {"index", solIndex}});
-        _solutions[i].append(it);
+        if (_solutions.contains(it.key())) {
+            _solutions[it.key()].append(sol);
+        }
     }
     QJsonObject obj({{"event", "solution"},
                      {"time", time},
-                     {"items", items},
+                     {"solution", solution},
                      {"index", solIndex}});
     broadcastMessage(QJsonDocument(obj));
 }
@@ -117,8 +116,8 @@ void VisConnector::webSocketMessageReceived(const QString& message)
                          {"payload", _solutions.isEmpty() ? 0 : _solutions.first().size()}});
         socket->sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson()));
     } else if (event == "getSolution") {
-        auto windowIndex = msg["window"].toInt();
-        if (windowIndex < 0 || windowIndex >= _solutions.size()) {
+        auto window_id = msg["window"].toString();
+        if (!_solutions.contains(window_id)) {
             QJsonObject obj({{"event", "error"},
                              {"id", msg["id"]},
                              {"window", msg["window"]},
@@ -128,9 +127,9 @@ void VisConnector::webSocketMessageReceived(const QString& message)
         }
         auto idx = msg["index"].toInt();
         if (idx < 0) {
-            idx += _solutions[windowIndex].size();
+            idx += _solutions[window_id].count();
         }
-        if (idx < 0 || idx >= _solutions[windowIndex].size()) {
+        if (idx < 0 || idx >= _solutions[window_id].count()) {
             QJsonObject obj({{"event", "error"},
                              {"id", msg["id"]},
                              {"window", msg["window"]},
@@ -141,11 +140,11 @@ void VisConnector::webSocketMessageReceived(const QString& message)
         QJsonObject obj({{"event", "response"},
                          {"id", msg["id"]},
                          {"window", msg["window"]},
-                         {"payload", _solutions[windowIndex][idx]}});
+                         {"payload", _solutions[window_id][idx]}});
         socket->sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson()));
     } else if (event == "getAllSolutions") {
-        auto windowIndex = msg["window"].toInt();
-        if (windowIndex < 0 || windowIndex >= _solutions.size()) {
+        auto window_id = msg["window"].toString();
+        if (!_solutions.contains(window_id)) {
             QJsonObject obj({{"event", "error"},
                              {"id", msg["id"]},
                              {"window", msg["window"]},
@@ -155,8 +154,8 @@ void VisConnector::webSocketMessageReceived(const QString& message)
         }
         QJsonObject obj({{"event", "response"},
                          {"id", msg["id"]},
-                         {"window", windowIndex},
-                         {"payload", _solutions[windowIndex]}});
+                         {"window", window_id},
+                         {"payload", _solutions[window_id]}});
         socket->sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson()));
     } else if (event == "getStatus") {
         QJsonObject obj({{"event", "response"},

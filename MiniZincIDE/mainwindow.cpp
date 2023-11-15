@@ -1334,10 +1334,13 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
             }
             ui->outputWidget->addText("\n", ui->outputWidget->infoCharFormat(), "trace");
         } else {
-            ui->outputWidget->addTextToSection(section, message.toString(), ui->outputWidget->commentCharFormat());
-            if (vis_connector == nullptr && section == "vis_json") {
+            auto text = message.toString();
+            if (!text.isEmpty()) {
+                ui->outputWidget->addTextToSection(section, text, ui->outputWidget->commentCharFormat());
+            }
+            if (vis_connector == nullptr && section.startsWith("mzn_vis_")) {
                 auto obj = message.toJsonObject();
-                startVisualisation(model, data, obj["url"].toString(), obj["userData"], proc);
+                startVisualisation(model, data, section, obj["url"].toString(), obj["userData"], proc);
             }
         }
     });
@@ -3076,7 +3079,7 @@ QString MainWindow::locationToLink(const QString& file, int firstLine, int first
                               .arg(position);
 }
 
-void MainWindow::startVisualisation(const QString& model, const QStringList& data, const QString& url, const QJsonValue& userData, MznProcess* proc)
+void MainWindow::startVisualisation(const QString& model, const QStringList& data, const QString& key, const QString& url, const QJsonValue& userData, MznProcess* proc)
 {
     if (server == nullptr) {
         server = new Server(this);
@@ -3129,22 +3132,25 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
         run(rsc, m, df);
     });
     connect(proc, &MznProcess::traceOutput, this, [=] (const QString& section, const QVariant& message) {
-        if (section == "vis_json") {
+        if (section.startsWith("mzn_vis_")) {
             auto obj = message.toJsonObject();
-            vis_connector->addWindow(obj["url"].toString(), obj["userData"]);
+            vis_connector->addWindow(section, obj["url"].toString(), obj["userData"]);
         }
     });
     connect(proc, &MznProcess::solutionOutput, [=](const QVariantMap& output, const QStringList& sections, qint64 time) {
-        if (output.contains("vis_json")) {
-            auto items = output["vis_json"].toJsonArray();
-            vis_connector->addSolution(items, time == -1 ? proc->elapsedTime() : time);
+        QJsonObject solution;
+        for (auto it = output.begin(); it != output.end(); it++) {
+            if (it.key().startsWith("mzn_vis_")) {
+                solution[it.key()] = it.value().toJsonValue();
+            }
         }
+        vis_connector->addSolution(solution, time == -1 ? proc->elapsedTime() : time);
     });
     connect(proc, &MznProcess::finalStatus, [=](const QString& status, qint64 time) {
         vis_connector->setFinalStatus(status, time == -1 ? proc->elapsedTime() : time);
     });
     connect(proc, &MznProcess::finished, vis_connector, &VisConnector::setFinished);
-    vis_connector->addWindow(url, userData);
+    vis_connector->addWindow(key, url, userData);
 
     ui->outputWidget->associateServerUrl(vis_connector->url().toString());
 

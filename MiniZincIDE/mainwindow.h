@@ -333,7 +333,7 @@ private:
 
     QString locationToLink(const QString& filename, int firstLine, int firstColumn, int lastLine, int lastColumn, const QColor& color);
 
-    void startVisualisation(const QString& model, const QStringList& data, const QString& url, const QJsonValue& userData, MznProcess* proc);
+    void startVisualisation(const QString& model, const QStringList& data, const QString& key, const QString& url, const QJsonValue& userData, MznProcess* proc);
 public:
     void addOutput(const QString& s, bool html=true);
     void openProject(const QString& fileName);
