@@ -1,3 +1,11 @@
+2023-11-16
+  v2.8.0
+-  Fix unreadable cheat sheet font colour in dark mode (#191).
+-  Add option to output objective value and enable by default.
+-  Show manually input parameters in output window.
+-  Fix missing checker messages (#192).
+-  Fix incorrect OpenSSL version in Linux packages (#189).
+
 2023-05-20
   v2.7.6
 -  Update to MiniZinc 2.7.6.
