@@ -447,6 +447,8 @@ void ConfigWindow::updateGUI(bool overrideSync)
         ui->outputObjective_checkBox->setChecked(sc->outputObjective);
     }
 
+    ui->outputObjective_checkBox->setEnabled(sc->solverDefinition.inputType != Solver::I_MZN || sc->supports("--output-objective"));
+
     ui->numSolutions_spinBox->setEnabled(ui->numSolutions_checkBox->isEnabled() && ui->numSolutions_checkBox->isChecked());
     ui->numOptimal_spinBox->setEnabled(ui->numOptimal_checkBox->isEnabled() && ui->numOptimal_checkBox->isChecked());
 

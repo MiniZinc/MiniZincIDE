@@ -324,17 +324,51 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="needs_mzn2fzn">
-                 <property name="text">
-                  <string>Run with mzn2fzn</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
                 <widget class="QCheckBox" name="needs_solns2out">
                  <property name="text">
                   <string>Run with solns2out</string>
                  </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <widget class="QLabel" name="label_16">
+                 <property name="text">
+                  <string>Input type</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="inputType_comboBox">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>FlatZinc (FZN)</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>FlatZinc-JSON (JSON)</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>MiniZinc (MZN)</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Non-linear (NL)</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
               </layout>

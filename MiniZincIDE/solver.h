@@ -22,6 +22,14 @@ struct SolverFlag {
 Q_DECLARE_METATYPE(SolverFlag)
 
 struct Solver {
+    enum SolverInputType {
+        I_FZN,
+        I_MZN,
+        I_NL,
+        I_JSON,
+        I_UNKNOWN
+    };
+
     QString configFile;
     QString id;
     QString name;
@@ -34,8 +42,7 @@ struct Solver {
     QString description;
     QString contact;
     QString website;
-    bool supportsMzn;
-    bool supportsFzn;
+    SolverInputType inputType;
     bool needsSolns2Out;
     bool isGUIApplication;
     bool needsMznExecutable;

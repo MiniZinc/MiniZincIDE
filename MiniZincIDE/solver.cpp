@@ -95,8 +95,27 @@ Solver::Solver(const QJsonObject& sj) {
     isDefaultSolver = (extraInfo["isDefault"].isBool() && extraInfo["isDefault"].toBool());
     contact = sj["contact"].toString("");
     website = sj["website"].toString("");
-    supportsFzn = sj["supportsFzn"].toBool(true);
-    supportsMzn = sj["supportsMzn"].toBool(false);
+    if (sj["inputType"].isString()) {
+        auto t = sj["inputType"].toString();
+        if (t == "FZN") {
+            inputType = SolverInputType::I_FZN;
+        } else if (t == "MZN") {
+            inputType = SolverInputType::I_MZN;
+        } else if (t == "NL") {
+            inputType = SolverInputType::I_NL;
+        } else if (t == "JSON") {
+            inputType = SolverInputType::I_JSON;
+        } else {
+            inputType = SolverInputType::I_UNKNOWN;
+        }
+    } else if (sj["supportsMzn"].toBool()) {
+        inputType = SolverInputType::I_MZN;
+    } else if (sj["supportsFzn"].toBool(true)) {
+        inputType = SolverInputType::I_FZN;
+    } else {
+        inputType = SolverInputType::I_UNKNOWN;
+    }
+
     if (sj["requiredFlags"].isArray()) {
         QJsonArray rfs = sj["requiredFlags"].toArray();
         for (auto rf : rfs) {
@@ -561,12 +580,14 @@ QJsonObject SolverConfiguration::toJSONObject(void) const
     if (outputTiming) {
         config["output-time"] = outputTiming;
     }
-    config["output-objective"] = outputObjective;
+    if (outputObjective && (solverDefinition.inputType != Solver::I_MZN || supports("--output-objective"))) {
+        config["output-objective"] = true;
+    }
     if (optimizationLevel != 1) {
         config["-O"] = optimizationLevel;
     }
     QJsonArray arr;
-    for (auto d : additionalData) {
+    for (auto& d : additionalData) {
         arr.push_back(d);
     }
     if (arr.size() > 0) {
@@ -659,7 +680,9 @@ bool SolverConfiguration::syncedOptionsMatch(const SolverConfiguration& sc) cons
         return false;
     }
 
-    if (outputObjective != sc.outputObjective) {
+    if ((solverDefinition.inputType != Solver::I_MZN || supports("--output-objective")) &&
+            (sc.solverDefinition.inputType != Solver::I_MZN || sc.supports("--output-objective")) &&
+            outputObjective != sc.outputObjective) {
         return false;
     }
 

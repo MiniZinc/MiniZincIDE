@@ -432,7 +432,8 @@ bool PreferencesDialog::updateSolver()
         solvers[index]->id = ui->solverId->text().trimmed();
         solvers[index]->version = ui->version->text().trimmed();
         solvers[index]->isGUIApplication= ui->detach->isChecked();
-        solvers[index]->supportsMzn = !ui->needs_mzn2fzn->isChecked();
+        Solver::SolverInputType inputTypeMap[4] = { Solver::I_FZN, Solver::I_JSON, Solver::I_MZN, Solver::I_NL };
+        solvers[index]->inputType = inputTypeMap[ui->inputType_comboBox->currentIndex()];
         solvers[index]->needsSolns2Out = ui->needs_solns2out->isChecked();
 
         solvers[index]->stdFlags.removeAll("-a");
@@ -476,7 +477,11 @@ bool PreferencesDialog::updateSolver()
         json["id"] = ui->solverId->text().trimmed();
         json["version"] = ui->version->text().trimmed();
         json["isGUIApplication"] = ui->detach->isChecked();
-        json["supportsMzn"] = !ui->needs_mzn2fzn->isChecked();
+        QStringList inputTypeStringMap = { "FZN", "JSON", "MZN", "NL" };
+        json["inputType"] = inputTypeStringMap[ui->inputType_comboBox->currentIndex()];
+        json.remove("supportsFzn");
+        json.remove("supportsMzn");
+        json.remove("supportsNL");
         json["needsSolns2Out"] = ui->needs_solns2out->isChecked();
         json["stdFlags"] = QJsonArray::fromStringList(solvers[index]->stdFlags);
         QJsonDocument jdoc(json);
@@ -722,7 +727,23 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->executable->setText(solvers[index]->executable);
         ui->exeNotFoundLabel->setVisible(!solvers[index]->executable.isEmpty() && solvers[index]->executable_resolved.isEmpty());
         ui->detach->setChecked(solvers[index]->isGUIApplication);
-        ui->needs_mzn2fzn->setChecked(!solvers[index]->supportsMzn);
+        switch (solvers[index]->inputType) {
+        case Solver::I_FZN:
+            ui->inputType_comboBox->setCurrentIndex(0);
+            break;
+        case Solver::I_JSON:
+            ui->inputType_comboBox->setCurrentIndex(1);
+            break;
+        case Solver::I_MZN:
+            ui->inputType_comboBox->setCurrentIndex(2);
+            break;
+        case Solver::I_NL:
+            ui->inputType_comboBox->setCurrentIndex(3);
+            break;
+        default:
+            ui->inputType_comboBox->setCurrentIndex(0);
+            break;
+        }
         ui->needs_solns2out->setChecked(solvers[index]->needsSolns2Out);
         ui->mznpath->setText(solvers[index]->mznlib);
         bool solverConfigIsUserEditable = false;
@@ -782,7 +803,7 @@ void PreferencesDialog::on_solvers_combo_currentIndexChanged(int index)
         ui->version->setText("");
         ui->executable->setText("");
         ui->detach->setChecked(false);
-        ui->needs_mzn2fzn->setChecked(true);
+        ui->inputType_comboBox->setCurrentIndex(0);
         ui->needs_solns2out->setChecked(true);
         ui->mznpath->setText("");
         ui->solverFrame->setEnabled(true);
