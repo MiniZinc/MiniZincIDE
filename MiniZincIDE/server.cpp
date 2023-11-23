@@ -192,10 +192,10 @@ Server::Server(quint16 port, QObject *parent) :
         p++;
     }
     if (!http->isListening()) {
-        throw new InternalError("Failed to start HTTP visualisation server");
+        throw ServerError("Failed to start HTTP visualisation server");
     }
     if (!ws->listen(QHostAddress::LocalHost)) {
-        throw new InternalError("Failed to start WebSocket visualisation server");
+        throw ServerError("Failed to start WebSocket visualisation server");
     }
 
     connect(http, &QTcpServer::newConnection, this, &Server::newHttpClient);

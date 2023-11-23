@@ -80,4 +80,13 @@ public:
     Exception *clone() const override { return new FileError(*this); }
 };
 
+class ServerError : public Exception
+{
+public:
+    ServerError(const QString& _msg) : Exception(_msg) {}
+
+    void raise() const override { throw *this; }
+    Exception *clone() const override { return new ServerError(*this); }
+};
+
 #endif // EXCEPTION_H

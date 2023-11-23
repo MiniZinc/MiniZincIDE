@@ -3090,7 +3090,12 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
     settings.endGroup();
 
     if (server == nullptr || server->desiredPort() != port) {
-        server = new Server(port, this);
+        try {
+            server = new Server(port, this);
+        } catch (ServerError& e) {
+            QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
+            return;
+        }
     }
 
     QFileInfo modelFileInfo(model);
