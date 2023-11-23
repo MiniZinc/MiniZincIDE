@@ -53,10 +53,11 @@ class Server : public QObject
 {
     Q_OBJECT
 public:
-    explicit Server(QObject *parent = nullptr);
+    explicit Server(quint16 port = 3000, QObject *parent = nullptr);
     ~Server();
     QString address() const { return http->serverAddress().toString(); }
     quint16 port() const { return http->serverPort(); }
+    quint16 desiredPort() const { return initialPort; }
 
     VisConnector* addConnector(const QString& label, const QStringList& roots);
     void clear();
@@ -77,6 +78,7 @@ private:
     QWebSocketServer* ws;
     QList<VisConnector*> connectors;
     QList<QWebSocket*> clients;
+    quint16 initialPort;
 };
 
 #endif // SERVER_H

@@ -3081,8 +3081,16 @@ QString MainWindow::locationToLink(const QString& file, int firstLine, int first
 
 void MainWindow::startVisualisation(const QString& model, const QStringList& data, const QString& key, const QString& url, const QJsonValue& userData, MznProcess* proc)
 {
-    if (server == nullptr) {
-        server = new Server(this);
+
+    QSettings settings;
+    settings.beginGroup("ide");
+    bool reuseVis = settings.value("reuseVis", false).toBool();
+    int port = settings.value("visPort", 3000).toInt();
+    bool printUrl = settings.value("printVisUrl", false).toBool();
+    settings.endGroup();
+
+    if (server == nullptr || server->desiredPort() != port) {
+        server = new Server(port, this);
     }
 
     QFileInfo modelFileInfo(model);
@@ -3154,11 +3162,6 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
 
     ui->outputWidget->associateServerUrl(vis_connector->url().toString());
 
-    QSettings settings;
-    settings.beginGroup("ide");
-    bool reuseVis = settings.value("reuseVis", false).toBool();
-    settings.endGroup();
-
     if (reuseVis) {
         QJsonObject obj({{"event", "navigate"}, {"url", vis_connector->url().toString()}});
         if (!server->sendToLastClient(QJsonDocument(obj))) {
@@ -3166,5 +3169,13 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
         }
     } else {
         QDesktopServices::openUrl(vis_connector->url());
+    }
+
+    if (printUrl) {
+        auto url = vis_connector->url().toString();
+        auto urlMessage = QString("<a href=\"%1\">%1</a>").arg(url);
+        ui->outputWidget->addText("Visualisation: ", ui->outputWidget->infoCharFormat(), "Visualisation");
+        ui->outputWidget->addHtml(urlMessage, "Visualisation");
+        ui->outputWidget->addText("\n", ui->outputWidget->infoCharFormat(), "Visualisation");
     }
 }

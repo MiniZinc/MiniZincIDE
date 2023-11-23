@@ -178,12 +178,20 @@ void VisConnector::webSocketMessageReceived(const QString& message)
     }
 }
 
-Server::Server(QObject *parent) :
+Server::Server(quint16 port, QObject *parent) :
     QObject(parent),
     http(new QTcpServer(this)),
     ws(new QWebSocketServer("MiniZincIDE", QWebSocketServer::NonSecureMode, this))
 {
-    if (!http->listen(QHostAddress::LocalHost)) {
+    initialPort = port;
+    qint16 p = port;
+    for (int i = 0; i < 10; i++) {
+        if (http->listen(QHostAddress::LocalHost, p) || p == 0) {
+            break;
+        }
+        p++;
+    }
+    if (!http->isListening()) {
         throw new InternalError("Failed to start HTTP visualisation server");
     }
     if (!ws->listen(QHostAddress::LocalHost)) {
