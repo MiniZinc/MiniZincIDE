@@ -391,11 +391,19 @@ MznProcess::RunResult MznProcess::run(const QStringList& args, const QString& cw
     }
     p.start(exec[0], execArgs, MznDriver::get().mznDistribPath());
     if (!p.waitForStarted()) {
-        throw ProcessError("Failed to find or start minizinc " + args.join(" ") + ".");
+        throw ProcessError(QString("Failed to find or start %1 %2 in '%3'.")
+                               .arg(exec[0])
+                               .arg(args.join(" "))
+                               .arg(MznDriver::get().mznDistribPath())
+                           );
     }
     if (!p.waitForFinished()) {
         p.terminate();
-        throw ProcessError("Failed to run minizinc " + args.join(" ") + ".");
+        throw ProcessError(QString("Failed to run %1 %2 in '%3'.")
+                               .arg(exec[0])
+                               .arg(args.join(" "))
+                               .arg(MznDriver::get().mznDistribPath())
+                           );
     }
     return { p.exitCode(), p.readAllStandardOutput(), p.readAllStandardError() };
 }
