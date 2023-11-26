@@ -72,6 +72,7 @@ PreferencesDialog::PreferencesDialog(bool addNewSolver, QWidget *parent) :
     }
     ui->reuseVis_checkBox->setChecked(settings.value("reuseVis", false).toBool());
     ui->visPort_spinBox->setValue(settings.value("visPort", 3000).toInt());
+    ui->visWsPort_spinBox->setValue(settings.value("visWsPort", 3100).toInt());
     ui->visUrl_checkBox->setChecked(settings.value("printVisUrl", false).toBool());
     ui->printCommand_checkBox->setChecked(settings.value("printCommand", false).toBool());
     ui->indentSize_spinBox->setValue(settings.value("indentSize", 2).toInt());
@@ -919,6 +920,7 @@ void PreferencesDialog::on_PreferencesDialog_accepted()
     settings.setValue("printCommand", ui->printCommand_checkBox->isChecked());
     settings.setValue("reuseVis", ui->reuseVis_checkBox->isChecked());
     settings.setValue("visPort", ui->visPort_spinBox->value());
+    settings.setValue("visWsPort", ui->visWsPort_spinBox->value());
     settings.setValue("printVisUrl", ui->visUrl_checkBox->isChecked());
     settings.setValue("theme", ui->theme_comboBox->currentIndex());
     settings.setValue("indentTabs", ui->indentTabs_radioButton->isChecked());

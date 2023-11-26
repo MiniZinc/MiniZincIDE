@@ -178,26 +178,11 @@ void VisConnector::webSocketMessageReceived(const QString& message)
     }
 }
 
-Server::Server(quint16 port, QObject *parent) :
+Server::Server(QObject *parent) :
     QObject(parent),
     http(new QTcpServer(this)),
     ws(new QWebSocketServer("MiniZincIDE", QWebSocketServer::NonSecureMode, this))
 {
-    initialPort = port;
-    qint16 p = port;
-    for (int i = 0; i < 10; i++) {
-        if (http->listen(QHostAddress::LocalHost, p) || p == 0) {
-            break;
-        }
-        p++;
-    }
-    if (!http->isListening()) {
-        throw ServerError("Failed to start HTTP visualisation server");
-    }
-    if (!ws->listen(QHostAddress::LocalHost)) {
-        throw ServerError("Failed to start WebSocket visualisation server");
-    }
-
     connect(http, &QTcpServer::newConnection, this, &Server::newHttpClient);
     connect(ws, &QWebSocketServer::newConnection, this, &Server::newWebSocketClient);
 }
@@ -206,6 +191,39 @@ Server::~Server()
 {
     for (auto* c : connectors) {
         delete c;
+    }
+}
+
+void Server::listen(quint16 httpPort, quint16 wsPort)
+{
+    if (!http->isListening() || httpPort != initialHttpPort) {
+        initialHttpPort = httpPort;
+        qint16 p = httpPort;
+        http->close();
+        for (int i = 0; i < 10; i++) {
+            if (http->listen(QHostAddress::LocalHost, p) || p == 0) {
+                break;
+            }
+            p++;
+        }
+        if (!http->isListening()) {
+            throw ServerError("Failed to start HTTP visualisation server");
+        }
+    }
+
+    if (!ws->isListening() || wsPort != initialWsPort) {
+        initialWsPort = wsPort;
+        quint16 p = wsPort;
+        ws->close();
+        for (int i = 0; i < 10; i++) {
+            if (ws->listen(QHostAddress::LocalHost, p) || p == 0) {
+                break;
+            }
+            p++;
+        }
+        if (!ws->isListening()) {
+            throw ServerError("Failed to start WebSocket visualisation server");
+        }
     }
 }
 

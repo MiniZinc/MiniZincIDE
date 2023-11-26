@@ -3085,17 +3085,19 @@ void MainWindow::startVisualisation(const QString& model, const QStringList& dat
     QSettings settings;
     settings.beginGroup("ide");
     bool reuseVis = settings.value("reuseVis", false).toBool();
-    int port = settings.value("visPort", 3000).toInt();
+    int httpPort = settings.value("visPort", 3000).toInt();
+    int wsPort = settings.value("visWsPort", 3100).toInt();
     bool printUrl = settings.value("printVisUrl", false).toBool();
     settings.endGroup();
 
-    if (server == nullptr || server->desiredPort() != port) {
-        try {
-            server = new Server(port, this);
-        } catch (ServerError& e) {
-            QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
-            return;
-        }
+    if (server == nullptr) {
+        server = new Server(this);
+    }
+    try {
+        server->listen(httpPort, wsPort);
+    } catch (ServerError& e) {
+        QMessageBox::warning(this, "MiniZinc IDE", e.message(), QMessageBox::Ok);
+        return;
     }
 
     QFileInfo modelFileInfo(model);
