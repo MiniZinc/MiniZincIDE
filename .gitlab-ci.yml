@@ -507,3 +507,24 @@ publish:snap_stable:
   <<: *snap_publish
   only: [tags]
   when: manual # Don't publish to stable channel automatically
+
+publish:github_edge:
+  stage: publish
+  image: ghcr.io/minizinc/docker-build-environment:package
+  variables:
+    GITHUB_RELEASE_TAG: edge
+    REMOTE_URL: https://minizinc-ci:${ACCESS_TOKEN}@gitlab.com/minizinc/minizinc-ide.git
+  script:
+    # Update edge tag
+    - git config user.name "$GITLAB_USER_NAME"
+    - git config user.email "$GITLAB_USER_EMAIL"
+    - git remote add gitlab_remote "${REMOTE_URL}" || git remote set-url gitlab_remote "${REMOTE_URL}"
+    - git tag -f -a -m "Development build of MiniZinc" edge
+    - git push -f gitlab_remote edge -o ci.skip
+    # Remove old assets
+    - gh release --repo MiniZinc/MiniZincIDE view edge --json assets --jq '.assets[].name' | xargs -n 1 -r gh release --repo MiniZinc/MiniZincIDE delete-asset -y edge
+    # Upload new assets
+    - gh release --repo MiniZinc/MiniZincIDE upload edge MiniZincIDE*.dmg MiniZincIDE*.exe MiniZincIDE*.AppImage MiniZincIDE*.tgz MiniZincIDE*.sha256
+  needs: ["package:osx", "package:win64", "package:appimage", "package:linux"]
+  only: [develop]
+  tags: [linux, docker]
