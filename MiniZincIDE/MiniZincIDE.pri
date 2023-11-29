@@ -11,8 +11,10 @@ output_version {
     write_file($$OUT_PWD/version, VERSION)
 }
 
-CXX_PREFIX =
-QMAKE_CXX = $$CXX_PREFIX $$QMAKE_CXX
+!isEmpty(CXX_PREFIX) {
+    message(Using CXX_PREFIX = $$CXX_PREFIX)
+    QMAKE_CXX = $$CXX_PREFIX $$QMAKE_CXX
+}
 
 CONFIG += c++11
 

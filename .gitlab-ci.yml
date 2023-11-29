@@ -144,7 +144,7 @@ test:win64:
     ### Build tests
     - if not exist "test" mkdir test
     - cd test
-    - qmake "CXX_PREFIX=ccache" ../tests/tests.pro
+    - qmake "CXX_PREFIX=buildcache" ../tests/tests.pro
     - jom -j4
     ### Run tests
     - jom check
