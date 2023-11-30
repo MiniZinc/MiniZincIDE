@@ -399,11 +399,6 @@ MznProcess::RunResult MznProcess::run(const QStringList& args, const QString& cw
     }
     if (!p.waitForFinished()) {
         p.terminate();
-        throw ProcessError(QString("Failed to run %1 %2 in '%3'.")
-                               .arg(exec[0])
-                               .arg(args.join(" "))
-                               .arg(MznDriver::get().mznDistribPath())
-                           );
     }
     return { p.exitCode(), p.readAllStandardOutput(), p.readAllStandardError() };
 }
