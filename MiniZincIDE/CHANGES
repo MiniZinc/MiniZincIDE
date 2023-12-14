@@ -1,4 +1,9 @@
+2023-12-15
+  v2.8.2
+-  Make process handling more robust to failures.
+
 2023-11-27
+  v2.8.1
 -  Fix command used to run findMUS and Globalizer.
 -  Add ability to set the ports used for the visualisation server.
 -  Add option for printing the visualisation server URL for debugging purposes.
