@@ -528,7 +528,6 @@ publish:github_edge:
   stage: publish
   image: ghcr.io/minizinc/docker-build-environment:package
   variables:
-    GITHUB_RELEASE_TAG: edge
     REMOTE_URL: https://minizinc-ci:${ACCESS_TOKEN}@gitlab.com/minizinc/minizinc-ide.git
   script:
     # Update edge tag
@@ -548,9 +547,6 @@ publish:github_edge:
 publish:github_stable:
   stage: publish
   image: ghcr.io/minizinc/docker-build-environment:package
-  variables:
-    GITHUB_RELEASE_TAG: edge
-    REMOTE_URL: https://minizinc-ci:${ACCESS_TOKEN}@gitlab.com/minizinc/minizinc-ide.git
   script:
     - VERSION_DASH=$(echo "$CI_COMMIT_TAG" | sed 's/\./-/g')
     - NOTES="This release"
@@ -560,4 +556,5 @@ publish:github_stable:
     - gh release --repo MiniZinc/MiniZincIDE create --draft --title "MiniZinc $CI_COMMIT_TAG" --notes "Please refer to the change log for details:\nhttps://www.minizinc.org/doc-${CI_COMMIT_TAG}/en/changelog.html" "$CI_COMMIT_TAG" MiniZincIDE*.dmg MiniZincIDE*.exe MiniZincIDE*.AppImage MiniZincIDE*.tgz MiniZincIDE*.sha256
   needs: ["package:osx", "package:win64", "package:appimage", "package:linux"]
   only: [tags]
+  except: [edge]
   tags: [linux, docker]
