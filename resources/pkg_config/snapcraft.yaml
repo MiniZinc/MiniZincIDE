@@ -10,7 +10,7 @@ description: |
   solver input language that is understood by a wide range of solvers.
 
 confinement: classic
-base: core20
+base: core22
 
 apps:
   minizinc:
@@ -31,6 +31,8 @@ parts:
       - bin/
       - lib/
       - plugins/
+    build-attributes:
+      - enable-patchelf
   deps:
     plugin: nil
     stage-packages:
@@ -58,6 +60,8 @@ parts:
     plugin: dump
     source: minizinc/
     stage: [bin/, share/]
+    build-attributes:
+      - enable-patchelf
   vendor:
     plugin: dump
     source: vendor/
@@ -73,18 +77,26 @@ parts:
       or-tools/share/minizinc/cpsat: share/minizinc/cpsat
       highs/lib64/libhighs.so: lib/
     stage: [bin/, lib/, share/minizinc/]
+    build-attributes:
+      - enable-patchelf
   globalizer:
     plugin: dump
     source: globalizer/
     stage: [bin/, share/minizinc/]
+    build-attributes:
+      - enable-patchelf
   findmus:
     plugin: dump
     source: findMUS/
     stage: [bin/, share/minizinc/]
+    build-attributes:
+      - enable-patchelf
   mzn-analyse:
     plugin: dump
     source: mzn-analyse/
     stage: [bin/]
+    build-attributes:
+      - enable-patchelf
   resources:
     plugin: dump
     source: resources/

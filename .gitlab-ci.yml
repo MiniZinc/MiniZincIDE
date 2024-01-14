@@ -487,7 +487,7 @@ minizinc:linux:nogui:
     - strip minizinc/bin/minizinc vendor/gecode_gist/bin/fzn-gecode vendor/chuffed/bin/fzn-chuffed vendor/or-tools/bin/fzn-cp-sat findMUS/bin/findMUS mzn-analyse/bin/mzn-analyse globalizer/bin/minizinc-globalizer minizinc/bin/mzn2doc
     - cp resources/pkg_config/snapcraft.yaml .
     - apt-get update -y
-    - snapcraft
+    - snapcraft --destructive-mode
   artifacts:
     name: "minizinc_snap_${CI_PIPELINE_ID}"
     paths: [minizinc*.snap]
