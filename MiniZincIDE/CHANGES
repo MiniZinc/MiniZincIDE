@@ -1,3 +1,7 @@
+2024-02-01
+  v2.8.3
+-  Increase maximum number of threads from default Qt limit (#196).
+
 2023-12-15
   v2.8.2
 -  Make process handling more robust to failures.
