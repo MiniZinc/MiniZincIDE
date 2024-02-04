@@ -408,39 +408,54 @@ package:appimage:
   needs: ["build:linux"]
   tags: [linux, docker]
 
+.docker_setup: &docker_setup
+  image: ghcr.io/minizinc/docker-build-environment:docker-cli
+  before_script:
+    ### Set the MZNVERSION variable
+    - 'if [ -n "$CI_COMMIT_TAG" ]; then MZNVERSION="$CI_COMMIT_TAG"; else MZNVERSION="build$CI_PIPELINE_ID"; fi'
+    ### Choose the MiniZinc compiler branch
+    - 'if [ -n "$CI_COMMIT_TAG" ]; then MZNREF="$CI_COMMIT_TAG"; elif [ "$CI_COMMIT_REF_NAME" = "master" ]; then MZNREF="master"; else MZNREF="develop"; fi'
+    ### Download Dependencies
+    - mkdir -p linux/amd64 && cd linux/amd64
+    - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH" && unzip -q minizinc.zip
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:$MZNARCH" && unzip -q vendor.zip
+    - mkdir -p ../arm64 && cd ../arm64
+    - curl --silent -o minizinc.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc/jobs/artifacts/$MZNREF/download?job=build:$MZNARCH-arm64" && unzip -q minizinc.zip
+    - curl --silent -o vendor.zip --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/minizinc%2Fminizinc-vendor/jobs/artifacts/master/download?job=bundle:$MZNARCH-arm64" && unzip -q vendor.zip
+    - cd ../../
+
 package:docker_alpine:
   stage: package
   variables:
     MZNARCH: "musl"
-  <<: *packaging_setup
+  <<: *docker_setup
   script:
     - echo "Building image based on \"alpine:latest\" with tag extension \"-alpine\""
-    - docker pull alpine:latest
-    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE='alpine:latest' -q .)"
-    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}-alpine && docker push minizinc/minizinc:${CI_COMMIT_TAG}-alpine; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest-alpine && docker push minizinc/minizinc:latest-alpine; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge-alpine && docker push minizinc/minizinc:edge-alpine; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then IMAGE_TAG="minizinc/minizinc:${CI_COMMIT_TAG}-alpine"; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then IMAGE_TAG=minizinc/minizinc:latest-alpine; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then IMAGE_TAG=minizinc/minizinc:edge-alpine; fi
+    - if [ -n "$IMAGE_TAG" ]; then BUILDX_ARGS="--push -t $IMAGE_TAG"; fi
+    - docker buildx build $BUILDX_ARGS --pull --builder=container --platform=linux/amd64,linux/arm64 -f resources/pkg_config/Dockerfile --build-arg BASE='alpine:latest' .
   needs: []
-  tags: [docker-cli]
+  tags: [linux-arm64, mac-mini]
 
 package:docker_ubuntu:
   stage: package
   parallel: 3
   variables:
     MZNARCH: "linux"
-  <<: *packaging_setup
+  <<: *docker_setup
   script:
     - BASES=("null" "ubuntu:latest" "ubuntu:jammy" "ubuntu:focal")
     - EXTS=("null" "" "-jammy" "-focal")
     - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
-    - docker pull ${BASES[CI_NODE_INDEX]}
-    - HASH="$(docker build -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} -q .)"
-    - echo $HASH
-    - if [ -n "$CI_COMMIT_TAG" ]; then docker tag ${HASH} minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then docker tag ${HASH} minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
-    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then docker tag ${HASH} minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]} && docker push minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ -n "$CI_COMMIT_TAG" ]; then IMAGE_TAG=minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then IMAGE_TAG=minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then IMAGE_TAG=minizinc/minizinc:edge${EXTS[$CI_NODE_INDEX]}; fi
+    - if [ -n "$IMAGE_TAG" ]; then BUILDX_ARGS="--push -t $IMAGE_TAG"; fi
+    - docker buildx build $BUILDX_ARGS --pull --builder=container --platform=linux/amd64,linux/arm64 -f resources/pkg_config/Dockerfile --build-arg BASE=${BASES[$CI_NODE_INDEX]} .
   needs: []
-  tags: [docker-cli]
+  tags: [linux-arm64, mac-mini]
 
 minizinc:linux:nogui:
   image: ghcr.io/minizinc/docker-build-environment:package

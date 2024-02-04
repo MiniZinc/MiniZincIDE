@@ -1,15 +1,16 @@
 ARG BASE=ubuntu:latest
 FROM ${BASE} AS composer
+ARG TARGETPLATFORM
 
 # Install MiniZinc toolchain
-COPY minizinc/bin/* /usr/local/bin/
-COPY minizinc/share/minizinc /usr/local/share/minizinc
+COPY ${TARGETPLATFORM}/minizinc/bin/* /usr/local/bin/
+COPY ${TARGETPLATFORM}/minizinc/share/minizinc /usr/local/share/minizinc
 
 # Install vendor solvers
-COPY vendor/gecode /usr/local
-COPY vendor/chuffed /usr/local
-COPY vendor/or-tools /or-tools
-COPY vendor/highs /usr/local
+COPY ${TARGETPLATFORM}/vendor/gecode /usr/local
+COPY ${TARGETPLATFORM}/vendor/chuffed /usr/local
+COPY ${TARGETPLATFORM}/vendor/or-tools /or-tools
+COPY ${TARGETPLATFORM}/vendor/highs /usr/local
 
 # Strip all binaries
 RUN [ -f "/etc/alpine-release" ] && apk add --no-cache binutils || (apt-get update -y && apt-get install -y binutils)
