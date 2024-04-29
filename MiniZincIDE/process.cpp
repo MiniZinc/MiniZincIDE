@@ -436,7 +436,7 @@ void MznProcess::stop()
         killTimer->stop();
         delete killTimer;
     });
-    killTimer->start(200);
+    killTimer->start(1000);
 }
 
 void MznProcess::terminate()
