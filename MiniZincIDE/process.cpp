@@ -370,7 +370,7 @@ void MznProcess::start(const SolverConfiguration& sc, const QStringList& args, c
             stop();
         });
         connect(this, &MznProcess::started, hardTimer, [=] () {
-            hardTimer->start(sc.timeLimit + 1000);
+            hardTimer->start(sc.timeLimit + 10000);
         });
         connect(this, &MznProcess::finished, hardTimer, [=] () {
             delete hardTimer;
