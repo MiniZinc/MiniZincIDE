@@ -1,3 +1,9 @@
+2024-05-10
+  v2.8.4
+-  Fix bundled OpenSSL libraries on Windows.
+-  Allow MOOC submission window to be scrolled.
+-  Increase hard process termination timeout to 1s.
+
 2024-02-01
   v2.8.3
 -  Increase maximum number of threads from default Qt limit (#196).
