@@ -1,3 +1,7 @@
+2024-05-31
+  v2.8.5
+-  Update to MiniZinc 2.8.5.
+
 2024-05-10
   v2.8.4
 -  Fix bundled OpenSSL libraries on Windows.
