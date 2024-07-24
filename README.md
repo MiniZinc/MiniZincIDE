@@ -18,7 +18,7 @@
   </p>
 
   <p align="center">
-    <img src="https://www.minizinc.org/doc-2.7.6/en/images/mzn-ide-playground-data.jpg" alt="The MiniZinc IDE">
+    <img src="https://docs.minizinc.dev/en/stable/images/mzn-ide-playground-data.jpg" alt="The MiniZinc IDE" style="max-width:768px;width:100%">
   </p>
 </p>
 
