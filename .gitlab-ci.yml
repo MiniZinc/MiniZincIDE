@@ -302,6 +302,7 @@ package:osx:
     - hdiutil detach signed_bundle
     - hdiutil convert -format UDZO -o MiniZincIDE-$MZNVERSION-bundled.dmg signed_bundle.sparseimage
   after_script:
+    - hdiutil detach -quiet signed_bundle || true
     - security lock-keychain "$OSX_KEYCHAIN_PATH"
   artifacts:
     name: "minizinc_bundle_mac_${CI_PIPELINE_ID}"
