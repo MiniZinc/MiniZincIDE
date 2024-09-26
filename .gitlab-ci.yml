@@ -564,13 +564,12 @@ publish:github_stable:
   stage: publish
   image: ghcr.io/minizinc/docker-build-environment:package
   script:
-    - VERSION_DASH=$(echo "$CI_COMMIT_TAG" | sed 's/\./-/g')
     - NOTES="This release"
     - '[ "$(echo "$CI_COMMIT_TAG" | cut -d. -f3)" == "0" ] && NOTES="$NOTES adds several new features and"'
-    - NOTES="$NOTES fixes a number of bugs, see https://www.minizinc.org/changes.html#version-${VERSION_DASH} for a full change log. Binary releases for different platforms are available in the bundled packages of the MiniZinc IDE at https://github.com/minizinc/minizincide/releases."
+    - NOTES="$NOTES fixes a number of bugs, see https://docs.minizinc.dev/en/${CI_COMMIT_TAG}/changelog.html for a full change log. Binary releases for different platforms are available in the bundled packages of the MiniZinc IDE at https://github.com/minizinc/minizincide/releases."
     - gh release --repo MiniZinc/libminizinc create --draft --title "MiniZinc $CI_COMMIT_TAG" --notes "$NOTES" "$CI_COMMIT_TAG"
     - echo "Please refer to the change log for details:" > ide_notes
-    - echo "https://www.minizinc.org/doc-${CI_COMMIT_TAG}/en/changelog.html" >> ide_notes
+    - echo "https://docs.minizinc.dev/en/${CI_COMMIT_TAG}/changelog.html" >> ide_notes
     - gh release --repo MiniZinc/MiniZincIDE create --draft --title "MiniZinc $CI_COMMIT_TAG" --notes-file ide_notes "$CI_COMMIT_TAG" MiniZincIDE*.dmg MiniZincIDE*.exe MiniZincIDE*.AppImage MiniZincIDE*.tgz MiniZincIDE*.sha256
   needs: ["package:osx", "package:win64", "package:appimage", "package:linux"]
   only: [tags]
