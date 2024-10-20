@@ -75,7 +75,7 @@ parts:
       or-tools/bin/fzn-cp-sat: bin/
       or-tools/share/minizinc/solvers/*: share/minizinc/solvers/
       or-tools/share/minizinc/cp-sat: share/minizinc/cp-sat
-      highs/lib64/libhighs.so: lib/
+      highs/lib64/libhighs.so*: lib/
     stage: [bin/, lib/, share/minizinc/]
     build-attributes:
       - enable-patchelf
