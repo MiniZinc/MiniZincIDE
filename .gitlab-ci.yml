@@ -329,6 +329,7 @@ package:win64:
     MZNARCH: "win64"
     ISSARCH: "x64"
     ISSARCHALLOWED: "x64"
+    CODESIGN_CMD: signtool.exe sign /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $WIN_CODESIGN_DLIB /dmdf $WIN_CODESIGN_METADATA
   before_script:
     ### Set redist variables
     - for /d %%a in ("%VCToolsRedistDir%\\x64\\*.CRT") do set MSVCREDIST=%%a
@@ -350,8 +351,10 @@ package:win64:
     - unzip -q findmus.zip
     - curl --silent -o mzn-analyse.zip --location --header "PRIVATE-TOKEN:%ACCESS_TOKEN%" "https://gitlab.com/api/v4/projects/minizinc%%2Fmzn-analyse/jobs/artifacts/%ANALYSEREF%/download?job=build:%MZNARCH%"
     - unzip -q mzn-analyse.zip
+    ### Turn on code signing if variables present
+    - if defined WIN_CODESIGN_METADATA (set DOCODESIGN=1) else (set DOCODESIGN=0)
   script:
-    - '"C:/Program Files (x86)/Inno Setup 6/ISCC.exe" /dMyAppVersion="%MZNVERSION%" /dMyMZNVersion="%MZNVERSION%" /dMyAppDirectory="%CI_PROJECT_DIR%" /dMyMSVCRedist="%MSVCREDIST%" /dMyUCRTRedist="%UCRTREDIST%" /dMyAPPArch="%MZNARCH%" /dMyApp64Bit="%ISSARCH%" /dMyAppArchitectures="%ISSARCHALLOWED%" /O"%CI_PROJECT_DIR%" resources/pkg_config/minizinc-bundle.iss'
+    - '"C:/Program Files (x86)/Inno Setup 6/ISCC.exe" /dMyAppVersion="%MZNVERSION%" /dMyMZNVersion="%MZNVERSION%" /dMyAppDirectory="%CI_PROJECT_DIR%" /dMyMSVCRedist="%MSVCREDIST%" /dMyUCRTRedist="%UCRTREDIST%" /dMyAPPArch="%MZNARCH%" /dMyApp64Bit="%ISSARCH%" /dMyAppArchitectures="%ISSARCHALLOWED%" /dDoCodeSign="%DOCODESIGN%" /SMyCodeSignTool="%CODESIGN_CMD% $f" /O"%CI_PROJECT_DIR%" resources/pkg_config/minizinc-bundle.iss'
     ### Generate checksum
     - certutil -hashfile MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.exe SHA256 > MiniZincIDE-%MZNVERSION%-bundled-setup-%MZNARCH%.sha256
   artifacts:

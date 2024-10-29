@@ -31,6 +31,10 @@ ArchitecturesAllowed={#MyAppArchitectures}
 DisableDirPage=no
 PrivilegesRequiredOverridesAllowed=dialog
 
+#if DoCodeSign == "1"
+  SignTool=MyCodeSignTool
+#endif
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
@@ -38,18 +42,19 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#MyAppDirectory}\ide\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\ide\*"; Excludes: "{#MyAppDirectory}\ide\MiniZincIDE.exe"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\ide\MiniZincIDE.exe"; DestDir: "{app}"; Flags: ignoreversion sign
 
 Source: "{#MyAppDirectory}\vendor\openssl\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\minizinc\bin\*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\minizinc\bin\*.exe"; DestDir: "{app}"; Flags: ignoreversion sign
 Source: "{#MyAppDirectory}\minizinc\share\minizinc\*"; DestDir: "{app}\share\minizinc"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\vendor\gecode_gist\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; DestName: "fzn-gecode.exe"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\gecode_gist\bin\fzn-gecode.exe"; DestDir: "{app}\bin"; DestName: "fzn-gecode.exe"; Flags: ignoreversion sign
 Source: "{#MyAppDirectory}\vendor\gecode_gist\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppDirectory}\resources\misc\win-gecode-qt.conf"; DestDir: "{app}\bin"; DestName: "qt.conf"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\vendor\chuffed\bin\fzn-chuffed.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
 Source: "{#MyAppDirectory}\vendor\chuffed\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "{#MyAppDirectory}\vendor\or-tools\bin\fzn-cp-sat.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
@@ -57,13 +62,13 @@ Source: "{#MyAppDirectory}\vendor\or-tools\share\minizinc\*"; DestDir: "{app}\sh
 
 Source: "{#MyAppDirectory}\vendor\highs\bin\highs.dll"; DestDir:"{app}\bin"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
 Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
 Source: "{#MyAppDirectory}\findMUS\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyAppDirectory}\mzn-analyse\bin\mzn-analyse.exe"; DestDir:"{app}\bin"; Flags: ignoreversion
+Source: "{#MyAppDirectory}\mzn-analyse\bin\mzn-analyse.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
 
 Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
