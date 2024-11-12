@@ -487,7 +487,7 @@ void IDE::openFile(const QString& fileName0)
 
 void IDE::help()
 {
-    QDesktopServices::openUrl(QUrl(QString("http://www.minizinc.org/doc-")+MINIZINC_IDE_VERSION+"/en/minizinc_ide.html"));
+    QDesktopServices::openUrl(QUrl(QString("http://docs.minizinc.dev/en/")+MINIZINC_IDE_VERSION+"/minizinc_ide.html"));
 }
 
 IDE::~IDE(void) {
