@@ -1,3 +1,7 @@
+2024-02-11
+  v2.9.0
+-  Fix broken documentation link in the help menu item.
+
 2024-10-02
   v2.8.7
 -  Update to MiniZinc 2.8.7.
