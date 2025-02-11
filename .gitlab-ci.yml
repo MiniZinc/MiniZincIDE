@@ -445,13 +445,13 @@ package:docker_alpine:
 
 package:docker_ubuntu:
   stage: package
-  parallel: 3
+  parallel: 4
   variables:
     MZNARCH: "linux"
   <<: *docker_setup
   script:
-    - BASES=("null" "ubuntu:latest" "ubuntu:jammy" "ubuntu:focal")
-    - EXTS=("null" "" "-jammy" "-focal")
+    - BASES=("null" "ubuntu:latest" "ubuntu:noble" "ubuntu:jammy" "ubuntu:focal")
+    - EXTS=("null" "" "-noble" "-jammy" "-focal")
     - echo "Building image based on \"${BASES[$CI_NODE_INDEX]}\" with tag extension \"${EXTS[$CI_NODE_INDEX]}\""
     - if [ -n "$CI_COMMIT_TAG" ]; then IMAGE_TAG=minizinc/minizinc:${CI_COMMIT_TAG}${EXTS[$CI_NODE_INDEX]}; fi
     - if [ "$CI_COMMIT_REF_NAME" = "master" ]; then IMAGE_TAG=minizinc/minizinc:latest${EXTS[$CI_NODE_INDEX]}; fi
