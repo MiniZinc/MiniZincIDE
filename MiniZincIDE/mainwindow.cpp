@@ -2972,8 +2972,8 @@ void MainWindow::on_minizincError(const QJsonObject& error) {
                          : currentTheme.warningColor.get(darkMode);
     QString messageType = isError ? "Errors" : "Warnings";
 
-    if (error["stack"].isArray()) {
-        auto stack = error["stack"].toArray();
+    auto stack = error["stack"].toArray();
+    if (!stack.empty()) {
         QString lastFile = "";
         int lastLine = -1;
         for (auto it : stack) {
