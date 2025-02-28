@@ -73,6 +73,7 @@ parts:
       chuffed/share/minizinc/solvers/*: share/minizinc/solvers/
       chuffed/share/minizinc/chuffed: share/minizinc/chuffed
       or-tools/bin/fzn-cp-sat: bin/
+      or-tools/lib64/*.so*: lib/
       or-tools/share/minizinc/solvers/*: share/minizinc/solvers/
       or-tools/share/minizinc/cp-sat: share/minizinc/cp-sat
       highs/lib64/libhighs.so*: lib/

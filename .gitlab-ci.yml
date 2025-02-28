@@ -216,6 +216,7 @@ package:linux:
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/or-tools/bin/fzn-cp-sat $PACKAGE/bin/
+    - cp vendor/or-tools/lib64/*.so $PACKAGE/lib/
     - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/share/minizinc/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Package Globalizer
@@ -262,6 +263,7 @@ package:osx:
     - mv vendor/chuffed/bin/fzn-chuffed $DIR/bin/
     - cp -r vendor/chuffed/share/minizinc/* $MZNDIR/
     - mv vendor/or-tools/bin/fzn-cp-sat $DIR/bin/
+    - cp vendor/or-tools/lib/*.dylib $DIR/lib/
     - cp -r vendor/or-tools/share/minizinc/* $MZNDIR/
     - cp vendor/highs/lib/libhighs.dylib $DIR/lib/
     ### Package Globalizer
@@ -387,6 +389,7 @@ package:appimage:
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/usr/share/minizinc/
     - mv vendor/or-tools/bin/fzn-cp-sat $PACKAGE/usr/bin/
     - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/usr/share/minizinc/
+    - cp vendor/or-tools/lib64/*.so $PACKAGE/usr/lib/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/usr/lib/
     ### Package Globalizer
     - mv globalizer/bin/minizinc-globalizer $PACKAGE/usr/bin/
@@ -480,6 +483,7 @@ minizinc:linux:nogui:
     - mv vendor/chuffed/bin/fzn-chuffed $PACKAGE/bin/
     - cp -r vendor/chuffed/share/minizinc/* $PACKAGE/share/minizinc/
     - mv vendor/or-tools/bin/fzn-cp-sat $PACKAGE/bin/
+    - cp vendor/or-tools/lib64/*.so $PACKAGE/lib/
     - cp -r vendor/or-tools/share/minizinc/* $PACKAGE/share/minizinc/
     - cp vendor/highs/lib64/libhighs.so $PACKAGE/lib/
     ### Strip included binaries
