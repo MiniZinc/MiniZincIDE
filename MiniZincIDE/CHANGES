@@ -1,4 +1,4 @@
-2025-02-27
+2025-03-03
   v2.9.1
 -  Ensure locations for warnings and errors are shown when the stack dump is empty (#212).
 -  Use scroll buttons when the tab bar overflows to ensure the side panels can be resized (#213).
