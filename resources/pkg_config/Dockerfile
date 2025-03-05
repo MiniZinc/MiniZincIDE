@@ -17,7 +17,7 @@ RUN [ -f "/etc/alpine-release" ] && apk add --no-cache binutils || (apt-get upda
 RUN cd /usr/local/bin && strip minizinc mzn2doc fzn-chuffed fzn-gecode /or-tools/bin/fzn-cp-sat
 
 # Generate resulting Docker image
-FROM ${BASE} 
+FROM ${BASE}
 
 RUN [ ! -f "/etc/alpine-release" ] || apk add --no-cache libstdc++
 
@@ -25,4 +25,5 @@ COPY --from=composer /usr/local/bin/* /usr/local/bin/
 COPY --from=composer /usr/local/share/minizinc /usr/local/share/minizinc
 COPY --from=composer /usr/local/lib*/libhighs.so /usr/local/lib/
 COPY --from=composer /or-tools/bin/fzn-cp-sat /usr/local/bin/
+COPY --from=composer /or-tools/lib*/*.so* /usr/local/lib/
 COPY --from=composer /or-tools/share/minizinc /usr/local/share/minizinc
