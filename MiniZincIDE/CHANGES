@@ -1,3 +1,7 @@
+2025-03-06
+  v2.9.2
+-  Fix the packaging of the OR Tools solver on linux distributions.
+
 2025-03-03
   v2.9.1
 -  Ensure locations for warnings and errors are shown when the stack dump is empty (#212).
@@ -294,7 +298,7 @@
   v2.3.0
   - The IDE will now check MiniZinc code for syntax and type errors
   - The editor performs simple code completion for MiniZinc keywords
-  - Ensure cursor is visible (editor scrolls to cursor position) when pressing 
+  - Ensure cursor is visible (editor scrolls to cursor position) when pressing
     tab or enter. Fixes #71.
   - Replace find dialog with inline widget and incremental search.
   - Support dark mode on macOS.
