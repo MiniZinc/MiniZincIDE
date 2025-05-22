@@ -10,7 +10,7 @@ description: |
   solver input language that is understood by a wide range of solvers.
 
 confinement: classic
-base: core22
+base: core24
 
 apps:
   minizinc:
