@@ -326,7 +326,7 @@ signals:
     ///
     /// \brief Emitted when a warning message is produced.
     ///
-    void warningOutput(const QJsonObject& warning);
+    void warningOutput(const QJsonObject& warning, bool fromChecker = false);
     ///
     /// \brief Emitted when a statistics message is produced.
     ///

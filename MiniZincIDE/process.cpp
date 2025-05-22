@@ -588,7 +588,7 @@ void MznProcess::onStdOutLine(const QString& line)
                         auto comment = msg["comment"].toString();
                         emit commentOutput(comment);
                     } else if (msg_type == "warning") {
-                        emit warningOutput(msg);
+                        emit warningOutput(msg, true);
                     } else if (msg_type == "error") {
                         emit errorOutput(msg);
                     }

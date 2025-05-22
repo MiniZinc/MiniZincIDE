@@ -1231,9 +1231,14 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     QStringList args;
     args << model
          << data;
+    bool compiledChecker = false;
     QStringList files;
     for (auto& arg : args) {
-        files << QFileInfo(arg).fileName();
+        QFileInfo fi(arg);
+        files << fi.fileName();
+        if (fi.suffix() == "mzc") {
+            compiledChecker = true;
+        }
     }
     args << extraArgs;
     for (auto& dzn : inlineData) {
@@ -1289,7 +1294,12 @@ void MainWindow::run(const SolverConfiguration& sc, const QString& model, const 
     connect(proc, &MznProcess::solutionOutput, ui->outputWidget, &OutputWidget::addSolution);
     connect(proc, &MznProcess::checkerOutput, ui->outputWidget, &OutputWidget::addCheckerOutput);
     connect(proc, &MznProcess::errorOutput, this, &MainWindow::on_minizincError);
-    connect(proc, &MznProcess::warningOutput, this, &MainWindow::on_minizincError);
+    connect(proc, &MznProcess::warningOutput, this, [=] (const QJsonObject& error, bool fromChecker) {
+        if (!fromChecker || !compiledChecker) {
+            // Suppress warnings from compiled checkers
+            on_minizincError(error);
+        }
+    });
     connect(proc, &MznProcess::finalStatus, ui->outputWidget, &OutputWidget::addStatus);
     connect(proc, &MznProcess::unknownOutput, [=](const QString& d) { ui->outputWidget->addText(d); });
     connect(proc, &MznProcess::commentOutput, this, [=] (const QString& d) {
