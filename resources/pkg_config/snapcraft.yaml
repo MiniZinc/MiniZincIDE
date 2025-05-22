@@ -46,7 +46,7 @@ parts:
       - libxcb1
     stage:
       # Drivers need no-patchelf so can't include them here
-      - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+      - -usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/dri
   deps-mesa:
     plugin: nil
     stage-packages:
@@ -55,7 +55,7 @@ parts:
       - no-patchelf
     stage:
       # Include no-patchelf drivers at this point
-      - usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+      - usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/dri
   minizinc:
     plugin: dump
     source: minizinc/
