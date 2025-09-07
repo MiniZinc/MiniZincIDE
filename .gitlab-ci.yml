@@ -33,8 +33,7 @@ build:linux:
     - make -j4 INSTALL_ROOT=../ide install; find ../ide/
     - cd ..
     # Download Gecode Gist so linuxdeploy can include its dependencies
-    - curl --retry 10 --location --header "PRIVATE-TOKEN:$ACCESS_TOKEN" --silent https://gitlab.com/api/v4/snippets/1796163/raw | tr -d '\r' > download.sh
-    - sh download.sh minizinc-vendor master gecode_gist:linux vendor.zip
+    - sh ${VENDOR_SCRIPT} minizinc-vendor master gecode_gist:linux vendor.zip
     - unzip -q vendor.zip
     - linuxdeploy --appdir ide --executable vendor/gecode_gist/bin/fzn-gecode --plugin qt -v0
     - rm -rf ide/usr/share ide/usr/translations ide/usr/bin/fzn-gecode
