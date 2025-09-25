@@ -1,3 +1,7 @@
+2025-09-25
+  v2.9.4
+-  Update to MiniZinc 2.9.4.
+
 2025-05-23
   v2.9.3
 -  Suppress warnings generated when running compiled solution checkers.
