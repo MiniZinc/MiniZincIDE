@@ -25,5 +25,4 @@ COPY --from=composer /usr/local/bin/* /usr/local/bin/
 COPY --from=composer /usr/local/share/minizinc /usr/local/share/minizinc
 COPY --from=composer /usr/local/lib*/libhighs.so /usr/local/lib/
 COPY --from=composer /or-tools/bin/fzn-cp-sat /usr/local/bin/
-COPY --from=composer /or-tools/lib*/*.so* /usr/local/lib/
 COPY --from=composer /or-tools/share/minizinc /usr/local/share/minizinc
