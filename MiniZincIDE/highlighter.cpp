@@ -31,7 +31,7 @@ Highlighter::Highlighter(QFont& font, const Theme& theme, bool dm, QTextDocument
              << "\\bendif\\b" << "\\benum\\b" << "\\bfloat\\b"
              << "\\bfunction\\b" << "\\bif\\b" << "\\binclude\\b"
              << "\\bintersect\\b" << "\\bin\\b" << "\\bint\\b"
-             << "\\blet\\b" << "\\bmaximize\\b" << "\\bminimize\\b"
+             << "\\blet\\b" << "\\blist\\b" << "\\bmaximize\\b" << "\\bminimize\\b"
              << "\\bmod\\b" << "\\bnot\\b" << "\\bof\\b" << "\\boutput\\b"
              << "\\bopt\\b" << "\\bpar\\b" << "\\bpredicate\\b"
              << "\\brecord\\b" << "\\bsatisfy\\b" << "\\bset\\b"
