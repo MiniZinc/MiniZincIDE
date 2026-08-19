@@ -1,0 +1,650 @@
+name: Build & Test
+
+# Build and test the IDE against a pinned compiler release; see
+# scripts/fetch_minizinc.sh for how that release is chosen. libminizinc
+# dispatches this workflow after republishing `edge`.
+#
+# QT_VERSION must match [toolchain.qt] in minizinc-vendor: the IDE bundles
+# fzn-gecode from gecode_gist and deploys Qt alongside it.
+
+on:
+  push:
+    # develop only: master/main and feature branches are covered by the PR that
+    # merges them, so building them again is redundant. Tags stay because they
+    # drive the release flow.
+    branches: [develop]
+    tags: ["*"]
+  pull_request: {}
+  workflow_dispatch:
+    inputs:
+      minizinc_release:
+        description: "libminizinc release to build against (blank = tag or edge)."
+        type: string
+        default: ""
+      promote_snap:
+        description: "Path or URL of a built .snap to release to the stable channel."
+        type: string
+        default: ""
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  QT_VERSION: "6.9.3"
+  # Same image as libminizinc's linux build and minizinc-vendor's solvers, so the
+  # whole bundle shares one glibc floor (2.28). TODO: pin by @sha256.
+  MANYLINUX_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64"
+  # Honoured by scripts/fetch_minizinc.sh; blank means "resolve from the ref".
+  MZN_RELEASE: ${{ github.event.inputs.minizinc_release }}
+
+jobs:
+  # Catches a bundle labelled with a version that does not match the compiler
+  # inside it. Reads VERSION from the .pri, so needs neither Qt nor a build.
+  check-version:
+    name: check version
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare the IDE, compiler and tag versions
+        shell: bash
+        run: |
+          set -eux
+          bash scripts/fetch_minizinc.sh x86_64-linux-gnu
+          ide=$(sed -nE 's/^VERSION *= *([0-9][^ ]*) *$/\1/p' MiniZincIDE/MiniZincIDE.pri | head -1)
+          mzn=$(minizinc/bin/minizinc --version | sed -nE 's/.*version ([^,]+),.*/\1/p')
+          echo "IDE=$ide MiniZinc=$mzn"
+          [ -n "$ide" ] && [ -n "$mzn" ]
+          [ "$ide" = "$mzn" ] || { echo "IDE $ide does not match MiniZinc $mzn" >&2; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            [ "$GITHUB_REF_NAME" = "$mzn" ] \
+              || { echo "tag $GITHUB_REF_NAME does not match version $mzn" >&2; exit 1; }
+          fi
+
+  build:
+    name: build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: linux,     triple: x86_64-linux-gnu,     runner: ubuntu-24.04 }
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
+          - { platform: win64,     triple: x86_64-windows,       runner: windows-2022 }
+          - { platform: win64-arm, triple: aarch64-windows,      runner: windows-11-arm }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      # linux gets Qt inside the manylinux container instead.
+      - uses: jurplel/install-qt-action@v4
+        if: matrix.platform != 'linux'
+        with:
+          version: ${{ env.QT_VERSION }}
+          # qtwebsockets is not in qtbase.
+          modules: qtwebsockets
+          cache: true
+          # windows-11-arm still reports as plain "Windows", so without this it
+          # pulls x64 Qt onto an arm64 build. macOS ships one universal package.
+          host: ${{ matrix.platform == 'win64-arm' && 'windows_arm64' || '' }}
+      - uses: TheMrMilchmann/setup-msvc-dev@v4.1.0
+        if: startsWith(matrix.platform, 'win64')
+        with:
+          arch: ${{ matrix.platform == 'win64-arm' && 'arm64' || 'x64' }}
+      - name: Fetch MiniZinc compiler + solvers
+        shell: bash
+        run: bash scripts/fetch_minizinc.sh ${{ matrix.triple }}
+
+      # manylinux_2_28: same glibc floor (2.28) as the compiler and solvers.
+      - name: Build (linux, manylinux container)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -eux
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e ROOT=/work -e BUILD_REF="$GITHUB_RUN_ID" -e IDE_PLATFORM=linux \
+            -e QT_VERSION="${{ env.QT_VERSION }}" -e QT_MODULES=qtwebsockets \
+            "${{ env.MANYLINUX_IMAGE }}" \
+            bash -c '. scripts/linux_build_env.sh && bash scripts/build_ide.sh'
+
+      - name: Build (osx)
+        if: startsWith(matrix.platform, 'osx')
+        shell: bash
+        run: ROOT="$PWD" BUILD_REF="$GITHUB_RUN_ID" IDE_PLATFORM=osx bash scripts/build_ide.sh
+
+      - name: Build (windows)
+        if: startsWith(matrix.platform, 'win64')
+        shell: cmd
+        run: |
+          if not exist build mkdir build
+          cd build
+          qmake "CONFIG+=bundled" "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"%GITHUB_RUN_ID%\\\\\\\"\"" ..\MiniZincIDE\MiniZincIDE.pro || exit /b 1
+          nmake || exit /b 1
+
+      # ---- package ----------------------------------------------------------
+      - name: Package (linux bundle + AppImage)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -eux
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e ROOT=/work -e APPIMAGE_EXTRACT_AND_RUN=1 -e IDE_VERSION -e TRIPLE \
+            -e QT_VERSION="${{ env.QT_VERSION }}" -e QT_MODULES=qtwebsockets \
+            "${{ env.MANYLINUX_IMAGE }}" bash -c '
+              set -eux
+              dnf -y install file >/dev/null    # linuxdeploy/appimagetool need it
+              . scripts/linux_build_env.sh
+              curl -sSLo /usr/local/bin/appimagetool \
+                https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+              chmod +x /usr/local/bin/appimagetool
+              export APPIMAGE_EXTRACT_AND_RUN=1   # no FUSE in the container
+              bash scripts/package_ide.sh linux "$IDE_VERSION" "$TRIPLE"
+              bash scripts/package_ide.sh appimage "$IDE_VERSION" "$TRIPLE"
+            '
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+          TRIPLE: ${{ matrix.triple }}
+
+      # Built here rather than in its own job: the snap is assembled from the
+      # ide/, minizinc/ and vendor/ trees this job already has laid out, none of
+      # which are uploaded as artifacts.
+      - name: Build snap (linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -eux
+          # The container writes as root; snapcraft runs as the runner user.
+          sudo chown -R "$USER" .
+          mkdir -p snap
+          cp resources/pkg_config/snapcraft.yaml snap/snapcraft.yaml
+      - uses: snapcore/action-build@v1
+        if: matrix.platform == 'linux'
+        id: snapcraft
+
+      # Always unsigned, even on develop/tags: sign-macos rebuilds the .dmg from
+      # a signed, notarised app and overwrites this. Built here anyway so PR and
+      # feature-branch CI still produce something installable.
+      - name: Package (macOS)
+        if: startsWith(matrix.platform, 'osx')
+        shell: bash
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+        run: |
+          set -eux
+          ROOT="$PWD" bash scripts/package_ide.sh osx "$IDE_VERSION" "${{ matrix.triple }}"
+          brew install create-dmg
+          bash scripts/build_dmg.sh MiniZincIDE.app "$IDE_VERSION" "${{ matrix.triple }}"
+          shasum -a 256 "MiniZincIDE-${IDE_VERSION}-${{ matrix.triple }}.dmg" \
+            > "MiniZincIDE-${IDE_VERSION}-${{ matrix.triple }}.dmg.sha256"
+          # ditto, not a bare tree: artifacts preserve neither the symlinks
+          # (Frameworks/*/Versions/Current) nor the executable bits.
+          ditto -c -k --sequesterRsrc --keepParent MiniZincIDE.app staged-app.zip
+
+      - name: Upload staged app (macOS, for signing)
+        if: startsWith(matrix.platform, 'osx')
+        uses: actions/upload-artifact@v7
+        with:
+          name: ide-${{ matrix.platform }}-staged
+          path: staged-app.zip
+          if-no-files-found: error
+
+      - name: Stage app for packaging (windows)
+        if: startsWith(matrix.platform, 'win64')
+        shell: cmd
+        run: |
+          if not exist ide mkdir ide
+          copy build\release\MiniZincIDE.exe ide\ || exit /b 1
+          windeployqt --no-translations --no-compiler-runtime --no-system-d3d-compiler ide\MiniZincIDE.exe vendor\gecode_gist\bin\fzn-gecode.exe || exit /b 1
+
+      # Handed to sign-windows, which re-stages a signed installer on top of this
+      # -- see that job for why signing does not happen inline here.
+      - name: Upload staged app (windows, for signing)
+        if: startsWith(matrix.platform, 'win64')
+        uses: actions/upload-artifact@v7
+        with:
+          name: ide-${{ matrix.platform }}-staged
+          path: ide/
+          if-no-files-found: error
+
+      # Always unsigned; sign-windows rebuilds it signed. Kept here so PR and
+      # feature-branch CI still produce a working installer.
+      - name: Package (Windows installer)
+        if: startsWith(matrix.platform, 'win64')
+        shell: cmd
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+          # Inno's ArchitecturesAllowed identifier and the VS/SDK redist
+          # directory name both happen to use the same token per arch.
+          REDIST_ARCH: ${{ matrix.platform == 'win64-arm' && 'arm64' || 'x64' }}
+        run: |
+          for /d %%a in ("%VCToolsRedistDir%\%REDIST_ARCH%\*.CRT") do set MSVCREDIST=%%a
+          set UCRTREDIST=%WindowsSdkDir%\Redist\ucrt\DLLs\%REDIST_ARCH%
+          "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" /dMyAppVersion="%IDE_VERSION%" /dMyMZNVersion="%IDE_VERSION%" /dMyAppDirectory="%CD%" /dMyMSVCRedist="%MSVCREDIST%" /dMyUCRTRedist="%UCRTREDIST%" /dMyAPPArch="${{ matrix.triple }}" /dMyApp64Bit="%REDIST_ARCH%" /dMyAppArchitectures="%REDIST_ARCH%" /dDoCodeSign="0" /O"%CD%" resources/pkg_config/minizinc-bundle.iss || exit /b 1
+
+      - name: Checksum installer (windows)
+        if: startsWith(matrix.platform, 'win64')
+        shell: cmd
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+          TRIPLE: ${{ matrix.triple }}
+        run: certutil -hashfile MiniZincIDE-%IDE_VERSION%-%TRIPLE%-setup.exe SHA256 > MiniZincIDE-%IDE_VERSION%-%TRIPLE%-setup.exe.sha256
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ide-${{ matrix.platform }}
+          path: |
+            MiniZincIDE-*.tgz
+            MiniZincIDE-*.AppImage
+            MiniZincIDE-*.dmg
+            MiniZincIDE-*.exe
+            MiniZincIDE-*.sha256
+            *.snap
+          if-no-files-found: warn
+
+  # Separate from `build` because an environment's branch policy fails the whole
+  # job on a disallowed ref -- inside the shared build matrix that would break PR
+  # CI for every platform, not just Windows.
+  sign-windows:
+    name: sign windows installer (${{ matrix.platform }})
+    needs: build
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: win64,     triple: x86_64-windows,  runner: windows-2022,   redist_arch: x64 }
+          - { platform: win64-arm, triple: aarch64-windows, runner: windows-11-arm, redist_arch: arm64 }
+    environment: windows-signing
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      deployments: write   # environment: implicitly records a deployment
+    steps:
+      - uses: actions/checkout@v7
+      - uses: TheMrMilchmann/setup-msvc-dev@v4.1.0
+        with:
+          arch: ${{ matrix.redist_arch }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: ide-${{ matrix.platform }}-staged
+          path: ide
+      # Inno's [Files] reads vendor/, minizinc/ and the tool dirs directly; the
+      # staged artifact above is only the app.
+      - name: Fetch MiniZinc compiler + solvers
+        shell: bash
+        run: bash scripts/fetch_minizinc.sh ${{ matrix.triple }}
+
+      - name: Sign application (windows)
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+          files-folder: ${{ github.workspace }}\ide
+          files-folder-filter: exe,dll
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      # Repackaged rather than reusing build's installer, so the exe/dlls Inno
+      # embeds are the signed ones and not just the wrapper.
+      - name: Package (Windows installer, signed)
+        shell: cmd
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+        run: |
+          for /d %%a in ("%VCToolsRedistDir%\${{ matrix.redist_arch }}\*.CRT") do set MSVCREDIST=%%a
+          set UCRTREDIST=%WindowsSdkDir%\Redist\ucrt\DLLs\${{ matrix.redist_arch }}
+          "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" /dMyAppVersion="%IDE_VERSION%" /dMyMZNVersion="%IDE_VERSION%" /dMyAppDirectory="%CD%" /dMyMSVCRedist="%MSVCREDIST%" /dMyUCRTRedist="%UCRTREDIST%" /dMyAPPArch="${{ matrix.triple }}" /dMyApp64Bit="${{ matrix.redist_arch }}" /dMyAppArchitectures="${{ matrix.redist_arch }}" /dDoCodeSign="0" /O"%CD%" resources/pkg_config/minizinc-bundle.iss || exit /b 1
+
+      - name: Sign installer (windows)
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+          files-folder: ${{ github.workspace }}
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      # After signing, so the published hash matches what users download.
+      - name: Checksum installer (windows)
+        shell: cmd
+        env:
+          IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+          TRIPLE: ${{ matrix.triple }}
+        run: certutil -hashfile MiniZincIDE-%IDE_VERSION%-%TRIPLE%-setup.exe SHA256 > MiniZincIDE-%IDE_VERSION%-%TRIPLE%-setup.exe.sha256
+
+      # Overwrites build's unsigned ide-<platform> with the now-signed installer,
+      # so publish (which needs this job) picks up the signed one.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ide-${{ matrix.platform }}
+          path: |
+            MiniZincIDE-*.exe
+            MiniZincIDE-*.sha256
+          overwrite: true
+
+  # Split out for the same reason as sign-windows.
+  sign-macos:
+    name: sign macOS bundle (${{ matrix.platform }})
+    needs: build
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
+    environment: macos-signing
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      deployments: write   # environment: implicitly records a deployment
+    env:
+      IDE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build{0}', github.run_id) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: ide-${{ matrix.platform }}-staged
+      - name: Unpack the staged app
+        run: ditto -x -k staged-app.zip .
+
+      - name: Import the signing certificate
+        env:
+          P12: ${{ secrets.OSX_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.OSX_CERTIFICATE_PASSWORD }}
+        run: |
+          set -eu
+          # A throwaway keychain, so the cleanup step can drop it wholesale.
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # Default is a 5-minute idle lock, which the notarisation waits exceed.
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" \
+            -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/cert.p12"
+          # Without this codesign blocks on a keychain prompt nothing can answer.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain
+
+      - name: Sign the app
+        env:
+          ID: ${{ secrets.OSX_DEVELOPER_ID }}
+        run: |
+          set -eux
+          # Inside out: signing nested code invalidates any signature above it.
+          for f in MiniZincIDE.app/Contents/Frameworks/*.framework; do
+            codesign --options runtime --force --sign "$ID" \
+              "$f"/Versions/*/"$(basename "$f" .framework)"
+          done
+          find MiniZincIDE.app/Contents/PlugIns MiniZincIDE.app/Contents/Frameworks \
+            -type f -name '*.dylib' \
+            -exec codesign --options runtime --force --sign "$ID" {} \;
+          # The bundled solvers need disable-library-validation (entitlements.xml)
+          # to load the dylibs shipped beside them.
+          find MiniZincIDE.app/Contents/Resources -type f -perm +111 \
+            -exec codesign --options runtime \
+              --entitlements resources/misc/entitlements.xml \
+              --force --sign "$ID" {} \;
+          codesign --options runtime --force --sign "$ID" MiniZincIDE.app
+          codesign --verify --deep --strict --verbose=2 MiniZincIDE.app
+
+      - name: Notarise and staple the app
+        env:
+          APPLE_ID: ${{ secrets.OSX_NOTARY_TOOL_APPLE_ID }}
+          TEAM_ID: ${{ secrets.OSX_NOTARY_TOOL_TEAM_ID }}
+          PASSWORD: ${{ secrets.OSX_NOTARY_TOOL_PASSWORD }}
+        run: |
+          set -eux
+          # notarytool takes an archive, not a bundle; --wait fails the step on a
+          # rejected submission rather than continuing unnotarised.
+          ditto -c -k --sequesterRsrc --keepParent MiniZincIDE.app notarise-app.zip
+          xcrun notarytool submit notarise-app.zip \
+            --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$PASSWORD" --wait
+          rm -f notarise-app.zip
+          # The app is stapled too, not just the .dmg: a copy dragged out of the
+          # image needs its own ticket to pass Gatekeeper offline.
+          xcrun stapler staple MiniZincIDE.app
+
+      - name: Build, sign and notarise the .dmg
+        env:
+          ID: ${{ secrets.OSX_DEVELOPER_ID }}
+          APPLE_ID: ${{ secrets.OSX_NOTARY_TOOL_APPLE_ID }}
+          TEAM_ID: ${{ secrets.OSX_NOTARY_TOOL_TEAM_ID }}
+          PASSWORD: ${{ secrets.OSX_NOTARY_TOOL_PASSWORD }}
+        run: |
+          set -eux
+          brew install create-dmg
+          bash scripts/build_dmg.sh MiniZincIDE.app "$IDE_VERSION" "${{ matrix.triple }}"
+          dmg="MiniZincIDE-${IDE_VERSION}-${{ matrix.triple }}.dmg"
+          # The image is what users download, so it is notarised in its own right.
+          codesign --force --sign "$ID" "$dmg"
+          xcrun notarytool submit "$dmg" \
+            --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$PASSWORD" --wait
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$dmg"
+          shasum -a 256 "$dmg" > "$dmg.sha256"
+
+      # Overwrites build's unsigned .dmg, so publish picks up the signed one.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ide-${{ matrix.platform }}
+          path: |
+            MiniZincIDE-*.dmg
+            MiniZincIDE-*.dmg.sha256
+          overwrite: true
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "${KEYCHAIN:-}" 2>/dev/null || true
+
+  test:
+    name: test (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: linux,     triple: x86_64-linux-gnu,     runner: ubuntu-24.04 }
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
+          - { platform: win64,     triple: x86_64-windows,       runner: windows-2022 }
+          - { platform: win64-arm, triple: aarch64-windows,      runner: windows-11-arm }
+    runs-on: ${{ matrix.runner }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v7
+      # linux gets Qt inside the manylinux container instead, to keep its glibc
+      # floor (scripts/linux_build_env.sh).
+      - uses: jurplel/install-qt-action@v4
+        if: matrix.platform != 'linux'
+        with:
+          version: ${{ env.QT_VERSION }}
+          # qtwebsockets is not in qtbase.
+          modules: qtwebsockets
+          cache: true
+          host: ${{ matrix.platform == 'win64-arm' && 'windows_arm64' || '' }}
+      - uses: TheMrMilchmann/setup-msvc-dev@v4.1.0
+        if: startsWith(matrix.platform, 'win64')
+        with:
+          arch: ${{ matrix.platform == 'win64-arm' && 'arm64' || 'x64' }}
+      - name: Fetch MiniZinc compiler + solvers
+        shell: bash
+        run: bash scripts/fetch_minizinc.sh ${{ matrix.triple }}
+
+      # Same container as the build; also where Qt is installed.
+      - name: Run tests (linux, manylinux container)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -eux
+          docker run --rm -v "$PWD:/work" -w /work \
+            -e ROOT=/work -e QT_QPA_PLATFORM=offscreen \
+            -e QT_VERSION="${{ env.QT_VERSION }}" -e QT_MODULES=qtwebsockets \
+            "${{ env.MANYLINUX_IMAGE }}" \
+            bash -c '. scripts/linux_build_env.sh && bash scripts/run_tests.sh'
+
+      - name: Run tests (osx)
+        if: startsWith(matrix.platform, 'osx')
+        shell: bash
+        run: ROOT="$PWD" bash scripts/run_tests.sh
+
+      - name: Run tests (windows)
+        if: startsWith(matrix.platform, 'win64')
+        shell: cmd
+        run: |
+          set PATH=%CD%\minizinc\bin;%PATH%
+          set MZN_SOLVER_PATH=%CD%\vendor\gecode_gist\share\minizinc\solvers\;%CD%\vendor\chuffed\share\minizinc\solvers
+          minizinc --solvers || exit /b 1
+          if not exist test mkdir test
+          cd test
+          qmake ..\tests\tests.pro || exit /b 1
+          nmake || exit /b 1
+          nmake check || exit /b 1
+
+  publish:
+    name: publish release
+    # sign-*: so this never races them for the ide-<platform> artifacts.
+    needs: [build, test, sign-windows, sign-macos]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-24.04
+    # Only the snap step needs this, but it is safe on the whole job: this if:
+    # already matches the environment's policy, so nothing extra gets blocked.
+    environment: snap-publishing
+    permissions:
+      contents: write
+      deployments: write   # environment: implicitly records a deployment
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Stage release assets
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p upload
+          # The snap goes to the Snap Store, and *-staged are the sign-* jobs'
+          # internal handoff (loose exe/DLLs); neither belongs on the release.
+          find artifacts -type f ! -name '*.snap' ! -path '*-staged/*' -exec cp {} upload/ \;
+          [ -n "$(ls -A upload)" ] || { echo "no assets to publish" >&2; exit 1; }
+          ls -l upload/
+      - name: Publish
+        shell: bash
+        run: |
+          set -eux
+          ROLLING=0        # i.e. the rolling `edge` tag rather than a release tag
+          if [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
+            TAG="${{ github.ref_name }}"
+            # Wording matches the existing releases.
+            NOTES="Please refer to the change log for details:"
+            NOTES="$NOTES"$'\n'"https://docs.minizinc.dev/en/$TAG/changelog.html"
+            NOTES="$NOTES"$'\n\n'"These bundles contain the MiniZinc IDE, compiler and solvers."
+            NOTES="$NOTES Command line only packages are available at"
+            NOTES="$NOTES https://github.com/MiniZinc/libminizinc/releases."
+            # Only create it if absent; anything else is a real error.
+            if ! gh release view "$TAG" >/dev/null 2>&1; then
+              gh release create "$TAG" --title "MiniZinc $TAG" --verify-tag \
+              --notes "$NOTES"
+            fi
+          else
+            ROLLING=1
+            TAG=edge
+            TITLE="MiniZinc Edge (unstable development release)"
+            cat > edge_notes <<'EOF'
+          This release is continuously updated to point to the latest development version of MiniZinc.
+
+          The packages provided here are unstable, and not guaranteed to work. However, they may be useful if you wish to try out upcoming features/bug fixes.
+
+          These bundles contain the MiniZinc IDE, compiler and solvers. Command line only packages are available at https://github.com/MiniZinc/libminizinc/releases/tag/edge
+
+          Please refer to the change log for details:
+          https://docs.minizinc.dev/en/latest/changelog.html#unreleased
+          EOF
+          fi
+
+          if [ "$ROLLING" = 1 ]; then
+            # Update the rolling prerelease IN PLACE. Deleting and recreating it
+            # would send a "new release" notification to every watcher on every
+            # develop build, so instead: move the tag, edit the release, and swap
+            # the assets. Pushing the tag with GITHUB_TOKEN does not re-trigger
+            # workflows, so this cannot set off the tag-driven release path.
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -f -a -m "Development build of the MiniZinc IDE" "$TAG" "$GITHUB_SHA"
+            git push -f origin "refs/tags/$TAG"
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              gh release edit "$TAG" --prerelease --title "$TITLE" --notes-file edge_notes
+            else
+              gh release create "$TAG" --prerelease --title "$TITLE" --notes-file edge_notes
+            fi
+          fi
+
+          gh release upload "$TAG" upload/* --clobber
+
+          # Prune assets from previous builds (their names embed the run id, so
+          # --clobber alone never removes them). Done AFTER the upload, never
+          # before: deleting first leaves the release empty for the duration of
+          # the upload, and empty for good if the run is cancelled in between.
+          if [ "$ROLLING" = 1 ]; then
+            keep=$(find upload -maxdepth 1 -type f -exec basename {} \;)
+            # Never prune against an empty list -- that would delete every asset.
+            [ -n "$keep" ] || { echo "no staged assets; refusing to prune" >&2; exit 1; }
+            gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r a; do
+              [ -n "$a" ] || continue
+              printf '%s\n' "$keep" | grep -qxF -- "$a" || gh release delete-asset "$TAG" "$a" -y
+            done
+          fi
+
+      - name: Locate the snap
+        id: snap
+        shell: bash
+        run: echo "path=$(find artifacts -name '*.snap' | head -1)" >> "$GITHUB_OUTPUT"
+
+      # A tagged build goes to `candidate`; `stable` is promoted by hand.
+      - uses: snapcore/action-publish@v1
+        if: steps.snap.outputs.path != ''
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.snap.outputs.path }}
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge' }}
+
+  # Dispatched by hand once a `candidate` build has been checked.
+  promote-snap:
+    name: promote the snap to stable
+    if: github.event_name == 'workflow_dispatch' && inputs.promote_snap != ''
+    runs-on: ubuntu-24.04
+    # Previously dispatchable from any branch by anyone with write access; the
+    # environment's branch/tag policy is what actually restricts that now.
+    environment: snap-publishing
+    permissions:
+      deployments: write   # environment: implicitly records a deployment
+    steps:
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ inputs.promote_snap }}
+          release: stable

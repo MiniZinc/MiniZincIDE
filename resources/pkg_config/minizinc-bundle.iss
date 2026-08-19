@@ -22,7 +22,7 @@ LicenseFile={#MyAppDirectory}\resources\misc\COMBINED_LICENSE.txt
 DefaultDirName={autopf}\MiniZinc
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputBaseFilename=MiniZincIDE-{#MyAppVersion}-bundled-setup-{#MyAppArch}
+OutputBaseFilename=MiniZincIDE-{#MyAppVersion}-{#MyAppArch}-setup
 Compression=lzma
 SolidCompression=yes
 ChangesAssociations=yes
@@ -62,16 +62,20 @@ Source: "{#MyAppDirectory}\vendor\or-tools\share\minizinc\*"; DestDir: "{app}\sh
 
 Source: "{#MyAppDirectory}\vendor\highs\bin\highs.dll"; DestDir:"{app}\bin"; Flags: ignoreversion
 
-Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
-Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\globalizer\bin\minizinc-globalizer.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign skipifsourcedoesntexist
+Source: "{#MyAppDirectory}\globalizer\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
-Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
-Source: "{#MyAppDirectory}\findMUS\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppDirectory}\findMUS\bin\findMUS.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign skipifsourcedoesntexist
+Source: "{#MyAppDirectory}\findMUS\share\minizinc\*"; DestDir: "{app}\share\minizinc\"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
-Source: "{#MyAppDirectory}\mzn-analyse\bin\mzn-analyse.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign
+Source: "{#MyAppDirectory}\mzn-analyse\bin\mzn-analyse.exe"; DestDir:"{app}\bin"; Flags: ignoreversion sign skipifsourcedoesntexist
 
 Source: "{#MyMSVCRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+; Some Windows SDK versions ship no arm64 folder under Redist\ucrt\DLLs at all
+; (a known Microsoft packaging gap, not specific to this build). Harmless to
+; skip either way: arm64 Windows has had the Universal CRT built into the OS
+; since it launched, unlike x86/x64 where it needed backfilling.
+Source: "{#MyUCRTRedist}\*.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
