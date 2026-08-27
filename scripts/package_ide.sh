@@ -58,7 +58,6 @@ linux)
   cp resources/scripts/MiniZincIDE.sh "$PACKAGE/"
   cp resources/misc/README "$PACKAGE/" 2>/dev/null || true
   tar -czf "${PACKAGE}.tgz" "$PACKAGE"
-  sha256sum "${PACKAGE}.tgz" > "${PACKAGE}.tgz.sha256"
   ;;
 
 appimage)
@@ -75,7 +74,6 @@ appimage)
   cp resources/icon.png "$PACKAGE/minizinc.png"
   OUT="MiniZincIDE-${VERSION}-${TRIPLE}.AppImage"
   ARCH=x86_64 appimagetool "$PACKAGE" "$OUT"
-  sha256sum "$OUT" > "MiniZincIDE-${VERSION}-${TRIPLE}.AppImage.sha256"
   ;;
 
 osx)
