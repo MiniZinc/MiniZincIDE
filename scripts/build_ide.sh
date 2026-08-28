@@ -13,6 +13,7 @@ cd build
 # Stated, not inherited from Qt's mkspec, so the IDE, compiler and solvers share
 # one floor.
 qmake -makefile "CONFIG+=bundled" \
+  "PREFIX=/usr" \
   "QMAKE_MACOSX_DEPLOYMENT_TARGET=12.0" \
   "DEFINES+=MINIZINC_IDE_BUILD=\\\\\\\"\"${BUILD_REF:-0}\\\\\\\"\"" \
   "$ROOT/MiniZincIDE/MiniZincIDE.pro"
@@ -21,9 +22,8 @@ qmake -makefile "CONFIG+=bundled" \
 case "${IDE_PLATFORM:-}" in
 linux)
   "${MAKE:-make}" INSTALL_ROOT="$ROOT/ide" install
+  test -x "$ROOT/ide/usr/bin/MiniZincIDE"
   cd "$ROOT"
-  # fzn-gecode is passed only so its Qt (Gist) dependencies get bundled; the
-  # binary itself is removed afterwards and taken from vendor/ at package time.
   # TODO: linuxdeploy only publishes a rolling `continuous` tag - the one
   # unpinned input left in the chain. Pin by asset digest if it drifts.
   LD_BASE="https://github.com/linuxdeploy/linuxdeploy"
@@ -33,7 +33,9 @@ linux)
   chmod +x linuxdeploy linuxdeploy-plugin-qt
   export APPIMAGE_EXTRACT_AND_RUN=1   # no FUSE in the container
   PATH="$ROOT:$PATH" ./linuxdeploy --appdir ide \
+    --executable "$ROOT/ide/usr/bin/MiniZincIDE" \
     --executable vendor/gecode_gist/bin/fzn-gecode --plugin qt -v0
+  test -e "$ROOT/ide/usr/lib/libQt6WebSockets.so.6"
   rm -rf ide/usr/share ide/usr/translations ide/usr/bin/fzn-gecode
   ;;
 osx)
