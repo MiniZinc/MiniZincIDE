@@ -21,10 +21,6 @@ on:
         description: "libminizinc release to build against (blank = tag or edge)."
         type: string
         default: ""
-      promote_snap:
-        description: "Path or URL of a built .snap to release to the stable channel."
-        type: string
-        default: ""
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -600,29 +596,11 @@ jobs:
         shell: bash
         run: echo "path=$(find artifacts -name '*.snap' | head -1)" >> "$GITHUB_OUTPUT"
 
-      # A tagged build goes to `candidate`; `stable` is promoted by hand.
+      # Tagged builds are released to `stable`; other builds go to `edge`.
       - uses: snapcore/action-publish@v1
         if: steps.snap.outputs.path != ''
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         with:
           snap: ${{ steps.snap.outputs.path }}
-          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge' }}
-
-  # Dispatched by hand once a `candidate` build has been checked.
-  promote-snap:
-    name: promote the snap to stable
-    if: github.event_name == 'workflow_dispatch' && inputs.promote_snap != ''
-    runs-on: ubuntu-24.04
-    # Previously dispatchable from any branch by anyone with write access; the
-    # environment's branch/tag policy is what actually restricts that now.
-    environment: snap-publishing
-    permissions:
-      deployments: write   # environment: implicitly records a deployment
-    steps:
-      - uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        with:
-          snap: ${{ inputs.promote_snap }}
-          release: stable
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'stable' || 'edge' }}
