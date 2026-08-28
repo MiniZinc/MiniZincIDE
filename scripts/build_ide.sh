@@ -31,6 +31,9 @@ linux)
   curl -sSLo linuxdeploy-plugin-qt \
     "$LD_BASE-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage"
   chmod +x linuxdeploy linuxdeploy-plugin-qt
+  # The IDE's profiler uses only QSQLITE. Avoid deploying unused drivers whose
+  # optional database-client dependencies are not part of the manylinux image.
+  rm -f "$QT_ROOT_DIR"/plugins/sqldrivers/libqsql{psql,odbc,mimer,mysql,ibase,oci}.so
   export APPIMAGE_EXTRACT_AND_RUN=1   # no FUSE in the container
   PATH="$ROOT:$PATH" ./linuxdeploy --appdir ide \
     --executable "$ROOT/ide/usr/bin/MiniZincIDE" \
