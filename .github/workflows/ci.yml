@@ -39,10 +39,10 @@ env:
   MZN_RELEASE: ${{ github.event.inputs.minizinc_release }}
 
 jobs:
-  # Catches a bundle labelled with a version that does not match the compiler
-  # inside it. Reads VERSION from the .pri, so needs neither Qt nor a build.
-  check-version:
-    name: check version
+  # Reads VERSION from the .pri, so needs neither Qt nor a build. A mismatch is
+  # reported only after the optional version-bump PR has been proposed.
+  read-versions:
+    name: read versions
     runs-on: ubuntu-24.04
     outputs:
       ide: ${{ steps.versions.outputs.ide }}
@@ -71,38 +71,22 @@ jobs:
             echo "mismatch=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Fail on a version mismatch
-        if: steps.versions.outputs.mismatch == 'true'
-        shell: bash
-        run: |
-          echo "IDE ${{ steps.versions.outputs.ide }} does not match MiniZinc ${{ steps.versions.outputs.mzn }}" >&2
-          exit 1
-
-      - name: Compare the tag version
-        shell: bash
-        run: |
-          if [ "$GITHUB_REF_TYPE" = tag ]; then
-            [ "$GITHUB_REF_NAME" = "${{ steps.versions.outputs.mzn }}" ] \
-              || { echo "tag $GITHUB_REF_NAME does not match version ${{ steps.versions.outputs.mzn }}" >&2; exit 1; }
-          fi
-
   # On develop, an edge compiler-version mismatch is proposed as a small,
   # reviewable update. This privileged job never checks out or executes code
   # from a pull request.
   propose-version-bump:
     name: propose version bump
-    needs: check-version
+    needs: read-versions
     if: >-
-      always() &&
       github.ref == 'refs/heads/develop' &&
       (github.event_name != 'workflow_dispatch' || inputs.minizinc_release == '') &&
-      needs.check-version.outputs.mismatch == 'true'
+      needs.read-versions.outputs.mismatch == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
     env:
-      MZN_VERSION: ${{ needs.check-version.outputs.mzn }}
+      MZN_VERSION: ${{ needs.read-versions.outputs.mzn }}
     steps:
       - uses: actions/checkout@v7
       - name: Prepare version bump
@@ -131,6 +115,33 @@ jobs:
               --head "$branch" \
               --title "Bump MiniZinc IDE version to $MZN_VERSION" \
               --body "Updates the IDE version to match the bundled MiniZinc compiler."
+          fi
+
+  # Catches a bundle labelled with a version that does not match the compiler.
+  # This runs after the proposal job even when that job was skipped.
+  check-version:
+    name: check version
+    needs: [read-versions, propose-version-bump]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Propagate a version read failure
+        if: needs.read-versions.result != 'success'
+        run: exit 1
+
+      - name: Fail on a version mismatch
+        if: needs.read-versions.outputs.mismatch == 'true'
+        shell: bash
+        run: |
+          echo "IDE ${{ needs.read-versions.outputs.ide }} does not match MiniZinc ${{ needs.read-versions.outputs.mzn }}" >&2
+          exit 1
+
+      - name: Compare the tag version
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            [ "$GITHUB_REF_NAME" = "${{ needs.read-versions.outputs.mzn }}" ] \
+              || { echo "tag $GITHUB_REF_NAME does not match version ${{ needs.read-versions.outputs.mzn }}" >&2; exit 1; }
           fi
 
   build:
