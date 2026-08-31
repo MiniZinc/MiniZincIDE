@@ -121,14 +121,9 @@ jobs:
   # This runs after the proposal job even when that job was skipped.
   check-version:
     name: check version
-    needs: [read-versions, propose-version-bump]
-    if: always()
+    needs: read-versions
     runs-on: ubuntu-24.04
     steps:
-      - name: Propagate a version read failure
-        if: needs.read-versions.result != 'success'
-        run: exit 1
-
       - name: Fail on a version mismatch
         if: needs.read-versions.outputs.mismatch == 'true'
         shell: bash
