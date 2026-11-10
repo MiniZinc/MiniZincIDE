@@ -146,7 +146,7 @@ jobs:
       matrix:
         include:
           - { platform: linux,     triple: x86_64-linux-gnu,     runner: ubuntu-24.04 }
-          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-26 }
           - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
           - { platform: win64,     triple: x86_64-windows,       runner: windows-2022 }
           - { platform: win64-arm, triple: aarch64-windows,      runner: windows-11-arm }
@@ -401,7 +401,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-26 }
           - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
     environment: macos-signing
     runs-on: ${{ matrix.runner }}
@@ -517,7 +517,7 @@ jobs:
       matrix:
         include:
           - { platform: linux,     triple: x86_64-linux-gnu,     runner: ubuntu-24.04 }
-          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-14 }
+          - { platform: osx,       triple: aarch64-apple-darwin, runner: macos-26 }
           - { platform: osx-intel, triple: x86_64-apple-darwin,  runner: macos-26-intel }
           - { platform: win64,     triple: x86_64-windows,       runner: windows-2022 }
           - { platform: win64-arm, triple: aarch64-windows,      runner: windows-11-arm }
