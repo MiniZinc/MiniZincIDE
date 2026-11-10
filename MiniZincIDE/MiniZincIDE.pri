@@ -19,6 +19,8 @@ output_version {
 CONFIG += c++11
 
 macx {
+    # Workaround for qyieldcpu undeclared __yield intrinsic
+    QMAKE_CXXFLAGS += -Wno-error=implicit-function-declaration
     ICON = $$PWD/mznide.icns
     OBJECTIVE_SOURCES += \
         $$PWD/darkmodenotifier_macos.mm
