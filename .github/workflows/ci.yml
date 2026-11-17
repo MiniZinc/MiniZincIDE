@@ -79,7 +79,7 @@ jobs:
     needs: read-versions
     if: >-
       github.ref == 'refs/heads/develop' &&
-      (github.event_name != 'workflow_dispatch' || inputs.minizinc_release == '') &&
+      (inputs.minizinc_release == '' || inputs.minizinc_release == 'edge') &&
       needs.read-versions.outputs.mismatch == 'true'
     runs-on: ubuntu-24.04
     permissions:
